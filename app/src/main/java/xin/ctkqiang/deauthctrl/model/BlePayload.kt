@@ -36,11 +36,30 @@ enum class BlePayloadProfile(
 }
 
 /**
- * Represents a single BLE advertisement sent.
+ * 单条 BLE 广播日志条目
+ *
+ * @param timestamp 发送时间戳 (epoch millis)
+ * @param profile 使用的协议
+ * @param payloadHex 完整广播载荷 (hex 字符串)
+ * @param payloadBytes 广播载荷字节数组，用于 hex dump 格式化显示
+ * @param success 是否发送成功
+ * @param index 全局发送序号 (自开始计数)
+ * @param txPowerLevel 发射功率级别
  */
 data class BleAdvertLogEntry(
     val timestamp: Long = System.currentTimeMillis(),
     val profile: BlePayloadProfile,
     val payloadHex: String,
+    val payloadBytes: ByteArray = byteArrayOf(),
     val success: Boolean,
-)
+    val index: Int = 0,
+    val txPowerLevel: String = "HIGH",
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is BleAdvertLogEntry) return false
+        return timestamp == other.timestamp && index == other.index
+    }
+
+    override fun hashCode(): Int = 31 * timestamp.hashCode() + index
+}

@@ -63,6 +63,7 @@ class BleSpamManager(private val context: Context) {
     private val maxIntervalMs = 100L
 
     private var cycleIndex = 0
+    private var packetIndex = 0 // 全局发包序号
 
     // Track active advertising to stop before re-starting
     private var activeAdvertising: Pair<BluetoothLeAdvertiser, AdvertiseCallback>? = null
@@ -95,6 +96,7 @@ class BleSpamManager(private val context: Context) {
         }
         _isRunning.value = true
         _error.value = null
+        packetIndex = 0
         advertiseJob = scope.launch { spamLoop() }
     }
 
@@ -172,23 +174,35 @@ class BleSpamManager(private val context: Context) {
         try {
             adv.startAdvertising(settings, advData, advertiseCallback)
             activeAdvertising = Pair(adv, advertiseCallback)
+            packetIndex++
             appendLog(BleAdvertLogEntry(
                 profile = profile,
                 payloadHex = data.toHexString(),
+                payloadBytes = data,
                 success = true,
+                index = packetIndex,
+                txPowerLevel = "HIGH",
             ))
         } catch (e: SecurityException) {
+            packetIndex++
             appendLog(BleAdvertLogEntry(
                 profile = profile,
                 payloadHex = data.toHexString(),
+                payloadBytes = data,
                 success = false,
+                index = packetIndex,
+                txPowerLevel = "HIGH",
             ))
             _error.value = "权限不足，请授予蓝牙权限。"
         } catch (e: Exception) {
+            packetIndex++
             appendLog(BleAdvertLogEntry(
                 profile = profile,
                 payloadHex = data.toHexString(),
+                payloadBytes = data,
                 success = false,
+                index = packetIndex,
+                txPowerLevel = "HIGH",
             ))
             _error.value = "广播错误: ${e.message}"
         }
