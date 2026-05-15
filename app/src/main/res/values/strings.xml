@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DeauthCtrl</string>
+    <string name="ble_tab">BLE 攻击</string>
+    <string name="wifi_tab">Wi-Fi 攻击</string>
+</resources>
