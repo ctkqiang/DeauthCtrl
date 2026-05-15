@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import xin.ctkqiang.deauthctrl.ui.components.GlitchText
+import xin.ctkqiang.deauthctrl.ui.components.ScanlineOverlay
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
 
@@ -31,12 +33,10 @@ fun MainScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     Column {
-                        Text(
+                        GlitchText(
                             text = "fsociety",
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
+                            glitchIntervalMs = 5000,
                             style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.primary,
                         )
                         Text(
                             text = "> 去认证控制系统 v1.0",
@@ -80,6 +80,7 @@ fun MainScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            ScanlineOverlay()
             when (selectedTab) {
                 0 -> BleSpamScreen(viewModel = bleViewModel)
                 1 -> WifiDisruptScreen(viewModel = wifiViewModel)
