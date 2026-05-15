@@ -96,7 +96,7 @@ fun PermissionRequestScreen(
                 Spacer(Modifier.height(12.dp))
 
                 PermissionRow(
-                    icon = "📍",
+                    icon = ">",
                     title = "位置信息",
                     description = "BLE 和 Wi-Fi 扫描需要位置权限 (Android 系统要求)",
                 )
@@ -104,7 +104,7 @@ fun PermissionRequestScreen(
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PermissionRow(
-                        icon = "📡",
+                        icon = ">",
                         title = "附近设备",
                         description = "BLE 广播与扫描需要蓝牙权限",
                     )

@@ -170,7 +170,7 @@ fun AboutScreen() {
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "⚠ 法律声明",
+                            text = "! 法律声明",
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.labelMedium,
