@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,7 +82,6 @@ fun BleSpamScreen(viewModel: BleSpamViewModel) {
 
         Spacer(Modifier.height(8.dp))
 
-        // ═══ 广播间隔 ═══
         Text("> 广播间隔: ${intervalMs.toLong()}ms", fontFamily = FontFamily.Monospace,
             style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
         Slider(value = intervalMs, onValueChange = { intervalMs = it },
@@ -105,14 +105,12 @@ fun BleSpamScreen(viewModel: BleSpamViewModel) {
                 fontFamily = FontFamily.Monospace, fontSize = 14.sp)
         }
 
-        // ═══ 错误 ═══
         error?.let { msg ->
             Spacer(Modifier.height(6.dp))
             Text("! $msg", color = MaterialTheme.colorScheme.error,
                 fontFamily = FontFamily.Monospace, fontSize = 11.sp)
         }
 
-        // ═══ 统计条 ═══
         if (isRunning && log.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             val ok = log.count { it.success }
@@ -170,17 +168,23 @@ private fun TerminalLogWindow(
     modifier: Modifier = Modifier,
     content: @Composable LazyListScope.() -> Unit,
 ) {
+    val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val scanlineColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.02f)
+    val titleBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+    val titleColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+
     Box(modifier = modifier) {
         LazyColumn(
             state = state,
             modifier = Modifier
                 .fillMaxSize()
-                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
-                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, borderColor, RoundedCornerShape(2.dp))
+                .background(surfaceColor)
                 .drawBehind {
                     var y = 0f
                     while (y < size.height) {
-                        drawLine(MaterialTheme.colorScheme.primary.copy(alpha = 0.02f),
+                        drawLine(scanlineColor,
                             Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
                         y += 4f
                     }
@@ -192,13 +196,13 @@ private fun TerminalLogWindow(
         // 终端标题栏
         Box(modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+            .background(titleBgColor,
                 RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
             .padding(horizontal = 8.dp, vertical = 2.dp),
         ) {
             Text("┌─ BLE TX DUMP ──────────────────────────────────────────────┐",
                 fontFamily = FontFamily.Monospace, fontSize = 8.sp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                color = titleColor)
         }
     }
 }
