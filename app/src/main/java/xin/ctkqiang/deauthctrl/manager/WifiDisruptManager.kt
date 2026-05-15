@@ -13,21 +13,25 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Manages Wi-Fi network scanning and experimental evil-twin beacon flooding.
+ * Wi-Fi 干扰攻击管理器
  *
- * The flooding technique works by creating a local-only hotspot with the same
- * SSID as the target network, then rapidly toggling it on/off. This sends
- * a burst of beacon frames that can confuse nearby clients and cause temporary
- * disconnections from the real access point.
+ * 通过创建与目标网络同名的本地热点 (邪恶双子) 并快速开关，
+ * 发送大量 Beacon 帧以混淆附近客户端，可能导致其从真实 AP 断开。
  *
- * LIMITATIONS (documented in UI):
- * - This is NOT a true deauth attack. Raw packet injection is impossible
- *   without root/hardware support.
- * - Hotspot toggling speed is limited by the Android framework (~50-100ms
- *   per cycle) and device hardware.
- * - Not all devices/Android versions support local-only hotspot.
- * - The real AP must be on a different channel for maximum confusion effect.
- * - Results vary significantly by device, Android version, and environment.
+ * 攻击原理：
+ * 1. Wi-Fi 扫描：使用 WifiManager 获取附近网络列表
+ * 2. 邪恶双子：startLocalOnlyHotspot() 创建同名热点
+ * 3. Beacon 泛洪：在协程循环中每 80ms 开关一次热点，
+ *    每次开启时 Wi-Fi 芯片广播 Beacon 帧宣布 SSID
+ * 4. 自动清理：泛洪结束确保热点关闭
+ *
+ * 重要限制（非真正 Deauth 攻击）：
+ * - 无 root 权限无法发送原始 802.11 帧
+ * - 热点开关速度受 Android 框架限制 (~50-100ms/轮)
+ * - 并非所有设备/Android 版本都支持本地热点
+ * - 真实 AP 需在不同信道才能产生混淆效果
+ * - 效果因设备、Android 版本和环境差异很大
+ * - Android 9+ 限制 Wi-Fi 扫描为每 2 分钟 4 次
  */
 class WifiDisruptManager(private val context: Context) {
 

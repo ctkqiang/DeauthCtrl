@@ -18,11 +18,25 @@ import kotlinx.coroutines.isActive
 import java.util.UUID
 
 /**
- * Manages BLE advertisement spam using BluetoothLeAdvertiser.
+ * BLE 泛洪攻击管理器
  *
- * Builds spoofed advertisement packets that mimic real devices
- * (Apple Continuity, Microsoft Swift Pair, etc.) and broadcasts them
- * at high frequency to disrupt nearby BLE stacks.
+ * 使用 Android 原生 BluetoothLeAdvertiser 接口，
+ * 以极高频率 (20-100ms 间隔) 广播伪造的 BLE 广告包，
+ * 模拟苹果、微软、谷歌、三星等真实设备签名，
+ * 从而对附近蓝牙栈发起拒绝服务攻击。
+ *
+ * 核心机制：
+ * - 广告包构造：按协议生成不同的 Manufacturer Data，
+ *   每组数据带有特定厂商 ID 和子类型标识
+ * - 高频轮询：在协程循环中不断切换广播数据，
+ *   每次先停止上一次广播再启动新广播，避免冲突
+ * - 状态管理：StateFlow 驱动 UI，实时反馈日志和错误
+ *
+ * 技术限制：
+ * - BLE 广播范围有限 (通常 10-50 米)
+ * - Android 系统对同时广播器数量有限制
+ * - 需要 BLUETOOTH_ADVERTISE 权限 (API 31+)
+ * - 部分 ROM 可能限制广播频率
  */
 class BleSpamManager(private val context: Context) {
 
@@ -103,8 +117,13 @@ class BleSpamManager(private val context: Context) {
         scope.cancel()
     }
 
-    // ── Spam loop ───────────────────────────────────────────────────────
+    // ── 泛洪主循环：在协程中无限循环发送广播包 ──────────────────────
 
+    /**
+     * 泛洪循环体 — 持续按选定协议和间隔发送 BLE 广播。
+     * 运行在 scope.launch 启动的协程中，通过 scope.isActive 控制生命周期。
+     * 停止时由 stop() 方法 cancel 对应的 Job。
+     */
     private suspend fun spamLoop() {
         while (scope.isActive) {
             val profile = resolveNextProfile()
@@ -193,7 +212,7 @@ class BleSpamManager(private val context: Context) {
         }
     }
 
-    // ── Payload builders ─────────────────────────────────────────────────
+    // ── 广播包构造器：按不同厂商协议生成伪造的广告数据 ──────────────
 
     private fun buildPayload(profile: BlePayloadProfile): ByteArray? {
         return when (profile) {
