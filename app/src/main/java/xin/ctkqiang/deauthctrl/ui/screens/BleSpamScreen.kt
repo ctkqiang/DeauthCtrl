@@ -2,20 +2,21 @@ package xin.ctkqiang.deauthctrl.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import xin.ctkqiang.deauthctrl.model.BleAdvertLogEntry
 import xin.ctkqiang.deauthctrl.model.BlePayloadProfile
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
@@ -36,363 +37,257 @@ fun BleSpamScreen(viewModel: BleSpamViewModel) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
 
     LaunchedEffect(log.size) {
-        if (log.isNotEmpty()) {
-            listState.animateScrollToItem(log.size - 1)
-        }
+        if (log.isNotEmpty()) listState.animateScrollToItem(log.size - 1)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(12.dp),
+            .padding(10.dp),
     ) {
-        // ── 攻击协议选择 ──────────────────────────────────────────────
-        Text(
-            text = "攻击协议",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.height(4.dp))
-
+        // ═══ 攻击协议选择 ═══
+        Text("> 攻击协议", fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.height(3.dp))
         var dropdownExpanded by remember { mutableStateOf(false) }
         Box {
             OutlinedButton(
                 onClick = { dropdownExpanded = true },
                 modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
             ) {
-                Text(
-                    text = "[ ${selectedProfile.displayName} ]",
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Text("[ ${selectedProfile.displayName} ]", fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp, color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            DropdownMenu(
-                expanded = dropdownExpanded,
-                onDismissRequest = { dropdownExpanded = false },
-            ) {
+            DropdownMenu(expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false }) {
                 profiles.forEach { profile ->
-                    DropdownMenuItem(
-                        text = {
-                            Column {
-                                Text(
-                                    profile.displayName,
-                                    fontFamily = FontFamily.Monospace,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                                Text(
-                                    profile.description,
-                                    fontFamily = FontFamily.Monospace,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        },
-                        onClick = {
-                            selectedProfile = profile
-                            viewModel.setProfile(profile)
-                            dropdownExpanded = false
-                        },
-                    )
+                    DropdownMenuItem(text = {
+                        Column {
+                            Text(profile.displayName, fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp)
+                            Text(profile.description, fontFamily = FontFamily.Monospace,
+                                fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }, onClick = {
+                        selectedProfile = profile; viewModel.setProfile(profile)
+                        dropdownExpanded = false
+                    })
                 }
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // ── 广播间隔 ─────────────────────────────────────────────────
-        Text(
-            text = "广播间隔: ${intervalMs.toLong()}ms",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Slider(
-            value = intervalMs,
-            onValueChange = { intervalMs = it },
-            valueRange = 20f..100f,
-            steps = 15,
-            modifier = Modifier.fillMaxWidth(),
+        // ═══ 广播间隔 ═══
+        Text("> 广播间隔: ${intervalMs.toLong()}ms", fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        Slider(value = intervalMs, onValueChange = { intervalMs = it },
+            valueRange = 20f..100f, steps = 7, modifier = Modifier.fillMaxWidth(),
             enabled = !isRunning,
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
+            colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
-                inactiveTrackColor = MaterialTheme.colorScheme.outline,
-            ),
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text("20ms", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("100ms", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+                inactiveTrackColor = MaterialTheme.colorScheme.outline))
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(6.dp))
 
-        // ── 开始/停止按钮 ─────────────────────────────────────────────
-        Button(
-            onClick = {
-                viewModel.setInterval(intervalMs.toLong())
-                if (isRunning) {
-                    viewModel.stopSpam()
-                } else {
-                    viewModel.startSpam()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
+        // ═══ 开始/停止 ═══
+        Button(onClick = {
+            viewModel.setInterval(intervalMs.toLong())
+            if (isRunning) viewModel.stopSpam() else viewModel.startSpam()
+        }, modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (isRunning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-        ) {
-            Text(
-                text = if (isRunning) "[ 停止攻击 ]" else "[ 开始 BLE 泛洪 ]",
-                fontFamily = FontFamily.Monospace,
-            )
+                contentColor = MaterialTheme.colorScheme.onPrimary)) {
+            Text(if (isRunning) "[ 停止攻击 ]" else "[ 开始 BLE 泛洪 ]",
+                fontFamily = FontFamily.Monospace, fontSize = 14.sp)
         }
 
-        // ── 错误显示 ─────────────────────────────────────────────────
+        // ═══ 错误 ═══
         error?.let { msg ->
-            Spacer(Modifier.height(8.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                ),
-                shape = RoundedCornerShape(2.dp),
-            ) {
-                Text(
-                    text = "! $msg",
-                    color = MaterialTheme.colorScheme.error,
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(8.dp),
-                )
-            }
+            Spacer(Modifier.height(6.dp))
+            Text("! $msg", color = MaterialTheme.colorScheme.error,
+                fontFamily = FontFamily.Monospace, fontSize = 11.sp)
         }
 
-        // ── 统计信息栏 (运行时显示) ──────────────────────────────────
+        // ═══ 统计条 ═══
         if (isRunning && log.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            val successCount = log.count { it.success }
-            val failCount = log.count { !it.success }
-            val ppsEstimate = if (successCount > 0) (successCount * 1000L / maxOf(1, System.currentTimeMillis() - log.first().timestamp)) else 0L
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(2.dp))
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "发包: $successCount",
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = "失败: $failCount",
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (failCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "速率: ~${ppsEstimate}pkt/s",
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Spacer(Modifier.height(6.dp))
+            val ok = log.count { it.success }
+            val fail = log.count { !it.success }
+            val elapsed = maxOf(1, System.currentTimeMillis() - log.first().timestamp)
+            Row(modifier = Modifier.fillMaxWidth().background(
+                MaterialTheme.colorScheme.surface, RoundedCornerShape(2.dp)).padding(6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("发包:$ok 失败:$fail", fontFamily = FontFamily.Monospace,
+                    fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
+                Text("~${ok * 1000L / elapsed}pkt/s", fontFamily = FontFamily.Monospace,
+                    fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
-        // ── 日志头 ───────────────────────────────────────────────────
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
+        // ═══ 日志头 ═══
+        Spacer(Modifier.height(6.dp))
+        Row(modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "发送日志 (${log.size})",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            TextButton(onClick = { viewModel.clearLog() }) {
-                Text(
-                    "清空",
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            verticalAlignment = Alignment.CenterVertically) {
+            Text("> TX LOG [${log.size}]", fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+            TextButton(onClick = { viewModel.clearLog() }, contentPadding = PaddingValues(0.dp)) {
+                Text("清空", fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
-        // ── Hex Dump 日志列表 ────────────────────────────────────────
-        LazyColumn(
+        // ═══ 终端窗口日志区 ═══
+        TerminalLogWindow(
             state = listState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(2.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(4.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f),
         ) {
             if (log.isEmpty()) {
                 item {
-                    Text(
-                        text = "等待发送…",
-                        fontFamily = FontFamily.Monospace,
-                        style = MaterialTheme.typography.bodySmall,
+                    Text("等待发送…", fontFamily = FontFamily.Monospace, fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
-                    )
+                        modifier = Modifier.padding(12.dp))
                 }
             }
             items(log, key = { "${it.index}_${it.timestamp}" }) { entry ->
-                HexDumpLogEntry(entry, timeFormat)
+                HexDumpEntry(entry, timeFormat)
             }
         }
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Hex Dump 格式的日志条目
-// ──────────────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 终端窗口容器 — 黑底红框，CRT 扫描线
+// ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * 以类 Wireshark / hexdump 格式展示单条 BLE 广播日志。
- * 包含：序号、时间戳、协议名、16 进制 hex dump (偏移 + hex + ASCII)、状态指示。
- */
 @Composable
-private fun HexDumpLogEntry(entry: BleAdvertLogEntry, timeFormat: SimpleDateFormat) {
-    val statusColor = if (entry.success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-    val borderColor = if (entry.success) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error
-
-    Column(
-        modifier = Modifier
+private fun TerminalLogWindow(
+    state: androidx.compose.foundation.lazy.LazyListState,
+    modifier: Modifier = Modifier,
+    content: @Composable LazyListScope.() -> Unit,
+) {
+    Box(modifier = modifier) {
+        LazyColumn(
+            state = state,
+            modifier = Modifier
+                .fillMaxSize()
+                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .drawBehind {
+                    var y = 0f
+                    while (y < size.height) {
+                        drawLine(MaterialTheme.colorScheme.primary.copy(alpha = 0.02f),
+                            Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+                        y += 4f
+                    }
+                }
+                .padding(5.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            content = content,
+        )
+        // 终端标题栏
+        Box(modifier = Modifier
             .fillMaxWidth()
-            .border(0.5.dp, borderColor.copy(alpha = 0.3f), RoundedCornerShape(1.dp))
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-    ) {
-        // ── 第一行: 序号、时间、协议、状态 ──────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp),
         ) {
-            Text(
-                text = "#${entry.index.toString().padStart(4, '0')}",
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = timeFormat.format(Date(entry.timestamp)),
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = entry.profile.displayName.take(14),
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "TX:${entry.txPowerLevel}",
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = if (entry.success) "OK" else "FAIL",
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.labelSmall,
-                color = statusColor,
-            )
+            Text("┌─ BLE TX DUMP ──────────────────────────────────────────────┐",
+                fontFamily = FontFamily.Monospace, fontSize = 8.sp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 单条 Hex Dump 条目 — 紧凑、适配手机屏幕
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun HexDumpEntry(entry: BleAdvertLogEntry, tf: SimpleDateFormat) {
+    val ok = entry.success
+    val accent = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val dim = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(1.dp))
+        .border(0.5.dp, if (ok) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        else MaterialTheme.colorScheme.error.copy(alpha = 0.5f), RoundedCornerShape(1.dp))
+        .padding(5.dp),
+    ) {
+        // ── 头部: #序号 时间 协议 状态 ──
+        Row(modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("#${entry.index.toString().padStart(4,'0')}",
+                fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = dim)
+            Text(tf.format(java.util.Date(entry.timestamp)),
+                fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = dim)
+            Text(entry.profile.displayName.take(10),
+                fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurface)
+            Text(if (ok) "OK" else "FAIL", fontFamily = FontFamily.Monospace,
+                fontSize = 10.sp, color = accent)
         }
 
         Spacer(Modifier.height(3.dp))
 
-        // ── 第二行: Hex dump ─────────────────────────────────────────
+        // ── Hex Dump 主体: 8 bytes/line，适合手机屏 ──
         val bytes = entry.payloadBytes
         if (bytes.isNotEmpty()) {
-            Box(
+            Text(
+                text = formatHexDump8(bytes),
+                fontFamily = FontFamily.Monospace,
+                fontSize = 9.sp,
+                lineHeight = 13.sp,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
                     .background(MaterialTheme.colorScheme.background, RoundedCornerShape(1.dp))
-                    .padding(4.dp),
-            ) {
-                Text(
-                    text = buildHexDump(bytes),
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    lineHeight = MaterialTheme.typography.labelSmall.lineHeight,
-                )
-            }
-        } else {
-            Text(
-                text = entry.payloadHex.take(64).chunked(2).joinToString(" "),
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                    .padding(3.dp),
             )
+        } else {
+            Text(entry.payloadHex.take(48).chunked(2).joinToString(" "),
+                fontFamily = FontFamily.Monospace, fontSize = 9.sp,
+                color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
-/**
- * 构建标准 hex dump 格式字符串，模仿 Wireshark/xxd 输出：
- * 每行: 偏移(4) | hex pairs (16 bytes) | ASCII 可打印字符
- *
- * 示例:
- * 0000  4c 00 05 02 a3 f1 6d 4e  12 7b 00 00 00 00 00 00  |L.....mN.{......|
- */
-private fun buildHexDump(bytes: ByteArray): String {
+// ═══════════════════════════════════════════════════════════════════════════════
+// 紧凑 Hex Dump 格式化: 每行 8 字节，适配手机屏宽
+// 格式: OFFSET  XX XX XX XX  XX XX XX XX  |ASCII....|
+// ═══════════════════════════════════════════════════════════════════════════════
+
+private fun formatHexDump8(bytes: ByteArray): String {
     val sb = StringBuilder()
-    val bytesPerLine = 16
-    var offset = 0
-
-    while (offset < bytes.size) {
-        // 偏移地址
-        sb.append(offset.toString(16).padStart(4, '0').uppercase())
+    val perLine = 8
+    var off = 0
+    while (off < bytes.size) {
+        sb.append(off.toString(16).padStart(4, '0').uppercase())
         sb.append("  ")
-
-        // 十六进制部分
-        for (i in 0 until bytesPerLine) {
-            if (i == 8) sb.append(" ") // 8 字节分隔
-            if (offset + i < bytes.size) {
-                sb.append((bytes[offset + i].toInt() and 0xFF).toString(16).padStart(2, '0').uppercase())
+        for (i in 0 until perLine) {
+            if (i == 4) sb.append(" ")
+            if (off + i < bytes.size) {
+                sb.append((bytes[off + i].toInt() and 0xFF)
+                    .toString(16).padStart(2, '0').uppercase())
                 sb.append(" ")
-            } else {
-                sb.append("   ")
-            }
+            } else sb.append("   ")
         }
-
         sb.append(" |")
-
-        // ASCII 可视化部分
-        for (i in 0 until bytesPerLine) {
-            if (offset + i < bytes.size) {
-                val b = bytes[offset + i].toInt() and 0xFF
+        for (i in 0 until perLine) {
+            if (off + i < bytes.size) {
+                val b = bytes[off + i].toInt() and 0xFF
                 sb.append(if (b in 32..126) b.toChar() else '.')
-            } else {
-                sb.append(" ")
             }
         }
-        sb.append("|\n")
-
-        offset += bytesPerLine
+        sb.append("|")
+        if (off + perLine < bytes.size) sb.append("\n")
+        off += perLine
     }
-
-    return sb.toString().trimEnd('\n')
+    return sb.toString()
 }
