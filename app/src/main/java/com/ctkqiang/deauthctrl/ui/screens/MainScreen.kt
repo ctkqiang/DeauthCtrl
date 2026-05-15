@@ -18,7 +18,7 @@ fun MainScreen(
     wifiViewModel: WifiDisruptViewModel,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("BLE 攻击", "Wi-Fi 攻击")
+    val tabs = listOf("BLE 攻击", "Wi-Fi 攻击", "关于")
 
     Scaffold(
         topBar = {
@@ -83,6 +83,7 @@ fun MainScreen(
             when (selectedTab) {
                 0 -> BleSpamScreen(viewModel = bleViewModel)
                 1 -> WifiDisruptScreen(viewModel = wifiViewModel)
+                2 -> AboutScreen()
             }
         }
     }
