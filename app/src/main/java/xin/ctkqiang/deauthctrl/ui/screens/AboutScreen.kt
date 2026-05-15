@@ -14,6 +14,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import xin.ctkqiang.deauthctrl.ui.components.GlitchText
+import xin.ctkqiang.deauthctrl.ui.components.ScanlineOverlay
+import xin.ctkqiang.deauthctrl.ui.components.BlinkingCursor
 import kotlinx.coroutines.delay
 
 /**
@@ -35,48 +38,17 @@ fun AboutScreen() {
         }
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        item {
-            AnimatedLine(visible = visibleLines >= 0) {
-                Text(
-                    text = "╔══════════════════════════════════════╗",
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        // CRT 扫描线覆盖层
+        ScanlineOverlay()
 
-        item {
-            AnimatedLine(visible = visibleLines >= 1) {
-                Text(
-                    text = "║     fsociety 去认证控制系统 v1.0      ║",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-
-        item {
-            AnimatedLine(visible = visibleLines >= 2) {
-                Text(
-                    text = "╚══════════════════════════════════════╝",
-                    fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-
-        item { Spacer(Modifier.height(12.dp)) }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
 
         // 开发者信息
         item {
@@ -242,13 +214,10 @@ fun AboutScreen() {
 
         item {
             AnimatedLine(visible = visibleLines >= 21) {
-                Text(
+                GlitchText(
                     text = "中国红客 · 哪吒网络安全",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
+                    glitchIntervalMs = 4000,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -267,6 +236,7 @@ fun AboutScreen() {
             }
         }
     }
+    } // end Box
 }
 
 /**
