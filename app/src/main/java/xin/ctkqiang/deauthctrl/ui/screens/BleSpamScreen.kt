@@ -166,7 +166,7 @@ fun BleSpamScreen(viewModel: BleSpamViewModel) {
 private fun TerminalLogWindow(
     state: androidx.compose.foundation.lazy.LazyListState,
     modifier: Modifier = Modifier,
-    content: @Composable LazyListScope.() -> Unit,
+    content: LazyListScope.() -> Unit,
 ) {
     val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
     val surfaceColor = MaterialTheme.colorScheme.surface
