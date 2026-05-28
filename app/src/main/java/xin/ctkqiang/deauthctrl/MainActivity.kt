@@ -20,7 +20,9 @@ import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
 import xin.ctkqiang.deauthctrl.ui.theme.Black
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,9 +50,13 @@ class MainActivity : ComponentActivity() {
                 } else {
                     val bleViewModel: BleSpamViewModel = viewModel()
                     val wifiViewModel: WifiDisruptViewModel = viewModel()
+                    val btJammerViewModel: BluetoothJammerViewModel = viewModel()
+                    val wifiJammerViewModel: WifiJammerViewModel = viewModel()
                     MainScreen(
                         bleViewModel = bleViewModel,
                         wifiViewModel = wifiViewModel,
+                        btJammerViewModel = btJammerViewModel,
+                        wifiJammerViewModel = wifiJammerViewModel,
                     )
                 }
             }

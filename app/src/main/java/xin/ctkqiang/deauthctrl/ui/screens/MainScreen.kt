@@ -11,16 +11,20 @@ import androidx.compose.ui.text.font.FontWeight
 import xin.ctkqiang.deauthctrl.ui.components.GlitchText
 import xin.ctkqiang.deauthctrl.ui.components.ScanlineOverlay
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     bleViewModel: BleSpamViewModel,
     wifiViewModel: WifiDisruptViewModel,
+    btJammerViewModel: BluetoothJammerViewModel,
+    wifiJammerViewModel: WifiJammerViewModel,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("BLE 攻击", "Wi-Fi 攻击", "关于")
+    val tabs = listOf("BLE 攻击", "Wi-Fi 攻击", "BT 压制", "WiFi 压制", "关于")
 
     Scaffold(
         topBar = {
@@ -84,7 +88,9 @@ fun MainScreen(
             when (selectedTab) {
                 0 -> BleSpamScreen(viewModel = bleViewModel)
                 1 -> WifiDisruptScreen(viewModel = wifiViewModel)
-                2 -> AboutScreen()
+                2 -> BluetoothJammerScreen(viewModel = btJammerViewModel)
+                3 -> WifiJammerScreen(viewModel = wifiJammerViewModel)
+                4 -> AboutScreen()
             }
         }
     }
