@@ -85,16 +85,16 @@ fun HomeScreen(
         Spacer(Modifier.height(14.dp))
 
         Card(
-            nav = { nav("ble") }, name = "BLE_SPAM", desc = "BLE advertisement protocol flooding", running = br,
+            nav = { nav("ble") }, name = "BLE 泛洪", desc = "BLE 广告协议泛洪攻击", running = br,
             onToggle = { if (br) bleVm.stopSpam() else bleVm.startSpam() })
         Card(
-            nav = { nav("wifi") }, name = "WIFI_DISRUPT", desc = "evil twin beacon flood", running = wr,
+            nav = { nav("wifi") }, name = "WIFI 干扰", desc = "邪恶双子信标泛洪", running = wr,
             onToggle = { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() })
         Card(
-            nav = { nav("btjam") }, name = "BT_JAMMER", desc = "full-spectrum Bluetooth attack", running = btr,
+            nav = { nav("btjam") }, name = "蓝牙压制", desc = "全频段蓝牙攻击", running = btr,
             onToggle = { if (btr) btVm.stop() else btVm.start() })
         Card(
-            nav = { nav("wifijam") }, name = "WIFI_JAMMER", desc = "auto-scan + jam all nearby SSIDs", running = wjr,
+            nav = { nav("wifijam") }, name = "WIFI 压制", desc = "自动扫描并压制附近所有 SSID", running = wjr,
             onToggle = { if (wjr) wjVm.stop() else wjVm.start() })
 
         Spacer(Modifier.weight(1f))
@@ -115,7 +115,7 @@ fun Card(nav: () -> Unit, name: String, desc: String, running: Boolean, onToggle
                 Text(desc, fontFamily = M, fontSize = 10.sp, color = G)
             }
             Surface(modifier = Modifier.clickable { onToggle() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else R.copy(alpha = 0.12f), border = BorderStroke(1.dp, R.copy(alpha = 0.5f))) {
-                Text(if (running) "STOP" else "START", fontFamily = M, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = R, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
+                Text(if (running) "停止" else "启动", fontFamily = M, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = R, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
             }
         }
     }
@@ -140,7 +140,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
     LaunchedEffect(log.size) { if (log.isNotEmpty()) listState.animateScrollToItem(0) }
 
     Column(Modifier.fillMaxSize().background(B)) {
-        DetailHeader("BLE SPAM ENGINE", back)
+        DetailHeader("BLE 泛洪引擎", back)
         Column(Modifier.fillMaxSize().padding(12.dp)) {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 vm.getProfiles().forEach { p ->
@@ -151,19 +151,19 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(6.dp))
-            Text("interval ${interval.toLong()}ms", fontFamily = M, fontSize = 10.sp, color = G)
+            Text("间隔 ${interval.toLong()}ms", fontFamily = M, fontSize = 10.sp, color = G)
             Slider(value = interval, onValueChange = { interval = it; vm.setInterval(interval.toLong()) }, valueRange = 20f..100f, steps = 7, colors = SliderDefaults.colors(thumbColor = R, activeTrackColor = R, inactiveTrackColor = D))
             Spacer(Modifier.height(4.dp))
             Surface(modifier = Modifier.fillMaxWidth().clickable { if (running) vm.stopSpam() else vm.startSpam() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else R, border = BorderStroke(1.dp, R.copy(alpha = 0.5f))) {
-                Text(if (running) "ABORT" else "EXECUTE", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                Text(if (running) "中止" else "执行", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
             }
             error?.let { Text("! $it", fontFamily = M, fontSize = 10.sp, color = R) }
             if (running && log.isNotEmpty()) {
-                val ok = log.count { it.success }; Text("tx $ok  |  ~${ok * 1000L / maxOf(1, System.currentTimeMillis() - log.first().timestamp)} pkt/s", fontFamily = M, fontSize = 10.sp, color = W)
+                val ok = log.count { it.success }; Text("发送 $ok  |  ~${ok * 1000L / maxOf(1, System.currentTimeMillis() - log.first().timestamp)} 包/秒", fontFamily = M, fontSize = 10.sp, color = W)
             }
             Spacer(Modifier.height(4.dp)); Hr()
             LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f)) {
-                if (log.isEmpty()) item { Text("no packets transmitted", fontFamily = M, fontSize = 10.sp, color = G, modifier = Modifier.padding(vertical = 20.dp)) }
+                if (log.isEmpty()) item { Text("暂无数据包", fontFamily = M, fontSize = 10.sp, color = G, modifier = Modifier.padding(vertical = 20.dp)) }
                 items(log.reversed()) { e ->
                     Text("#${e.index.toString().padStart(4,'0')}  ${tf.format(Date(e.timestamp))}  ${e.profile.displayName.take(12).padEnd(12)}  ${if (e.success) "OK" else "FAIL"}", fontFamily = M, fontSize = 9.sp, color = if (e.success) W else R)
                 }
@@ -179,18 +179,18 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
     val tf = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
 
     Column(Modifier.fillMaxSize().background(B)) {
-        DetailHeader("BT JAMMER ENGINE", back)
+        DetailHeader("蓝牙压制引擎", back)
         Column(Modifier.fillMaxSize().padding(12.dp)) {
             Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("BLE_flood: ON", fontFamily = M, fontSize = 9.sp, color = R); Text("BT_inquiry: ON", fontFamily = M, fontSize = 9.sp, color = R); Text("devices: $count", fontFamily = M, fontSize = 9.sp, color = W)
+                Text("BLE泛洪: 开", fontFamily = M, fontSize = 9.sp, color = R); Text("蓝牙查询: 开", fontFamily = M, fontSize = 9.sp, color = R); Text("设备: $count", fontFamily = M, fontSize = 9.sp, color = W)
             }
             Surface(modifier = Modifier.fillMaxWidth().clickable { if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else R, border = BorderStroke(1.dp, R.copy(alpha = 0.5f))) {
-                Text(if (running) "ABORT JAMMER" else "EXECUTE JAMMER", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                Text(if (running) "中止压制" else "执行压制", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
             }
             error?.let { Text("! $it", fontFamily = M, fontSize = 10.sp, color = R) }
             if (running) { Spacer(Modifier.height(4.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = R, trackColor = D) }
             if (devices.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp)); Text("DISCOVERED DEVICES", fontFamily = M, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = R)
+                Spacer(Modifier.height(4.dp)); Text("发现的设备", fontFamily = M, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = R)
                 LazyColumn(Modifier.fillMaxWidth().height(100.dp)) { items(devices.take(8)) { d -> Text("  ${d.name.take(24).padEnd(24)}  ${d.address}  [${d.type}]", fontFamily = M, fontSize = 9.sp, color = W) } }
             }
             Spacer(Modifier.height(4.dp)); Hr()
@@ -205,16 +205,16 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
     var sel by remember { mutableStateOf<WifiNetwork?>(null) }; var dur by remember { mutableIntStateOf(vm.getDuration()) }
 
     Column(Modifier.fillMaxSize().background(B)) {
-        DetailHeader("WIFI DISRUPT ENGINE", back)
+        DetailHeader("WIFI 干扰引擎", back)
         Column(Modifier.fillMaxSize().padding(12.dp)) {
             Surface(modifier = Modifier.fillMaxWidth().clickable { vm.scanNetworks() }, shape = RoundedCornerShape(3.dp), color = R) {
-                Text("SCAN NETWORKS", fontFamily = M, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                Text("扫描网络", fontFamily = M, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
             }
             Spacer(Modifier.height(4.dp))
             when (val s = ss) {
-                is ScanState.Scanning -> Text("scanning 2.4/5GHz...", fontFamily = M, fontSize = 10.sp, color = W)
+                is ScanState.Scanning -> Text("扫描 2.4/5GHz...", fontFamily = M, fontSize = 10.sp, color = W)
                 is ScanState.Results -> {
-                    Text("found ${s.networks.size} networks -- select target:", fontFamily = M, fontSize = 10.sp, color = G)
+                    Text("发现  ${s.networks.size} 个网络 -- 选择目标:", fontFamily = M, fontSize = 10.sp, color = G)
                     LazyColumn(Modifier.fillMaxWidth().weight(0.5f)) {
                         items(s.networks, key = { it.bssid }) { n ->
                             val on = sel?.bssid == n.bssid
@@ -232,15 +232,15 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                 else -> {}
             }
             if (sel != null) {
-                Text("target: ${sel!!.ssid}  |  duration: ${dur}s", fontFamily = M, fontSize = 11.sp, color = W)
+                Text("目标: ${sel!!.ssid}  |  duration: ${dur}s", fontFamily = M, fontSize = 11.sp, color = W)
                 Slider(value = dur.toFloat(), onValueChange = { dur = it.toInt().coerceIn(1, 60) }, valueRange = 1f..60f, steps = 14, colors = SliderDefaults.colors(thumbColor = R, activeTrackColor = R, inactiveTrackColor = D))
                 Surface(modifier = Modifier.fillMaxWidth().clickable { vm.setDuration(dur); if (fl) vm.stopFlood() else vm.startFlood() }, shape = RoundedCornerShape(3.dp), color = if (fl) Color.Transparent else R, border = BorderStroke(1.dp, R.copy(alpha = 0.5f))) {
-                    Text(if (fl) "ABORT FLOOD" else "EXECUTE FLOOD", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (fl) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                    Text(if (fl) "中止泛洪" else "执行泛洪", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (fl) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
                 }
             }
             when (val r = hr) {
                 is HotspotResult.Progress -> { LinearProgressIndicator(progress = { r.cycle.toFloat() / r.totalCycles }, modifier = Modifier.fillMaxWidth(), color = R, trackColor = D); Text("cycle ${r.cycle}/${r.totalCycles}", fontFamily = M, fontSize = 9.sp, color = W) }
-                is HotspotResult.Completed -> Text("flood complete", fontFamily = M, fontSize = 10.sp, color = R)
+                is HotspotResult.Completed -> Text("泛洪完成", fontFamily = M, fontSize = 10.sp, color = R)
                 is HotspotResult.Error -> Text(r.message, fontFamily = M, fontSize = 10.sp, color = R)
                 else -> {}
             }
@@ -256,19 +256,19 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
     var ms by remember { mutableFloatStateOf(vm.getInterval().toFloat()) }
 
     Column(Modifier.fillMaxSize().background(B)) {
-        DetailHeader("WIFI JAMMER ENGINE", back)
+        DetailHeader("WIFI 压制引擎", back)
         Column(Modifier.fillMaxSize().padding(12.dp)) {
-            Text("toggle interval ${ms.toLong()}ms", fontFamily = M, fontSize = 10.sp, color = G)
+            Text("切换间隔 ${ms.toLong()}ms", fontFamily = M, fontSize = 10.sp, color = G)
             Slider(value = ms, onValueChange = { ms = it; vm.setInterval(ms.toLong()) }, valueRange = 60f..300f, steps = 11, colors = SliderDefaults.colors(thumbColor = R, activeTrackColor = R, inactiveTrackColor = D))
             Surface(modifier = Modifier.fillMaxWidth().clickable { if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else R, border = BorderStroke(1.dp, R.copy(alpha = 0.5f))) {
-                Text(if (running) "ABORT JAMMER" else "EXECUTE JAMMER", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                Text(if (running) "中止压制" else "执行压制", fontFamily = M, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) R else W, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
             }
             error?.let { Text("! $it", fontFamily = M, fontSize = 10.sp, color = R) }
-            if (running) { LinearProgressIndicator(Modifier.fillMaxWidth(), color = R, trackColor = D); Text("targets $tc  |  beacon ${vm.getBeaconCount()}  |  cycles ${vm.getCycleCount()}", fontFamily = M, fontSize = 10.sp, color = W) }
+            if (running) { LinearProgressIndicator(Modifier.fillMaxWidth(), color = R, trackColor = D); Text("目标 $tc  |  beacon ${vm.getBeaconCount()}  |  cycles ${vm.getCycleCount()}", fontFamily = M, fontSize = 10.sp, color = W) }
             when (val s = ss) {
-                is JammerScanState.Scanning -> Text("scanning...", fontFamily = M, fontSize = 10.sp, color = W)
+                is JammerScanState.Scanning -> Text("扫描中...", fontFamily = M, fontSize = 10.sp, color = W)
                 is JammerScanState.Results -> {
-                    Text("jamming ${s.networks.size} SSIDs:", fontFamily = M, fontSize = 10.sp, color = R, fontWeight = FontWeight.Bold)
+                    Text("压制  ${s.networks.size} 个SSID:", fontFamily = M, fontSize = 10.sp, color = R, fontWeight = FontWeight.Bold)
                     LazyColumn(Modifier.fillMaxWidth().weight(0.4f)) { items(s.networks.take(12)) { n -> Text("  ${n.ssid.ifBlank { "<hidden>" }.take(26).padEnd(26)}  CH${n.channel.toString().padStart(2)}  ${n.signalStrength}dBm  ${n.security}", fontFamily = M, fontSize = 9.sp, color = W) } }
                 }
                 is JammerScanState.Error -> Text(s.message, fontFamily = M, fontSize = 10.sp, color = R)
@@ -283,7 +283,7 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
 @Composable
 fun AboutDetailScreen(back: () -> Unit) {
     Column(Modifier.fillMaxSize().background(B)) {
-        DetailHeader("ABOUT", back)
+        DetailHeader("关于", back)
         Column(Modifier.fillMaxSize().padding(12.dp)) {
             Text("""
 ██████╗ ███████╗ █████╗ ██╗   ██╗████████╗██╗  ██╗
@@ -293,11 +293,11 @@ fun AboutDetailScreen(back: () -> Unit) {
 ██████╔╝███████╗██║  ██║╚██████╔╝   ██║   ██║  ██║
 ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝""".trimIndent(), fontFamily = M, fontSize = 6.sp, color = R)
             Spacer(Modifier.height(12.dp))
-            Text("author   钟智强 (ctkqiang)", fontFamily = M, fontSize = 12.sp, color = W)
-            Text("alias    哪吒网络安全", fontFamily = M, fontSize = 12.sp, color = W)
-            Text("email    ctkqiang@dingtalk.com", fontFamily = M, fontSize = 12.sp, color = W)
-            Text("repo     gitcode.com/ctkqiang_sr/DeauthCtrl", fontFamily = M, fontSize = 12.sp, color = W)
-            Text("arch     MVVM + StateFlow + Jetpack Compose", fontFamily = M, fontSize = 12.sp, color = W)
+            Text("作者   钟智强 (ctkqiang)", fontFamily = M, fontSize = 12.sp, color = W)
+            Text("代号    哪吒网络安全", fontFamily = M, fontSize = 12.sp, color = W)
+            Text("邮箱    ctkqiang@dingtalk.com", fontFamily = M, fontSize = 12.sp, color = W)
+            Text("仓库     gitcode.com/ctkqiang_sr/DeauthCtrl", fontFamily = M, fontSize = 12.sp, color = W)
+            Text("架构     MVVM + StateFlow + Jetpack Compose", fontFamily = M, fontSize = 12.sp, color = W)
             Spacer(Modifier.height(12.dp))
             Text("中国红客  |  哪吒网络安全  |  国产自主  |  安全可控", fontFamily = M, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = R)
         }
