@@ -34,7 +34,7 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
 
     fun startFlood() {
         if (targetSsid.isBlank()) {
-            manager.scanNetworks() // error will show via hotspotResult
+            manager.scanNetworks()
             return
         }
         manager.startFlood(targetSsid, durationSeconds)

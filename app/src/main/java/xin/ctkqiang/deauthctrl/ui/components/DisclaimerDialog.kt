@@ -5,10 +5,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 
-/**
- * Legal & ethical disclaimer shown on first app launch.
- * User must accept before accessing the app.
- */
 @Composable
 fun DisclaimerDialog(
     onAccept: () -> Unit,
@@ -17,7 +13,7 @@ fun DisclaimerDialog(
 
     if (openDialog.value) {
         AlertDialog(
-            onDismissRequest = { /* cannot dismiss — must accept */ },
+            onDismissRequest = {  },
             title = {
                 Text(
                     text = "⚠ LEGAL WARNING",

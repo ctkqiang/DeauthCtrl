@@ -1,10 +1,5 @@
 package xin.ctkqiang.deauthctrl.model
 
-/**
- * BLE advertisement payload profiles for spoofing.
- * Each profile mimics a real device type to trigger unwanted behavior
- * in nearby Bluetooth stacks.
- */
 enum class BlePayloadProfile(
     val displayName: String,
     val description: String,
@@ -35,17 +30,6 @@ enum class BlePayloadProfile(
     );
 }
 
-/**
- * 单条 BLE 广播日志条目
- *
- * @param timestamp 发送时间戳 (epoch millis)
- * @param profile 使用的协议
- * @param payloadHex 完整广播载荷 (hex 字符串)
- * @param payloadBytes 广播载荷字节数组，用于 hex dump 格式化显示
- * @param success 是否发送成功
- * @param index 全局发送序号 (自开始计数)
- * @param txPowerLevel 发射功率级别
- */
 data class BleAdvertLogEntry(
     val timestamp: Long = System.currentTimeMillis(),
     val profile: BlePayloadProfile,

@@ -2,13 +2,11 @@ package xin.ctkqiang.deauthctrl.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary — danger red
 val Red = Color(0xFFFF0000)
 val RedBright = Color(0xFFFF3333)
 val RedDark = Color(0xFFCC0000)
 val RedBackground = Color(0x1AFF0000)
 
-// Backgrounds
 val Black = Color(0xFF000000)
 val BlackAlt = Color(0xFF030303)
 val Surface = Color(0xFF080808)
@@ -16,22 +14,18 @@ val SurfaceAlt = Color(0xFF0C0C0C)
 val Card = Color(0xFF0D0D0D)
 val CardAlt = Color(0xFF111111)
 
-// Borders
 val Border = Color(0xFF1A1A1A)
 val BorderLight = Color(0xFF222222)
 
-// Text
 val TextPrimary = Color(0xFFE0E0E0)
 val TextBright = Color(0xFFFFFFFF)
 val TextDim = Color(0xFF888888)
 val TextMuted = Color(0xFF444444)
 
-// Functional
 val Amber = Color(0xFFFFB000)
 val Success = Color(0xFF00AA00)
 val Info = Color(0xFF4488CC)
 
-// Dark theme colors
 val DarkBackground = Black
 val DarkSurface = Surface
 val DarkSurfaceVariant = SurfaceAlt
@@ -40,7 +34,6 @@ val DarkOnSurface = TextPrimary
 val DarkOnSurfaceVariant = TextDim
 val DarkOutline = BorderLight
 
-// Light theme colors
 val LightBackground = Color(0xFFFAFAFA)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFF0F0F0)

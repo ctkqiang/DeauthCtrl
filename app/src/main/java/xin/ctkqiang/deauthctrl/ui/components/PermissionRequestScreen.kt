@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 fun PermissionRequestScreen(
     onAllGranted: () -> Unit,
 ) {
-    // 需要申请的权限
     val requiredPermissions = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
@@ -56,7 +55,6 @@ fun PermissionRequestScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // fsociety Logo
         Text(
             text = "fsociety",
             fontFamily = FontFamily.Monospace,
@@ -78,7 +76,6 @@ fun PermissionRequestScreen(
 
         Spacer(Modifier.height(32.dp))
 
-        // 权限说明框
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -115,7 +112,6 @@ fun PermissionRequestScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // 授权按钮
         Button(
             onClick = { launcher.launch(requiredPermissions) },
             modifier = Modifier.fillMaxWidth(),
@@ -130,7 +126,6 @@ fun PermissionRequestScreen(
             )
         }
 
-        // 再次提示
         if (showRationale) {
             Spacer(Modifier.height(12.dp))
             Text(

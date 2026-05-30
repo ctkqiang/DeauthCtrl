@@ -28,55 +28,38 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        // 状态栏：黑底配白/红图标
         window.statusBarColor = Black.toArgb()
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
         }
 
-        // 检查权限是否已全部授予，是则直接进入主界面
         val allGranted = checkAllPermissionsGranted()
 
         setContent {
             var permissionsGranted by remember { mutableStateOf(allGranted) }
-
             DeauthCtrlTheme(darkTheme = true) {
                 if (!permissionsGranted) {
-                    PermissionRequestScreen(
-                        onAllGranted = { permissionsGranted = true },
-                    )
+                    PermissionRequestScreen(onAllGranted = { permissionsGranted = true })
                 } else {
-                    val bleViewModel: BleSpamViewModel = viewModel()
-                    val wifiViewModel: WifiDisruptViewModel = viewModel()
-                    val btJammerViewModel: BluetoothJammerViewModel = viewModel()
-                    val wifiJammerViewModel: WifiJammerViewModel = viewModel()
                     MainScreen(
-                        bleViewModel = bleViewModel,
-                        wifiViewModel = wifiViewModel,
-                        btJammerViewModel = btJammerViewModel,
-                        wifiJammerViewModel = wifiJammerViewModel,
+                        bleVm = viewModel(),
+                        wifiVm = viewModel(),
+                        btVm = viewModel(),
+                        wjVm = viewModel(),
                     )
                 }
             }
         }
     }
 
-    /** 检查所有必需权限是否已授予 */
     private fun checkAllPermissionsGranted(): Boolean {
         val required = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            )
+            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        return required.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        }
+        return required.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
     }
 }

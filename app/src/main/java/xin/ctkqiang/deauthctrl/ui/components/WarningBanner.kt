@@ -10,9 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
-/**
- * Persistent warning banner displayed in the app.
- */
 @Composable
 fun WarningBanner(
     visible: Boolean = true,

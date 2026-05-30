@@ -53,7 +53,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun DeauthCtrlTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // disabled — we want our hacker aesthetic
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
