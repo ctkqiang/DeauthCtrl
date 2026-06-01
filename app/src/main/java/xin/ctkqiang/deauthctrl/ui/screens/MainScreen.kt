@@ -159,7 +159,6 @@ fun TerminalHeader(title: String, back: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Text(title, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White)
         Spacer(Modifier.weight(1f))
-        Text("root@deauth:~#", fontFamily = Mono, fontSize = 9.sp, color = Gray)
     }
 }
 
@@ -212,7 +211,6 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
             LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
                 if (log.isEmpty()) item { Text("等待数据...", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(vertical = 16.dp)) }
                 items(log.reversed()) { e ->
-                    Text("#${e.index.toString().padStart(4, '0')}  ${tf.format(Date(e.timestamp))}  ${e.profile.displayName.take(12).padEnd(12)}  ${if (e.success) "OK" else "FAIL"}", fontFamily = Mono, fontSize = 9.sp, color = if (e.success) White else Red)
                 }
             }
         }

@@ -4,19 +4,19 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Skull/danger icon for deauth theme -->
+
     <path
         android:fillColor="#FFFF0000"
         android:pathData="M54,28 C41,28 30,38 30,50 L30,54 L34,54 L34,50 C34,40 42,32 54,32 C66,32 74,40 74,50 L74,54 L78,54 L78,50 C78,38 67,28 54,28 Z" />
-    <!-- Eyes -->
+
     <path
         android:fillColor="#FF000000"
         android:pathData="M44,46 L50,46 L50,52 L44,52 Z M58,46 L64,46 L64,52 L58,52 Z" />
-    <!-- Mouth -->
+
     <path
         android:fillColor="#FFFF0000"
         android:pathData="M44,60 L64,60 L64,64 L44,64 Z" />
-    <!-- Crossbones -->
+
     <path
         android:fillColor="#FFFF0000"
         android:strokeColor="#FFFF0000"
