@@ -6,12 +6,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
@@ -31,8 +36,12 @@ import androidx.compose.ui.unit.sp
 import xin.ctkqiang.deauthctrl.manager.*
 import xin.ctkqiang.deauthctrl.model.*
 import android.net.Uri
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import xin.ctkqiang.deauthctrl.ui.components.*
 import xin.ctkqiang.deauthctrl.viewmodel.*
 import java.text.SimpleDateFormat
@@ -54,6 +63,8 @@ fun MainScreen(
     bleVm: BleSpamViewModel, wifiVm: WifiDisruptViewModel,
     btVm: BluetoothJammerViewModel, wjVm: WifiJammerViewModel,
     wsVm: WebServerViewModel, arpVm: ArpScanViewModel,
+    httpVm: HttpClientViewModel, pingVm: PingViewModel,
+    blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
 ) {
     var screen by remember { mutableStateOf("home") }
     var boot by remember { mutableStateOf(true) }
@@ -67,13 +78,17 @@ fun MainScreen(
                     .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(300)) { -it / 5 })
             }) { current ->
                 when (current) {
-                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, nav = { screen = it })
+                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, nav = { screen = it })
                     "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
                     "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
                     "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
                     "wifijam" -> WifiJamDetailScreen(wjVm, back = { screen = "home" })
                     "webserver" -> WebServerDetailScreen(wsVm, back = { screen = "home" })
                     "arp" -> ArpDetailScreen(arpVm, back = { screen = "home" })
+                    "http" -> HttpClientScreen(httpVm, back = { screen = "home" })
+                    "ping" -> PingScreen(pingVm, back = { screen = "home" })
+                    "blescan" -> BleScannerScreen(blescanVm, back = { screen = "home" })
+                    "portscan" -> PortScannerScreen(portscanVm, back = { screen = "home" })
                     "about" -> AboutDetailScreen(back = { screen = "home" })
                 }
             }
@@ -112,6 +127,8 @@ fun HomeScreen(
     bleVm: BleSpamViewModel, wifiVm: WifiDisruptViewModel,
     btVm: BluetoothJammerViewModel, wjVm: WifiJammerViewModel,
     wsVm: WebServerViewModel, arpVm: ArpScanViewModel,
+    httpVm: HttpClientViewModel, pingVm: PingViewModel,
+    blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
     nav: (String) -> Unit,
 ) {
     val br by bleVm.isRunning.collectAsState()
@@ -120,9 +137,13 @@ fun HomeScreen(
     val wjr by wjVm.isRunning.collectAsState()
     val wsr by wsVm.isRunning.collectAsState()
     val arpr by arpVm.isRunning.collectAsState()
+    val httpr by httpVm.isRunning.collectAsState()
+    val pingr by pingVm.isRunning.collectAsState()
+    val blesr by blescanVm.isRunning.collectAsState()
+    val portr by portscanVm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
 
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp)) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp).verticalScroll(rememberScrollState())) {
         GlitchText("DEAUTHCTRL", style = TextStyle(fontSize = 28.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
         Text("$ v1.0  |  哪吒网络安全  |  fsociety", fontFamily = Mono, fontSize = 11.sp, color = Gray, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(14.dp))
@@ -135,8 +156,12 @@ fun HomeScreen(
         AnimatedCard("WIFI 压制", "自动扫描并压制附近所有 SSID", running = wjr, delayMs = 240, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("wifijam") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (wjr) wjVm.stop() else wjVm.start() })
         AnimatedCard("WEB 服务", "热点 HTTP 服务器 — 托管 HTML 页面", running = wsr, delayMs = 320, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("webserver") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (wsr) wsVm.stopServer() else wsVm.startServer() })
         AnimatedCard("ARP 扫描", "局域网设备发现 — arp -a 扫描", running = arpr, delayMs = 400, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("arp") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); arpVm.scan() })
+        AnimatedCard("HTTP 请求", "curl 客户端 — GET/POST/PUT/DELETE", running = httpr, delayMs = 480, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("http") }, onToggle = {  })
+        AnimatedCard("PING 泛洪", "无限 ping — 压力测试工具", running = pingr, delayMs = 560, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("ping") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (pingr) pingVm.stop() else pingVm.start() })
+        AnimatedCard("BLE 扫描", "低功耗蓝牙嗅探 — RSSI 实时图谱", running = blesr, delayMs = 640,onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("blescan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (blesr) blescanVm.stop() else blescanVm.start() })
+        AnimatedCard("端口扫描", "nmap 风格 TCP 扫描 — 服务识别", running = portr, delayMs = 720, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("portscan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (portr) portscanVm.stop() else portscanVm.start() })
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(14.dp))
         AsciiDivider(modifier = Modifier.padding(vertical = 10.dp))
         Text("中国红客  |  国产自主  |  安全可控", fontFamily = Mono, fontSize = 11.sp, color = Gray, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(6.dp))
@@ -621,6 +646,271 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
             if (!running && devices.isEmpty()) {
                 Spacer(Modifier.height(12.dp))
                 Text("$ 点击上方 ping sweep 扫描局域网", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+            }
+        }
+    }
+}
+
+@Composable
+fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState()
+    val devices by vm.devices.collectAsState()
+    val error by vm.error.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    var selected by remember { mutableStateOf<String?>(null) }
+    val selDev = devices.find { it.address == selected }
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("BLE 嗅探扫描", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                    Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                    Text(if (running) "hcitool lescan --stop" else "hcitool lescan --duplicates", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                }
+            }
+            error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
+            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim); Text("$ devices_found=${devices.size}", fontFamily = Mono, fontSize = 11.sp, color = White) }
+
+            if (selDev != null) {
+                Spacer(Modifier.height(6.dp))
+                TermPanel("设备详情: ${selDev.name}") {
+                    Row(Modifier.fillMaxWidth()) {
+                        Text("ADDR: ${selDev.address}   TX: ${if (selDev.txPower > Int.MIN_VALUE) "${selDev.txPower}dBm" else "N/A"}   类型: ${selDev.deviceType.ifEmpty { "未知" }}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                    }
+                    if (selDev.services.isNotEmpty()) Text("  服务: ${selDev.services.joinToString(", ")}", fontFamily = Mono, fontSize = 10.sp, color = RedDim)
+                    if (selDev.manufacturerData.isNotEmpty()) Text("  MFR:  ${selDev.manufacturerData.entries.joinToString { "${it.key}: ${it.value}" }}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+
+                    if (selDev.rssiHistory.size > 1) {
+                        Spacer(Modifier.height(6.dp))
+                        Text("RSSI (dBm)", fontFamily = Mono, fontSize = 9.sp, color = RedDim)
+                        Box(Modifier.fillMaxWidth().height(60.dp).background(Color(0xFF020202)).border(0.5.dp, BorderDim)) {
+                            Canvas(Modifier.fillMaxSize()) {
+                                val h = size.height; val w = size.width
+                                val vals = selDev.rssiHistory
+                                if (vals.size > 1) {
+                                    val step = w / (vals.size - 1)
+                                    val minR = -100f; val maxR = -20f; val range = maxR - minR
+                                    val path = Path()
+                                    vals.forEachIndexed { i, v ->
+                                        val x = i.toFloat() * step
+                                        val y = h - ((v.toFloat() - minR) / range * h).coerceIn(0f, h)
+                                        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                                    }
+                                    drawPath(path, Color.Red, style = Stroke(1.5f))
+                                }
+                            }
+                        }
+                        Text("  min:${selDev.rssiHistory.minOrNull() ?: 0}  max:${selDev.rssiHistory.maxOrNull() ?: 0}  cur:${selDev.rssi}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            AsciiDivider()
+            Text("$ devices_found=${devices.size}", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                items(devices) { d ->
+                    val sel = d.address == selected
+                    Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); selected = if (sel) null else d.address }, color = if (sel) Red.copy(alpha = 0.06f) else Color.Transparent) {
+                        Column(Modifier.padding(vertical = 2.dp, horizontal = 4.dp)) {
+                            Row {
+                                Text(if (sel) "▸" else " ", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.width(14.dp))
+                                Text(d.name.take(20).padEnd(20), fontFamily = Mono, fontSize = 11.sp, color = if (sel) Red else White, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal)
+                                Text(" ${d.rssi}dBm".padStart(7), fontFamily = Mono, fontSize = 10.sp, color = if (d.rssi > -50) RedDim else if (d.rssi > -70) White else Gray)
+                                Text("  ${d.address}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PingScreen(vm: PingViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState()
+    val host by vm.host.collectAsState()
+    val results by vm.results.collectAsState()
+    val sent by vm.sent.collectAsState(); val recv by vm.received.collectAsState()
+    val loss by vm.loss.collectAsState()
+    val min by vm.min.collectAsState(); val avg by vm.avg.collectAsState(); val max by vm.max.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val list = rememberLazyListState()
+    LaunchedEffect(results.size) { if (results.isNotEmpty()) list.animateScrollToItem(results.size - 1) }
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("PING 泛洪", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            TermInput("host", host) { vm.setHost(it) }
+
+            Spacer(Modifier.height(8.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                    Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                    Text(if (running) "killall ping" else "ping -c unlimited $host", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                }
+            }
+
+            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
+
+            if (sent > 0) {
+                Spacer(Modifier.height(6.dp))
+                TermPanel("统计") {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        StatCol("发送", "$sent")
+                        StatCol("接收", "$recv")
+                        StatCol("丢包", "${loss}%")
+                        StatCol("最小", "${min}ms")
+                        StatCol("平均", "${avg}ms")
+                        StatCol("最大", "${max}ms")
+                    }
+                }
+            }
+
+            if (results.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                AsciiDivider()
+                Text("$ ping $host", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+                LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    items(results) { r ->
+                        Text("${r.bytes}b from ${r.ip}: icmp_seq=${r.sequence} ttl=${r.ttl} time=${r.timeMs}ms", fontFamily = Mono, fontSize = 10.sp, color = if (r.timeMs > 500) Red else if (r.timeMs > 100) RedDim else White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatCol(label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+        Text(label, fontFamily = Mono, fontSize = 9.sp, color = Gray)
+    }
+}
+
+@Composable
+fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState()
+    val resp by vm.response.collectAsState()
+    val error by vm.error.collectAsState()
+    val url by vm.url.collectAsState()
+    val method by vm.method.collectAsState()
+    val headers by vm.headers.collectAsState()
+    val body by vm.body.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val methods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD")
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("HTTP 客户端", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            TermInput("URL", url) { vm.setUrl(it) }
+
+            Spacer(Modifier.height(6.dp))
+            Text("$ --method", fontFamily = Mono, fontSize = 11.sp, color = Red)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                methods.forEach { m ->
+                    val sel = m == method
+                    Surface(modifier = Modifier.clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); vm.setMethod(m) }, shape = RoundedCornerShape(2.dp), color = if (sel) Red.copy(alpha = 0.15f) else Color.Transparent, border = BorderStroke(1.dp, if (sel) Red else BorderDim)) {
+                        Text(m, fontFamily = Mono, fontSize = 10.sp, color = if (sel) Red else Gray, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            TermInput("Headers", headers, placeholder = "Key: Value (每行一个)") { vm.setHeaders(it) }
+
+            if (method in listOf("POST", "PUT", "PATCH")) {
+                Spacer(Modifier.height(6.dp))
+                TermInput("Body", body) { vm.setBody(it) }
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); vm.send() }, shape = RoundedCornerShape(3.dp), color = if (running) RedDim else Red) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), horizontalArrangement = Arrangement.Center) {
+                    Text("$ curl -X $method", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White)
+                    Text(" $url", fontFamily = Mono, fontSize = 12.sp, color = White.copy(alpha = 0.6f))
+                }
+            }
+
+            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
+            error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
+
+            if (resp != null) {
+                Spacer(Modifier.height(8.dp))
+                AsciiDivider()
+                Text("$ HTTP/${resp!!.statusCode} ${resp!!.statusMessage}  (${resp!!.timeMs}ms)", fontFamily = Mono, fontSize = 12.sp, color = if (resp!!.statusCode < 400) White else Red, fontWeight = FontWeight.Bold)
+
+                val hdrText = resp!!.headers.entries.joinToString("\n") { (k, v) -> "  $k: ${v.joinToString(", ")}" }
+                if (hdrText.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text("$ response headers:", fontFamily = Mono, fontSize = 10.sp, color = RedDim)
+                    Text(hdrText, fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                }
+
+                Spacer(Modifier.height(4.dp))
+                Text("$ response body:", fontFamily = Mono, fontSize = 10.sp, color = RedDim)
+                LazyColumn(Modifier.fillMaxWidth().weight(1f).background(SurfaceBg).padding(8.dp)) {
+                    item { SelectionContainer { Text(resp!!.body.ifEmpty { "(空)" }, fontFamily = Mono, fontSize = 10.sp, color = White) } }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TermInput(label: String, value: String, placeholder: String = "", onValue: (String) -> Unit) {
+    Text("$ --$label", fontFamily = Mono, fontSize = 11.sp, color = Red)
+    BasicTextField(
+        value = value, onValueChange = onValue,
+        textStyle = TextStyle(fontFamily = Mono, fontSize = 12.sp, color = White),
+        modifier = Modifier.fillMaxWidth().background(SurfaceBg).border(1.dp, BorderDim).padding(8.dp),
+        decorationBox = { inner ->
+            if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, fontFamily = Mono, fontSize = 12.sp, color = Gray.copy(alpha = 0.4f))
+            inner()
+        },
+    )
+}
+
+@Composable
+fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState()
+    val host by vm.host.collectAsState()
+    val results by vm.results.collectAsState()
+    val scanned by vm.scanned.collectAsState()
+    val total by vm.total.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val open = results.filter { it.state == "open" }
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("端口扫描", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            TermInput("host", host) { vm.setHost(it) }
+            Spacer(Modifier.height(8.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                    Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                    Text(if (running) "kill scan" else "nmap -sT -T4 $host", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                }
+            }
+            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(progress = { scanned.toFloat() / maxOf(1, total) }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim); Text("$ scanned $scanned/$total  |  open: ${open.size}", fontFamily = Mono, fontSize = 11.sp, color = White) }
+            if (results.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp)); AsciiDivider()
+                Text("$ nmap -sT $host", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+                LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                    item {
+                        TermPanel("Nmap 扫描报告: $host") {
+                            if (open.isEmpty()) Text("  未发现开放端口", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                            open.forEach { p ->
+                                Text("${p.port}/tcp".padEnd(10) + p.state.padEnd(8) + p.service, fontFamily = Mono, fontSize = 11.sp, color = White)
+                                if (p.banner.isNotEmpty()) Text("  |_ ${p.banner}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                            }
+                            Text("  Nmap done: $total ports scanned, ${open.size} open", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                        }
+                    }
+                }
             }
         }
     }

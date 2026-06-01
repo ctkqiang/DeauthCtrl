@@ -20,7 +20,11 @@ import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
 import xin.ctkqiang.deauthctrl.ui.theme.Black
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.HttpClientViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.PingViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.PortScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
@@ -51,6 +55,10 @@ class MainActivity : ComponentActivity() {
                         wjVm = viewModel(),
                         wsVm = viewModel(),
                         arpVm = viewModel(),
+                        httpVm = viewModel(),
+                        pingVm = viewModel(),
+                        blescanVm = viewModel(),
+                        portscanVm = viewModel(),
                     )
                 }
             }
