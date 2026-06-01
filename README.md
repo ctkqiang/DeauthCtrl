@@ -2,7 +2,7 @@
 
 > **中国红客 · 哪吒网络安全**
 > Android 网络安全工具集 · 纯软件实现 · 终端美学
-> 12 合 1 安全工具 · 触觉反馈 · 好莱坞黑客 UI
+> 13 合 1 安全工具 + WiFi 对讲机 · 触觉反馈 · 好莱坞黑客 UI
 
 ---
 
@@ -57,14 +57,17 @@
 │             ViewModel Layer (StateFlow + Haptic)           │
 │  10 ViewModels: BleSpam · WifiDisrupt · BtJam · WifiJam  │
 │  WebServer · ArpScan · HttpClient · Ping · BleScan · Port│
+│  WalkieTalkie                                          │
 ├──────────────────────────────────────────────────────────┤
 │             Manager Layer (Business Logic)                │
 │  Android APIs · ServerSocket · HttpURLConnection         │
 │  Runtime.exec() · Socket · BluetoothLeScanner            │
+│  AudioRecord · AudioTrack · DatagramSocket (UDP)        │
 ├──────────────────────────────────────────────────────────┤
 │             Model Layer (Data Classes)                    │
 │  BlePayload · WifiNetwork · JammerModels · ArpEntry      │
 │  PingResult · HttpResponse · PortResult · BleDevice      │
+│  WalkiePeer · WalkieTalkieManager                       │
 └──────────────────────────────────────────────────────────┘
 ```
 
