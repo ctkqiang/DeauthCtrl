@@ -56,7 +56,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
             }
 
             Spacer(Modifier.height(24.dp))
-            Button(onClick = { launcher.launch(required) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(2.dp), colors = ButtonDefaults.buttonColors(containerColor = R, contentColor = White)) {
+            Button(onClick = { launcher.launch(required) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(2.dp), colors = ButtonDefaults.buttonColors(containerColor = R, contentColor = W)) {
                 Text("[ 授予权限 ]", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
             }
 
