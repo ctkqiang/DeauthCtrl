@@ -516,7 +516,6 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
 @Composable
 fun StatusChip(label: String, active: Boolean) = Text("$label: ${if (active) "ON" else "OFF"}", fontFamily = Mono, fontSize = 11.sp, color = if (active) Red else Gray)
 
-@Composable
 /** 键值状态芯片 — 显示 "标签: 值"（白色文字） */
 @Composable
 fun StatusChip(label: String, value: String) = Text("$label: $value", fontFamily = Mono, fontSize = 11.sp, color = White)
