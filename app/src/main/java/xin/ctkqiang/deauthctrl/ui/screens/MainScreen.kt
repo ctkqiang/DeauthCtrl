@@ -1,5 +1,7 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -52,13 +55,18 @@ fun MainScreen(
         if (boot) {
             BootSequence(onComplete = { boot = false })
         } else {
-            when (screen) {
-                "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, nav = { screen = it })
-                "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
-                "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
-                "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
-                "wifijam" -> WifiJamDetailScreen(wjVm, back = { screen = "home" })
-                "about" -> AboutDetailScreen(back = { screen = "home" })
+            AnimatedContent(targetState = screen, transitionSpec = {
+                (fadeIn(animationSpec = tween(200)) + slideInHorizontally(animationSpec = tween(250)) { it / 4 })
+                    .togetherWith(fadeOut(animationSpec = tween(150)) + slideOutHorizontally(animationSpec = tween(200)) { -it / 4 })
+            }) { current ->
+                when (current) {
+                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, nav = { screen = it })
+                    "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
+                    "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
+                    "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
+                    "wifijam" -> WifiJamDetailScreen(wjVm, back = { screen = "home" })
+                    "about" -> AboutDetailScreen(back = { screen = "home" })
+                }
             }
         }
         if (!boot) ScanlineOverlay(lineSpacing = 3.dp, alpha = 0.035f)
@@ -108,10 +116,10 @@ fun HomeScreen(
         StatusBar()
         Spacer(Modifier.height(12.dp))
 
-        ModuleCard("BLE 泛洪", "BLE 广告协议泛洪攻击", running = br, onClick = { nav("ble") }, onToggle = { if (br) bleVm.stopSpam() else bleVm.startSpam() })
-        ModuleCard("WIFI 干扰", "邪恶双子信标泛洪攻击", running = wr, onClick = { nav("wifi") }, onToggle = { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() })
-        ModuleCard("蓝牙压制", "全频段蓝牙设备压制攻击", running = btr, onClick = { nav("btjam") }, onToggle = { if (btr) btVm.stop() else btVm.start() })
-        ModuleCard("WIFI 压制", "自动扫描并压制附近所有 SSID", running = wjr, onClick = { nav("wifijam") }, onToggle = { if (wjr) wjVm.stop() else wjVm.start() })
+        AnimatedCard("BLE 泛洪", "BLE 广告协议泛洪攻击", running = br, delayMs = 0,  onClick = { nav("ble") }, onToggle = { if (br) bleVm.stopSpam() else bleVm.startSpam() })
+        AnimatedCard("WIFI 干扰", "邪恶双子信标泛洪攻击", running = wr, delayMs = 60, onClick = { nav("wifi") }, onToggle = { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() })
+        AnimatedCard("蓝牙压制", "全频段蓝牙设备压制攻击", running = btr, delayMs = 120, onClick = { nav("btjam") }, onToggle = { if (btr) btVm.stop() else btVm.start() })
+        AnimatedCard("WIFI 压制", "自动扫描并压制附近所有 SSID", running = wjr, delayMs = 180, onClick = { nav("wifijam") }, onToggle = { if (wjr) wjVm.stop() else wjVm.start() })
 
         AsciiDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -123,30 +131,39 @@ fun HomeScreen(
 }
 
 @Composable
-fun ModuleCard(name: String, desc: String, running: Boolean, onClick: () -> Unit, onToggle: () -> Unit) {
-    val accent = if (running) Red.copy(alpha = 0.65f) else BorderDim
-    val bg = if (running) Red.copy(alpha = 0.04f) else SurfaceBg
+fun AnimatedCard(name: String, desc: String, running: Boolean, delayMs: Long, onClick: () -> Unit, onToggle: () -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f))
 
-    Surface(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 3.dp),
-        shape = RoundedCornerShape(3.dp),
-        color = bg,
-        border = BorderStroke(1.dp, accent),
-    ) {
-        Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(if (running) Red else RedDim.copy(alpha = 0.4f)))
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(name, fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
-                Text(desc, fontFamily = Mono, fontSize = 10.sp, color = if (running) Red.copy(alpha = 0.45f) else Gray)
-            }
-            Surface(
-                modifier = Modifier.clickable { onToggle() },
-                shape = RoundedCornerShape(2.dp),
-                color = if (running) Color.Transparent else Red,
-                border = BorderStroke(1.dp, if (running) Red.copy(alpha = 0.25f) else Red),
-            ) {
-                Text(if (running) "停止" else "启动", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp))
+    LaunchedEffect(Unit) { delay(delayMs); visible = true }
+
+    AnimatedVisibility(visible = visible, enter = fadeIn(tween(300)) + slideInVertically(tween(350)) { it / 3 }) {
+        val accent by animateColorAsState(if (running) Red.copy(alpha = 0.65f) else BorderDim, tween(300))
+        val bg by animateColorAsState(if (running) Red.copy(alpha = 0.04f) else SurfaceBg, tween(300))
+        val nameColor by animateColorAsState(if (running) Red else White, tween(300))
+        val descColor by animateColorAsState(if (running) Red.copy(alpha = 0.45f) else Gray, tween(300))
+        val dotColor by animateColorAsState(if (running) Red else RedDim.copy(alpha = 0.4f), tween(300))
+
+        Surface(
+            modifier = Modifier.fillMaxWidth().scale(scale).clickable { onClick() }.padding(vertical = 3.dp),
+            shape = RoundedCornerShape(3.dp), color = bg, border = BorderStroke(1.dp, accent),
+        ) {
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(dotColor))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(name, fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = nameColor)
+                    Text(desc, fontFamily = Mono, fontSize = 10.sp, color = descColor)
+                }
+                Surface(
+                    modifier = Modifier.clickable { pressed = true; onToggle(); pressed = false },
+                    shape = RoundedCornerShape(2.dp),
+                    color = if (running) Color.Transparent else Red,
+                    border = BorderStroke(1.dp, if (running) Red.copy(alpha = 0.25f) else Red),
+                ) {
+                    Text(if (running) "停止" else "启动", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp))
+                }
             }
         }
     }
@@ -159,6 +176,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Text(title, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White)
         Spacer(Modifier.weight(1f))
+        Text("root@deauth:~#", fontFamily = Mono, fontSize = 9.sp, color = Gray)
     }
 }
 
@@ -205,12 +223,15 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                 val ok = log.count { it.success }
                 Text("已发送 $ok 包  |  ~${ok * 1000L / maxOf(1, System.currentTimeMillis() - log.first().timestamp)} pps", fontFamily = Mono, fontSize = 10.sp, color = White)
             }
+            AnimatedVisibility(running && log.isNotEmpty()) { LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
+
             Spacer(Modifier.height(6.dp))
             AsciiDivider()
             SectionLabel("数据包日志")
             LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
                 if (log.isEmpty()) item { Text("等待数据...", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(vertical = 16.dp)) }
                 items(log.reversed()) { e ->
+                    Text("#${e.index.toString().padStart(4, '0')}  ${tf.format(Date(e.timestamp))}  ${e.profile.displayName.take(12).padEnd(12)}  ${if (e.success) "OK" else "FAIL"}", fontFamily = Mono, fontSize = 9.sp, color = if (e.success) White else Red)
                 }
             }
         }
@@ -237,10 +258,12 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
                 Text(if (running) "中止压制" else "执行压制", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
             }
             error?.let { Text("! $it", fontFamily = Mono, fontSize = 10.sp, color = Red) }
-            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
-            if (devices.isNotEmpty()) {
-                SectionLabel("附近设备")
-                LazyColumn(Modifier.fillMaxWidth().height(120.dp)) { items(devices.take(10)) { d -> Text("  ${d.name.take(28).padEnd(28)} ${d.address}  [${d.type}]", fontFamily = Mono, fontSize = 9.sp, color = White) } }
+            AnimatedVisibility(running) { Column { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) } }
+            AnimatedVisibility(devices.isNotEmpty()) {
+                Column {
+                    SectionLabel("附近设备")
+                    LazyColumn(Modifier.fillMaxWidth().height(120.dp)) { items(devices.take(10)) { d -> Text("  ${d.name.take(28).padEnd(28)} ${d.address}  [${d.type}]", fontFamily = Mono, fontSize = 9.sp, color = White) } }
+                }
             }
             Spacer(Modifier.height(6.dp))
             AsciiDivider()
@@ -291,12 +314,14 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                 else -> {}
             }
 
-            if (sel != null) {
-                Spacer(Modifier.height(6.dp))
-                Text("目标: ${sel!!.ssid}  |  持续 ${dur}s", fontFamily = Mono, fontSize = 11.sp, color = White)
-                Slider(dur.toFloat(), { dur = it.toInt().coerceIn(1, 60) }, valueRange = 1f..60f, steps = 14, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = BorderDim))
-                Surface(modifier = Modifier.fillMaxWidth().clickable { vm.setDuration(dur); if (fl) vm.stopFlood() else vm.startFlood() }, shape = RoundedCornerShape(2.dp), color = if (fl) Color.Transparent else Red, border = BorderStroke(1.dp, if (fl) Red.copy(alpha = 0.3f) else Red)) {
-                    Text(if (fl) "中止泛洪" else "开始泛洪", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (fl) Red else White, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
+            AnimatedVisibility(sel != null) {
+                Column {
+                    Spacer(Modifier.height(6.dp))
+                    Text("目标: ${sel!!.ssid}  |  持续 ${dur}s", fontFamily = Mono, fontSize = 11.sp, color = White)
+                    Slider(dur.toFloat(), { dur = it.toInt().coerceIn(1, 60) }, valueRange = 1f..60f, steps = 14, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = BorderDim))
+                    Surface(modifier = Modifier.fillMaxWidth().clickable { vm.setDuration(dur); if (fl) vm.stopFlood() else vm.startFlood() }, shape = RoundedCornerShape(2.dp), color = if (fl) Color.Transparent else Red, border = BorderStroke(1.dp, if (fl) Red.copy(alpha = 0.3f) else Red)) {
+                        Text(if (fl) "中止泛洪" else "开始泛洪", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (fl) Red else White, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
+                    }
                 }
             }
 
@@ -331,7 +356,9 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
                 Text(if (running) "中止压制" else "执行压制", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
             }
             error?.let { Text("! $it", fontFamily = Mono, fontSize = 10.sp, color = Red) }
-            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim); Text("压制 $tc 个SSID  |  beacon ${vm.getBeaconCount()}  |  周期 ${vm.getCycleCount()}", fontFamily = Mono, fontSize = 10.sp, color = White) }
+            AnimatedVisibility(running) {
+                Column { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim); Text("压制 $tc 个SSID  |  beacon ${vm.getBeaconCount()}  |  周期 ${vm.getCycleCount()}", fontFamily = Mono, fontSize = 10.sp, color = White) }
+            }
 
             when (val s = ss) {
                 is JammerScanState.Scanning -> Text("扫描中...", fontFamily = Mono, fontSize = 10.sp, color = White)
