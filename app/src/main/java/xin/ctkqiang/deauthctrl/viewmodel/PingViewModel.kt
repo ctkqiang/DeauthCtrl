@@ -6,6 +6,20 @@ import kotlinx.coroutines.flow.StateFlow
 import xin.ctkqiang.deauthctrl.manager.PingManager
 import xin.ctkqiang.deauthctrl.manager.PingResult
 
+/**
+ * Ping 泛洪 ViewModel
+ *
+ * 管理持续 ICMP Ping 探测的状态，支持无限发包和实时统计。
+ * 默认目标为 8.8.8.8（Google Public DNS），用户可自定义目标 IP。
+ *
+ * ## 状态流
+ * - isRunning: Ping 探测运行状态
+ * - host: 目标主机（IP 或域名）
+ * - results: Ping 探测结果列表（按时间顺序排列，最新在末尾）
+ * - sent/received/loss: 发包统计（发送数/接收数/丢包率百分比）
+ * - min/avg/max: RTT 统计（最小/平均/最大往返时延，单位 ms）
+ * - error: 错误信息
+ */
 class PingViewModel : ViewModel() {
 
     private val manager = PingManager()
@@ -30,8 +44,15 @@ class PingViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    /** 设置目标主机地址 */
     fun setHost(h: String) { _host.value = h }
 
+    /**
+     * 开始持续 Ping 探测
+     *
+     * 清空历史记录和统计信息，以 count=0（无限）、interval=150ms 参数启动 PingManager。
+     * 结果通过回调实时追加到 _results 列表，统计信息每 150ms 更新一次。
+     */
     fun start() {
         _isRunning.value = true
         _error.value = null
@@ -52,6 +73,11 @@ class PingViewModel : ViewModel() {
         )
     }
 
+    /**
+     * 停止 Ping 探测
+     *
+     * 取消协程 Job，设置运行标志为 false。
+     */
     fun stop() {
         manager.stop()
         _isRunning.value = false

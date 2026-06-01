@@ -8,6 +8,21 @@ import kotlinx.coroutines.flow.StateFlow
 import xin.ctkqiang.deauthctrl.manager.BleDevice
 import xin.ctkqiang.deauthctrl.manager.BleScannerManager
 
+/**
+ * BLE 嗅探扫描 ViewModel
+ *
+ * 管理低功耗蓝牙被动扫描的生命周期和设备列表状态。
+ * 继承 AndroidViewModel 以获取 Context（用于 BluetoothAdapter 初始化）。
+ *
+ * ## 轮询机制
+ * 启动扫描后，在后台协程中每 200ms 从 BleScannerManager 的设备表拉取最新数据，
+ * 按 RSSI 降序排列（信号最强的设备排在最前面），推送到 UI。
+ *
+ * ## 状态流
+ * - isRunning: 扫描运行状态
+ * - devices: 已发现设备列表（按 RSSI 降序，每 200ms 更新）
+ * - error: 错误信息
+ */
 class BleScannerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val manager = BleScannerManager(application)
@@ -18,8 +33,15 @@ class BleScannerViewModel(application: Application) : AndroidViewModel(applicati
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    /** 后台轮询协程 Job */
     private var scanJob: Job? = null
 
+    /**
+     * 启动 BLE 扫描
+     *
+     * 启动 Android BLE 硬件扫描，启动后台轮询协程每 200ms 更新设备列表。
+     * 设备列表按 RSSI 从强到弱排列（最强信号优先）。
+     */
     fun start() {
         _isRunning.value = true
         _error.value = null
@@ -38,6 +60,11 @@ class BleScannerViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    /**
+     * 停止 BLE 扫描
+     *
+     * 停止硬件扫描，取消后台轮询协程。
+     */
     fun stop() {
         manager.stop()
         scanJob?.cancel()
