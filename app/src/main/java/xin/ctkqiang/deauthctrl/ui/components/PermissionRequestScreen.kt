@@ -21,6 +21,29 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * 权限请求界面
+ *
+ * 应用启动时若检测到权限未授予，则显示此界面作为权限网关。
+ * 通过 ActivityResultContracts.RequestMultiplePermissions 一次性请求所有必需权限。
+ *
+ * ## 权限列表
+ * - Android 12+ (API 31+):
+ *   - BLUETOOTH_SCAN: BLE 扫描
+ *   - BLUETOOTH_CONNECT: BLE 连接
+ *   - BLUETOOTH_ADVERTISE: BLE 广播
+ *   - ACCESS_FINE_LOCATION: WiFi/BLE 扫描所需位置权限
+ * - Android 11- (API 30-):
+ *   - ACCESS_FINE_LOCATION: WiFi/BLE 扫描所需位置权限
+ *
+ * ## 交互流程
+ * 1. 显示权限列表和说明卡片
+ * 2. 用户点击「授予权限」→ RequestMultiplePermissions 弹出系统权限对话框
+ * 3. 所有权限已授予 → 调用 onAllGranted 回调进入主界面
+ * 4. 任一权限被拒绝 → 显示「重新请求」按钮和设置提示
+ *
+ * @param onAllGranted 所有权限授予后的回调，通知父组件切换到主界面
+ */
 @Composable
 fun PermissionRequestScreen(onAllGranted: () -> Unit) {
     val required = remember {
@@ -84,6 +107,14 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
     }
 }
 
+/**
+ * 单个权限项
+ *
+ * 在权限卡片中显示的单项权限信息，包含红色箭头指示符 + 权限标题 + 权限描述。
+ *
+ * @param title 权限标题（如"位置信息"）
+ * @param desc 权限描述/原因（如"BLE 与 WiFi 扫描需要位置权限"）
+ */
 @Composable
 private fun PermissionItem(title: String, desc: String) {
     val R = Color(0xFFFF0000); val W = Color(0xFFEEEEEE); val G = Color(0xFF888888)

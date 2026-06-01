@@ -58,6 +58,34 @@ private val SurfaceBg = Color(0xFF0D0D0D)
 private val BorderDim = Color(0xFF1F1F1F)
 private val Mono = FontFamily.Monospace
 
+/**
+ * 应用主路由入口 Composable
+ *
+ * 整个应用的根组件，负责：
+ * 1. 启动序列播放（BootSequence → 主界面）
+ * 2. 页面路由导航（通过 AnimatedContent 实现 12 个页面的动画过渡）
+ * 3. 全局 ScanlineOverlay 叠加（启动完成后持续显示）
+ *
+ * ## 路由系统
+ * 基于字符串的简单路由（"home", "ble", "btjam", "wifi", "wifijam", "webserver",
+ * "arp", "http", "ping", "blescan", "portscan", "about"）。
+ * 页面切换使用 AnimatedContent，过渡动画为 fade + 水平滑入/滑出。
+ *
+ * ## 10 个 ViewModel 注入
+ * 所有 ViewModel 由 MainActivity 通过 viewModel() 创建并注入到此组件，
+ * 通过函数参数按需分发到各个详情页。
+ *
+ * @param bleVm BLE 泛洪攻击 ViewModel
+ * @param wifiVm WiFi 干扰攻击 ViewModel
+ * @param btVm 蓝牙压制攻击 ViewModel
+ * @param wjVm WiFi 压制攻击 ViewModel
+ * @param wsVm Web 服务器 ViewModel
+ * @param arpVm ARP 扫描 ViewModel
+ * @param httpVm HTTP 客户端 ViewModel
+ * @param pingVm Ping 泛洪 ViewModel
+ * @param blescanVm BLE 扫描 ViewModel
+ * @param portscanVm 端口扫描 ViewModel
+ */
 @Composable
 fun MainScreen(
     bleVm: BleSpamViewModel, wifiVm: WifiDisruptViewModel,
@@ -97,6 +125,19 @@ fun MainScreen(
     }
 }
 
+/**
+ * 实时状态栏
+ *
+ * 模拟 htop/glances 系统监控的终端状态栏，显示 4 项"系统指标"。
+ * 使用 Kotlin Random(seed=7) 确保每次重组时数值变化可预测且平滑。
+ * 每 1.5 秒自动刷新 tick，各指标基于 tick 计算伪随机增量。
+ *
+ * 显示项：
+ * - 数据包: 网络数据包计数（8000-13000 范围伪随机）
+ * - 接口: 当前激活的无线接口（固定 wlan0）
+ * - CPU: 伪 CPU 使用率（8%-30% 循环）
+ * - 内存: 伪内存占用量（300-500MB 循环）
+ */
 @Composable
 fun StatusBar() {
     var tick by remember { mutableIntStateOf(0) }
@@ -114,6 +155,15 @@ fun StatusBar() {
     }
 }
 
+/**
+ * 状态栏单项指标
+ *
+ * 在 StatusBar 中显示一个 "标签: 值" 格式的指标项。
+ * 标签用灰色、值用暗红色，形成层次对比。
+ *
+ * @param label 指标标签（如 "数据包"、"CPU"）
+ * @param value 指标值（如 "8942"、"12%"）
+ */
 @Composable
 private fun Stat(label: String, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -122,6 +172,20 @@ private fun Stat(label: String, value: String) {
     }
 }
 
+/**
+ * 主屏幕 / 功能入口页
+ *
+ * 应用的核心导航页面，展示 10 个功能模块卡片，每个卡片可点击进入详情页或直接启停。
+ * 采用可滚动 Column 布局，内容从上到下依次为：
+ * 1. GlitchText 标题（DEAUTHCTRL）
+ * 2. 版本号 + 标签行
+ * 3. StatusBar（系统状态栏）
+ * 4. 10 张 AnimatedCard（逐级延迟入场动画）
+ * 5. ASCII 分隔线 + 标语 + 关于链接
+ *
+ * 每张卡片都绑定触觉反馈（HapticFeedbackType.LongPress）。
+ * 所有 ViewModel 的运行状态通过 collectAsState() 实时反映在卡片颜色和文字上。
+ */
 @Composable
 fun HomeScreen(
     bleVm: BleSpamViewModel, wifiVm: WifiDisruptViewModel,
@@ -169,6 +233,28 @@ fun HomeScreen(
     }
 }
 
+/**
+ * 带动画入场的功能模块卡片
+ *
+ * 主屏幕上的核心 UI 单元。每张卡片包含：
+ * - 状态指示灯（红色脉冲 = 运行中，暗红 = 停止）
+ * - 模块名称（Bold 等宽字体）
+ * - 功能描述（次级灰色文字）
+ * - 启动/停止按钮（红色实体 / 红色空心切换）
+ *
+ * ## 动画系统
+ * - 入场动画：delayMs 延迟后以 fade + slide 动画显示
+ * - 按压动画：spring 弹性缩放至 95%
+ * - 颜色过渡：animateColorAsState 在运行/停止状态间平滑切换（400ms tween）
+ *   - 边框、背景、名称颜色、描述颜色、指示灯颜色全部独立过渡
+ *
+ * @param name 模块名称（如 "BLE 泛洪"）
+ * @param desc 功能描述（如 "BLE 广告协议泛洪攻击"）
+ * @param running 当前运行状态，驱动颜色过渡和按钮文字
+ * @param delayMs 入场延迟（毫秒），用于实现逐级错开的入场动画
+ * @param onClick 点击卡片主体时的回调（导航到详情页）
+ * @param onToggle 点击启停按钮时的回调（切换运行状态）
+ */
 @Composable
 fun AnimatedCard(name: String, desc: String, running: Boolean, delayMs: Long, onClick: () -> Unit, onToggle: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
@@ -208,6 +294,16 @@ fun AnimatedCard(name: String, desc: String, running: Boolean, delayMs: Long, on
     }
 }
 
+/**
+ * 终端风格页面头部
+ *
+ * 所有详情页统一的标题栏组件。左侧显示 [ 返回 ] 按钮（红色），
+ * 中间显示页面标题（白色），右侧显示终端提示符 `root@deauth:~#`。
+ * 背景色为 SurfaceBg（#0D0D0D），底部有暗色边框。
+ *
+ * @param title 页面标题（如 "BLE 泛洪引擎"）
+ * @param back 点击返回按钮时的回调，用于导航回上一页
+ */
 @Composable
 fun TerminalHeader(title: String, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
@@ -222,16 +318,19 @@ fun TerminalHeader(title: String, back: () -> Unit) {
     }
 }
 
+/** 终端提示符渲染器 — 显示 `root@deauth:~# ` 红色前缀 */
 @Composable
 fun TermPrompt(cmd: String) {
     Text("root@deauth:~# ", fontFamily = Mono, fontSize = 12.sp, color = Red, fontWeight = FontWeight.Bold)
 }
 
+/** 终端输出行渲染器 — 缩进两格显示输出文本 */
 @Composable
 fun TermOutput(text: String, color: Color = White) {
     Text("  $text", fontFamily = Mono, fontSize = 11.sp, color = color)
 }
 
+/** 终端行渲染器 — `$ prompt output` 格式，output 含 FAIL/ERROR 时红色 */
 @Composable
 fun TermLine(prompt: String, output: String) {
     Row(Modifier.padding(vertical = 1.dp)) {
@@ -241,6 +340,17 @@ fun TermLine(prompt: String, output: String) {
     }
 }
 
+/**
+ * 终端面板组件
+ *
+ * 带标题栏的卡片式面板，使用 ┌─/└─ 字符模拟终端框线。
+ * 标题栏为微红背景（Red 8% alpha），内容区为深黑背景（SurfaceBg）。
+ * 顶部 ┌─ 标题 + 底部 └─ 形成完整框线视觉。
+ *
+ * @param title 面板标题（如 "载荷配置"、"统计"）
+ * @param modifier Modifier 修饰符
+ * @param content 面板内容（在 ColumnScope 中渲染，支持 Column 子布局）
+ */
 @Composable
 fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(modifier = modifier.fillMaxWidth().border(1.dp, BorderDim).background(SurfaceBg)) {
@@ -252,11 +362,30 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
     }
 }
 
+/**
+ * 区域标签
+ *
+ * 在详情页中标记一个逻辑区块的标题，使用暗红色粗体等宽字体。
+ *
+ * @param text 标签文字（如 "载荷配置"、"数据包日志"）
+ */
 @Composable
 fun SectionLabel(text: String) {
     Text(text, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = RedDim, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 }
 
+/**
+ * BLE 泛洪攻击详情页
+ *
+ * BLE 广告协议泛洪工具的控制和监控界面。
+ * 功能区块：
+ * - 载荷配置面板（TermPanel）：选择广播载荷 Profile + 调整发包间隔（20-100ms）
+ * - 执行/中止按钮：终端命令风格 `$ ./start_ble --flood` / `$ ./stop_ble`
+ * - 实时统计：已发包数 + 每秒发包速率（pps）
+ * - 数据包日志：`$ tail -f /var/log/ble_packets.log` 风格日志流
+ *
+ * 日志条目自动滚动到最新数据（animateScrollToItem(0)）。
+ */
 @Composable
 fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
     val log by vm.log.collectAsState(); val running by vm.isRunning.collectAsState()
@@ -320,6 +449,16 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * 蓝牙压制攻击详情页
+ *
+ * 全频段蓝牙压制工具的监控界面。同时运行 BLE 泛洪 + 经典蓝牙发现。
+ * 功能区块：
+ * - 状态面板（TermPanel）：BLE泛洪/设备发现 开关状态 + 已发现设备计数
+ * - 执行/中止按钮：`$ ./start_btjam --all-channels` / `$ ./stop_btjam`
+ * - 附近设备列表（`$ hcitool scan --active` 风格）
+ * - 运行日志（`$ journalctl -u btjam -f` 风格）
+ */
 @Composable
 fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
     val log by vm.log.collectAsState(); val running by vm.isRunning.collectAsState()
@@ -373,12 +512,25 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
     }
 }
 
+/** 布尔状态芯片 — 显示 "标签: ON"（红色）或 "标签: OFF"（灰色） */
 @Composable
 fun StatusChip(label: String, active: Boolean) = Text("$label: ${if (active) "ON" else "OFF"}", fontFamily = Mono, fontSize = 11.sp, color = if (active) Red else Gray)
 
 @Composable
+/** 键值状态芯片 — 显示 "标签: 值"（白色文字） */
+@Composable
 fun StatusChip(label: String, value: String) = Text("$label: $value", fontFamily = Mono, fontSize = 11.sp, color = White)
 
+/**
+ * WiFi 干扰攻击详情页
+ *
+ * 邪恶双子信标泛洪工具。功能区块：
+ * - 扫描按钮：`$ airodump-ng wlan0` 风格，扫描附近 2.4/5GHz WiFi 网络
+ * - 网络列表：BSSID + SSID + CH + dBm 显示（终端列对齐），选中目标
+ * - 目标配置：duration 滑动条（1-60s），目标 SSID 显示
+ * - 执行/中止按钮：`$ ./start_flood --deauth --duration=Ns`
+ * - 进度显示：cycle N/total + LinearProgressIndicator
+ */
 @Composable
 fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
     val ss by vm.scanState.collectAsState(); val hr by vm.hotspotResult.collectAsState(); val fl by vm.isFlooding.collectAsState()
@@ -443,6 +595,16 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * WiFi 压制攻击详情页
+ *
+ * 自动扫描并交替压制附近所有 SSID。功能区块：
+ * - 配置面板（TermPanel）：信道切换间隔 Slider（60-300ms）
+ * - 执行/中止按钮：`$ ./start_wifijam --jam-all --aggressive`
+ * - 实时压制统计：jamming N SSIDs + beacon 计数 + cycles 计数
+ * - 目标网络列表：BSSID + SSID + CH + dBm
+ * - 运行日志：`$ tail -f /var/log/wifijam.log` 风格
+ */
 @Composable
 fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
     val log by vm.log.collectAsState(); val running by vm.isRunning.collectAsState()
@@ -502,6 +664,14 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * 关于页面
+ *
+ * 显示应用和作者信息。使用 TermPanel 卡片 + 终端命令风格排版：
+ * - `$ uname -a` → 系统标识行（DeauthCtrl v1.0 | 中国红客 | 国产自主 | 安全可控）
+ * - `$ whoami` → 作者身份行（哪吒网络安全 / ctkqiang）
+ * - TermPanel 含：作者、代号、邮箱、仓库、架构、许可 6 项信息
+ */
 @Composable
 fun AboutDetailScreen(back: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Dark)) {
@@ -526,6 +696,7 @@ fun AboutDetailScreen(back: () -> Unit) {
     }
 }
 
+/** 信息行 — 在关于页面中显示 "标签: 值" 格式的信息项 */
 @Composable
 private fun InfoRow(label: String, value: String) {
     Row(Modifier.padding(vertical = 3.dp)) {
@@ -534,6 +705,17 @@ private fun InfoRow(label: String, value: String) {
     }
 }
 
+/**
+ * Web 服务器详情页
+ *
+ * 嵌入式 HTTP 服务器管理界面。功能区块：
+ * - HTML 文件选择面板：显示当前文件名 + [选择文件] 按钮（通过系统文件选择器选取 HTML）
+ * - 启动/停止按钮：`$ ./start_webserver --port=80` / `$ ./stop_webserver`
+ * - 服务器信息面板（运行后显示）：
+ *   - `$ ifconfig wlan0` → IP 地址
+ *   - `$ http://...` → HTTP 响应头模拟（200 OK、Content-Type、Server）
+ *   - 浏览器访问 URL 提示
+ */
 @Composable
 fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
@@ -591,6 +773,18 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * ARP 网络扫描详情页
+ *
+ * 局域网 Ping Sweep 设备发现界面。功能区块：
+ * - 扫描按钮：`$ arp -a`（红色实体按钮，执行 /24 子网 Ping Sweep）
+ * - 进度显示：`$ ping -c 1 192.168.x.0/24 ...`
+ * - 设备列表面板（TermPanel）：
+ *   - IP Address | MAC Address | Hostname 三列表头
+ *   - 每行显示设备 IP（白色）、MAC（灰色或"(pending)"）、主机名（暗红或灰色）
+ *   - 支持滚动，最多显示 400dp 高度
+ * - 未发现设备时的提示信息
+ */
 @Composable
 fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
     val devices by vm.devices.collectAsState()
@@ -651,6 +845,21 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * BLE 嗅探扫描详情页
+ *
+ * 低功耗蓝牙被动扫描和 RSSI 图谱展示界面。功能区块：
+ * - 扫描按钮：`$ hcitool lescan --duplicates` / `--stop`
+ * - 设备列表：名称 + RSSI + MAC 地址，RSSI 按信号强度着
+ * - 选中设备详情面板（TermPanel）：
+ *   - 基本信息：ADDR、TX Power、设备类型
+ *   - 服务 UUID 列表 + 厂商自定义数据（MFR）
+ *   - **RSSI 实时走势图**（Canvas 绘制，60dp 高）：
+ *     - X 轴 = 时间（最近 50 次扫描结果的索引）
+ *     - Y 轴 = dBm 范围（-100 到 -20）
+ *     - 红色折线图，Stroke 1.5f 线宽
+ *     - 图表下方显示 min/max/cur 统计值
+ */
 @Composable
 fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
@@ -728,6 +937,18 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * Ping 泛洪详情页
+ *
+ * 持续 ICMP Ping 探测与压力测试界面。功能区块：
+ * - 目标主机输入框（TermInput）
+ * - 启动/停止按钮：`$ ping -c unlimited <host>` / `$ killall ping`
+ * - 统计面板（TermPanel）：6 列等宽统计（发送/接收/丢包%/最小/平均/最大）
+ * - 实时 Ping 结果日志：
+ *   - `N bytes from <ip>: icmp_seq=X ttl=Y time=Zms`
+ *   - 按 RTT 着色：>500ms 红色, >100ms 暗红, <100ms 白色
+ *   - 自动滚动到最新结果
+ */
 @Composable
 fun PingScreen(vm: PingViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
@@ -783,6 +1004,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
     }
 }
 
+/** Ping 统计列 — 垂直排列：值（红色粗体）+ 标签（灰色小字） */
 @Composable
 private fun StatCol(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -791,6 +1013,20 @@ private fun StatCol(label: String, value: String) {
     }
 }
 
+/**
+ * HTTP 客户端详情页（curl/Postman 风格）
+ *
+ * 完整的 HTTP 请求构建和响应查看工具。功能区块：
+ * - URL 输入框（TermInput）
+ * - 方法选择器（GET/POST/PUT/DELETE/OPTIONS/PATCH/HEAD）— 水平滚动芯片
+ * - Headers 输入框（多行文本，格式: "Key: Value"，每行一个）
+ * - Body 输入框（仅 POST/PUT/PATCH 显示）
+ * - 发送按钮：`$ curl -X <METHOD> <URL>`
+ * - 响应区域：
+ *   - HTTP 状态行 + 耗时
+ *   - 响应头（折叠显示）
+ *   - 响应体（可选中复制，SelectionContainer）
+ */
 @Composable
 fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
@@ -860,6 +1096,18 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
     }
 }
 
+/**
+ * 终端风格输入字段
+ *
+ * 带 `$ --label` 前缀的文本输入框，背景为 SurfaceBg，边框为 BorderDim。
+ * 支持 placeholder 占位文字（颜色为 Gray 40% alpha）。
+ * 使用 BasicTextField 实现，无 Material 装饰，纯终端风格。
+ *
+ * @param label 标签名（如 "URL"、"host"、"Headers"）
+ * @param value 当前输入值（双向绑定由调用方管理）
+ * @param placeholder 占位提示文字，为空时不显示
+ * @param onValue 值变更回调
+ */
 @Composable
 fun TermInput(label: String, value: String, placeholder: String = "", onValue: (String) -> Unit) {
     Text("$ --$label", fontFamily = Mono, fontSize = 11.sp, color = Red)
@@ -874,6 +1122,19 @@ fun TermInput(label: String, value: String, placeholder: String = "", onValue: (
     )
 }
 
+/**
+ * 端口扫描详情页（Nmap 风格）
+ *
+ * TCP Connect 端口扫描工具。功能区块：
+ * - 目标主机输入框（TermInput）
+ * - 扫描按钮：`$ nmap -sT -T4 <host>` / `$ kill scan`
+ * - 进度条 + 已扫描/开放计数
+ * - Nmap 风格扫描报告（TermPanel）：
+ *   - `Nmap 扫描报告: <host>`
+ *   - 每行 `端口/tcp | 状态 | 服务名`
+ *   - Banner 输出（`|_ banner: ...`）
+ *   - 底部统计行：共扫描 N 端口，M 个开放
+ */
 @Composable
 fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
