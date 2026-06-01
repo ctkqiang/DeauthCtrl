@@ -23,7 +23,7 @@ fun WarningBanner(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             Text(
-                text = "FOR AUTHORIZED LAB TESTING ONLY. DO NOT USE ON DEVICES YOU DO NOT OWN.",
+                text = "仅供授权实验室测试使用。请勿用于非您拥有的设备。",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.error,

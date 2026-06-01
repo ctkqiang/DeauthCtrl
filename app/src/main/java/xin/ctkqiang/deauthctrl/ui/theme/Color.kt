@@ -7,7 +7,16 @@ val RedBright = Color(0xFFFF3333)
 val RedDark = Color(0xFFCC0000)
 val RedBackground = Color(0x1AFF0000)
 
+val MatrixGreen = Color(0xFF00FF41)
+val MatrixGreenDark = Color(0xFF003B00)
+val MatrixGreenDim = Color(0xFF00AA2E)
+
+val NeonCyan = Color(0xFF00FFFF)
+val NeonCyanDark = Color(0xFF003333)
+val NeonAmber = Color(0xFFFFB000)
+
 val Black = Color(0xFF000000)
+val DeepBlack = Color(0xFF010101)
 val BlackAlt = Color(0xFF030303)
 val Surface = Color(0xFF080808)
 val SurfaceAlt = Color(0xFF0C0C0C)
@@ -22,11 +31,11 @@ val TextBright = Color(0xFFFFFFFF)
 val TextDim = Color(0xFF888888)
 val TextMuted = Color(0xFF444444)
 
-val Amber = Color(0xFFFFB000)
+val Amber = NeonAmber
 val Success = Color(0xFF00AA00)
 val Info = Color(0xFF4488CC)
 
-val DarkBackground = Black
+val DarkBackground = DeepBlack
 val DarkSurface = Surface
 val DarkSurfaceVariant = SurfaceAlt
 val DarkOnBackground = TextPrimary
