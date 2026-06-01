@@ -19,8 +19,10 @@ import xin.ctkqiang.deauthctrl.ui.components.PermissionRequestScreen
 import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
 import xin.ctkqiang.deauthctrl.ui.theme.Black
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
+import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel
 
@@ -47,6 +49,8 @@ class MainActivity : ComponentActivity() {
                         wifiVm = viewModel(),
                         btVm = viewModel(),
                         wjVm = viewModel(),
+                        wsVm = viewModel(),
+                        arpVm = viewModel(),
                     )
                 }
             }
