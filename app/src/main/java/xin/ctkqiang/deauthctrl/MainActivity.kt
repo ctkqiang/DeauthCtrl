@@ -28,6 +28,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.PortScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.WalkieTalkieViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel
 
 /**
@@ -89,6 +90,7 @@ class MainActivity : ComponentActivity() {
                         pingVm = viewModel(),
                         blescanVm = viewModel(),
                         portscanVm = viewModel(),
+                        walkieVm = viewModel(),
                     )
                 }
             }
@@ -106,7 +108,8 @@ class MainActivity : ComponentActivity() {
     private fun checkAllPermissionsGranted(): Boolean {
         val required = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.ACCESS_FINE_LOCATION)
+                Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.RECORD_AUDIO)
         } else {
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         }

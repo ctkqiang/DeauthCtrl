@@ -2,6 +2,8 @@ package xin.ctkqiang.deauthctrl.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import kotlin.math.PI
+import kotlin.math.sin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,8 +42,12 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.input.pointer.pointerInput
 import xin.ctkqiang.deauthctrl.ui.components.*
 import xin.ctkqiang.deauthctrl.viewmodel.*
 import java.text.SimpleDateFormat
@@ -93,6 +99,7 @@ fun MainScreen(
     wsVm: WebServerViewModel, arpVm: ArpScanViewModel,
     httpVm: HttpClientViewModel, pingVm: PingViewModel,
     blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
+    walkieVm: WalkieTalkieViewModel,
 ) {
     var screen by remember { mutableStateOf("home") }
     var boot by remember { mutableStateOf(true) }
@@ -106,7 +113,7 @@ fun MainScreen(
                     .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(300)) { -it / 5 })
             }) { current ->
                 when (current) {
-                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, nav = { screen = it })
+                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, nav = { screen = it })
                     "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
                     "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
                     "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
@@ -117,6 +124,7 @@ fun MainScreen(
                     "ping" -> PingScreen(pingVm, back = { screen = "home" })
                     "blescan" -> BleScannerScreen(blescanVm, back = { screen = "home" })
                     "portscan" -> PortScannerScreen(portscanVm, back = { screen = "home" })
+                    "walkie" -> WalkieTalkieScreen(walkieVm, back = { screen = "home" })
                     "about" -> AboutDetailScreen(back = { screen = "home" })
                 }
             }
@@ -193,6 +201,7 @@ fun HomeScreen(
     wsVm: WebServerViewModel, arpVm: ArpScanViewModel,
     httpVm: HttpClientViewModel, pingVm: PingViewModel,
     blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
+    walkieVm: WalkieTalkieViewModel,
     nav: (String) -> Unit,
 ) {
     val br by bleVm.isRunning.collectAsState()
@@ -205,6 +214,7 @@ fun HomeScreen(
     val pingr by pingVm.isRunning.collectAsState()
     val blesr by blescanVm.isRunning.collectAsState()
     val portr by portscanVm.isRunning.collectAsState()
+    val walkier by walkieVm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp).verticalScroll(rememberScrollState())) {
@@ -224,6 +234,7 @@ fun HomeScreen(
         AnimatedCard("PING 泛洪", "无限 ping — 压力测试工具", running = pingr, delayMs = 560, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("ping") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (pingr) pingVm.stop() else pingVm.start() })
         AnimatedCard("BLE 扫描", "低功耗蓝牙嗅探 — RSSI 实时图谱", running = blesr, delayMs = 640,onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("blescan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (blesr) blescanVm.stop() else blescanVm.start() })
         AnimatedCard("端口扫描", "nmap 风格 TCP 扫描 — 服务识别", running = portr, delayMs = 720, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("portscan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (portr) portscanVm.stop() else portscanVm.start() })
+        AnimatedCard("对讲机", "WiFi 局域网 PTT — 按住说话实时语音", running = walkier, delayMs = 800, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("walkie") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (walkier) walkieVm.stop() else walkieVm.start() })
 
         Spacer(Modifier.height(14.dp))
         AsciiDivider(modifier = Modifier.padding(vertical = 10.dp))
@@ -1170,6 +1181,107 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
                             Text("  Nmap done: $total ports scanned, ${open.size} open", fontFamily = Mono, fontSize = 10.sp, color = Gray)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState()
+    val talking by vm.isTalking.collectAsState()
+    val peers by vm.peers.collectAsState()
+    val error by vm.error.collectAsState()
+    val isLive by vm.isLive.collectAsState()
+    val countdown by vm.liveCountdown.collectAsState()
+    val haptic = LocalHapticFeedback.current
+
+    val active = talking || isLive
+    val transition = rememberInfiniteTransition()
+    val pulse by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(600), RepeatMode.Restart))
+    val scale by animateFloatAsState(if (active) 1.0f + sin(pulse * PI * 2).toFloat() * 0.03f else 1f, spring())
+    val glowAlpha by animateFloatAsState(if (active) 0.85f else 0.12f, tween(300))
+
+    Box(Modifier.fillMaxSize().background(Dark)) {
+        Column(Modifier.fillMaxSize()) {
+            TerminalHeader("WiFi 对讲机", back)
+            Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+                Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                        Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                        Text(if (running) "./stop_walkie" else "./start_walkie --channel=default", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                    }
+                }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
+
+                if (running && peers.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    TermPanel("在线设备 (${peers.size})") {
+                        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 140.dp)) {
+                            items(peers) { p ->
+                                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp).background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent).padding(horizontal = 4.dp, vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    if (p.isTalking) {
+                                        Text("⬤ ", fontFamily = Mono, fontSize = 10.sp, color = Red)
+                                    } else {
+                                        Text("○ ", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                    }
+                                    Text(p.name.take(20).padEnd(20), fontFamily = Mono, fontSize = 11.sp, color = if (p.isTalking) Red else White, fontWeight = if (p.isTalking) FontWeight.Bold else FontWeight.Normal)
+                                    Text(p.ip, fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                    if (p.isTalking) Text("  说话中", fontFamily = Mono, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                if (running) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); vm.toggleLive() },
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (isLive) Red.copy(alpha = 0.15f) else Color.Transparent,
+                            border = BorderStroke(1.5.dp, if (isLive) Red else Red.copy(alpha = 0.3f)),
+                        ) {
+                            Text(
+                                if (isLive) "LIVE ${countdown}s" else "LIVE",
+                                fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                color = if (isLive) Red else Red.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth().height(100.dp)
+                            .scale(scale)
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        when {
+                                            event.changes.any { it.changedToDown() } -> vm.startTalk()
+                                            event.changes.any { it.changedToUp() } -> vm.stopTalk()
+                                        }
+                                    }
+                                }
+                            }
+                            .background(if (active) Red.copy(alpha = glowAlpha) else Red.copy(alpha = 0.15f))
+                            .border(2.dp, Red.copy(alpha = if (active) 1f else 0.3f), RoundedCornerShape(4.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            if (active) "●●● 发送中 ●●●" else "按住说话",
+                            fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                            color = if (active) White else Red,
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
                 }
             }
         }

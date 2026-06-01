@@ -42,6 +42,7 @@
 | 10  | **端口扫描**  | Nmap 风格 TCP Connect 扫描 + Banner | `Socket.connect()` + 40+ 端口        |
 | 11  | **系统信息**  | 关于页 — 作者/架构/许可             | 终端命令风格 (`uname -a` / `whoami`) |
 | 12  | **权限管理**  | 运行时权限请求网关                  | `RequestMultiplePermissions`         |
+| 13  | **WiFi 对讲** | 局域网 PTT 语音通话 · 免提模式 · 说话者识别 | UDP 广播发现 + AudioRecord/AudioTrack PCM 流 |
 
 ---
 
@@ -50,7 +51,7 @@
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                   UI Layer (Jetpack Compose)               │
-│  12 Detail Screens · HackerEffects · Terminal Components  │
+│  13 Detail Screens · HackerEffects · Terminal Components  │
 │  GlitchText · ScanlineOverlay · PulseDot · AnimatedCard  │
 ├──────────────────────────────────────────────────────────┤
 │             ViewModel Layer (StateFlow + Haptic)           │
