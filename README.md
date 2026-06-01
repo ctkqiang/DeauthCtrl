@@ -6,6 +6,15 @@
 
 ---
 
+## 下载
+
+| 平台 | 直链 |
+|------|------|
+| **GitHub** | [DeauthCTRL.apk](https://github.com/ctkqiang/DeauthCtrl/releases/download/v1.0.0/DeauthCTRL.apk) |
+| **GitCode** | [DeauthCTRL.apk](https://gitcode.com/ctkqiang_sr/DeauthCtrl/releases/download/v1.0.0/DeauthCTRL.apk) |
+
+---
+
 ## 法律声明
 
 **本工具仅供授权安全研究与教育用途。**
