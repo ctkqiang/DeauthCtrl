@@ -80,26 +80,31 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             DeauthCtrlTheme(darkTheme = true) {
-                MainScreen(
-                    bleVm = viewModel(),
-                    wifiVm = viewModel(),
-                    btVm = viewModel(),
-                    wjVm = viewModel(),
-                    wsVm = viewModel(),
-                    arpVm = viewModel(),
-                    httpVm = viewModel(),
-                    pingVm = viewModel(),
-                    blescanVm = viewModel(),
-                    portscanVm = viewModel(),
-                    walkieVm = viewModel(),
-                    vaultVm = viewModel(),
-                    radarVm = viewModel(),
-                    ftVm = viewModel(),
-                    revVm = viewModel(),
-                    payloadVm = viewModel(),
-                    bruteVm = viewModel(),
-                    cveVm = viewModel(),
-                )
+                var granted by remember { mutableStateOf(checkAllPermissionsGranted()) }
+                if (granted) {
+                    MainScreen(
+                        bleVm = viewModel(),
+                        wifiVm = viewModel(),
+                        btVm = viewModel(),
+                        wjVm = viewModel(),
+                        wsVm = viewModel(),
+                        arpVm = viewModel(),
+                        httpVm = viewModel(),
+                        pingVm = viewModel(),
+                        blescanVm = viewModel(),
+                        portscanVm = viewModel(),
+                        walkieVm = viewModel(),
+                        vaultVm = viewModel(),
+                        radarVm = viewModel(),
+                        ftVm = viewModel(),
+                        revVm = viewModel(),
+                        payloadVm = viewModel(),
+                        bruteVm = viewModel(),
+                        cveVm = viewModel(),
+                    )
+                } else {
+                    PermissionRequestScreen { granted = true }
+                }
             }
         }
     }

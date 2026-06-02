@@ -7,7 +7,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import org.json.JSONObject
-import org.json.JSONArray
 
 data class CVEResult(val id: String, val description: String, val cvss: Float?, val published: String)
 
@@ -21,56 +20,50 @@ class CVESearchManager {
         job = CoroutineScope(Dispatchers.IO).launch {
             try {
                 val q = query.trim()
-                if (q.isEmpty()) { onStatus("Please enter a search query"); onComplete(); return@launch }
+                if (q.isEmpty()) { onStatus("请输入搜索关键词"); onComplete(); return@launch }
 
-                if (q.uppercase().startsWith("CVE-")) {
-                    searchById(q, onResult, onStatus)
-                } else {
-                    searchByKeyword(q, onResult, onStatus)
-                }
-            } catch (e: Exception) { onStatus("Error: ${e.message}") }
+                if (q.uppercase().startsWith("CVE-")) searchById(q, onResult, onStatus)
+                else searchByKeyword(q, onResult, onStatus)
+            } catch (e: Exception) { onStatus("错误: ${e.message}") }
             finally { withContext(Dispatchers.Main) { onComplete() } }
         }
     }
 
     private suspend fun searchById(cveId: String, onResult: (CVEResult) -> Unit, onStatus: (String) -> Unit) {
-        val apiUrl = "https://cve.circl.lu/api/id/$cveId"
-        onStatus("Fetching $cveId...")
-        val body = httpGet(apiUrl)
-        if (body == null) { onStatus("Network error — check connection"); return }
-        if (body.startsWith("{") && body.contains("\"id\"")) {
-            val json = JSONObject(body)
-            val id = json.optString("id", cveId)
-            val desc = json.optString("summary", "").take(300)
-            val cvss = json.optJSONObject("cvss")?.optDouble("score")?.toFloat()
-            val published = json.optString("Published", "").take(10)
-            onResult(CVEResult(id, desc, cvss, published))
-            onStatus("OK")
-        } else { onStatus("CVE not found") }
+        onStatus("查询 $cveId ...")
+        val url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=$cveId"
+        val body = httpGet(url) ?: run { onStatus("网络不通 — 请检查 WiFi/数据连接"); return }
+        parseNvdResponse(body, onResult, onStatus)
     }
 
     private suspend fun searchByKeyword(keyword: String, onResult: (CVEResult) -> Unit, onStatus: (String) -> Unit) {
+        onStatus("搜索 \"$keyword\" ...")
         val encoded = URLEncoder.encode(keyword, "UTF-8")
-        val apiUrl = "https://cve.circl.lu/api/search/$encoded"
-        onStatus("Searching...")
-        val body = httpGet(apiUrl)
-        if (body == null) { onStatus("Network error — check connection"); return }
-        if (body.startsWith("{") && body.contains("\"data\"")) {
-            val json = JSONObject(body)
-            val data = json.optJSONArray("data")
-            if (data != null && data.length() > 0) {
-                val count = minOf(data.length(), 25)
-                for (i in 0 until count) {
-                    val item = data.getJSONObject(i)
-                    val id = item.optString("id", "?")
-                    val desc = item.optString("summary", "").take(250)
-                    val cvss = item.optJSONObject("cvss")?.optDouble("score")?.toFloat()
-                    val published = item.optString("Published", "").take(10)
-                    withContext(Dispatchers.Main) { onResult(CVEResult(id, desc, cvss, published)) }
-                }
-                onStatus("Found ${data.length()} results (showing $count)")
-            } else onStatus("No results found for \"$keyword\"")
-        } else onStatus("No results found")
+        val url = "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=$encoded&resultsPerPage=20"
+        val body = httpGet(url) ?: run { onStatus("网络不通 — 请检查 WiFi/数据连接"); return }
+        parseNvdResponse(body, onResult, onStatus)
+    }
+
+    private suspend fun parseNvdResponse(body: String, onResult: (CVEResult) -> Unit, onStatus: (String) -> Unit) {
+        try {
+            val root = JSONObject(body)
+            val vulns = root.optJSONArray("vulnerabilities")
+            if (vulns == null || vulns.length() == 0) { onStatus("未找到结果"); return }
+            val count = minOf(vulns.length(), 20)
+            for (i in 0 until count) {
+                val cve = vulns.getJSONObject(i).optJSONObject("cve") ?: continue
+                val id = cve.optString("id", "?")
+                val descArr = cve.optJSONArray("descriptions")
+                val desc = if (descArr != null && descArr.length() > 0) descArr.getJSONObject(0).optString("value", "").take(250) else ""
+                val cvss = cve.optJSONObject("metrics")?.optJSONObject("cvssMetricV31")
+                    ?.optJSONArray("cvssData")?.optJSONObject(0)?.optDouble("baseScore")?.toFloat()
+                    ?: cve.optJSONObject("metrics")?.optJSONObject("cvssMetricV30")
+                    ?.optJSONArray("cvssData")?.optJSONObject(0)?.optDouble("baseScore")?.toFloat()
+                val published = cve.optString("published", "").take(10)
+                withContext(Dispatchers.Main) { onResult(CVEResult(id, desc, cvss, published)) }
+            }
+            onStatus("找到 ${vulns.length()} 条结果")
+        } catch (e: Exception) { onStatus("解析失败: ${e.message}") }
     }
 
     private fun httpGet(urlStr: String): String? {
@@ -78,11 +71,9 @@ class CVESearchManager {
             val conn = URL(urlStr).openConnection() as HttpURLConnection
             conn.connectTimeout = 10000; conn.readTimeout = 15000
             conn.setRequestProperty("User-Agent", "DeauthCtrl/1.0")
-            val code = conn.responseCode
-            if (code !in 200..299) { conn.disconnect(); return null }
+            if (conn.responseCode !in 200..299) { conn.disconnect(); return null }
             val body = BufferedReader(InputStreamReader(conn.inputStream)).readText()
-            conn.disconnect()
-            body
+            conn.disconnect(); body
         } catch (e: Exception) { null }
     }
 

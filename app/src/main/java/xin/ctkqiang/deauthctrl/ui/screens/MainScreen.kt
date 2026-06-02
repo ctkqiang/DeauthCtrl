@@ -1326,6 +1326,15 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
     val sweep = rememberInfiniteTransition()
     val sweepAngle by sweep.animateFloat(0f, 360f, infiniteRepeatable(tween(8000, easing = LinearEasing)))
 
+    // haptic tick each full sweep rotation (detect 360→0 wrap)
+    var prevAngle by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { sweepAngle }.collect { cur ->
+            if (cur < prevAngle) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            prevAngle = cur
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {

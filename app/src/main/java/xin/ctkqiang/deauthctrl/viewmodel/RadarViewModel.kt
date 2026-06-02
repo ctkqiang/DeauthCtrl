@@ -34,6 +34,7 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
         pollJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 _targets.value = manager.targets.values.toList()
+                manager.onTick()
                 delay(500)
             }
         }
