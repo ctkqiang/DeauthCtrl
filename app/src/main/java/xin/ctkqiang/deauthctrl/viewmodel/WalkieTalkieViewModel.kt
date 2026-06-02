@@ -1,9 +1,13 @@
 package xin.ctkqiang.deauthctrl.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Intent
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import xin.ctkqiang.deauthctrl.WalkieTalkieService
 import xin.ctkqiang.deauthctrl.manager.WalkiePeer
 import xin.ctkqiang.deauthctrl.manager.WalkieTalkieManager
 
@@ -11,14 +15,17 @@ import xin.ctkqiang.deauthctrl.manager.WalkieTalkieManager
  * WiFi 对讲机 ViewModel
  *
  * 管理局域网 PTT（Push-to-Talk）对讲机功能的状态。
+ * 启动时自动拉起前台服务，在状态栏显示持久通知。
  *
  * ## 状态流
  * - isRunning: 对讲机服务是否已启动（监听 + 广播 + 音频通道）
  * - isTalking: PTT 按钮是否被按住（正在录音+发送）
+ * - isLive: 免提模式是否激活
+ * - liveCountdown: 免提模式倒计时秒数
  * - peers: 已发现的局域网对讲设备列表
  * - error: 错误信息
  */
-class WalkieTalkieViewModel : ViewModel() {
+class WalkieTalkieViewModel(application: Application) : AndroidViewModel(application) {
 
     private val manager = WalkieTalkieManager()
     private val _isRunning = MutableStateFlow(false)
@@ -46,11 +53,19 @@ class WalkieTalkieViewModel : ViewModel() {
         if (manager.start()) {
             _isRunning.value = true
             _error.value = null
+            val ctx = getApplication<Application>()
+            WalkieTalkieService.instance = manager
+            val intent = Intent(ctx, WalkieTalkieService::class.java)
+            try { ContextCompat.startForegroundService(ctx, intent) } catch (_: Exception) {}
             pollJob = CoroutineScope(Dispatchers.IO).launch {
                 while (isActive) {
                     delay(500)
                     _peers.value = manager.peers.values.toList()
                     _isTalking.value = manager.isTalking
+                    try {
+                        val svcIntent = Intent(ctx, WalkieTalkieService::class.java).apply { action = WalkieTalkieService.ACTION_UPDATE }
+                        ctx.startService(svcIntent)
+                    } catch (_: Exception) {}
                 }
             }
         } else {
@@ -97,9 +112,9 @@ class WalkieTalkieViewModel : ViewModel() {
     fun stop() {
         manager.stop()
         pollJob?.cancel()
-        _isRunning.value = false
-        _isTalking.value = false
-        _peers.value = emptyList()
+        _isRunning.value = false; _isTalking.value = false; _peers.value = emptyList()
+        WalkieTalkieService.instance = null
+        try { getApplication<Application>().stopService(Intent(getApplication(), WalkieTalkieService::class.java)) } catch (_: Exception) {}
     }
 
     override fun onCleared() {

@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -53,11 +54,10 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO)
         }
     }
-    var showRationale by remember { mutableStateOf(false) }
+    var done by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-        if (required.all { results[it] == true }) onAllGranted() else showRationale = true
-    }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { done = true }
+    LaunchedEffect(done) { if (done) onAllGranted() }
 
     val R = Color(0xFFFF0000); val BG = Color(0xFF0A0A0A); val S = Color(0xFF0D0D0D)
     val W = Color(0xFFEEEEEE); val G = Color(0xFF777777); val B = Color(0xFF1F1F1F)
@@ -81,7 +81,15 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(14.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); done = true; onAllGranted() },
+                shape = RoundedCornerShape(3.dp), color = Color.Transparent, border = BorderStroke(1.dp, G)
+            ) {
+                Text("[ 跳过 ]", fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = G, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
+            }
+
+            Spacer(Modifier.height(8.dp))
             Button(
                 onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); launcher.launch(required) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -89,15 +97,6 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = R, contentColor = W),
             ) {
                 Text("[ 授予权限 ]", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            }
-
-            if (showRationale) {
-                Spacer(Modifier.height(14.dp))
-                Text("请在系统设置中手动授予所有必需权限后重新进入。", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = R, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); launcher.launch(required) }) {
-                    Text("[ 重新请求 ]", fontFamily = FontFamily.Monospace, color = R, fontSize = 13.sp)
-                }
             }
 
             Spacer(Modifier.height(32.dp))

@@ -182,7 +182,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     }
     LaunchedEffect(Unit) { while (true) { delay(500); blink = !blink } }
 
-    Box(modifier = modifier.fillMaxSize().background(Color(0xFF020202)), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.fillMaxSize().background(Color(0xFF000000)), contentAlignment = Alignment.Center) {
         Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("DEAUTHCTRL", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 26.sp, color = Color(0xFFFF0000))
             Text("v1.0  |  哪吒网络安全", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Color(0xFF666666))

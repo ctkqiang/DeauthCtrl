@@ -3,6 +3,7 @@ package xin.ctkqiang.deauthctrl.ui.screens
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.sin
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -42,12 +43,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.ui.input.pointer.pointerInput
 import xin.ctkqiang.deauthctrl.ui.components.*
 import xin.ctkqiang.deauthctrl.viewmodel.*
 import java.text.SimpleDateFormat
@@ -59,8 +56,8 @@ private val Red = Color(0xFFFF0000)
 private val RedDim = Color(0xFF880000)
 private val White = Color(0xFFEEEEEE)
 private val Gray = Color(0xFF777777)
-private val Dark = Color(0xFF0A0A0A)
-private val SurfaceBg = Color(0xFF0D0D0D)
+private val Dark = Color(0xFF000000)
+private val SurfaceBg = Color(0xFF060606)
 private val BorderDim = Color(0xFF1F1F1F)
 private val Mono = FontFamily.Monospace
 
@@ -99,7 +96,8 @@ fun MainScreen(
     wsVm: WebServerViewModel, arpVm: ArpScanViewModel,
     httpVm: HttpClientViewModel, pingVm: PingViewModel,
     blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
-    walkieVm: WalkieTalkieViewModel,
+    walkieVm: WalkieTalkieViewModel, radarVm: RadarViewModel,
+    ftVm: FileTransferViewModel, vaultVm: SecureMediaViewModel,
 ) {
     var screen by remember { mutableStateOf("home") }
     var boot by remember { mutableStateOf(true) }
@@ -113,7 +111,7 @@ fun MainScreen(
                     .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(300)) { -it / 5 })
             }) { current ->
                 when (current) {
-                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, nav = { screen = it })
+                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, nav = { screen = it })
                     "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
                     "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
                     "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
@@ -125,6 +123,9 @@ fun MainScreen(
                     "blescan" -> BleScannerScreen(blescanVm, back = { screen = "home" })
                     "portscan" -> PortScannerScreen(portscanVm, back = { screen = "home" })
                     "walkie" -> WalkieTalkieScreen(walkieVm, back = { screen = "home" })
+                    "radar" -> RadarScreen(radarVm, back = { screen = "home" })
+                    "filetransfer" -> FileTransferScreen(ftVm, back = { screen = "home" })
+                    "vault" -> SecureVaultScreen(vaultVm, back = { screen = "home" })
                     "about" -> AboutDetailScreen(back = { screen = "home" })
                 }
             }
@@ -153,7 +154,7 @@ fun StatusBar() {
     LaunchedEffect(Unit) { while (true) { delay(1500); tick++ } }
 
     Row(
-        Modifier.fillMaxWidth().background(Color(0xFF060606)).border(0.5.dp, BorderDim).padding(horizontal = 14.dp, vertical = 5.dp),
+        Modifier.fillMaxWidth().background(Color(0xFF020202)).border(0.5.dp, BorderDim).padding(horizontal = 14.dp, vertical = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Stat("数据包", (9000 + rng.nextInt(2000) + tick * 41).toString().padStart(4))
@@ -201,7 +202,8 @@ fun HomeScreen(
     wsVm: WebServerViewModel, arpVm: ArpScanViewModel,
     httpVm: HttpClientViewModel, pingVm: PingViewModel,
     blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
-    walkieVm: WalkieTalkieViewModel,
+    walkieVm: WalkieTalkieViewModel, radarVm: RadarViewModel,
+    ftVm: FileTransferViewModel, vaultVm: SecureMediaViewModel,
     nav: (String) -> Unit,
 ) {
     val br by bleVm.isRunning.collectAsState()
@@ -215,6 +217,8 @@ fun HomeScreen(
     val blesr by blescanVm.isRunning.collectAsState()
     val portr by portscanVm.isRunning.collectAsState()
     val walkier by walkieVm.isRunning.collectAsState()
+    val radarr by radarVm.isRunning.collectAsState()
+    val ftr by ftVm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp).verticalScroll(rememberScrollState())) {
@@ -235,6 +239,9 @@ fun HomeScreen(
         AnimatedCard("BLE 扫描", "低功耗蓝牙嗅探 — RSSI 实时图谱", running = blesr, delayMs = 640,onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("blescan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (blesr) blescanVm.stop() else blescanVm.start() })
         AnimatedCard("端口扫描", "nmap 风格 TCP 扫描 — 服务识别", running = portr, delayMs = 720, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("portscan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (portr) portscanVm.stop() else portscanVm.start() })
         AnimatedCard("对讲机", "WiFi 局域网 PTT — 按住说话实时语音", running = walkier, delayMs = 800, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("walkie") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (walkier) walkieVm.stop() else walkieVm.start() })
+        AnimatedCard("设备雷达", "WiFi/BT 设备扫描 — 信号距离定位", running = radarr, delayMs = 880, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("radar") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (radarr) radarVm.stop() else radarVm.start() })
+        AnimatedCard("文件快传", "FileTransfer 风格 — 同 WiFi 局域网传文件", running = ftr, delayMs = 960, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("filetransfer") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (ftr) ftVm.stop() else ftVm.start() })
+        AnimatedCard("加密保险箱", "AES-256 加密相册/摄像/录音 · 密码保护查看", running = false, delayMs = 1040, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("vault") }, onToggle = { })
 
         Spacer(Modifier.height(14.dp))
         AsciiDivider(modifier = Modifier.padding(vertical = 10.dp))
@@ -1198,16 +1205,16 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     val active = talking || isLive
-    val transition = rememberInfiniteTransition()
-    val pulse by transition.animateFloat(0f, 1f, infiniteRepeatable(tween(600), RepeatMode.Restart))
-    val scale by animateFloatAsState(if (active) 1.0f + sin(pulse * PI * 2).toFloat() * 0.03f else 1f, spring())
     val glowAlpha by animateFloatAsState(if (active) 0.85f else 0.12f, tween(300))
 
     Box(Modifier.fillMaxSize().background(Dark)) {
         Column(Modifier.fillMaxSize()) {
             TerminalHeader("WiFi 对讲机", back)
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
-                Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                Surface(modifier = Modifier.fillMaxWidth().clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (running) vm.stop() else vm.start()
+                }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
                     Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
                         Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
                         Text(if (running) "./stop_walkie" else "./start_walkie --channel=default", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
@@ -1259,29 +1266,210 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth().height(100.dp)
-                            .scale(scale)
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        when {
-                                            event.changes.any { it.changedToDown() } -> vm.startTalk()
-                                            event.changes.any { it.changedToUp() } -> vm.stopTalk()
-                                        }
-                                    }
-                                }
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                if (talking || isLive) { vm.stopTalk() } else { vm.startTalk() }
                             }
                             .background(if (active) Red.copy(alpha = glowAlpha) else Red.copy(alpha = 0.15f))
                             .border(2.dp, Red.copy(alpha = if (active) 1f else 0.3f), RoundedCornerShape(4.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            if (active) "●●● 发送中 ●●●" else "按住说话",
+                            if (active) "●●● 发送中 ●●●" else "点击说话",
                             fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold,
                             color = if (active) White else Red,
                         )
                     }
                     Spacer(Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+/** 设备雷达页 — 军用 PPI 雷达视图 + 扫描线 + 设备光点 */
+@Composable
+fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState(); val targets by vm.targets.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val sweep = rememberInfiniteTransition()
+    val sweepAngle by sweep.animateFloat(0f, 360f, infiniteRepeatable(tween(6000, easing = LinearEasing)))
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("设备雷达", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                    Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                    Text(if (running) "stop radar" else "start radar", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                }
+            }
+            if (running) { Spacer(Modifier.height(4.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
+
+            Spacer(Modifier.height(8.dp))
+            Text("$ PPI SCOPE — ${targets.size} contacts", fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
+
+            Box(Modifier.fillMaxWidth().weight(0.6f).background(Color(0xFF000A00)).border(1.5.dp, Color(0xFF003300))) {
+                Canvas(Modifier.fillMaxSize().padding(12.dp)) {
+                    val cx = size.width / 2; val cy = size.height / 2
+                    val maxR = minOf(cx, cy) * 0.85f
+                    val green = Color(0xFF00DD00)
+                    val greenDim = Color(0xFF005500)
+
+                    listOf(0.25f, 0.5f, 0.75f, 1.0f).forEach { s ->
+                        drawCircle(greenDim.copy(alpha = 0.3f), maxR * s, Offset(cx, cy), style = Stroke(0.8f))
+                    }
+                    drawLine(greenDim.copy(alpha = 0.25f), Offset(cx - maxR, cy), Offset(cx + maxR, cy), 1f)
+                    drawLine(greenDim.copy(alpha = 0.25f), Offset(cx, cy - maxR), Offset(cx, cy + maxR), 1f)
+                    for (deg in 0..330 step 30) {
+                        val a = Math.toRadians(deg.toDouble()).toFloat()
+                        drawLine(greenDim.copy(alpha = 0.2f), Offset(cx + maxR * 0.95f * cos(a), cy + maxR * 0.95f * sin(a)), Offset(cx + maxR * cos(a), cy + maxR * sin(a)), 0.5f)
+                    }
+
+                    val sweepRad = Math.toRadians(sweepAngle.toDouble()).toFloat()
+                    for (i in 0..5) {
+                        val trailAngle = sweepRad - i * 0.04f
+                        val trailAlpha = 0.6f - i * 0.1f
+                        drawLine(green.copy(alpha = trailAlpha.coerceAtLeast(0.05f)), Offset(cx, cy), Offset(cx + maxR * cos(trailAngle), cy + maxR * sin(trailAngle)), (2f - i * 0.3f).coerceAtLeast(0.5f))
+                    }
+                    drawCircle(green, 4.dp.toPx(), Offset(cx, cy))
+
+                    if (running) {
+                        targets.forEach { t ->
+                            val r = ((t.distanceM / 100f).coerceIn(0.04f, 1f) * maxR).coerceAtLeast(4f)
+                            val angleRad = Math.toRadians(t.angleDeg.toDouble()).toFloat()
+                            val x = cx + r * cos(angleRad); val y = cy + r * sin(angleRad)
+                            val dotColor = if (t.type == "wifi") Color.Red.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.9f)
+                            drawCircle(dotColor, 5.dp.toPx(), Offset(x, y))
+                        }
+                    }
+                }
+            }
+
+            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(if (running) "SCANNING" else "STANDBY", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
+                Text("RNG:100m", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
+                Text("AZ:${"%.0f".format(sweepAngle)}°", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
+                Text("CNT:${targets.size}", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
+            }
+
+            Spacer(Modifier.height(6.dp))
+            AsciiDivider()
+            Text("$ contacts: ${targets.size}", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                items(targets.sortedByDescending { it.rssi }) { t ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+                        Text(if (t.type == "wifi") "W" else "B", fontFamily = Mono, fontSize = 9.sp, color = if (t.type == "wifi") RedDim else Red, modifier = Modifier.width(14.dp))
+                        Text(t.name.take(18).padEnd(18), fontFamily = Mono, fontSize = 10.sp, color = White)
+                        Text(" ${t.rssi}dBm".padStart(7), fontFamily = Mono, fontSize = 10.sp, color = if (t.rssi > -50) RedDim else if (t.rssi > -70) White else Gray)
+                        Text(" ~${"%.1f".format(t.distanceM)}m".padStart(8), fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                        Text(" ${t.angleDeg.toInt()}°".padStart(5), fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 文件快传页 — FileTransfer 风格局域网文件传输 */
+@Composable
+fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
+    val running by vm.isRunning.collectAsState(); val peers by vm.peers.collectAsState()
+    val received by vm.received.collectAsState(); val error by vm.error.collectAsState()
+    val sent by vm.sentCount.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.sendFile(it) } }
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("文件快传", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+                    Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                    Text(if (running) "./stop_ft" else "./start_ft", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
+                }
+            }
+            error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
+
+            if (running && peers.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                TermPanel("在线设备 (${peers.size})") {
+                    LazyColumn(Modifier.fillMaxWidth().heightIn(max = 120.dp)) {
+                        items(peers) { p -> Text("  ${p.name.take(22).padEnd(22)} ${p.ip}", fontFamily = Mono, fontSize = 11.sp, color = White) }
+                    }
+                }
+            }
+
+            if (running) {
+                Spacer(Modifier.height(8.dp))
+                Surface(modifier = Modifier.fillMaxWidth().clickable { picker.launch(arrayOf("*/*")) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                    Text("$ send file → ${peers.size} peer(s)", fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                }
+                Text("  已发送: $sent 个文件", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                if (peers.isEmpty()) Text("  等待设备接入...", fontFamily = Mono, fontSize = 10.sp, color = RedDim)
+            }
+
+            if (received != null) {
+                Spacer(Modifier.height(8.dp))
+                TermPanel("收到的文件") { Text("  ${received!!.name} (${received!!.length() / 1024}KB)", fontFamily = Mono, fontSize = 11.sp, color = White) }
+            }
+        }
+    }
+}
+
+/** 加密保险箱页 — 密码保护相册/摄像/录音 */
+@Composable
+fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
+    val locked by vm.isLocked.collectAsState(); val entries by vm.entries.collectAsState()
+    val recording by vm.isRecording.collectAsState(); val decrypted by vm.decryptedFile.collectAsState()
+    val error by vm.error.collectAsState(); val pwd by vm.passphrase.collectAsState()
+    val haptic = LocalHapticFeedback.current
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("加密保险箱", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            if (locked) {
+                TermPanel("解锁保险箱") {
+                    TermInput("passphrase", pwd, placeholder = "输入密码") { vm.setPassphrase(it) }
+                    Spacer(Modifier.height(8.dp))
+                    Surface(modifier = Modifier.fillMaxWidth().clickable { vm.unlock() }, shape = RoundedCornerShape(3.dp), color = Red) {
+                        Text("$ unlock", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp), textAlign = TextAlign.Center)
+                    }
+                    error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("photo" to "拍照", "video" to "摄像", "audio" to "录音").forEach { (type, label) ->
+                        Surface(modifier = Modifier.weight(1f).clickable {
+                            when (type) {
+                                "photo" -> { /* camera intent - handled via launcher in real impl */ }
+                                "video" -> { /* video intent */ }
+                                "audio" -> if (recording) vm.stopRecording() else vm.startRecording()
+                            }
+                        }, shape = RoundedCornerShape(3.dp), color = if (recording && type == "audio") Red else Red.copy(alpha = 0.1f), border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
+                            Text(if (recording && type == "audio") "停止" else label, fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                AsciiDivider()
+                Text("$ encrypted files: ${entries.size}", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+                LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                    items(entries) { e ->
+                        Row(Modifier.fillMaxWidth().clickable { vm.decrypt(e) }.padding(vertical = 3.dp)) {
+                            Text(if (e.type == "photo") "IMG" else if (e.type == "video") "VID" else "AUD", fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.width(36.dp))
+                            Text(e.fileName, fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.weight(1f))
+                            Text("${e.sizeBytes / 1024}KB", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                        }
+                    }
+                }
+                if (decrypted != null) {
+                    Spacer(Modifier.height(6.dp))
+                    Text("$ decrypted: ${decrypted!!.name}", fontFamily = Mono, fontSize = 11.sp, color = White)
+                    Surface(modifier = Modifier.fillMaxWidth().clickable { vm.clearDecrypted() }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.1f)) {
+                        Text("$ clear", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                    }
                 }
             }
         }
