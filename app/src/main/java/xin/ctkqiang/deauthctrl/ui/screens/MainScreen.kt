@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -1308,16 +1310,22 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth().height(100.dp)
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                if (talking || isLive) { vm.stopTalk() } else { vm.startTalk() }
+                            .pointerInput(isLive) {
+                                detectTapGestures(
+                                    onPress = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (!isLive) vm.startTalk()
+                                        tryAwaitRelease()
+                                        if (!isLive) vm.stopTalk()
+                                    },
+                                )
                             }
                             .background(if (active) Red.copy(alpha = glowAlpha) else Red.copy(alpha = 0.15f))
                             .border(2.dp, Red.copy(alpha = if (active) 1f else 0.3f), RoundedCornerShape(4.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            if (active) "●●● 发送中 ●●●" else "点击说话",
+                            if (active) "●●● 发送中 ●●●" else "按住说话",
                             fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold,
                             color = if (active) White else Red,
                         )
