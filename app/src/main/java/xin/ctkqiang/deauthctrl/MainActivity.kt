@@ -30,7 +30,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.FileTransferViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
-import xin.ctkqiang.deauthctrl.viewmodel.ReverseShellVM
+import xin.ctkqiang.deauthctrl.viewmodel.RevShellViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.PayloadViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.DirBruteViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.CVESearchViewModel
@@ -95,6 +95,10 @@ class MainActivity : ComponentActivity() {
                     vaultVm = viewModel(),
                     radarVm = viewModel(),
                     ftVm = viewModel(),
+                    revVm = viewModel(),
+                    payloadVm = viewModel(),
+                    bruteVm = viewModel(),
+                    cveVm = viewModel(),
                 )
             }
         }

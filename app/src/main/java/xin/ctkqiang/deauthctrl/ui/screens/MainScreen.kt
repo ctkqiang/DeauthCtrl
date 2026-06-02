@@ -117,6 +117,8 @@ fun MainScreen(
     blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
     walkieVm: WalkieTalkieViewModel, radarVm: RadarViewModel,
     ftVm: FileTransferViewModel, vaultVm: SecureMediaViewModel,
+    revVm: RevShellViewModel, payloadVm: PayloadViewModel,
+    bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
 ) {
     var screen by remember { mutableStateOf("home") }
     var boot by remember { mutableStateOf(true) }
@@ -130,7 +132,7 @@ fun MainScreen(
                     .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(300)) { -it / 5 })
             }) { current ->
                 when (current) {
-                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, nav = { screen = it })
+                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, revVm, payloadVm, bruteVm, cveVm, nav = { screen = it })
                     "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
                     "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
                     "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
@@ -145,6 +147,10 @@ fun MainScreen(
                     "radar" -> RadarScreen(radarVm, back = { screen = "home" })
                     "filetransfer" -> FileTransferScreen(ftVm, back = { screen = "home" })
                     "vault" -> SecureVaultScreen(vaultVm, back = { screen = "home" })
+                    "revshell" -> RevShellScreen(revVm, back = { screen = "home" })
+                    "payload" -> PayloadScreen(payloadVm, back = { screen = "home" })
+                    "brute" -> DirBruteScreen(bruteVm, back = { screen = "home" })
+                    "cve" -> CVEScreen(cveVm, back = { screen = "home" })
                     "about" -> AboutDetailScreen(back = { screen = "home" })
                 }
             }
@@ -223,6 +229,8 @@ fun HomeScreen(
     blescanVm: BleScannerViewModel, portscanVm: PortScannerViewModel,
     walkieVm: WalkieTalkieViewModel, radarVm: RadarViewModel,
     ftVm: FileTransferViewModel, vaultVm: SecureMediaViewModel,
+    revVm: RevShellViewModel, payloadVm: PayloadViewModel,
+    bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
     nav: (String) -> Unit,
 ) {
     val br by bleVm.isRunning.collectAsState()
@@ -261,6 +269,10 @@ fun HomeScreen(
         AnimatedCard("设备雷达", "WiFi/BT 设备扫描 — 信号距离定位", running = radarr, delayMs = 880, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("radar") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (radarr) radarVm.stop() else radarVm.start() })
         AnimatedCard("文件快传", "同 WiFi 局域网传文件 — UDP 发现 + TCP 直连", running = ftr, delayMs = 960, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("filetransfer") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (ftr) ftVm.stop() else ftVm.start() })
         AnimatedCard("加密保险箱", "AES-256 加密相册/摄像/录音 · 密码保护查看", running = false, delayMs = 1040, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("vault") }, onToggle = { })
+        AnimatedCard("Reverse Shell", "nc -lvnp 监听器 — 接收反弹Shell", running = revVm.isRunning.collectAsState().value, delayMs = 1120, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("revshell") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (revVm.isRunning.value) revVm.stop() else revVm.start() })
+        AnimatedCard("Payload 生成", "21 种反弹Shell Payload 一键生成", running = false, delayMs = 1200, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("payload") }, onToggle = { })
+        AnimatedCard("目录爆破", "HTTP 目录枚举 — gobuster 风格", running = bruteVm.isRunning.collectAsState().value, delayMs = 1280, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("brute") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (bruteVm.isRunning.value) bruteVm.stop() else bruteVm.start() })
+        AnimatedCard("CVE 搜索", "漏洞数据库查询 — CVE/Exploit-DB", running = cveVm.isRunning.collectAsState().value, delayMs = 1360, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("cve") }, onToggle = { })
 
         Spacer(Modifier.height(14.dp))
         AsciiDivider(modifier = Modifier.padding(vertical = 10.dp))
@@ -1562,4 +1574,43 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
             }
         }
     }
+}
+
+@Composable fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) { val running by vm.isRunning.collectAsState(); val connected by vm.connected.collectAsState(); val logs by vm.logs.collectAsState(); val port by vm.port.collectAsState(); val cmd by vm.cmd.collectAsState(); val haptic = LocalHapticFeedback.current; val list = rememberLazyListState(); LaunchedEffect(logs.size) { if (logs.isNotEmpty()) list.animateScrollToItem(logs.size - 1) }
+    Column(Modifier.fillMaxSize().background(Dark)) { TerminalHeader("Reverse Shell", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("$ nc -lvnp ", fontFamily = Mono, fontSize = 14.sp, color = Red, fontWeight = FontWeight.Bold); TermInput("port", port) { vm.setPort(it) } }
+            Spacer(Modifier.height(6.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) { Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), horizontalArrangement = Arrangement.Center) { Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White); Text(if (running) "listening on :$port (${if (connected) "CONNECTED" else "waiting"})" else "nc -lvnp $port", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White) } }
+            if (running) { Spacer(Modifier.height(4.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = if (connected) RedDim else Red, trackColor = BorderDim) }
+            AsciiDivider()
+            LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) { items(logs) { l -> Text(if (l.direction == "in") "  < ${l.text}" else if (l.direction == "out") "  > ${l.text}" else "  [*] ${l.text}", fontFamily = Mono, fontSize = 10.sp, color = when (l.direction) { "in" -> Color(0xFF00CC00); "out" -> Red; else -> Gray }) } }
+            if (connected) { TermInput("cmd", cmd, placeholder = "whoami / id / ls -la / cat /etc/passwd") { vm.setCmd(it) }; Spacer(Modifier.height(4.dp)); Surface(modifier = Modifier.fillMaxWidth().clickable { vm.send() }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.15f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) { Text("$ send command", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center) } } } } }
+
+@Composable fun PayloadScreen(vm: PayloadViewModel, back: () -> Unit) { val ip by vm.ip.collectAsState(); val port by vm.port.collectAsState(); val payloads by vm.payloads.collectAsState(); val haptic = LocalHapticFeedback.current
+    Column(Modifier.fillMaxSize().background(Dark)) { TerminalHeader("Payload 生成器", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+            Row(Modifier.fillMaxWidth()) { TermInput("LHOST", ip) { vm.setIp(it) }; Spacer(Modifier.width(8.dp)); TermInput("LPORT", port) { vm.setPort(it) } }
+            Spacer(Modifier.height(8.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); vm.generate() }, shape = RoundedCornerShape(3.dp), color = Red) { Text("$ msfvenom --generate-all", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp), textAlign = TextAlign.Center) }
+            Spacer(Modifier.height(6.dp)); AsciiDivider()
+            Text("$ ${payloads.size} payloads generated for $ip:$port", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) { items(payloads) { p -> TermPanel("${p.name} (${p.lang})") { SelectionContainer { Text(p.template, fontFamily = Mono, fontSize = 9.sp, color = White) } } } } } } }
+
+@Composable fun DirBruteScreen(vm: DirBruteViewModel, back: () -> Unit) { val running by vm.isRunning.collectAsState(); val url by vm.url.collectAsState(); val results by vm.results.collectAsState(); val (done, total) = vm.progress.collectAsState().value; val haptic = LocalHapticFeedback.current
+    Column(Modifier.fillMaxSize().background(Dark)) { TerminalHeader("目录爆破", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) { TermInput("url", url) { vm.setUrl(it) }; Spacer(Modifier.height(8.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (running) vm.stop() else vm.start() }, shape = RoundedCornerShape(3.dp), color = if (running) Color.Transparent else Red, border = BorderStroke(1.5.dp, if (running) Red.copy(alpha = 0.3f) else Red)) { Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), horizontalArrangement = Arrangement.Center) { Text("$ ", fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White); Text(if (running) "stop gobuster" else "gobuster dir -u $url -w /usr/share/wordlists", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White) } }
+            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(progress = { done.toFloat() / maxOf(1, total) }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim); Text("$ $done/$total paths tested  |  found: ${results.size}", fontFamily = Mono, fontSize = 11.sp, color = White) }
+            Spacer(Modifier.height(6.dp)); AsciiDivider()
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) { items(results) { r -> Text("${r.path.padEnd(30)} [${r.status}] ${r.size}b ${r.timeMs}ms", fontFamily = Mono, fontSize = 10.sp, color = if (r.status == 200) Red else if (r.status in 301..303) Color(0xFF00CC00) else White) } } } } }
+
+@Composable fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) { val running by vm.isRunning.collectAsState(); val query by vm.query.collectAsState(); val results by vm.results.collectAsState(); val status by vm.status.collectAsState(); val haptic = LocalHapticFeedback.current
+    Column(Modifier.fillMaxSize().background(Dark)) { TerminalHeader("CVE 搜索", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) { TermInput("query", query, placeholder = "CVE-2024-xxxx / apache / linux kernel") { vm.setQuery(it) }; Spacer(Modifier.height(8.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); vm.search() }, shape = RoundedCornerShape(3.dp), color = Red) { Text("$ searchcve $query", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp), textAlign = TextAlign.Center) }
+            if (running) { Spacer(Modifier.height(6.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
+            if (status.isNotBlank()) Text("$ $status", fontFamily = Mono, fontSize = 11.sp, color = White)
+            Spacer(Modifier.height(6.dp)); AsciiDivider()
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) { items(results) { r -> TermPanel("${r.id}  ${if (r.cvss != null) "CVSS:${"%.1f".format(r.cvss)}" else ""}") { Text(r.description, fontFamily = Mono, fontSize = 10.sp, color = White); Text("  Published: ${r.published}", fontFamily = Mono, fontSize = 9.sp, color = Gray) } } } } }
 }
