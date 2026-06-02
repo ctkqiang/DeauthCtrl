@@ -27,9 +27,9 @@ class ScreenCaptureManager {
         private const val TAG = "ScreenCaptureMgr"
         const val VIDEO_WIDTH = 1280
         const val VIDEO_HEIGHT = 720
-        private const val BITRATE = 2_000_000
+        private const val BITRATE = 4_000_000
         private const val FRAME_RATE = 30
-        private const val I_FRAME_INTERVAL_SEC = 1
+        private const val I_FRAME_INTERVAL_SEC = 2
 
         /** CSD 帧标记：packet[4] = 0x01 表示 CSD，0x00 表示普通帧 */
         const val CSD_MARKER = 0x01.toByte()
@@ -68,6 +68,12 @@ class ScreenCaptureManager {
             setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel31)
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
             setInteger(MediaFormat.KEY_PRIORITY, 0)
+            // 低延迟优化
+            setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
+            setInteger(MediaFormat.KEY_LATENCY, 1)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                setInteger(MediaFormat.KEY_MAX_B_FRAMES, 0)
+            }
         }
 
         val codec = try {

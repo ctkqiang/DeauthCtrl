@@ -46,8 +46,9 @@ class VideoStreamServer {
                     synchronized(this@VideoStreamServer) {
                         clientSocket?.close()
                         clientSocket = s
-                        outStream = BufferedOutputStream(s.getOutputStream())
                         s.tcpNoDelay = true
+                        s.sendBufferSize = 65536
+                        outStream = BufferedOutputStream(s.getOutputStream(), 4096)
                         // 先发送缓存的 CSD 帧
                         for (csd in csdFrames) writeFrame(csd)
                         hasClient = true

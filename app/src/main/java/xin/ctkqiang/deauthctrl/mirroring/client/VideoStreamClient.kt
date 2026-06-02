@@ -35,10 +35,11 @@ class VideoStreamClient {
         _status.value = ClientStatus.CONNECTING
         try {
             val s = Socket(host, port)
-            s.tcpNoDelay = true      // 禁用 Nagle 算法，减少延迟
-            s.soTimeout = 0           // 无限超时 — 由协程取消控制
+            s.tcpNoDelay = true          // 禁用 Nagle
+            s.receiveBufferSize = 65536  // 64KB 接收缓冲
+            s.soTimeout = 0
             socket = s
-            inputStream = BufferedInputStream(s.getInputStream())
+            inputStream = BufferedInputStream(s.getInputStream(), 4096)
             _status.value = ClientStatus.CONNECTED
             Log.d(TAG, "已连接到 $host:$port")
             true

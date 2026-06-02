@@ -71,7 +71,7 @@ class MediaCodecDecoder {
         } else 0
 
         try {
-            val idx = c.dequeueInputBuffer(10_000)
+            val idx = c.dequeueInputBuffer(0) // 非阻塞，低延迟
             if (idx < 0) return
             val buf = c.getInputBuffer(idx) ?: return
             buf.clear()
