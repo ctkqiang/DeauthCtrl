@@ -50,6 +50,9 @@ class FileTransferManager {
     /** 已发现的局域网设备表 */
     val peers = mutableMapOf<String, SendPeer>()
 
+    /** 错误回调 */
+    var onError: ((String) -> Unit)? = null
+
     private var discoverSocket: DatagramSocket? = null
     private var serverSocket: ServerSocket? = null
     private var receiveJob: Job? = null
@@ -59,6 +62,9 @@ class FileTransferManager {
 
     /** 接收文件存储目录 */
     private var receiveDir: File? = null
+
+    /** 获取本机局域网 IPv4 地址 */
+    val localIpAddress: String? get() = fetchLocalIp()
 
     /**
      * 启动文件传输服务
@@ -72,12 +78,13 @@ class FileTransferManager {
     fun start(dir: File): Boolean {
         receiveDir = dir; dir.mkdirs()
         try {
-            discoverSocket = DatagramSocket(9998).apply { broadcast = true; reuseAddress = true }
+            discoverSocket = DatagramSocket(null).apply { bind(InetSocketAddress(9998)); broadcast = true; reuseAddress = true }
             serverSocket = ServerSocket(9997)
             isRunning = true
-            thread { discoverLoop() }; thread { discoverListen() }
+            thread(name = "ft-discover-send") { discoverLoop() }
+            thread(name = "ft-discover-listen") { discoverListen() }
             receiveJob = CoroutineScope(Dispatchers.IO).launch { acceptLoop() }
-        } catch (_: Exception) { stop(); return false }
+        } catch (e: Exception) { stop(); return false }
         return true
     }
 
@@ -138,8 +145,8 @@ class FileTransferManager {
 
     /** UDP 广播本机设备名 + IP（每 2 秒） */
     private fun discoverLoop() {
-        val localIp = getLocalIp() ?: return
-        val msg = "DEAUTHCTRL_FT|$deviceName|$localIp".toByteArray()
+        val myIp = fetchLocalIp() ?: return
+        val msg = "DEAUTHCTRL_FT|$deviceName|$myIp".toByteArray()
         while (isRunning) {
             try { discoverSocket?.send(DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), 9998)) } catch (_: Exception) {}
             Thread.sleep(2000)
@@ -155,7 +162,7 @@ class FileTransferManager {
                 val d = String(p.data, 0, p.length)
                 if (d.startsWith("DEAUTHCTRL_FT|")) {
                     val parts = d.removePrefix("DEAUTHCTRL_FT|").split("|")
-                    if (parts.size >= 2) { val n = parts[0]; val ip = parts[1]; if (ip != getLocalIp()) peers[ip] = SendPeer(ip, n) }
+                    if (parts.size >= 2) { val n = parts[0]; val ip = parts[1]; if (ip != fetchLocalIp()) peers[ip] = SendPeer(ip, n) }
                 }
             } catch (_: Exception) {}
         }
@@ -170,7 +177,7 @@ class FileTransferManager {
     }
 
     /** 获取本机局域网 IPv4 地址 */
-    private fun getLocalIp(): String? {
+    private fun fetchLocalIp(): String? {
         try { NetworkInterface.getNetworkInterfaces().toList().forEach { i -> i.inetAddresses.toList().forEach { a -> if (a is Inet4Address && !a.isLoopbackAddress && a.hostAddress?.startsWith("192.168.") == true) return a.hostAddress } } } catch (_: Exception) {}
         return null
     }

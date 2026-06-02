@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import xin.ctkqiang.deauthctrl.manager.*
 import xin.ctkqiang.deauthctrl.model.*
+import android.content.Intent
 import android.net.Uri
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -240,7 +241,7 @@ fun HomeScreen(
         AnimatedCard("端口扫描", "nmap 风格 TCP 扫描 — 服务识别", running = portr, delayMs = 720, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("portscan") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (portr) portscanVm.stop() else portscanVm.start() })
         AnimatedCard("对讲机", "WiFi 局域网 PTT — 按住说话实时语音", running = walkier, delayMs = 800, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("walkie") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (walkier) walkieVm.stop() else walkieVm.start() })
         AnimatedCard("设备雷达", "WiFi/BT 设备扫描 — 信号距离定位", running = radarr, delayMs = 880, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("radar") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (radarr) radarVm.stop() else radarVm.start() })
-        AnimatedCard("文件快传", "FileTransfer 风格 — 同 WiFi 局域网传文件", running = ftr, delayMs = 960, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("filetransfer") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (ftr) ftVm.stop() else ftVm.start() })
+        AnimatedCard("文件快传", "同 WiFi 局域网传文件 — UDP 发现 + TCP 直连", running = ftr, delayMs = 960, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("filetransfer") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (ftr) ftVm.stop() else ftVm.start() })
         AnimatedCard("加密保险箱", "AES-256 加密相册/摄像/录音 · 密码保护查看", running = false, delayMs = 1040, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("vault") }, onToggle = { })
 
         Spacer(Modifier.height(14.dp))
@@ -1371,14 +1372,15 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
     }
 }
 
-/** 文件快传页 — FileTransfer 风格局域网文件传输 */
+/** 文件快传页 — 局域网文件传输 */
 @Composable
 fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState(); val peers by vm.peers.collectAsState()
     val received by vm.received.collectAsState(); val error by vm.error.collectAsState()
     val sent by vm.sentCount.collectAsState()
     val haptic = LocalHapticFeedback.current
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.sendFile(it) } }
+    var manualIp by remember { mutableStateOf("") }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.sendFile(it, manualIp) } }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("文件快传", back)
@@ -1391,27 +1393,45 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
             }
             error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
 
-            if (running && peers.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                TermPanel("在线设备 (${peers.size})") {
-                    LazyColumn(Modifier.fillMaxWidth().heightIn(max = 120.dp)) {
-                        items(peers) { p -> Text("  ${p.name.take(22).padEnd(22)} ${p.ip}", fontFamily = Mono, fontSize = 11.sp, color = White) }
+            if (running) {
+                Text("  本机: ${vm.localIp}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                if (peers.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    TermPanel("已发现设备 (${peers.size})") {
+                        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 100.dp)) {
+                            items(peers) { p -> Text("  ${p.name.take(22).padEnd(22)} ${p.ip}", fontFamily = Mono, fontSize = 11.sp, color = White) }
+                        }
                     }
                 }
-            }
+                if (peers.isEmpty()) {
+                    Text("  未发现设备 — 输入对方IP手动发送", fontFamily = Mono, fontSize = 10.sp, color = RedDim)
+                    Spacer(Modifier.height(4.dp))
+                    TermInput("target_ip", manualIp, placeholder = "192.168.x.x") { manualIp = it }
+                }
 
-            if (running) {
                 Spacer(Modifier.height(8.dp))
                 Surface(modifier = Modifier.fillMaxWidth().clickable { picker.launch(arrayOf("*/*")) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
-                    Text("$ send file → ${peers.size} peer(s)", fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center)
+                    Text(
+                        if (peers.isNotEmpty()) "$ send file → all peers" else if (manualIp.isNotBlank()) "$ send file → $manualIp" else "$ 选择文件发送",
+                        fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center,
+                    )
                 }
                 Text("  已发送: $sent 个文件", fontFamily = Mono, fontSize = 10.sp, color = Gray)
-                if (peers.isEmpty()) Text("  等待设备接入...", fontFamily = Mono, fontSize = 10.sp, color = RedDim)
             }
 
             if (received != null) {
                 Spacer(Modifier.height(8.dp))
-                TermPanel("收到的文件") { Text("  ${received!!.name} (${received!!.length() / 1024}KB)", fontFamily = Mono, fontSize = 11.sp, color = White) }
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                TermPanel("收到文件") {
+                    Text("  ${received!!.name} (${received!!.length() / 1024}KB)", fontFamily = Mono, fontSize = 11.sp, color = White)
+                    Spacer(Modifier.height(4.dp))
+                    Surface(modifier = Modifier.fillMaxWidth().clickable {
+                        val uri = androidx.core.content.FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", received!!)
+                        ctx.startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "*/*"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
+                    }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.1f), border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
+                        Text("$ 打开文件", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
+                    }
+                }
             }
         }
     }

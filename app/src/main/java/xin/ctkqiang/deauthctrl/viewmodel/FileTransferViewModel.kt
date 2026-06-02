@@ -32,6 +32,7 @@ class FileTransferViewModel(application: Application) : AndroidViewModel(applica
     private val _error = MutableStateFlow<String?>(null); val error: StateFlow<String?> = _error
     private val _sentCount = MutableStateFlow(0); val sentCount: StateFlow<Int> = _sentCount
     private var pollJob: Job? = null
+    val localIp: String get() = manager.localIpAddress ?: "未知"
 
     init {
         manager.deviceName = android.os.Build.MODEL
@@ -40,31 +41,32 @@ class FileTransferViewModel(application: Application) : AndroidViewModel(applica
 
     /** 启动服务 + 每 500ms 轮询设备列表 */
     fun start() {
-        val dir = File(getApplication<Application>().filesDir, "local_send")
+        val dir = File(getApplication<Application>().filesDir, "ft_received")
         if (manager.start(dir)) {
-            _isRunning.value = true
+            _isRunning.value = true; _error.value = null
             pollJob = CoroutineScope(Dispatchers.IO).launch { while (isActive) { _peers.value = manager.peers.values.toList(); delay(500) } }
-        } else _error.value = "启动失败"
+        } else _error.value = "启动失败 — 端口可能被占用"
     }
 
-    /** 发送文件到所有已发现设备 */
-    fun sendFile(uri: Uri) {
+    /** 发送文件到所有已发现设备 + 手动IP */
+    fun sendFile(uri: Uri, manualIp: String = "") {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val ctx = getApplication<Application>()
                 val input = ctx.contentResolver.openInputStream(uri) ?: return@launch
-                val fileName = uri.lastPathSegment ?: "file"
+                val fileName = ctx.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)) else null
+                } ?: uri.lastPathSegment ?: "file"
                 val tmp = File(ctx.cacheDir, fileName)
                 tmp.outputStream().use { input.copyTo(it) }; input.close()
-                val peers = manager.peers.values.toList()
-                if (peers.isEmpty()) { _error.value = "未发现设备 — 确保两台设备都启动了文件快传"; return@launch }
-                var ok = 0; val total = peers.size
-                peers.forEach { p ->
-                    if (manager.sendFile(tmp, p.ip)) ok++
-                }
+
+                val targetIps = if (manualIp.isNotBlank()) listOf(manualIp.trim()) else manager.peers.values.map { it.ip }
+                if (targetIps.isEmpty()) { _error.value = "未发现设备，请输入对方IP"; return@launch }
+                var ok = 0; val total = targetIps.size
+                targetIps.forEach { ip -> if (manager.sendFile(tmp, ip)) ok++ }
                 withContext(Dispatchers.Main) {
                     _sentCount.value = ok
-                    if (ok == 0) _error.value = "发送失败: 0/$total — 检查网络连通"
+                    if (ok == 0) _error.value = "发送失败 — 检查对方IP和网络"
                     else _error.value = null
                 }
                 tmp.delete()
