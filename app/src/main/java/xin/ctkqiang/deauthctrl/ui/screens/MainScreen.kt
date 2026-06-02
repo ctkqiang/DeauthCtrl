@@ -50,6 +50,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import xin.ctkqiang.deauthctrl.ui.components.*
 import xin.ctkqiang.deauthctrl.viewmodel.*
+import xin.ctkqiang.deauthctrl.mirroring.ui.DashboardScreen
+import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
+import xin.ctkqiang.deauthctrl.mirroring.ui.RemoteViewerScreen
+import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
+import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringState
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.delay
@@ -119,9 +124,11 @@ fun MainScreen(
     ftVm: FileTransferViewModel, vaultVm: SecureMediaViewModel,
     revVm: RevShellViewModel, payloadVm: PayloadViewModel,
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
+    mirrorVm: MirroringViewModel,
 ) {
     var screen by remember { mutableStateOf("home") }
     var boot by remember { mutableStateOf(true) }
+    var selectedMirrorDevice by remember { mutableStateOf<MirroringDevice?>(null) }
 
     Box(Modifier.fillMaxSize().background(Dark)) {
         if (boot) {
@@ -132,7 +139,9 @@ fun MainScreen(
                     .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(300)) { -it / 5 })
             }) { current ->
                 when (current) {
-                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, revVm, payloadVm, bruteVm, cveVm, nav = { screen = it })
+                    "home" -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, revVm, payloadVm, bruteVm, cveVm, mirrorVm = mirrorVm, nav = { screen = it })
+                    "mirroring" -> DashboardScreen(vm = mirrorVm, onConnectDevice = { d -> selectedMirrorDevice = d; screen = "remote_viewer" }, back = { screen = "home" })
+                    "remote_viewer" -> RemoteViewerScreen(vm = mirrorVm, device = selectedMirrorDevice, back = { screen = "mirroring" })
                     "ble" -> BleDetailScreen(bleVm, back = { screen = "home" })
                     "btjam" -> BtJamDetailScreen(btVm, back = { screen = "home" })
                     "wifi" -> WifiDetailScreen(wifiVm, back = { screen = "home" })
@@ -231,6 +240,7 @@ fun HomeScreen(
     ftVm: FileTransferViewModel, vaultVm: SecureMediaViewModel,
     revVm: RevShellViewModel, payloadVm: PayloadViewModel,
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
+    mirrorVm: MirroringViewModel,
     nav: (String) -> Unit,
 ) {
     val br by bleVm.isRunning.collectAsState()
@@ -273,6 +283,7 @@ fun HomeScreen(
         AnimatedCard("Payload 生成", "21 种反弹Shell Payload 一键生成", running = false, delayMs = 1200, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("payload") }, onToggle = { })
         AnimatedCard("目录爆破", "HTTP 目录枚举 — gobuster 风格", running = bruteVm.isRunning.collectAsState().value, delayMs = 1280, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("brute") }, onToggle = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (bruteVm.isRunning.value) bruteVm.stop() else bruteVm.start() })
         AnimatedCard("CVE 搜索", "漏洞数据库查询 — CVE/Exploit-DB", running = cveVm.isRunning.collectAsState().value, delayMs = 1360, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("cve") }, onToggle = { })
+        AnimatedCard("屏幕镜像", "局域网 Android 远程屏幕镜像与控制", running = mirrorVm.state.collectAsState().value is MirroringState.HostLive, delayMs = 1440, onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); nav("mirroring") }, onToggle = { })
 
         Spacer(Modifier.height(14.dp))
         AsciiDivider(modifier = Modifier.padding(vertical = 10.dp))

@@ -37,6 +37,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.CVESearchViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.SecureMediaViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WalkieTalkieViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel
+import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
 
 /**
  * DeauthCtrl 主 Activity
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
                         payloadVm = viewModel(),
                         bruteVm = viewModel(),
                         cveVm = viewModel(),
+                        mirrorVm = viewModel(),
                     )
                 } else {
                     PermissionRequestScreen { granted = true }
