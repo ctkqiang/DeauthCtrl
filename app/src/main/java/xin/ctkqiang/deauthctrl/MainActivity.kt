@@ -30,6 +30,10 @@ import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.FileTransferViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.ReverseShellVM
+import xin.ctkqiang.deauthctrl.viewmodel.PayloadViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.DirBruteViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.CVESearchViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.SecureMediaViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WalkieTalkieViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel

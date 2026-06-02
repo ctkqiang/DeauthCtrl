@@ -33,34 +33,34 @@ class SecureMediaViewModel(application: Application) : AndroidViewModel(applicat
     val error: StateFlow<String?> = _error
     private val _passphrase = MutableStateFlow("deauthctrl")
     val passphrase: StateFlow<String> = _passphrase
-    private val _pendingCameraUri = MutableStateFlow<Uri?>(null)
-    val pendingCameraUri: StateFlow<Uri?> = _pendingCameraUri
+    private var pendingFile: File? = null
 
     fun setPassphrase(p: String) { _passphrase.value = p }
 
-    fun createPhotoIntent(): Intent {
-        val ctx = getApplication<Application>()
-        val file = File(ctx.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
-        val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
-        _pendingCameraUri.value = uri
-        return Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { putExtra(MediaStore.EXTRA_OUTPUT, uri); addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+    fun createPhotoIntent(): Intent? {
+        return try {
+            val ctx = getApplication<Application>()
+            val file = File(ctx.cacheDir, "capture_photo.jpg")
+            pendingFile = file
+            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { putExtra(MediaStore.EXTRA_OUTPUT, uri); addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        } catch (e: Exception) { _error.value = "相机: ${e.message}"; null }
     }
 
-    fun createVideoIntent(): Intent {
-        val ctx = getApplication<Application>()
-        val file = File(ctx.cacheDir, "video_${System.currentTimeMillis()}.mp4")
-        val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
-        _pendingCameraUri.value = uri
-        return Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply { putExtra(MediaStore.EXTRA_OUTPUT, uri); addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+    fun createVideoIntent(): Intent? {
+        return try {
+            val ctx = getApplication<Application>()
+            val file = File(ctx.cacheDir, "capture_video.mp4")
+            pendingFile = file
+            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
+            Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply { putExtra(MediaStore.EXTRA_OUTPUT, uri); addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        } catch (e: Exception) { _error.value = "录像: ${e.message}"; null }
     }
 
     fun onMediaCaptured() {
-        val uri = _pendingCameraUri.value ?: return
-        _pendingCameraUri.value = null
-        val ctx = getApplication<Application>()
-        val path = uri.path ?: return
-        val file = File(path)
-        if (!file.exists() || file.length() == 0L) { _error.value = "文件为空"; return }
+        val file = pendingFile ?: return
+        pendingFile = null
+        if (!file.exists() || file.length() == 0L) { _error.value = "未拍摄到内容"; file.delete(); return }
         val type = if (file.name.contains("photo")) "photo" else "video"
         encryptFile(file, type)
     }

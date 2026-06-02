@@ -129,14 +129,14 @@ class RadarManager(private val context: Context) {
      */
     fun start() {
         isRunning = true; targets.clear()
-        context.registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-        context.registerReceiver(btReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
-        btAdapter?.startDiscovery()
+        try { context.registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) } catch (_: Exception) {}
+        try { context.registerReceiver(btReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND)) } catch (_: Exception) {}
+        try { btAdapter?.startDiscovery() } catch (_: Exception) {}
         scanJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
-                wifiManager.startScan()
+                try { wifiManager.startScan() } catch (_: Exception) {}
                 delay(3000)
-                btAdapter?.startDiscovery()
+                try { btAdapter?.startDiscovery() } catch (_: Exception) {}
             }
         }
     }

@@ -1476,6 +1476,12 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
     val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { vm.onMediaCaptured() }
     val videoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { vm.onMediaCaptured() }
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.importFile(it) } }
+    val camPermLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.createPhotoIntent()?.let { photoLauncher.launch(it) }
+    }
+    val micPermLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.startRecording()
+    }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("加密保险箱", back)
@@ -1484,13 +1490,32 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
 
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); photoLauncher.launch(vm.createPhotoIntent()) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                Surface(modifier = Modifier.weight(1f).clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
+                        ctx.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        camPermLauncher.launch(android.Manifest.permission.CAMERA)
+                    } else vm.createPhotoIntent()?.let { photoLauncher.launch(it) }
+                }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
                     Text("拍照", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                 }
-                Surface(modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); videoLauncher.launch(vm.createVideoIntent()) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                Surface(modifier = Modifier.weight(1f).clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
+                        ctx.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        camPermLauncher.launch(android.Manifest.permission.CAMERA)
+                    } else vm.createVideoIntent()?.let { videoLauncher.launch(it) }
+                }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
                     Text("摄像", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                 }
-                Surface(modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (recording) vm.stopRecording() else vm.startRecording() }, shape = RoundedCornerShape(3.dp), color = if (recording) Red else Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = if (recording) 0.8f else 0.4f))) {
+                Surface(modifier = Modifier.weight(1f).clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (recording) { vm.stopRecording(); return@clickable }
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
+                        ctx.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        micPermLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                    } else vm.startRecording()
+                }, shape = RoundedCornerShape(3.dp), color = if (recording) Red else Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = if (recording) 0.8f else 0.4f))) {
                     Text(if (recording) "停止" else "录音", fontFamily = Mono, fontSize = 12.sp, color = if (recording) White else Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                 }
             }
