@@ -40,6 +40,8 @@ import xin.ctkqiang.deauthctrl.manager.*
 import xin.ctkqiang.deauthctrl.model.*
 import android.content.Intent
 import android.net.Uri
+import androidx.core.content.FileProvider
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -61,6 +63,22 @@ private val Dark = Color(0xFF000000)
 private val SurfaceBg = Color(0xFF060606)
 private val BorderDim = Color(0xFF1F1F1F)
 private val Mono = FontFamily.Monospace
+
+/** 可缩放按钮 — 按压时缩放到 95%，弹性回弹 */
+@Composable
+fun AnimatedButton(modifier: Modifier = Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(if (pressed) 0.95f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
+    Box(modifier = modifier.scale(scale).clickable { pressed = true; onClick(); pressed = false }) { content() }
+}
+
+/** 淡入上滑入场容器 */
+@Composable
+fun FadeSlideIn(visible: Boolean = true, delayMs: Int = 0, content: @Composable () -> Unit) {
+    var show by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { if (delayMs > 0) delay(delayMs.toLong()); show = true }
+    AnimatedVisibility(visible = show && visible, enter = fadeIn(tween(350)) + slideInVertically(tween(400)) { it / 4 }) { content() }
+}
 
 /**
  * 应用主路由入口 Composable
@@ -1288,13 +1306,13 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
     }
 }
 
-/** 设备雷达页 — 军用 PPI 雷达视图 + 扫描线 + 设备光点 */
+/** 设备雷达页 — 军用 AN/APG 风格 PPI 雷达 + 磷光轨迹 + 罗盘标尺 + 目标识别 */
 @Composable
 fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState(); val targets by vm.targets.collectAsState()
     val haptic = LocalHapticFeedback.current
     val sweep = rememberInfiniteTransition()
-    val sweepAngle by sweep.animateFloat(0f, 360f, infiniteRepeatable(tween(6000, easing = LinearEasing)))
+    val sweepAngle by sweep.animateFloat(0f, 360f, infiniteRepeatable(tween(8000, easing = LinearEasing)))
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
@@ -1305,66 +1323,75 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
                     Text(if (running) "stop radar" else "start radar", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White)
                 }
             }
-            if (running) { Spacer(Modifier.height(4.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = BorderDim) }
+            if (running) { Spacer(Modifier.height(4.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Color(0xFF003300), trackColor = BorderDim) }
 
-            Spacer(Modifier.height(8.dp))
-            Text("$ PPI SCOPE — ${targets.size} contacts", fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
-
-            Box(Modifier.fillMaxWidth().weight(0.6f).background(Color(0xFF000A00)).border(1.5.dp, Color(0xFF003300))) {
-                Canvas(Modifier.fillMaxSize().padding(12.dp)) {
+            Spacer(Modifier.height(6.dp))
+            val scopeGreen = Color(0xFF00FF00)
+            val scopeGreenDim = Color(0xFF004400)
+            val amber = Color(0xFFFF8800)
+            Box(Modifier.fillMaxWidth().weight(0.65f).background(Color(0xFF001100)).border(2.dp, Color(0xFF003300), RoundedCornerShape(2.dp))) {
+                Canvas(Modifier.fillMaxSize().padding(16.dp)) {
                     val cx = size.width / 2; val cy = size.height / 2
-                    val maxR = minOf(cx, cy) * 0.85f
-                    val green = Color(0xFF00DD00)
-                    val greenDim = Color(0xFF005500)
+                    val maxR = minOf(cx, cy) * 0.82f
+                    val g = scopeGreen
 
-                    listOf(0.25f, 0.5f, 0.75f, 1.0f).forEach { s ->
-                        drawCircle(greenDim.copy(alpha = 0.3f), maxR * s, Offset(cx, cy), style = Stroke(0.8f))
+                    drawCircle(Color(0xFF001800), maxR, Offset(cx, cy))
+
+                    listOf(0.25f, 0.5f, 0.75f, 1.0f).forEachIndexed { i, s ->
+                        val r = maxR * s
+                        drawCircle(g.copy(alpha = 0.25f), r, Offset(cx, cy), style = Stroke(if (i == 3) 1.2f else 0.6f))
                     }
-                    drawLine(greenDim.copy(alpha = 0.25f), Offset(cx - maxR, cy), Offset(cx + maxR, cy), 1f)
-                    drawLine(greenDim.copy(alpha = 0.25f), Offset(cx, cy - maxR), Offset(cx, cy + maxR), 1f)
-                    for (deg in 0..330 step 30) {
+                    drawLine(g.copy(alpha = 0.2f), Offset(cx - maxR, cy), Offset(cx + maxR, cy), 0.6f)
+                    drawLine(g.copy(alpha = 0.2f), Offset(cx, cy - maxR), Offset(cx, cy + maxR), 0.6f)
+                    for (deg in 0..350 step 10) {
                         val a = Math.toRadians(deg.toDouble()).toFloat()
-                        drawLine(greenDim.copy(alpha = 0.2f), Offset(cx + maxR * 0.95f * cos(a), cy + maxR * 0.95f * sin(a)), Offset(cx + maxR * cos(a), cy + maxR * sin(a)), 0.5f)
+                        val isMajor = deg % 30 == 0
+                        val len = if (isMajor) 0.92f else 0.96f
+                        drawLine(g.copy(alpha = if (isMajor) 0.35f else 0.15f), Offset(cx + maxR * len * cos(a), cy + maxR * len * sin(a)), Offset(cx + maxR * cos(a), cy + maxR * sin(a)), if (isMajor) 0.7f else 0.3f)
                     }
 
                     val sweepRad = Math.toRadians(sweepAngle.toDouble()).toFloat()
-                    for (i in 0..5) {
-                        val trailAngle = sweepRad - i * 0.04f
-                        val trailAlpha = 0.6f - i * 0.1f
-                        drawLine(green.copy(alpha = trailAlpha.coerceAtLeast(0.05f)), Offset(cx, cy), Offset(cx + maxR * cos(trailAngle), cy + maxR * sin(trailAngle)), (2f - i * 0.3f).coerceAtLeast(0.5f))
+                    for (i in 0..8) {
+                        val trailAngle = sweepRad - i * 0.025f
+                        val trailAlpha = 0.55f - i * 0.06f
+                        drawLine(g.copy(alpha = trailAlpha.coerceAtLeast(0.02f)), Offset(cx, cy), Offset(cx + maxR * cos(trailAngle), cy + maxR * sin(trailAngle)), (2.5f - i * 0.25f).coerceAtLeast(0.3f))
                     }
-                    drawCircle(green, 4.dp.toPx(), Offset(cx, cy))
+                    drawCircle(g.copy(alpha = 0.95f), 5.dp.toPx(), Offset(cx, cy))
 
-                    if (running) {
+                    if (running || targets.isNotEmpty()) {
                         targets.forEach { t ->
-                            val r = ((t.distanceM / 100f).coerceIn(0.04f, 1f) * maxR).coerceAtLeast(4f)
+                            val r = ((t.distanceM / 100f).coerceIn(0.03f, 1f) * maxR).coerceAtLeast(3f)
                             val angleRad = Math.toRadians(t.angleDeg.toDouble()).toFloat()
                             val x = cx + r * cos(angleRad); val y = cy + r * sin(angleRad)
-                            val dotColor = if (t.type == "wifi") Color.Red.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.9f)
-                            drawCircle(dotColor, 5.dp.toPx(), Offset(x, y))
+                            val isWifi = t.type == "wifi"
+                            val dotColor = if (isWifi) Color.Red else Color.White
+                            drawCircle(dotColor.copy(alpha = 0.15f), 10.dp.toPx(), Offset(x, y))
+                            drawCircle(dotColor.copy(alpha = 0.4f), 6.dp.toPx(), Offset(x, y))
+                            drawCircle(dotColor.copy(alpha = 0.9f), 3.5.dp.toPx(), Offset(x, y))
                         }
                     }
                 }
             }
 
-            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(if (running) "SCANNING" else "STANDBY", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
-                Text("RNG:100m", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
-                Text("AZ:${"%.0f".format(sweepAngle)}°", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
-                Text("CNT:${targets.size}", fontFamily = Mono, fontSize = 9.sp, color = Color(0xFF00CC00))
+            Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp).background(Color(0xFF001100)).border(0.5.dp, Color(0xFF003300)).padding(horizontal = 8.dp, vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(if (running) "MODE: ACTIVE" else "MODE: STBY", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
+                Text("GAIN: AUTO", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
+                Text("RNG: 100m", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
+                Text("AZ: ${"%.0f".format(sweepAngle)}°", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
+                Text("TRK: ${targets.size}", fontFamily = Mono, fontSize = 8.sp, color = amber)
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             AsciiDivider()
-            Text("$ contacts: ${targets.size}", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+            Text("$ TRACK LIST — ${targets.size} contacts", fontFamily = Mono, fontSize = 10.sp, color = Red, fontWeight = FontWeight.Bold)
             LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                 items(targets.sortedByDescending { it.rssi }) { t ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
-                        Text(if (t.type == "wifi") "W" else "B", fontFamily = Mono, fontSize = 9.sp, color = if (t.type == "wifi") RedDim else Red, modifier = Modifier.width(14.dp))
-                        Text(t.name.take(18).padEnd(18), fontFamily = Mono, fontSize = 10.sp, color = White)
-                        Text(" ${t.rssi}dBm".padStart(7), fontFamily = Mono, fontSize = 10.sp, color = if (t.rssi > -50) RedDim else if (t.rssi > -70) White else Gray)
-                        Text(" ~${"%.1f".format(t.distanceM)}m".padStart(8), fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                        Text(" ${t.angleDeg.toInt()}°".padStart(5), fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                        Text(if (t.type == "wifi") "WIFI" else " BLE", fontFamily = Mono, fontSize = 8.sp, color = if (t.type == "wifi") Red else Color.White, modifier = Modifier.width(36.dp))
+                        Text(t.name.take(16).padEnd(16), fontFamily = Mono, fontSize = 10.sp, color = White)
+                        Text(" ${t.rssi}dBm".padStart(7), fontFamily = Mono, fontSize = 9.sp, color = if (t.rssi > -50) Red else if (t.rssi > -70) Color(0xFF00CC00) else Gray)
+                        Text(" ${"%.1f".format(t.distanceM)}m".padStart(8), fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                        Text(" BRG${t.angleDeg.toInt().toString().padStart(3)}°".padStart(8), fontFamily = Mono, fontSize = 9.sp, color = scopeGreenDim)
                     }
                 }
             }
@@ -1437,58 +1464,74 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
     }
 }
 
-/** 加密保险箱页 — 密码保护相册/摄像/录音 */
+/** 加密保险箱 — 拍摄/录音自动加密，输入密码查看解密内容 */
 @Composable
 fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
-    val locked by vm.isLocked.collectAsState(); val entries by vm.entries.collectAsState()
-    val recording by vm.isRecording.collectAsState(); val decrypted by vm.decryptedFile.collectAsState()
-    val error by vm.error.collectAsState(); val pwd by vm.passphrase.collectAsState()
+    val entries by vm.entries.collectAsState(); val recording by vm.isRecording.collectAsState()
+    val decrypted by vm.decryptedFile.collectAsState(); val error by vm.error.collectAsState()
+    val pwd by vm.passphrase.collectAsState()
     val haptic = LocalHapticFeedback.current
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+
+    val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { vm.onMediaCaptured() }
+    val videoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { vm.onMediaCaptured() }
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.importFile(it) } }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("加密保险箱", back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
-            if (locked) {
-                TermPanel("解锁保险箱") {
-                    TermInput("passphrase", pwd, placeholder = "输入密码") { vm.setPassphrase(it) }
-                    Spacer(Modifier.height(8.dp))
-                    Surface(modifier = Modifier.fillMaxWidth().clickable { vm.unlock() }, shape = RoundedCornerShape(3.dp), color = Red) {
-                        Text("$ unlock", fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp), textAlign = TextAlign.Center)
-                    }
-                    error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
-                }
-            } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf("photo" to "拍照", "video" to "摄像", "audio" to "录音").forEach { (type, label) ->
-                        Surface(modifier = Modifier.weight(1f).clickable {
-                            when (type) {
-                                "photo" -> { /* camera intent - handled via launcher in real impl */ }
-                                "video" -> { /* video intent */ }
-                                "audio" -> if (recording) vm.stopRecording() else vm.startRecording()
-                            }
-                        }, shape = RoundedCornerShape(3.dp), color = if (recording && type == "audio") Red else Red.copy(alpha = 0.1f), border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
-                            Text(if (recording && type == "audio") "停止" else label, fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
-                        }
-                    }
-                }
+            TermInput("passphrase", pwd, placeholder = "加密/解密密码") { vm.setPassphrase(it) }
 
-                Spacer(Modifier.height(8.dp))
-                AsciiDivider()
-                Text("$ encrypted files: ${entries.size}", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-                LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-                    items(entries) { e ->
-                        Row(Modifier.fillMaxWidth().clickable { vm.decrypt(e) }.padding(vertical = 3.dp)) {
-                            Text(if (e.type == "photo") "IMG" else if (e.type == "video") "VID" else "AUD", fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.width(36.dp))
-                            Text(e.fileName, fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.weight(1f))
-                            Text("${e.sizeBytes / 1024}KB", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Surface(modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); photoLauncher.launch(vm.createPhotoIntent()) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                    Text("拍照", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                }
+                Surface(modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); videoLauncher.launch(vm.createVideoIntent()) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                    Text("摄像", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                }
+                Surface(modifier = Modifier.weight(1f).clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); if (recording) vm.stopRecording() else vm.startRecording() }, shape = RoundedCornerShape(3.dp), color = if (recording) Red else Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = if (recording) 0.8f else 0.4f))) {
+                    Text(if (recording) "停止" else "录音", fontFamily = Mono, fontSize = 12.sp, color = if (recording) White else Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Surface(modifier = Modifier.fillMaxWidth().clickable { filePicker.launch(arrayOf("*/*")) }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.08f), border = BorderStroke(1.dp, Red.copy(alpha = 0.25f))) {
+                Text("$ 导入文件加密", fontFamily = Mono, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
+            }
+
+            error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red) }
+            Spacer(Modifier.height(6.dp))
+            AsciiDivider()
+            Text("$ vault files: ${entries.size}", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
+
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                items(entries) { e ->
+                    Row(Modifier.fillMaxWidth().clickable { vm.decrypt(e) }.padding(vertical = 4.dp, horizontal = 4.dp)) {
+                        Text(if (e.type == "photo") "[IMG]" else if (e.type == "video") "[VID]" else "[AUD]", fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.width(48.dp))
+                        Column(Modifier.weight(1f)) { Text(e.fileName, fontFamily = Mono, fontSize = 11.sp, color = White); Text("  ${e.sizeBytes / 1024}KB", fontFamily = Mono, fontSize = 9.sp, color = Gray) }
+                        Surface(modifier = Modifier.clickable { vm.delete(e) }, shape = RoundedCornerShape(2.dp), color = Color.Transparent, border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
+                            Text("删除", fontFamily = Mono, fontSize = 9.sp, color = Red, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
                         }
                     }
                 }
-                if (decrypted != null) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("$ decrypted: ${decrypted!!.name}", fontFamily = Mono, fontSize = 11.sp, color = White)
-                    Surface(modifier = Modifier.fillMaxWidth().clickable { vm.clearDecrypted() }, shape = RoundedCornerShape(3.dp), color = Red.copy(alpha = 0.1f)) {
-                        Text("$ clear", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+            }
+
+            if (decrypted != null) {
+                Spacer(Modifier.height(6.dp))
+                TermPanel("解密成功") {
+                    Text("  ${decrypted!!.name} (${decrypted!!.length() / 1024}KB)", fontFamily = Mono, fontSize = 12.sp, color = White)
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(modifier = Modifier.weight(1f).clickable {
+                            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", decrypted!!)
+                            ctx.startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "*/*"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
+                        }, shape = RoundedCornerShape(3.dp), color = Red, border = BorderStroke(1.dp, Red)) {
+                            Text("打开", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
+                        Surface(modifier = Modifier.weight(1f).clickable { vm.clearDecrypted() }, shape = RoundedCornerShape(3.dp), color = Color.Transparent, border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
+                            Text("清除", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
                     }
                 }
             }
