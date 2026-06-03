@@ -15,6 +15,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -369,6 +370,8 @@ fun AnimatedCard(name: String, desc: String, running: Boolean, delayMs: Long, on
 @Composable
 fun TerminalHeader(title: String, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
+    val cursorBlink = rememberInfiniteTransition()
+    val cursorAlpha by cursorBlink.animateFloat(0f, 1f, infiniteRepeatable(tween(600), RepeatMode.Reverse))
     Column {
         Row(Modifier.fillMaxWidth().statusBarsPadding().background(SurfaceBg).border(0.5.dp, BorderDim).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("[ 返回 ]", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); back() })
@@ -376,6 +379,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
             Text(title, fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White)
             Spacer(Modifier.weight(1f))
             Text("root@deauth:~#", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+            Text("_", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red.copy(alpha = cursorAlpha))
         }
     }
 }
@@ -1250,6 +1254,11 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
 
     val active = talking || isLive
     val glowAlpha by animateFloatAsState(if (active) 0.85f else 0.12f, tween(300))
+    // PTT 呼吸脉冲：说话时按钮有节奏地明暗交替
+    val breathPulse = rememberInfiniteTransition()
+    val breathAlpha by breathPulse.animateFloat(
+        0.4f, 0.9f, infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+    )
 
     Box(Modifier.fillMaxSize().background(Dark)) {
         Column(Modifier.fillMaxSize()) {
@@ -1270,20 +1279,27 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     TermPanel("在线设备 (${peers.size})") {
                         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 140.dp)) {
-                            items(peers) { p ->
-                                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp).background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent).padding(horizontal = 4.dp, vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    if (p.isTalking) {
-                                        Text("⬤ ", fontFamily = Mono, fontSize = 10.sp, color = Red)
-                                    } else {
-                                        Text("○ ", fontFamily = Mono, fontSize = 10.sp, color = Gray)
-                                    }
-                                    Text(p.name.take(20).padEnd(20), fontFamily = Mono, fontSize = 11.sp, color = if (p.isTalking) Red else White, fontWeight = if (p.isTalking) FontWeight.Bold else FontWeight.Normal)
-                                    Text(p.ip, fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                            itemsIndexed(peers) { i, p ->
+                                var visible by remember { mutableStateOf(false) }
+                                LaunchedEffect(Unit) { delay(i * 80L); visible = true }
+                                AnimatedVisibility(
+                                    visible = visible,
+                                    enter = fadeIn(tween(300)) + slideInHorizontally(tween(350)) { it / 3 },
+                                ) {
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp).background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent).padding(horizontal = 4.dp, vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        if (p.isTalking) {
+                                            Text("⬤ ", fontFamily = Mono, fontSize = 10.sp, color = Red)
+                                        } else {
+                                            Text("○ ", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                        }
+                                        Text(p.name.take(20).padEnd(20), fontFamily = Mono, fontSize = 11.sp, color = if (p.isTalking) Red else White, fontWeight = if (p.isTalking) FontWeight.Bold else FontWeight.Normal)
+                                        Text(p.ip, fontFamily = Mono, fontSize = 10.sp, color = Gray)
                                     if (p.isTalking) Text("  说话中", fontFamily = Mono, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
                     }
+                }
                 }
 
                 Spacer(Modifier.weight(1f))
@@ -1320,7 +1336,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                                     },
                                 )
                             }
-                            .background(if (active) Red.copy(alpha = glowAlpha) else Red.copy(alpha = 0.15f))
+                            .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.15f))
                             .border(2.dp, Red.copy(alpha = if (active) 1f else 0.3f), RoundedCornerShape(4.dp)),
                         contentAlignment = Alignment.Center,
                     ) {

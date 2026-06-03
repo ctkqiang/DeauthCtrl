@@ -3,12 +3,17 @@ package xin.ctkqiang.deauthctrl.mirroring.ui
 import android.media.projection.MediaProjectionManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,10 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
 
 /** 屏幕镜像仪表板 */
@@ -98,7 +107,15 @@ fun DashboardScreen(
 
             if (state is MirroringState.HostLive) {
                 Spacer(Modifier.height(6.dp))
-                Text("● 正在广播 — ${vm.hostVideoPort}:10087", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Gray)
+                val hostPulse = rememberInfiniteTransition()
+                val hostDotAlpha by hostPulse.animateFloat(0.3f, 1f, infiniteRepeatable(tween(1000), RepeatMode.Reverse))
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(color = Color(0xFF00CC00).copy(alpha = hostDotAlpha))) { append("● ") }
+                        withStyle(SpanStyle(color = Gray)) { append("正在广播 — ${vm.hostVideoPort}:10087") }
+                    },
+                    fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -131,11 +148,18 @@ fun DashboardScreen(
                 }
             } else {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    items(devices) { device ->
-                        DeviceRow(device) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            vm.connectToDevice(device)
-                            onConnectDevice(device)
+                    itemsIndexed(devices) { i, device ->
+                        var visible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) { delay(i * 60L); visible = true }
+                        AnimatedVisibility(
+                            visible = visible,
+                            enter = fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 4 },
+                        ) {
+                            DeviceRow(device) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                vm.connectToDevice(device)
+                                onConnectDevice(device)
+                            }
                         }
                     }
                 }
