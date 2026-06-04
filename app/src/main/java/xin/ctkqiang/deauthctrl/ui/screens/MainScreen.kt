@@ -63,14 +63,7 @@ import java.util.*
 import kotlinx.coroutines.delay
 import kotlin.random.Random as KRandom
 
-private val Red = Color(0xFFFF0000)
-private val RedDim = Color(0xFF880000)
-private val White = Color(0xFFEEEEEE)
-private val Gray = Color(0xFF777777)
-private val Dark = Color(0xFF000000)
-private val SurfaceBg = Color(0xFF060606)
-private val BorderDim = Color(0xFF1F1F1F)
-private val Mono = FontFamily.Monospace
+// 颜色常量和共享组件已提取至 ui.components.TerminalKit
 
 /** 可缩放按钮 — 按压时缩放到 95%，弹性回弹 */
 @Composable

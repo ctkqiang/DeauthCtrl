@@ -4,6 +4,7 @@ import android.graphics.SurfaceTexture
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
+import android.content.pm.ActivityInfo
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.*
@@ -54,18 +55,24 @@ fun RemoteViewerScreen(
     val view = LocalView.current
     val isLive = state is MirroringState.ClientLive
 
-    // 全屏沉浸 — 隐藏状态栏和导航栏
+    // 全屏沉浸 + 强制横屏
     DisposableEffect(Unit) {
-        val window = (context as ComponentActivity).window
+        val activity = context as ComponentActivity
+        val window = activity.window
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val ctrl = WindowCompat.getInsetsController(window, view)
         ctrl.hide(WindowInsetsCompat.Type.systemBars())
         ctrl.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        // 锁定横屏
+        val prevOrientation = activity.requestedOrientation
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         onDispose {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             WindowCompat.setDecorFitsSystemWindows(window, true)
             ctrl.show(WindowInsetsCompat.Type.systemBars())
+            // 恢复之前的屏幕方向
+            activity.requestedOrientation = prevOrientation
         }
     }
 
