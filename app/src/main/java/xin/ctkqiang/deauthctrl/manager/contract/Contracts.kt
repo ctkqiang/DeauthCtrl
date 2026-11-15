@@ -2,6 +2,7 @@ package xin.ctkqiang.deauthctrl.manager.contract
 
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.manager.WalkiePeer
+import xin.ctkqiang.deauthctrl.model.BlePayloadProfile
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -40,7 +41,7 @@ interface IBleSpamManager {
     fun startSpam()
     fun stopSpam()
     fun getProfiles(): List<*>
-    fun getCurrentProfile(): *
+    fun getCurrentProfile(): BlePayloadProfile
     fun setProfile(profile: Any)
     fun getCurrentInterval(): Long
     fun setInterval(ms: Long)

@@ -1,10 +1,16 @@
 package xin.ctkqiang.deauthctrl.manager
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.le.BluetoothLeScanner
+import android.Manifest
+import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -59,22 +65,32 @@ data class BleDevice(
  */
 class BleScannerManager(private val context: Context) {
 
-    /** 系统蓝牙适配器，可能为 null（设备不支持蓝牙） */
-    private val adapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-
-    /** BLE 扫描器实例，从 BluetoothAdapter 获取 */
-    private var scanner: BluetoothLeScanner? = adapter?.bluetoothLeScanner
-
     /**
      * 扫描运行状态
      *
-     * @Volatile 确保 stop() 在 UI 线程调用后，扫描回调能感知状态变更
+     * @Volatile 确保 stop() 在 UI 线程调用后，扫描回调能感知状态变更。
+     * 只有 startScan() 真的被系统接受之后才置为 true —— 提前置 true 会让一次彻底
+     * 失败的启动在界面上表现成"正在扫描但一台设备都没有"，这正是最难排查的形态。
      */
     @Volatile var isRunning = false
         private set
 
+    /**
+     * 异步失败原因
+     *
+     * onScanFailed 在 Binder 线程回调，不能直接改 UI 状态，用 StateFlow 交给
+     * ViewModel 轮询取用。为 null 表示当前没有失败。
+     */
+    private val _failure = MutableStateFlow<String?>(null)
+    val failure: StateFlow<String?> = _failure
+
     /** 已发现设备表，Key 为 MAC 地址，ConcurrentHashMap 保证多线程读写安全 */
     val devices = ConcurrentHashMap<String, BleDevice>()
+
+    /** 扫描参数：界面要看实时 RSSI 波动，必须用 LOW_LATENCY；默认的 LOW_POWER 上报太稀 */
+    private val scanSettings: ScanSettings = ScanSettings.Builder()
+        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        .build()
 
     /**
      * BLE 扫描回调
@@ -134,20 +150,52 @@ class BleScannerManager(private val context: Context) {
             }
         }
 
-        /** BLE 扫描失败回调（权限不足、硬件错误、扫描器忙等） */
-        override fun onScanFailed(errorCode: Int) { isRunning = false }
+        /**
+         * BLE 扫描失败回调
+         *
+         * errorCode 是唯一能定位原因的线索，必须翻译成可读文本送到界面上；
+         * 同时把 isRunning 落回 false，否则界面会一直停在"运行中"。
+         */
+        override fun onScanFailed(errorCode: Int) {
+            isRunning = false
+            _failure.value = describeScanFailure(errorCode)
+        }
     }
 
     /**
      * 启动 BLE 扫描
      *
-     * 清空已有设备列表，调用 BluetoothLeScanner.startScan() 开始监听广播包。
-     * 在非 root 设备上，Android 系统会将扫描结果节流（throttle）以节省电量。
+     * 启动前依次校验：适配器存在 → 蓝牙已开启 → 扫描权限已授予 → 系统给出扫描器。
+     * 任何一步不通过都会返回可读原因，而**不会**把 isRunning 置成 true。
+     *
+     * 扫描器每次都在这里重新获取，不做构造期缓存：蓝牙关闭时
+     * BluetoothAdapter.bluetoothLeScanner 会返回 null，若在构造期把它存进字段，
+     * 这个 null 就会跟随整个进程生命周期 —— 用户之后把蓝牙打开也不会恢复。
+     *
+     * @return null 表示已成功交给系统扫描；非 null 为失败原因（同时写入 [failure]）
      */
-    fun start() {
+    fun start(): String? {
+        if (isRunning) return null
         devices.clear()
-        isRunning = true
-        scanner?.startScan(scanCallback)
+        _failure.value = null
+
+        // 走 BluetoothManager 取适配器；BluetoothAdapter.getDefaultAdapter() 已弃用
+        val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter
+            ?: return fail("此设备没有蓝牙适配器")
+        if (!adapter.isEnabled) return fail("蓝牙未开启，请先在系统设置中打开蓝牙")
+        if (!hasScanPermission()) return fail("缺少蓝牙扫描权限，请在系统设置中授予「附近的设备」权限")
+
+        val leScanner = adapter.bluetoothLeScanner
+            ?: return fail("系统未提供 BLE 扫描器，请关闭蓝牙后重新打开再试")
+
+        return try {
+            leScanner.startScan(null, scanSettings, scanCallback)
+            isRunning = true
+            null
+        } catch (e: SecurityException) {
+            // SecurityException 的 message 经常是 null，直接透传会让界面显示一条空错误
+            fail("扫描权限被系统拒绝：${e.message ?: "请在系统设置中授予「附近的设备」权限"}")
+        }
     }
 
     /**
@@ -158,7 +206,51 @@ class BleScannerManager(private val context: Context) {
      */
     fun stop() {
         isRunning = false
-        try { scanner?.stopScan(scanCallback) } catch (_: Exception) {}
+        try {
+            context.getSystemService(BluetoothManager::class.java)?.adapter?.bluetoothLeScanner?.stopScan(scanCallback)
+        } catch (_: Exception) {
+        }
+    }
+
+    // ── 内部辅助 ────────────────────────────────────────────────────────────
+
+    /** 记录失败原因并返回它，让调用处可以 `return fail(...)` 一行收尾 */
+    private fun fail(reason: String): String {
+        isRunning = false
+        _failure.value = reason
+        return reason
+    }
+
+    /**
+     * 扫描权限是否已授予
+     *
+     * Android 12 起蓝牙扫描有独立的 BLUETOOTH_SCAN；12 以下没有这条权限，
+     * 由位置权限代偿（manifest 里的 neverForLocation 就是配套声明）。
+     */
+    private fun hasScanPermission(): Boolean {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Manifest.permission.BLUETOOTH_SCAN
+        } else {
+            Manifest.permission.ACCESS_FINE_LOCATION
+        }
+        return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /**
+     * 把 ScanCallback 的错误码翻译成可读原因
+     *
+     * 这些错误码原先被整条丢弃，导致扫描失败时界面一片空白、无从排查。
+     * 其中 SCAN_FAILED_SCANNING_TOO_FREQUENTLY 在 Android 8.1+ 上很常见：
+     * 30 秒内反复启停扫描超过 5 次就会被系统拒绝。
+     */
+    private fun describeScanFailure(errorCode: Int): String = when (errorCode) {
+        ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "扫描已在进行中，请先停止再重试"
+        ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "扫描回调注册失败，请关闭蓝牙再重新打开"
+        ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "系统内部错误，请关闭蓝牙再重新打开"
+        ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "此设备不支持 BLE 扫描"
+        ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> "蓝牙硬件资源不足，请关闭其他扫描类应用后重试"
+        ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> "扫描过于频繁，请等待约 30 秒后重试"
+        else -> "扫描失败（系统错误码 $errorCode）"
     }
 
     /**

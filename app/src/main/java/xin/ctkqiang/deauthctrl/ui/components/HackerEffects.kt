@@ -1,5 +1,12 @@
 package xin.ctkqiang.deauthctrl.ui.components
 
+import android.Manifest
+import android.app.ActivityManager
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -15,13 +22,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
@@ -144,41 +154,159 @@ fun AsciiDivider(modifier: Modifier = Modifier) {
     Text("─".repeat(48), fontFamily = FontFamily.Monospace, fontSize = 8.sp, color = Color(0xFFFF0000).copy(alpha = 0.3f), modifier = modifier)
 }
 
+// ─── 启动自检 ────────────────────────────────────────────────────────────────
+
+/** 自检结论等级 */
+private enum class CheckLevel { OK, WARN, FAIL }
+
 /**
- * 系统启动序列动画
+ * 一项启动自检结果
  *
- * 模拟 Hollywood/Mr. Robot 风格的终端启动画面。
- * 以打字机效果逐行显示 8 个系统初始化步骤，每行带有 "[ OK ]" 确认标记。
+ * @param label 检查项名称
+ * @param detail 实测到的具体值或结论 —— 不用 "OK" 这类无信息量的词填充
+ * @param level 结论等级，决定右侧标记与配色
+ */
+private class StartupCheck(val label: String, val detail: String, val level: CheckLevel)
+
+/** 自检项逐条浮现的间隔（毫秒） */
+private const val CHECK_REVEAL_INTERVAL_MS = 150L
+
+/** 自检全部显示完毕后停留多久再进主界面 */
+private const val DONE_HOLD_MS = 450L
+
+/** 可用内存低于总量的该比例时给出警告 */
+private const val LOW_MEMORY_RATIO = 0.15
+
+/** 可用存储低于 100MB 时给出警告（加密保险箱需要落盘空间） */
+private const val LOW_STORAGE_BYTES = 100L * 1024L * 1024L
+
+/** 取当前活跃网络的接口名；无活动网络或系统未提供时返回 null */
+private fun activeInterfaceName(connectivity: ConnectivityManager?): String? {
+    val manager = connectivity ?: return null
+    val network = manager.activeNetwork ?: return null
+    return runCatching { manager.getLinkProperties(network)?.interfaceName }.getOrNull()
+}
+
+/** 字节 → "1.8GB" */
+private fun formatGigabytes(bytes: Long): String =
+    String.format(Locale.US, "%.1fGB", bytes.toDouble() / (1024.0 * 1024.0 * 1024.0))
+
+/**
+ * 采集真实的启动自检结果
  *
- * ## 动画时间线
- * 1. 依次显示 8 个启动步骤（每个间隔 200-400ms，总计约 2.1 秒）
- * 2. 显示 "> 就绪 _" （闪烁光标，500ms 周期）
- * 3. 延迟 400ms 后调用 onComplete 回调 → 切换到主界面
+ * 每一项都来自系统 API 实测。这一步替代了原先那套「加载内核模块 / 挂载文件系统 /
+ * 激活隐蔽模式」的固定文案 —— 那些操作本应用一步都不执行，却一律勾上 `[ OK ]`，
+ * 是纯粹的表演。现在每一行都反映设备此刻的真实状态，出了问题在第一屏就能看见，
+ * 不必进到具体模块才发现功能不可用。
  *
- * ## 启动步骤
- * 加载内核模块 → 挂载文件系统 → 初始化引擎 → 配置 BLE → 配置 WiFi →
- * 加载载荷 → 建立安全通道 → 激活隐蔽模式
+ * 读不到的项直接不显示，而不是补一个占位值。
  *
- * 背景为深黑色（#020202），叠加 ScanlineOverlay 增强 CRT 真实感。
+ * @param context 用于查询权限、蓝牙、网络、内存与存储
+ * @return 按重要性排序的自检结果
+ */
+private fun collectStartupChecks(context: Context): List<StartupCheck> = buildList {
+    // 1. 运行时权限 —— 这一项失败会让所有扫描类功能一起失效
+    val missing = RequiredPermissions.missing(context)
+    add(
+        if (missing.isEmpty()) StartupCheck("运行时权限", "全部已授予", CheckLevel.OK)
+        else StartupCheck("运行时权限", "缺 ${missing.size} 项，相关功能不可用", CheckLevel.FAIL)
+    )
+
+    // 2. 蓝牙适配器
+    when (val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter) {
+        null -> add(StartupCheck("蓝牙适配器", "此设备没有蓝牙硬件", CheckLevel.FAIL))
+        else -> add(
+            if (adapter.isEnabled) StartupCheck("蓝牙适配器", "已就绪", CheckLevel.OK)
+            else StartupCheck("蓝牙适配器", "已关闭，BLE 功能需先开启", CheckLevel.WARN)
+        )
+    }
+
+    // 3. BLE 扫描权限（Android 12 起独立成权；12 以下由定位权限代偿）
+    val scanPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Manifest.permission.BLUETOOTH_SCAN
+    } else {
+        Manifest.permission.ACCESS_FINE_LOCATION
+    }
+    val scanGranted = ContextCompat.checkSelfPermission(context, scanPermission) == PackageManager.PERMISSION_GRANTED
+    add(
+        if (scanGranted) StartupCheck("BLE 扫描权限", "已授予", CheckLevel.OK)
+        else StartupCheck("BLE 扫描权限", "未授予，BLE 嗅探不可用", CheckLevel.FAIL)
+    )
+
+    // 4. 活跃网络接口 —— 局域网类功能（Web 服务、文件快传、对讲机）都依赖它
+    val iface = activeInterfaceName(context.getSystemService(ConnectivityManager::class.java))
+    add(
+        if (iface.isNullOrEmpty()) StartupCheck("网络接口", "无活动网络，局域网功能受限", CheckLevel.WARN)
+        else StartupCheck("网络接口", "$iface 在线", CheckLevel.OK)
+    )
+
+    // 5. 可用内存
+    val memory = ActivityManager.MemoryInfo()
+    context.getSystemService(ActivityManager::class.java)?.getMemoryInfo(memory)
+    if (memory.totalMem > 0L) {
+        val detail = "${formatGigabytes(memory.availMem)} / ${formatGigabytes(memory.totalMem)}"
+        val low = memory.availMem.toDouble() / memory.totalMem < LOW_MEMORY_RATIO
+        add(
+            if (low) StartupCheck("可用内存", "$detail（偏低）", CheckLevel.WARN)
+            else StartupCheck("可用内存", detail, CheckLevel.OK)
+        )
+    }
+
+    // 6. 可用存储
+    val free = context.filesDir.usableSpace
+    if (free > 0L) {
+        add(
+            if (free < LOW_STORAGE_BYTES) StartupCheck("存储空间", "${formatGigabytes(free)}（偏低）", CheckLevel.WARN)
+            else StartupCheck("存储空间", "${formatGigabytes(free)} 可用", CheckLevel.OK)
+        )
+    }
+}
+
+/** 等级 → 右侧标记，用有区分度的字，不用统一的 "OK" 掩盖差异 */
+private fun CheckLevel.tag(): String = when (this) {
+    CheckLevel.OK -> "[ OK ]"
+    CheckLevel.WARN -> "[WARN]"
+    CheckLevel.FAIL -> "[FAIL]"
+}
+
+/** 等级 → 配色。三级都保证在纯黑背景上对比度达标 */
+private fun CheckLevel.color(): Color = when (this) {
+    CheckLevel.OK -> Color(0xFF00AA00)
+    CheckLevel.WARN -> Color(0xFFFFB000)
+    CheckLevel.FAIL -> Color(0xFFFF0000)
+}
+
+/**
+ * 启动自检序列
  *
- * @param onComplete 启动序列完成后的回调，通常用于导航到主屏幕
+ * 逐行显示真实的系统自检结果。这一屏同时充当**首屏诊断**：蓝牙没开、权限缺失、
+ * 没有网络，在这里就能看见。
+ *
+ * 只有存在 FAIL 项时，末尾结论才标红；全项通过或仅有警告都算可用状态，
+ * 不会拦着用户进主界面。
+ *
+ * @param onComplete 自检展示完毕后的回调，通常用于切换到主屏幕
  * @param modifier Modifier 修饰符
  */
 @Composable
 fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
-    val steps = listOf(
-        "加载内核模块" to 260L, "挂载文件系统" to 220L, "初始化引擎 v1.0" to 320L,
-        "配置 BLE 协议栈" to 280L, "配置 WiFi 接口" to 280L, "加载载荷数据库" to 260L,
-        "建立安全通道" to 320L, "激活隐蔽模式" to 400L,
-    )
-    var n by remember { mutableIntStateOf(0) }
-    var done by remember { mutableStateOf(false) }
-    var blink by remember { mutableStateOf(true) }
-    var subtitle by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    // 只在进入时采一次：这一屏展示的是"启动那一刻"的状态，展示过程中不该变化
+    val checks = remember { collectStartupChecks(context) }
 
-    LaunchedEffect(Unit) {
-        for ((_, d) in steps) { delay(d); n++ }
-        delay(500); done = true; subtitle = "系统就绪"; delay(800); blink = false; delay(400); onComplete()
+    var shown by remember { mutableIntStateOf(0) }
+    var blink by remember { mutableStateOf(true) }
+
+    val failed = checks.count { it.level == CheckLevel.FAIL }
+    val warned = checks.count { it.level == CheckLevel.WARN }
+
+    LaunchedEffect(checks) {
+        checks.indices.forEach { index ->
+            delay(CHECK_REVEAL_INTERVAL_MS)
+            shown = index + 1
+        }
+        delay(DONE_HOLD_MS)
+        onComplete()
     }
     LaunchedEffect(Unit) { while (true) { delay(500); blink = !blink } }
 
@@ -190,20 +318,30 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
             AsciiDivider()
             Spacer(Modifier.height(14.dp))
 
-            steps.forEachIndexed { i, (msg, _) ->
-                AnimatedVisibility(visible = i < n, enter = fadeIn(tween(200)) + slideInVertically(tween(250))) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("  > $msg", fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = Color(0xFFFF0000))
-                        Text("[  OK  ]", fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = Color(0xFF880000))
+            checks.forEachIndexed { index, check ->
+                AnimatedVisibility(visible = index < shown, enter = fadeIn(tween(200)) + slideInVertically(tween(250))) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("  > ${check.label}", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Color(0xFFFF0000), modifier = Modifier.weight(1f))
+                        Text("${check.detail}  ", fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = Color(0xFF888888))
+                        Text(check.level.tag(), fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = check.level.color())
                     }
                 }
             }
 
-            if (done) {
+            if (shown >= checks.size) {
                 Spacer(Modifier.height(16.dp))
                 AsciiDivider()
                 Spacer(Modifier.height(10.dp))
-                Text(if (blink) "> 就绪 _" else "> 就绪", fontFamily = FontFamily.Monospace, fontSize = 16.sp, color = Color(0xFFFF0000), fontWeight = FontWeight.Bold)
+                val summary = when {
+                    failed > 0 -> "> 就绪 — $failed 项异常，$warned 项警告"
+                    warned > 0 -> "> 就绪 — $warned 项警告"
+                    else -> "> 全项通过"
+                }
+                Text(
+                    if (blink) "$summary _" else summary,
+                    fontFamily = FontFamily.Monospace, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    color = if (failed > 0) Color(0xFFFF0000) else Color(0xFF00AA00),
+                )
             }
         }
         ScanlineOverlay(lineSpacing = 3.dp, alpha = 0.05f, color = Color(0xFFFF0000))

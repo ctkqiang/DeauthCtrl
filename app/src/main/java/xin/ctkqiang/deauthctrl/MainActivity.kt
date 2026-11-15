@@ -1,21 +1,21 @@
 package xin.ctkqiang.deauthctrl
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
-import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import xin.ctkqiang.deauthctrl.ui.components.PermissionRequestScreen
+import xin.ctkqiang.deauthctrl.ui.components.RequiredPermissions
 import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
 import xin.ctkqiang.deauthctrl.ui.theme.Black
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
@@ -49,10 +49,10 @@ import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
  * 4. 10 个 ViewModel 的创建和注入（通过 viewModel() 委托）
  *
  * ## 权限策略
- * - Android 12+ (API 31+): 需要 BLUETOOTH_SCAN、BLUETOOTH_CONNECT、BLUETOOTH_ADVERTISE、ACCESS_FINE_LOCATION
- * - Android 11- (API 30-): 仅需要 ACCESS_FINE_LOCATION
- * - 所有权限为必需项（任一缺失即显示权限请求界面）
- * - 权限通过 ActivityResultContracts.RequestMultiplePermissions 一次性请求
+ * - 权限清单**单一出处**：ui.components.RequiredPermissions（检查侧与请求侧共用同一份）
+ * - Android 12+ (API 31+): BLUETOOTH_SCAN / CONNECT / ADVERTISE、ACCESS_FINE_LOCATION、RECORD_AUDIO、CAMERA
+ * - Android 11- (API 30-): ACCESS_FINE_LOCATION、RECORD_AUDIO、CAMERA
+ * - 任一缺失即显示权限请求界面；ON_RESUME 时重新核对，因为用户可能刚从系统设置回来
  *
  * ## ViewModel 注入
  * 使用 Jetpack Compose 的 viewModel() 内联函数创建 ViewModel，
@@ -81,7 +81,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             DeauthCtrlTheme(darkTheme = true) {
-                var granted by remember { mutableStateOf(checkAllPermissionsGranted()) }
+                val activity = this@MainActivity
+                var granted by remember { mutableStateOf(!hasMissingPermissions()) }
+
+                // 用户去系统设置授权后返回，必须重新核对；否则会永远停在权限页
+                DisposableEffect(activity) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) granted = !hasMissingPermissions()
+                    }
+                    activity.lifecycle.addObserver(observer)
+                    onDispose { activity.lifecycle.removeObserver(observer) }
+                }
+
                 if (granted) {
                     MainScreen(
                         bleVm = viewModel(),
@@ -112,22 +123,13 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * 检查所有必需权限是否已授予
+     * 是否仍有必需权限未授予
      *
-     * 根据 Android API 级别动态确定需要检查的权限列表，
-     * 通过 ContextCompat.checkSelfPermission 逐个验证。
+     * 权限清单集中定义在 [RequiredPermissions]，检查侧不再单独维护一份。
+     * 原先这里要求 CAMERA 而权限页的请求列表里没有 CAMERA，
+     * 结果是用户永远无法通过网关，界面也说不清到底缺了什么。
      *
-     * @return true 表示所有权限已授予，可进入主界面
+     * @return true 表示仍有权限未授予，需要停留在权限网关
      */
-    private fun checkAllPermissionsGranted(): Boolean {
-        val required = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.CAMERA)
-        } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        return required.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
-    }
+    private fun hasMissingPermissions(): Boolean = RequiredPermissions.missing(this).isNotEmpty()
 }
