@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
@@ -137,12 +137,12 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             StarBadge(64.dp)
             Spacer(Modifier.height(12.dp))
-            Text("去认证控制", fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 3.sp, color = White)
+            Text("去认证控制", fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 0.sp, color = White)
             Spacer(Modifier.height(4.dp))
             Text("> 战前授权 · 授予所需权限", fontFamily = Sans, fontSize = 12.sp, color = Gray)
             Spacer(Modifier.height(28.dp))
 
-            Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
+            Surface(modifier = Modifier.fillMaxWidth(), shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
                 Column(Modifier.padding(18.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Star(Gold, 9.dp)
@@ -172,7 +172,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                     if (missing.isEmpty()) onAllGranted() else launcher.launch(RequiredPermissions.runtime)
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(7.dp),
+                shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Red, contentColor = White),
             ) {
                 Text(
@@ -186,7 +186,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); context.openAppSettings() },
-                    shape = RoundedCornerShape(7.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
                 ) {
                     Text("[ 去系统设置授权 ]", fontFamily = Sans, fontSize = 12.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
                 }
@@ -195,13 +195,13 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onAllGranted() },
-                shape = RoundedCornerShape(7.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
             ) {
                 Text("[ 跳过 —— 蓝牙与 WiFi 功能将不可用 ]", fontFamily = Sans, fontSize = 11.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
             }
 
             Spacer(Modifier.height(28.dp))
-            Text("★ 去认证控制  |  仅供授权安全研究使用 ★", fontFamily = Sans, fontSize = 11.sp, color = GoldDim)
+            Text("去认证控制 · 仅供授权安全研究使用", fontFamily = Sans, fontSize = 11.sp, color = GoldDim)
         }
         ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Red)
     }
@@ -210,7 +210,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
 /**
  * 单个权限项
  *
- * 金星指示符 + 权限标题 + 权限描述。
+ * 菱形指示符 + 权限标题 + 权限描述。
  */
 @Composable
 private fun PermissionItem(title: String, desc: String) {

@@ -72,13 +72,13 @@ import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
  *
  * @param lineSpacing 扫描线间距（dp），越小越密集。默认 4dp
  * @param alpha 线条透明度（0.0-1.0），默认 0.03
- * @param color 线条颜色，默认军旗红
+ * @param color 线条颜色，默认全息青
  */
 @Composable
 fun ScanlineOverlay(
     lineSpacing: Dp = 4.dp,
     alpha: Float = 0.03f,
-    color: Color = Color(0xFFD7000F),
+    color: Color = Color(0xFF35C9FF),
 ) {
     val px = with(androidx.compose.ui.platform.LocalDensity.current) { lineSpacing.toPx() }
     Box(
@@ -97,12 +97,12 @@ fun ScanlineOverlay(
  *
  * 模拟数字故障/毛刺（glitch）效果的文字组件。
  * 每间隔 glitchIntervalMs 毫秒触发一次故障动画：
- * 1. 红色副本向右偏移（RGB 通道错位）
+ * 1. 青色副本向右偏移（通道错位）
  * 2. 白色副本向左偏移（信号过载）
- * 3. 金色副本向左偏移（色偏修复延迟）
+ * 3. 品红副本向左偏移（色偏修复延迟）
  * 4. 恢复原始位置
  *
- * 红 + 金双通道偏移：红客旗帜的故障美学。
+ * 青 + 品红双通道偏移：全息投影的故障美学。
  */
 @Composable
 fun GlitchText(
@@ -128,10 +128,10 @@ fun GlitchText(
     }
 
     Box(modifier = modifier) {
-        if (showRed) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color.Red.copy(alpha = 0.7f), modifier = Modifier.offset(x = offsetX.dp))
+        if (showRed) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFF35C9FF).copy(alpha = 0.7f), modifier = Modifier.offset(x = offsetX.dp))
         if (showBright) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color.White.copy(alpha = 0.6f), modifier = Modifier.offset(x = -offsetX.dp / 2))
-        if (showGold) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFFFFD23F).copy(alpha = 0.4f), modifier = Modifier.offset(x = -offsetX.dp))
-        Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFFD7000F))
+        if (showGold) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFFFF4FD8).copy(alpha = 0.4f), modifier = Modifier.offset(x = -offsetX.dp))
+        Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFF35C9FF))
     }
 }
 
@@ -142,7 +142,7 @@ fun GlitchText(
  * 已由 [PulseStar] 取代，保留供兼容。
  */
 @Composable
-fun PulseDot(color: Color = Color(0xFFD7000F), size: Dp = 10.dp, modifier: Modifier = Modifier) {
+fun PulseDot(color: Color = Color(0xFF35C9FF), size: Dp = 10.dp, modifier: Modifier = Modifier) {
     var phase by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) { while (true) { delay(60); phase += 0.06f } }
     val a = (sin(phase * PI).toFloat() * 0.45f + 0.5f)
@@ -158,7 +158,7 @@ fun PulseDot(color: Color = Color(0xFFD7000F), size: Dp = 10.dp, modifier: Modif
  */
 @Composable
 fun AsciiDivider(modifier: Modifier = Modifier) {
-    Text("─".repeat(48), fontFamily = FontFamily.Monospace, fontSize = 8.sp, color = Color(0xFFD7000F).copy(alpha = 0.35f), modifier = modifier)
+    Text("─".repeat(48), fontFamily = FontFamily.Monospace, fontSize = 8.sp, color = Color(0xFF35C9FF).copy(alpha = 0.35f), modifier = modifier)
 }
 
 // ─── 启动自检 ────────────────────────────────────────────────────────────────
@@ -271,18 +271,18 @@ private fun CheckLevel.tag(): String = when (this) {
     CheckLevel.FAIL -> "[FAIL]"
 }
 
-/** 等级 → 配色。OK 用绿灯（交通灯语义），WARN 用金星黄，FAIL 用军旗红 */
+/** 等级 → 配色。OK 用通行绿，WARN 用琥珀，FAIL 用危险红 */
 private fun CheckLevel.color(): Color = when (this) {
     CheckLevel.OK -> Color(0xFF00C853)
-    CheckLevel.WARN -> Color(0xFFFFD23F)
-    CheckLevel.FAIL -> Color(0xFFFF4B3E)
+    CheckLevel.WARN -> Color(0xFFFFB547)
+    CheckLevel.FAIL -> Color(0xFFFF5A5A)
 }
 
 /**
  * 启动自检序列
  *
- * 军徽 + 标题 + 逐行浮现的真实自检结果。
- * 只有存在 FAIL 项时，末尾结论才标红；全项通过或仅有警告都算可用状态。
+ * 全息核心 + 标题 + 逐行浮现的真实自检结果。
+ * 只有存在 FAIL 项时，末尾结论才用危险色；全项通过或仅有警告都算可用状态。
  *
  * @param onComplete 自检展示完毕后的回调，通常用于切换到主屏幕
  */
@@ -318,15 +318,15 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     }
     LaunchedEffect(Unit) { while (true) { delay(500); blink = !blink } }
 
-    Box(modifier = modifier.fillMaxSize().background(Color(0xFF08080A)), contentAlignment = Alignment.Center) {
-        // 夜视数据流雨背景
-        DataRain(Modifier.fillMaxSize(), color = Color(0xFF00E676))
+    Box(modifier = modifier.fillMaxSize().background(Color(0xFF060B14)), contentAlignment = Alignment.Center) {
+        // 全息数据流雨背景
+        DataRain(Modifier.fillMaxSize(), color = Color(0xFF45E0FF))
         Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             StarBadge(56.dp)
             Spacer(Modifier.height(12.dp))
-            Text("去认证控制", fontFamily = FontFamily.Default, fontWeight = FontWeight.Black, fontSize = 23.sp, letterSpacing = 3.sp, color = Color(0xFFEDEDEF))
+            Text("去认证控制", fontFamily = FontFamily.Default, fontWeight = FontWeight.Black, fontSize = 23.sp, letterSpacing = 0.sp, color = Color(0xFFE8F4FF))
             Spacer(Modifier.height(3.dp))
-            GlitchText("Δ DELTA-06 · 哪吒网络安全", glitchIntervalMs = 2200, style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier)
+            GlitchText("哪吒网络安全 · 全息战术终端", glitchIntervalMs = 2200, style = TextStyle(fontFamily = FontFamily.Default, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier)
             Spacer(Modifier.height(18.dp))
             AsciiDivider()
             Spacer(Modifier.height(12.dp))
@@ -334,8 +334,8 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
             checks.forEachIndexed { index, check ->
                 AnimatedVisibility(visible = index < shown, enter = fadeIn(tween(200)) + slideInVertically(tween(250))) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("  > ${check.label}", fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD7000F), modifier = Modifier.weight(1f))
-                        Text("${check.detail}  ", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Color(0xFF8E8E96))
+                        Text("  > ${check.label}", fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF35C9FF), modifier = Modifier.weight(1f))
+                        Text("${check.detail}  ", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Color(0xFF7E93AD))
                         Text(check.level.tag(), fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = check.level.color())
                     }
                 }
@@ -348,30 +348,30 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
                 val summary = when {
                     failed > 0 -> "> 部署警告 — $failed 项异常，$warned 项警告"
                     warned > 0 -> "> 部署就绪 — $warned 项警告"
-                    else -> "> 部署就绪 — 三角洲红队待命"
+                    else -> "> 系统就绪 — 全息终端待命"
                 }
                 Text(
                     if (blink) "$summary _" else summary,
                     fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                    color = if (failed > 0) Color(0xFFFF4B3E) else Color(0xFF00C853),
+                    color = if (failed > 0) Color(0xFFFF5A5A) else Color(0xFF00C853),
                 )
             }
         }
-        ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Color(0xFFD7000F))
+        ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Color(0xFF35C9FF))
     }
 }
 
 // ─── Android Studio 预览 ──────────────────────────────────────────────────────
 
 /** 启动自检预览 */
-@Preview(name = "启动自检", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Preview(name = "启动自检", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393, heightDp = 852, locale = "zh")
 @Composable
 private fun BootSequencePreview() {
     PreviewTheme { BootSequence(onComplete = {}) }
 }
 
 /** 故障文字预览 */
-@Preview(name = "故障文字", showBackground = true, backgroundColor = 0xFF08080A)
+@Preview(name = "故障文字", showBackground = true, backgroundColor = 0xFF060B14)
 @Composable
 private fun GlitchTextPreview() {
     PreviewTheme {
@@ -382,26 +382,26 @@ private fun GlitchTextPreview() {
 }
 
 /** 扫描线预览 */
-@Preview(name = "扫描线叠加层", showBackground = true, backgroundColor = 0xFF08080A)
+@Preview(name = "扫描线叠加层", showBackground = true, backgroundColor = 0xFF060B14)
 @Composable
 private fun ScanlinePreview() {
     PreviewTheme {
         Box(Modifier.fillMaxSize()) {
-            Text("去认证控制", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFEDEDEF), modifier = Modifier.align(Alignment.Center))
-            ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Color(0xFFD7000F))
+            Text("去认证控制", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFE8F4FF), modifier = Modifier.align(Alignment.Center))
+            ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Color(0xFF35C9FF))
         }
     }
 }
 
 
 /**
- * 数据流雨 —— 夜视仪风格的加密代码流
+ * 数据流雨 —— 全息战术风格的加密代码流
  *
  * 启动屏背景：22 列下落的字符流，头部亮点 + 渐隐尾迹。
  * 用线条代替字符绘制，性能友好；相位驱动全部在绘制层。
  */
 @Composable
-fun DataRain(modifier: Modifier = Modifier, color: Color = Color(0xFF00E676)) {
+fun DataRain(modifier: Modifier = Modifier, color: Color = Color(0xFF45E0FF)) {
     val t = rememberInfiniteTransition()
     val phase by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart))
     Canvas(modifier) {

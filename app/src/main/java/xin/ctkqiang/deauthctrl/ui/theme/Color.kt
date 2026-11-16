@@ -5,38 +5,38 @@ import androidx.compose.ui.graphics.Color
 /**
  * DeauthCtrl 色彩系统
  *
- * 以红色（#FF0000）为主色调、深黑（#010101）为背景色的暗色主题配色方案。
- * 灵感来自 Mr. Robot 视觉风格和终端/黑客工具美学。
+ * 以全息青（#35C9FF）为主色调、深海军蓝为背景色的暗色主题配色方案。
+ * 视觉语言取自全息战术 HUD 与机载设备界面：青蓝投影、玻璃面板、细发光描边。
  *
  * ## 色彩分组
- * - **Red 系列**: 主色、亮色、暗色、透明背景 — 用于标题、按钮、强调元素、运行状态指示
+ * - **主色系列**（变量名沿用 Red）: 全息青主色、亮青、深青、透明背景 — 用于标题、按钮、强调元素、运行状态指示
  * - **Matrix Green 系列**: 备用强调色（当前未在 UI 中使用，保留供未来扩展）
- * - **Neon 系列**: 青色和琥珀色点缀色，用于 GlitchText 偏移层和特殊高亮
- * - **Black 系列**: 多层次黑色背景（#000000 → #111111），营造深度感
+ * - **Neon 系列**: 青色和琥珀色点缀色，用于特殊高亮与告警
+ * - **Black 系列**: 多层次深色背景（#000000 → #111111），营造深度感
  * - **Border 系列**: 暗灰色边框，用于卡片和面板分隔
  * - **Text 系列**: 白色到深灰的四个文字层级（Primary/Bright/Dim/Muted）
  * - **Theme Tokens**: Material3 darkColorScheme 所需的标准映射
  */
 
-/** 军旗红 —— 标题、按钮、强调文字、运行状态 */
-val Red = Color(0xFFD7000F)
-/** 亮红 —— hover 高亮、次要强调 */
-val RedBright = Color(0xFFFF4B3E)
-/** 暗红 —— 非活跃状态、分隔线（仅装饰） */
-val RedDark = Color(0xFF7A1416)
-/** 红色 10% 透明度 —— 卡片/面板激活背景 */
-val RedBackground = Color(0x1AD7000F)
+/** 全息青 —— 标题、按钮、强调文字、运行状态 */
+val Red = Color(0xFF35C9FF)
+/** 亮青 —— hover 高亮、次要强调 */
+val RedBright = Color(0xFF7FE7FF)
+/** 深青 —— 非活跃状态、分隔线（仅装饰） */
+val RedDark = Color(0xFF0E5C7A)
+/** 全息青 10% 透明度 —— 卡片/面板激活背景 */
+val RedBackground = Color(0x1A35C9FF)
 
 /** Matrix 绿 — 备用终端绿色（当前未在 UI 中使用） */
 val MatrixGreen = Color(0xFF00FF41)
 val MatrixGreenDark = Color(0xFF003B00)
 val MatrixGreenDim = Color(0xFF00AA2E)
 
-/** 霓虹青色 — GlitchText 偏移层、特殊装饰 */
+/** 霓虹青色 — 特殊装饰与高亮 */
 val NeonCyan = Color(0xFF00FFFF)
 val NeonCyanDark = Color(0xFF003333)
-/** 霓虹琥珀色/金星黄 — 警告/军功金强调 */
-val NeonAmber = Color(0xFFFFD23F)
+/** 霓虹琥珀色 — 警告与异常强调 */
+val NeonAmber = Color(0xFFFFB547)
 
 /** 纯黑 — 最深背景色 */
 val Black = Color(0xFF000000)

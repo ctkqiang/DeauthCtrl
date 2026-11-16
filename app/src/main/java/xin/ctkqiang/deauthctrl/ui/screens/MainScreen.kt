@@ -32,7 +32,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.BluetoothDisabled
@@ -199,15 +199,15 @@ fun MainScreen(
 }
 
 /**
- * 战地战术网格 —— 全屏微弱方格参考线
+ * 全息战术网格 —— 全屏微弱方格参考线
  *
- * 三角洲作战地图的底纹。drawBehind 一次绘制，随内容重绘但成本极低。
+ * 全息战术终端的底纹。一次绘制，随内容重绘但成本极低。
  */
 @Composable
 private fun TacticalGrid(modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxSize()) {
         val step = 30.dp.toPx()
-        val line = Color(0xFF14141B)
+        val line = Color(0xFF0E1B2E)
         var x = 0f
         while (x < size.width) {
             drawLine(line, Offset(x, 0f), Offset(x, size.height), 0.6f)
@@ -322,12 +322,12 @@ private fun rememberSystemTelemetry(intervalMs: Long = TELEMETRY_INTERVAL_MS): S
     return telemetry
 }
 
-/** 实时状态栏 —— 四格真实系统指标，数值为军功金 */
+/** 实时状态栏 —— 四格真实系统指标，数值为电光青 */
 @Composable
 fun StatusBar() {
     val telemetry = rememberSystemTelemetry()
 
-    Surface(shape = RoundedCornerShape(6.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
+    Surface(shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
         Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             TelemetryCell("下行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.rxBytesPerSec) else TELEMETRY_PLACEHOLDER)
             TelemetryCell("上行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.txBytesPerSec) else TELEMETRY_PLACEHOLDER)
@@ -337,7 +337,7 @@ fun StatusBar() {
     }
 }
 
-/** 状态栏单项 —— 金色数值在上、中文标签在下 */
+/** 状态栏单项 —— 电光青数值在上、中文标签在下 */
 @Composable
 private fun TelemetryCell(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -370,7 +370,7 @@ private const val CASCADE_MAX_STEPS = 6
  * 主屏幕 / 功能入口页
  *
  * ## 信息层次（自上而下）
- * 1. 军徽 + 「去认证控制」大标题 + 红客特遣队绶带
+ * 1. 全息设备核心 + 「去认证控制」大标题 + 全息终端标识
  * 2. [StatusBar] —— 真实系统遥测
  * 3. **运行中** 分区 —— 仅在有模块运行时出现，当前状态第一眼可见
  * 4. 功能分区：侦察 / 网络 / 无线 / 工具（每张卡片带专属图标）
@@ -452,7 +452,7 @@ fun HomeScreen(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        // ─── 军徽头部 ─────────────────────────────────────────────
+        // ─── 全息核心头部 ─────────────────────────────────────────
         item(key = "header") {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 StarBadge(68.dp)
@@ -462,14 +462,14 @@ fun HomeScreen(
                     fontFamily = Sans,
                     fontSize = 27.sp,
                     fontWeight = FontWeight.Black,
-                    letterSpacing = 3.sp,
+                    letterSpacing = 0.sp,
                     color = White,
                 )
                 Spacer(Modifier.height(2.dp))
-                GlitchText("TAC-OPS · 三角洲红队", glitchIntervalMs = 3200, style = TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
+                GlitchText("全息战术终端", glitchIntervalMs = 3200, style = TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "呼号: 哪吒  ·  战备等级: 最高  ·  加密信道: AES-256",
+                    "操作员: 哪吒 · 全息终端 · 加密信道: AES-256",
                     fontFamily = Mono,
                     fontSize = 9.sp,
                     color = Gray,
@@ -528,12 +528,10 @@ fun HomeScreen(
                     Spacer(Modifier.width(7.dp))
                     Text("安全可控", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                 }
-                Spacer(Modifier.height(6.dp))
-                Text("Δ DELTA-06 // TAC-OPS // 加密信道已建立", fontFamily = Mono, fontSize = 8.sp, color = TacGreen.copy(alpha = 0.7f))
                 Spacer(Modifier.height(12.dp))
                 Surface(
                     modifier = Modifier.padding(bottom = 4.dp),
-                    shape = RoundedCornerShape(6.dp),
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                     color = Red.copy(alpha = 0.08f),
                     border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
                 ) {
@@ -559,7 +557,7 @@ fun HomeScreen(
 // ─── Android Studio 预览 ──────────────────────────────────────────────────────
 
 /** 状态栏预览 */
-@Preview(name = "状态栏", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393)
+@Preview(name = "状态栏", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393)
 @Composable
 private fun StatusBarPreview() {
     PreviewTheme {
@@ -570,7 +568,7 @@ private fun StatusBarPreview() {
 }
 
 /** 主页预览 —— 完整 19 模块 + 运行态卡片 */
-@Preview(name = "主页", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Preview(name = "主页", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393, heightDp = 852, locale = "zh")
 @Composable
 private fun HomeScreenPreview() {
     PreviewTheme {
@@ -590,7 +588,7 @@ private fun HomeScreenPreview() {
 }
 
 /** 主路由预览 —— 免责声明 → 启动自检 → 主页完整流程 */
-@Preview(name = "主路由完整流程", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Preview(name = "主路由完整流程", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393, heightDp = 852, locale = "zh")
 @Composable
 private fun MainScreenPreview() {
     PreviewTheme {

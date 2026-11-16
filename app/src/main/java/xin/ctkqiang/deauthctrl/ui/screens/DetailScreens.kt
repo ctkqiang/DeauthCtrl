@@ -40,7 +40,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LinearProgressIndicator
@@ -93,6 +93,7 @@ import xin.ctkqiang.deauthctrl.model.WifiNetwork
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.AsciiDivider
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
+import xin.ctkqiang.deauthctrl.ui.components.Danger
 import xin.ctkqiang.deauthctrl.ui.components.Dark
 import xin.ctkqiang.deauthctrl.ui.components.EmptyHint
 import xin.ctkqiang.deauthctrl.ui.components.GhostButton
@@ -115,6 +116,7 @@ import xin.ctkqiang.deauthctrl.ui.components.TermPanel
 import xin.ctkqiang.deauthctrl.ui.components.TacGreen
 import xin.ctkqiang.deauthctrl.ui.components.TacticalCorners
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
+import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.ui.components.drawTacticalCorners
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
@@ -145,8 +147,8 @@ import kotlin.math.sin
 /**
  * 详情页内容整体入场动画 —— 每页进入时轻微淡入上滑
  *
- * [locked] 为 true 时页面四角显示夜视绿呼吸锁定框：
- * 任务执行中的页面 = 被三角洲 HUD 锁定的目标。
+ * [locked] 为 true 时页面四角显示全息青呼吸锁定框：
+ * 任务执行中的页面 = 被全息 HUD 锁定的目标。
  */
 @Composable
 private fun PageEnter(locked: Boolean = false, content: @Composable () -> Unit) {
@@ -164,8 +166,8 @@ private fun PageEnter(locked: Boolean = false, content: @Composable () -> Unit) 
     }
 }
 
-/** 进度条未激活段底色 */
-private val Track = Color(0xFF2A2A2A)
+/** 进度条未激活段底色 —— 深海军蓝 */
+private val Track = Color(0xFF0E1B2E)
 
 /** 日志渲染上限，与内核环形缓冲配合，避免一次性渲染全部条目 */
 private const val LOG_TAIL = 60
@@ -257,7 +259,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stopSpam() else vm.startSpam()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
                 AnimatedVisibility(running) {
                     Column { Spacer(Modifier.height(8.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track) }
                 }
@@ -279,14 +281,14 @@ private fun BleStatsPanel(vm: BleSpamViewModel) {
     TermPanel("运行统计") {
         val upSec = stats.uptimeMs / 1000
         PanelStat("已发送", "${stats.sent}")
-        PanelStat("失败", "${stats.failed}", if (stats.failed > 0) Red else White)
+        PanelStat("失败", "${stats.failed}", if (stats.failed > 0) Danger else White)
         PanelStat("总尝试", "${stats.total}")
-        PanelStat("成功率", "%.1f%%".format(stats.successRate * 100), if (stats.successRate > 0.5f) White else Red)
+        PanelStat("成功率", "%.1f%%".format(stats.successRate * 100), if (stats.successRate > 0.5f) White else Danger)
         PanelStat("发包速率", "%.1f pps".format(stats.pps))
         PanelStat("运行时长", "%02d:%02d".format(upSec / 60, upSec % 60))
         if (stats.failRateRecent > 0.3f) {
             Spacer(Modifier.height(4.dp))
-            Text("[!] 近期失败率 %.0f%%，建议增大发送间隔".format(stats.failRateRecent * 100), fontFamily = Mono, fontSize = 10.sp, color = Red)
+            Text("[!] 近期失败率 %.0f%%，建议增大发送间隔".format(stats.failRateRecent * 100), fontFamily = Mono, fontSize = 10.sp, color = Danger)
         }
     }
 }
@@ -307,7 +309,7 @@ private fun BleLogPanel(vm: BleSpamViewModel) {
             LogLine(
                 tf.format(Date(e.timestamp)),
                 "${e.profile.displayName}  ${if (e.success) "成功" else "失败"}  #${e.index.toString().padStart(5, '0')}",
-                if (e.success) White else Red,
+                if (e.success) White else Danger,
             )
         }
     }
@@ -345,7 +347,7 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
                 AnimatedVisibility(running) {
                     Column { Spacer(Modifier.height(8.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track) }
                 }
@@ -366,7 +368,7 @@ private fun BtJamLivePanel(vm: BluetoothJammerViewModel) {
     val stats by vm.stats.collectAsState()
     Column {
         Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth().background(SurfaceBg, RoundedCornerShape(6.dp)).border(1.dp, BorderDim, RoundedCornerShape(6.dp)).padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().background(SurfaceBg, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)).border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)).padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Text("已发现设备", fontFamily = Sans, fontSize = 10.sp, color = Gray)
             Spacer(Modifier.width(6.dp))
             Text("$count 台", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold)
@@ -462,7 +464,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                             }
                         }
                     }
-                    is ScanState.Error -> Text("[!] ${s.message}", fontFamily = Mono, fontSize = 12.sp, color = Red)
+                    is ScanState.Error -> Text("[!] ${s.message}", fontFamily = Mono, fontSize = 12.sp, color = Danger)
                     else -> {}
                 }
 
@@ -518,7 +520,7 @@ private fun WifiLivePanel(vm: WifiDisruptViewModel, fl: Boolean) {
                 Text("周期 ${r.cycle}/${r.totalCycles}", fontFamily = Sans, fontSize = 10.sp, color = White, modifier = Modifier.padding(top = 3.dp))
             }
             is HotspotResult.Completed -> Text("泛洪完成", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(top = 6.dp))
-            is HotspotResult.Error -> Text("[!] ${r.message}", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(top = 6.dp))
+            is HotspotResult.Error -> Text("[!] ${r.message}", fontFamily = Mono, fontSize = 12.sp, color = Danger, modifier = Modifier.padding(top = 6.dp))
             else -> {}
         }
 
@@ -568,7 +570,7 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 // 高频数据区独立订阅：压制期间目标计数/轮次统计/扫描结果/日志均高频刷新
                 WifiJamLivePanel(vm, running = running, modifier = Modifier.weight(1f))
@@ -607,7 +609,7 @@ private fun WifiJamLivePanel(vm: WifiJammerViewModel, running: Boolean, modifier
                     }
                 }
             }
-            is JammerScanState.Error -> Text("[!] ${s.message}", fontFamily = Mono, fontSize = 12.sp, color = Red)
+            is JammerScanState.Error -> Text("[!] ${s.message}", fontFamily = Mono, fontSize = 12.sp, color = Danger)
             else -> {}
         }
 
@@ -686,7 +688,7 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stopServer() else vm.startServer()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 AnimatedVisibility(running) {
                     Column {
@@ -791,7 +793,7 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
                     if (running) vm.stop() else vm.scan()
                 }
 
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 // 高频数据区独立订阅：扫描期间探测进度/统计/设备/日志每秒多次刷新
                 ArpLivePanel(vm, running = running)
@@ -910,7 +912,7 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 // 高频数据区独立订阅：嗅探期间设备列表与 RSSI 每秒多次刷新
                 BleScannerLivePanel(vm, running = running, selected = selected, onSelect = { selected = it }, modifier = Modifier.weight(1f))
@@ -959,7 +961,7 @@ private fun BleScannerLivePanel(
                 if (selDev.rssiHistory.size > 1) {
                     Spacer(Modifier.height(8.dp))
                     Text("信号强度走势 (dBm)", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
-                    Box(Modifier.fillMaxWidth().height(60.dp).background(Color(0xFF020202)).border(0.5.dp, Track, RoundedCornerShape(4.dp))) {
+                    Box(Modifier.fillMaxWidth().height(60.dp).background(Color(0xFF04121C)).border(0.5.dp, Track, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))) {
                         Canvas(Modifier.fillMaxSize()) {
                             val h = size.height; val w = size.width
                             val vals = selDev.rssiHistory
@@ -972,7 +974,7 @@ private fun BleScannerLivePanel(
                                     val y = h - ((v.toFloat() - minR) / range * h).coerceIn(0f, h)
                                     if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
                                 }
-                                drawPath(path, Color.Red, style = Stroke(1.5f))
+                                drawPath(path, TacGreen, style = Stroke(1.5f))
                             }
                         }
                     }
@@ -1035,7 +1037,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 // 高频数据区独立订阅：探测期间每秒多次返回结果，隔离后只重组统计与列表
                 PingLivePanel(vm, running = running, host = host, error = error)
@@ -1080,7 +1082,7 @@ private fun PingLivePanel(vm: PingViewModel, running: Boolean, host: String, err
             Spacer(Modifier.height(4.dp))
             LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
                 items(results, key = { it.sequence }) { r ->
-                    LogLine("seq=${r.sequence}", "${r.bytes}b 来自 ${r.ip} · ttl=${r.ttl} · 耗时 ${r.timeMs}ms", if (r.timeMs > 500) Red else if (r.timeMs > 100) RedDim else White)
+                    LogLine("seq=${r.sequence}", "${r.bytes}b 来自 ${r.ip} · ttl=${r.ttl} · 耗时 ${r.timeMs}ms", if (r.timeMs > 500) Danger else if (r.timeMs > 100) RedDim else White)
                 }
             }
         }
@@ -1149,13 +1151,13 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 resp?.let { r ->
                     Spacer(Modifier.height(10.dp))
                     AsciiDivider(modifier = Modifier.padding(vertical = 4.dp))
                     Text("状态 ${r.statusCode} · 耗时 ${r.timeMs}ms", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                        color = if (r.statusCode < 400) White else Red,
+                        color = if (r.statusCode < 400) White else Danger,
                     )
                     PanelStat("响应大小", vm.formatBytes(r.bodyBytes.toLong()))
                     PanelStat("字符集", r.charset)
@@ -1163,7 +1165,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                         PanelStat("重定向落点", r.finalUrl, Gray)
                     }
                     if (r.truncated) {
-                        Text("[!] 响应体超过 ${vm.formatBytes(HttpClientManager.MAX_BODY_BYTES.toLong())}，已截断", fontFamily = Sans, fontSize = 10.sp, color = Red, modifier = Modifier.padding(top = 3.dp))
+                        Text("[!] 响应体超过 ${vm.formatBytes(HttpClientManager.MAX_BODY_BYTES.toLong())}，已截断", fontFamily = Sans, fontSize = 10.sp, color = Danger, modifier = Modifier.padding(top = 3.dp))
                     }
 
                     if (r.headers.isNotEmpty()) {
@@ -1182,7 +1184,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                             .fillMaxWidth()
                             .heightIn(max = BODY_VIEWER_MAX_HEIGHT)
                             .background(SurfaceBg)
-                            .border(1.dp, Track, RoundedCornerShape(6.dp))
+                            .border(1.dp, Track, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                             .padding(10.dp),
                     ) {
                         item { SelectionContainer { Text(r.body.ifEmpty { "（空）" }, fontFamily = Mono, fontSize = 10.sp, color = White) } }
@@ -1208,12 +1210,12 @@ private fun HttpStatsPanel(vm: HttpClientViewModel, running: Boolean) {
         PanelStat("重定向 3xx", "${stats.redirectCount}")
         PanelStat("客户端错误 4xx", "${stats.clientErrorCount}")
         PanelStat("服务端错误 5xx", "${stats.serverErrorCount}")
-        PanelStat("失败", "${stats.failureCount}", if (stats.failureCount > 0) Red else White)
+        PanelStat("失败", "${stats.failureCount}", if (stats.failureCount > 0) Danger else White)
         PanelStat("接收流量", vm.formatBytes(stats.bytesReceived))
         PanelStat("平均耗时", "${stats.averageDurationMs} ms")
         PanelStat("最近状态", if (stats.lastStatusCode == 0) "-" else "${stats.lastStatusCode}")
         PanelStat("最近耗时", "${stats.lastDurationMs} ms")
-        if (stats.lastError.isNotEmpty()) PanelStat("最近错误", stats.lastError, Red)
+        if (stats.lastError.isNotEmpty()) PanelStat("最近错误", stats.lastError, Danger)
         if (stats.redirected && stats.lastFinalUrl.isNotEmpty()) PanelStat("最近落点", stats.lastFinalUrl, Gray)
         PanelStat("状态", if (running) "运行中" else "空闲", if (running) White else Gray)
     }
@@ -1266,7 +1268,7 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 // 高频数据区独立订阅：扫描期间进度与结果持续刷新
                 PortScanLivePanel(vm, running = running, host = host, error = error)
@@ -1353,7 +1355,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 // 高频数据区独立订阅：对讲期间在线设备与说话状态持续刷新
                 WalkiePeersPanel(vm, running = running)
@@ -1367,7 +1369,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             vm.toggleLive()
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                         color = if (isLive) Red.copy(alpha = 0.15f) else Color.Transparent,
                         border = BorderStroke(1.5.dp, if (isLive) Gold else Red.copy(alpha = 0.3f)),
                     ) {
@@ -1394,7 +1396,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                                 )
                             }
                             .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.12f))
-                            .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.3f), RoundedCornerShape(10.dp)),
+                            .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.3f), CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -1427,7 +1429,7 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
                     ) {
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                                .background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent, RoundedCornerShape(4.dp))
+                                .background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent, CutCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -1484,12 +1486,12 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
     }
 }
 
-/** 磷光色 —— 老式示波管绿 */
-private val ScopeGreen = Color(0xFF00E676)
-/** 磷光暗底 */
-private val ScopeBack = Color(0xFF00231A)
-/** WiFi 目标警示红 */
-private val ScopeRed = Color(0xFFFF3B30)
+/** 全息青磷光 —— 扫描盘主色 */
+private val ScopeGreen = Color(0xFF45E0FF)
+/** 深空底色 —— 全息投影暗面 */
+private val ScopeBack = Color(0xFF04121C)
+/** WiFi 目标警示琥珀 */
+private val ScopeRed = Color(0xFFFFB547)
 
 /**
  * 雷达扫描盘 —— 全动画 Canvas
@@ -1525,9 +1527,9 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
 
     Box(
         modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
             .background(ScopeBack)
-            .border(1.dp, Color(0xFF00382A), RoundedCornerShape(8.dp)),
+            .border(1.dp, Color(0xFF0E3A55), CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val cx = size.width / 2f
@@ -1598,8 +1600,13 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                 topLeft = Offset(cx - r, cy - r),
                 size = Size(r * 2f, r * 2f),
             )
-            // 光束前沿亮线
-            drawLine(g.copy(alpha = 0.95f), Offset(cx, cy), Offset(cx + r * cos(sweepRad), cy + r * sin(sweepRad)), 2f)
+            // ── 扫描针：细长亮针 + 针尖光点，雷达视觉主角 ──
+            val tipX = cx + r * cos(sweepRad)
+            val tipY = cy + r * sin(sweepRad)
+            drawLine(g.copy(alpha = 0.35f), Offset(cx, cy), Offset(tipX, tipY), 4f)
+            drawLine(g.copy(alpha = 0.95f), Offset(cx, cy), Offset(tipX, tipY), 1.6f)
+            drawCircle(g.copy(alpha = 0.55f), 4.dp.toPx(), Offset(tipX, tipY))
+            drawCircle(Color(0xFFE8F4FF).copy(alpha = 0.95f), 1.8.dp.toPx(), Offset(tipX, tipY))
 
             // ── 全局声呐 ping：每 1.8 秒一发扩散环 ──
             val ping = ((sweepDeg / 360f) * 2f) % 1f
@@ -1646,7 +1653,7 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     drawLine(blip.copy(alpha = bright * 0.8f), Offset(x - cross, y), Offset(x + cross, y), 1f)
                     drawLine(blip.copy(alpha = bright * 0.8f), Offset(x, y - cross), Offset(x, y + cross), 1f)
 
-                    // 目标锁定框：光束扫过时弹出四角括号（三角洲 HUD 锁定）
+                    // 目标锁定框：光束扫过时弹出四角括号（全息 HUD 锁定）
                     if (bright > 0.55f) {
                         val lockSize = 26.dp.toPx()
                         withTransform({
@@ -1700,10 +1707,10 @@ private fun RadarTrackPanel(vm: RadarViewModel, modifier: Modifier = Modifier) {
             LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                 items(targets.sortedByDescending { it.rssi }, key = { it.id }) { t ->
                     val wifi = t.type == "wifi"
-                    val barColor = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Color(0xFF4C6A5E)
+                    val barColor = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Color(0xFF1E4A66)
                     Surface(
                         Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        shape = RoundedCornerShape(6.dp),
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                         color = SurfaceBg,
                         border = BorderStroke(1.dp, BorderDim),
                     ) {
@@ -1713,10 +1720,10 @@ private fun RadarTrackPanel(vm: RadarViewModel, modifier: Modifier = Modifier) {
                                 Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
                                 Spacer(Modifier.height(3.dp))
                                 // 信号强度条
-                                Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF1B2B26))) {
+                                Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(Color(0xFF0E1B2E))) {
                                     Box(
                                         Modifier.fillMaxWidth(((t.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
-                                            .clip(RoundedCornerShape(2.dp)).background(barColor),
+                                            .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
                                     )
                                 }
                             }
@@ -1754,7 +1761,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
 
                 if (running) {
                     Spacer(Modifier.height(6.dp))
@@ -1803,7 +1810,7 @@ private fun FileTransferLivePanel(
         Spacer(Modifier.height(8.dp))
         Surface(
             modifier = Modifier.fillMaxWidth().clickable { picker.launch(arrayOf("*/*")) },
-            shape = RoundedCornerShape(8.dp),
+            shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
             color = Red.copy(alpha = 0.12f),
             border = BorderStroke(1.dp, Red.copy(alpha = 0.4f)),
         ) {
@@ -1831,7 +1838,7 @@ private fun FileTransferInboxPanel(vm: FileTransferViewModel) {
                     val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", received!!)
                     ctx.startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "*/*"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
                 },
-                shape = RoundedCornerShape(7.dp),
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                 color = Red.copy(alpha = 0.1f),
                 border = BorderStroke(1.dp, Red.copy(alpha = 0.3f)),
             ) {
@@ -1878,7 +1885,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             ctx.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
                         } else vm.createPhotoIntent()?.let { photoLauncher.launch(it) }
-                    }, shape = RoundedCornerShape(8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                    }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
                         Text("拍照", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
@@ -1887,7 +1894,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             ctx.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
                         } else vm.createVideoIntent()?.let { videoLauncher.launch(it) }
-                    }, shape = RoundedCornerShape(8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
+                    }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
                         Text("摄像", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
@@ -1897,17 +1904,17 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             ctx.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                             micPermLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
                         } else vm.startRecording()
-                    }, shape = RoundedCornerShape(8.dp), color = if (recording) Red else Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = if (recording) 0.8f else 0.4f))) {
+                    }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = if (recording) Red else Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = if (recording) 0.8f else 0.4f))) {
                         Text(if (recording) "停止" else "录音", fontFamily = Mono, fontSize = 12.sp, color = if (recording) White else Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Surface(modifier = Modifier.fillMaxWidth().clickable { filePicker.launch(arrayOf("*/*")) }, shape = RoundedCornerShape(8.dp), color = Red.copy(alpha = 0.08f), border = BorderStroke(1.dp, Red.copy(alpha = 0.25f))) {
+                Surface(modifier = Modifier.fillMaxWidth().clickable { filePicker.launch(arrayOf("*/*")) }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red.copy(alpha = 0.08f), border = BorderStroke(1.dp, Red.copy(alpha = 0.25f))) {
                     Text("导入文件加密", fontFamily = Sans, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
                 }
 
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
                 Spacer(Modifier.height(8.dp))
                 Text("保险库文件 · ${entries.size} 个", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
@@ -1934,10 +1941,10 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             Surface(modifier = Modifier.weight(1f).clickable {
                                 val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", decrypted!!)
                                 ctx.startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "*/*"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
-                            }, shape = RoundedCornerShape(7.dp), color = Red, border = BorderStroke(1.dp, Red)) {
+                            }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red, border = BorderStroke(1.dp, Red)) {
                                 Text("打开", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                             }
-                            Surface(modifier = Modifier.weight(1f).clickable { vm.clearDecrypted() }, shape = RoundedCornerShape(7.dp), color = Color.Transparent, border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
+                            Surface(modifier = Modifier.weight(1f).clickable { vm.clearDecrypted() }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
                                 Text("清除", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                             }
                         }
@@ -1984,7 +1991,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(6.dp))
                     Surface(
                         modifier = Modifier.fillMaxWidth().clickable { vm.send() },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                         color = Red.copy(alpha = 0.15f),
                         border = BorderStroke(1.dp, Red.copy(alpha = 0.4f)),
                     ) {
@@ -2010,7 +2017,7 @@ private fun RevShellLogPanel(vm: RevShellViewModel, modifier: Modifier = Modifie
             LogLine(
                 if (l.direction == "in") "收到" else if (l.direction == "out") "发出" else "系统",
                 l.text,
-                when (l.direction) { "in" -> Color(0xFF00CC00); "out" -> Red; else -> Gray },
+                when (l.direction) { "in" -> TacGreen; "out" -> Red; else -> Gray },
             )
         }
     }
@@ -2109,7 +2116,7 @@ private fun DirBruteLivePanel(vm: DirBruteViewModel, running: Boolean) {
                 LogLine(
                     "${r.status}",
                     "${r.path}  ${r.size}b  ${r.timeMs}ms",
-                    if (r.status == 200) Red else if (r.status in 301..303) Color(0xFF00CC00) else White,
+                    if (r.status == 200) Red else if (r.status in 301..303) Warn else White,
                 )
             }
         }
@@ -2192,12 +2199,12 @@ fun AboutDetailScreen(back: () -> Unit) {
                     fontFamily = Sans,
                     fontWeight = FontWeight.Black,
                     fontSize = 20.sp,
-                    letterSpacing = 2.sp,
+                    letterSpacing = 0.sp,
                     color = White,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
                 Text(
-                    "★ DEAUTHCTRL v1.0 ★",
+                    "◆ DEAUTHCTRL v1.0 ◆",
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,

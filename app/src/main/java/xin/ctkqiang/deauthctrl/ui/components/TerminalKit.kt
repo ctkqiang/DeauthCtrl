@@ -37,7 +37,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BluetoothSearching
@@ -60,6 +60,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -75,61 +76,65 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
-// ─── 红军网络特战队 · 设计系统 ───────────────────────────────────────────────
+// ─── 全息战术 HUD · 设计系统 ─────────────────────────────────────────────────
 //
-// 视觉语言：军旗红 + 金星黄。中国红客工具的身份不是舶来的 Mr. Robot 终端，
-// 而是自己的旗帜与军徽 —— 五角星、绶带、军功金。
+// 视觉语言：全息青蓝 + 深海军蓝。青蓝色全息投影、斜切角面板、细发光边框、
+// 扫描环与数据流，像一台握在手里的战术全息设备。
 //
 // 对比度纪律：
 // - 正文用 White / Red / Gold，与 SurfaceBg 对比度均 ≥ 4.5:1
 // - RedDim 只用于装饰，不允许承载需要被读到的文字
+// - 错误 / 失败 / 告警一律使用 Danger，不使用主色青
 
-/** 军旗红 —— 主色：按钮、标题、运行状态 */
-val Red = Color(0xFFD7000F)
+/** 全息青 —— 主色：按钮、标题、强调、边框 */
+val Red = Color(0xFF35C9FF)
 
-/** 亮红 —— 运行中名称、告警强调 */
-val RedBright = Color(0xFFFF4B3E)
+/** 亮青 —— 运行中名称、告警强调 */
+val RedBright = Color(0xFF7FE7FF)
 
-/** 暗红 —— 仅装饰用途 */
-val RedDim = Color(0xFF7A1416)
+/** 深青 —— 仅装饰用途 */
+val RedDim = Color(0xFF0E5C7A)
 
-/** 金星黄 —— 军功金：徽章、荣誉状态、关键数值 */
-val Gold = Color(0xFFFFD23F)
+/** 危险红 —— 错误 / 失败 / 危险状态 */
+val Danger = Color(0xFFFF5A5A)
 
-/** 暗金 —— 装饰与未激活金星 */
-val GoldDim = Color(0xFF9A7B22)
+/** 琥珀橙 —— 警告 / 敌目标 */
+val Warn = Color(0xFFFFB547)
 
-/** 夜视绿 —— 三角洲功能色：运行状态、锁定框、实时数据 */
-val TacGreen = Color(0xFF00E676)
+/** 淡青 —— 关键数值、核心标记 */
+val Gold = Color(0xFF9BD7FF)
 
-/** 夜视绿暗 —— 弱信号/未激活 */
-val TacGreenDim = Color(0xFF00695C)
+/** 暗青 —— 装饰与未激活标记 */
+val GoldDim = Color(0xFF2E5E7E)
+
+/** 电光青 —— 运行状态、锁定框、实时数据 */
+val TacGreen = Color(0xFF45E0FF)
+
+/** 电光青暗 —— 弱信号 / 未激活 */
+val TacGreenDim = Color(0xFF0E4E6E)
 
 /** 正文白 */
-val White = Color(0xFFEDEDEF)
+val White = Color(0xFFE8F4FF)
 
 /** 次要文字灰 */
-val Gray = Color(0xFF8E8E96)
+val Gray = Color(0xFF7E93AD)
 
 /** 三级文字灰 —— 仅装饰 */
-val GrayDark = Color(0xFF5A5A62)
+val GrayDark = Color(0xFF4C6078)
 
-/** 页面最底层背景 —— 夜幕黑 */
-val Dark = Color(0xFF08080A)
+/** 页面最底层背景 —— 深海军蓝 */
+val Dark = Color(0xFF060B14)
 
-/** 卡片与面板底色 */
-val SurfaceBg = Color(0xFF0F0F12)
+/** 卡片与面板底色 —— 玻璃面板 */
+val SurfaceBg = Color(0xFF0B1522)
 
 /** 输入框与图标底 */
-val SurfaceAlt = Color(0xFF16161B)
+val SurfaceAlt = Color(0xFF101E30)
 
 /** 暗色边框与分隔线 */
-val BorderDim = Color(0xFF232329)
+val BorderDim = Color(0xFF1B3A5C)
 
 /** 全应用统一等宽字体 —— 数据、命令、日志 */
 val Mono = FontFamily.Monospace
@@ -137,12 +142,12 @@ val Mono = FontFamily.Monospace
 /** 中文界面字体 —— 标题、说明、按钮 */
 val Sans = FontFamily.Default
 
-// ─── 五角星 ──────────────────────────────────────────────────────────────────
+// ─── 菱形 HUD 标记 ───────────────────────────────────────────────────────────
 
 /**
  * 目标锁定框（四角括号）
  *
- * 三角洲战术 HUD 的核心符号：四角括号 = 目标已被锁定。
+ * 战术 HUD 的核心符号：四角括号 = 目标已被锁定。
  * 用于运行中的模块卡片与雷达目标高亮。
  */
 fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTacticalCorners(
@@ -175,62 +180,78 @@ fun TacticalCorners(color: Color, modifier: Modifier = Modifier, len: Dp = 9.dp,
 }
 
 /**
- * 五角星
+ * 菱形 HUD 标记
  *
- * Canvas 手绘标准五角星（外接圆半径 : 内接圆半径 = 1 : 0.42）。
- * 是整套设计系统的核心符号：徽章、状态指示、分区标题、分隔符。
+ * Canvas 手绘菱形（四顶点闭合 Path）：上下左右四个顶点连成瞄准标记，
+ * 是全息界面里的状态指示、分区标记与分隔符。
  */
 @Composable
 fun Star(color: Color, starSize: Dp, modifier: Modifier = Modifier) {
     Canvas(modifier.size(starSize)) {
-        val outer = size.minDimension / 2f
-        val inner = outer * 0.42f
+        val r = size.minDimension / 2f
         val cx = size.width / 2f
         val cy = size.height / 2f
         val path = Path()
-        for (i in 0 until 10) {
-            val r = if (i % 2 == 0) outer else inner
-            val a = -PI.toFloat() / 2 + i * PI.toFloat() / 5
-            val x = cx + r * cos(a)
-            val y = cy + r * sin(a)
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
+        path.moveTo(cx, cy - r)
+        path.lineTo(cx + r, cy)
+        path.lineTo(cx, cy + r)
+        path.lineTo(cx - r, cy)
         path.close()
         drawPath(path, color)
     }
 }
 
 /**
- * 军徽 —— 红底金环 + 缓慢旋转的金星
+ * 全息设备核心
  *
- * 主页与启动页的视觉锚点。金星以 12 秒一圈缓慢旋转，
- * 帽徽般的仪式感，转速刻意放慢避免分散注意力。
+ * 全息投影设备的核心图形：静态外环 + 缓慢旋转的虚线内环 +
+ * 中心菱形 + 约 2.5 秒一轮向外扩散的波纹环。
  */
 @Composable
 fun StarBadge(size: Dp, modifier: Modifier = Modifier) {
     val spin = rememberInfiniteTransition()
     val angle by spin.animateFloat(0f, 360f, infiniteRepeatable(tween(12000, easing = LinearEasing)))
+    val sweepDeg by spin.animateFloat(0f, 360f, infiniteRepeatable(tween(2500, easing = LinearEasing)))
 
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val c = Offset(this.size.width / 2f, this.size.height / 2f)
             val r = this.size.minDimension / 2f
-            drawCircle(Red.copy(alpha = 0.14f), r, c)
-            drawCircle(Red, r * 0.84f, c)
-            drawCircle(Gold, r * 0.84f, c, style = Stroke(2.2.dp.toPx()))
-            drawCircle(Gold.copy(alpha = 0.35f), r * 0.70f, c, style = Stroke(1.dp.toPx()))
+            val phase = (sweepDeg / 360f) % 1f
+            // 全息玻璃底光
+            drawCircle(Red.copy(alpha = 0.06f), r * 0.88f, c)
+            // 静态外环
+            drawCircle(Red.copy(alpha = 0.35f), r * 0.94f, c, style = Stroke(1.dp.toPx()))
+            // 向外扩散的波纹环：约 2.5 秒一轮，越远越淡
+            drawCircle(
+                Red.copy(alpha = (1f - phase) * 0.40f),
+                r * (0.30f + phase * 0.65f),
+                c,
+                style = Stroke(1.4.dp.toPx()),
+            )
         }
-        Box(Modifier.graphicsLayer { rotationZ = angle }) {
-            Star(Gold, size * 0.52f)
+        // 内圈虚线环缓慢旋转
+        Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = angle }) {
+            val c = Offset(this.size.width / 2f, this.size.height / 2f)
+            val r = this.size.minDimension / 2f
+            drawCircle(
+                Red.copy(alpha = 0.55f),
+                r * 0.74f,
+                c,
+                style = Stroke(
+                    width = 1.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 5f)),
+                ),
+            )
         }
+        Star(Gold, size * 0.52f)
     }
 }
 
 /**
- * 脉冲金星 —— 运行状态指示
+ * 菱形脉冲指示 —— 运行状态指示
  *
- * 运行中：双层金色光晕 + 金星呼吸脉冲；停止：静态暗金星。
- * 取代圆点：状态不是"亮灯"，而是"授星"。
+ * 运行中：双层电光青光晕 + 菱形呼吸脉冲；停止：静态暗青菱形。
  */
 @Composable
 fun PulseStar(active: Boolean, size: Dp = 9.dp, modifier: Modifier = Modifier) {
@@ -278,7 +299,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 back()
             },
-            shape = RoundedCornerShape(6.dp),
+            shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
             color = Red.copy(alpha = 0.10f),
             border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
         ) {
@@ -286,7 +307,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
         }
         Spacer(Modifier.width(12.dp))
         Text(title, fontFamily = Sans, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
-        Text("Δ TAC-06 // root@deauth:~#", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+        Text("root@deauth:~#", fontFamily = Mono, fontSize = 10.sp, color = Gray)
         Text("▊", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold.copy(alpha = cursorAlpha))
     }
 }
@@ -294,13 +315,12 @@ fun TerminalHeader(title: String, back: () -> Unit) {
 /**
  * 区域标签
  *
- * `★ 侦察 ────`：金星 + 白色粗体标题 + 延伸至右边缘的军旗红线。
+ * `▸ 侦察 ────`：前导箭头 + 白色粗体标题 + 延伸至右边缘的青色细线。
  */
 @Composable
 fun SectionLabel(text: String) {
     Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Star(Gold, 10.dp)
-        Spacer(Modifier.width(8.dp))
+        Text("▸ ", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
         Text(text, fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
         Spacer(Modifier.width(9.dp))
         Box(Modifier.weight(1f).height(1.dp).background(Red.copy(alpha = 0.35f)))
@@ -310,16 +330,16 @@ fun SectionLabel(text: String) {
 /**
  * 终端面板
  *
- * 标题条：金星 + 红字标题；内容区：深黑底。面板是作战地图上的区块。
+ * 标题条：菱形标记 + 青字标题；内容区：深蓝玻璃底。面板是作战地图上的区块。
  */
 @Composable
 fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
             .background(SurfaceBg)
-            .border(1.dp, BorderDim, RoundedCornerShape(8.dp)),
+            .border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
     ) {
         Row(
             Modifier.fillMaxWidth().background(Red.copy(alpha = 0.07f)).padding(horizontal = 12.dp, vertical = 7.dp),
@@ -327,7 +347,7 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
         ) {
             Star(Gold, 8.dp)
             Spacer(Modifier.width(7.dp))
-            Text("Δ $title", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red)
+            Text("▸ $title", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red)
         }
         Column(Modifier.padding(12.dp)) { content() }
     }
@@ -338,7 +358,7 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
 /**
  * 终端风格输入框
  *
- * 顶部中文标签 + 圆角输入框。输入内容用等宽字体，光标金色。
+ * 顶部中文标签 + 斜切角输入框。输入内容用等宽字体，光标淡青。
  */
 @Composable
 fun TermInput(label: String, value: String, placeholder: String = "", modifier: Modifier = Modifier, onValue: (String) -> Unit) {
@@ -351,9 +371,9 @@ fun TermInput(label: String, value: String, placeholder: String = "", modifier: 
             cursorBrush = SolidColor(Gold),
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(6.dp))
+                .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                 .background(SurfaceAlt)
-                .border(1.dp, BorderDim, RoundedCornerShape(6.dp))
+                .border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             decorationBox = { inner ->
                 if (value.isEmpty() && placeholder.isNotEmpty()) {
@@ -368,8 +388,8 @@ fun TermInput(label: String, value: String, placeholder: String = "", modifier: 
 /**
  * 主操作按钮（二态）
  *
- * - 空闲：军旗红底 + 金边 + 白字「▶ 启动」
- * - 运行中：深红底 + 呼吸金边 + 脉冲金星 + 红字「■ 停止」
+ * - 空闲：全息青底 + 亮青边 + 白字「▶ 启动」
+ * - 运行中：青色微光底 + 呼吸亮边 + 菱形脉冲 + 青字「■ 停止」
  */
 @Composable
 fun ActionButton(
@@ -395,7 +415,7 @@ fun ActionButton(
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()
             },
-        shape = RoundedCornerShape(7.dp),
+        shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
         color = if (running) TacGreen.copy(alpha = 0.08f) else Red,
         border = BorderStroke(1.5.dp, if (running) TacGreen.copy(alpha = borderAlpha) else Gold.copy(alpha = 0.9f)),
     ) {
@@ -415,7 +435,7 @@ fun ActionButton(
     }
 }
 
-/** 次级操作按钮 —— 金边红字，用于「选择文件」「清空」等次要动作 */
+/** 次级操作按钮 —— 青边青字，用于「选择文件」「清空」等次要动作 */
 @Composable
 fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
@@ -428,7 +448,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
-        shape = RoundedCornerShape(6.dp),
+        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
         color = Red.copy(alpha = 0.08f),
         border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
     ) {
@@ -439,7 +459,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
 /**
  * 选项芯片
  *
- * 选中态：红底白字；未选中：透明底灰字暗框。
+ * 选中态：青底白字；未选中：透明底灰字暗框。
  */
 @Composable
 fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
@@ -449,7 +469,7 @@ fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
-        shape = RoundedCornerShape(6.dp),
+        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
         color = if (selected) Red else Color.Transparent,
         border = BorderStroke(1.dp, if (selected) Gold.copy(alpha = 0.7f) else BorderDim),
     ) {
@@ -459,7 +479,7 @@ fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
 
 // ─── 状态指示 ────────────────────────────────────────────────────────────────
 
-/** 键值统计芯片 —— 状态面板内竖排「值 / 标签」，值为军功金 */
+/** 键值统计芯片 —— 状态面板内竖排「值 / 标签」，值为电光青 */
 @Composable
 fun StatChip(label: String, value: String, active: Boolean = true) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 2.dp)) {
@@ -483,10 +503,10 @@ fun PanelStat(label: String, value: String, valueColor: Color = White) {
 /**
  * 日志区头部
  *
- * 金星 + 「实时日志」标题 + 右侧可选「清空」按钮。
+ * 菱形标记 + 「战地日志」标题 + 右侧可选「清空」按钮。
  */
 @Composable
-fun LogHeader(title: String = "Δ 战地日志", showClear: Boolean = false, onClear: () -> Unit = {}) {
+fun LogHeader(title: String = "战地日志", showClear: Boolean = false, onClear: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Star(Gold, 8.dp)
         Spacer(Modifier.width(7.dp))
@@ -497,12 +517,12 @@ fun LogHeader(title: String = "Δ 战地日志", showClear: Boolean = false, onC
     }
 }
 
-/** 空状态提示 —— 暗底卡片 + 金星 + 中文引导 */
+/** 空状态提示 —— 深色斜切卡片 + 菱形标记 + 中文引导 */
 @Composable
 fun EmptyHint(text: String) {
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 14.dp).clip(RoundedCornerShape(8.dp))
-            .background(SurfaceBg).border(1.dp, BorderDim, RoundedCornerShape(8.dp)).padding(12.dp),
+        Modifier.fillMaxWidth().padding(vertical = 14.dp).clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+            .background(SurfaceBg).border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Star(Gold, 9.dp)
@@ -528,7 +548,7 @@ fun LogLine(timestamp: String, text: String, textColor: Color = White) {
 /**
  * 主页功能模块卡片
  *
- * 左：图标底（运行中红星金辉）；中：名称（运行中带脉冲金星）+ 中文描述；
+ * 左：图标底（运行中电光青微光）；中：名称（运行中带菱形脉冲）+ 中文描述；
  * 右：「启动 / 停止」二态按钮或「进入 ›」。
  *
  * ## 动画
@@ -572,16 +592,16 @@ fun ModuleCard(
                     onClick()
                 }
                 .padding(vertical = 5.dp),
-            shape = RoundedCornerShape(6.dp),
+            shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
             color = bg,
             border = BorderStroke(1.dp, border),
         ) {
             Box {
             Row(Modifier.padding(horizontal = 13.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(40.dp).clip(RoundedCornerShape(6.dp))
+                    Modifier.size(40.dp).clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                         .background(if (running) TacGreen.copy(alpha = 0.14f) else SurfaceAlt)
-                        .border(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, RoundedCornerShape(6.dp)),
+                        .border(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(20.dp))
@@ -605,7 +625,7 @@ fun ModuleCard(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onClick()
                         },
-                        shape = RoundedCornerShape(6.dp),
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                         color = Color.Transparent,
                         border = BorderStroke(1.dp, BorderDim),
                     ) {
@@ -617,7 +637,7 @@ fun ModuleCard(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onToggle()
                         },
-                        shape = RoundedCornerShape(6.dp),
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                         color = if (running) Color.Transparent else Red,
                         border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.6f) else Gold.copy(alpha = 0.9f)),
                     ) {
@@ -641,8 +661,8 @@ fun ModuleCard(
 // 组件级预览不依赖 ViewModel，静态预览（Layoutlib）即可直接渲染。
 // 屏幕级预览见 ui/screens/MainScreen.kt 与 DetailScreens.kt 文件底部。
 
-/** 军徽与星标预览 */
-@Preview(name = "军徽与星标", showBackground = true, backgroundColor = 0xFF08080A)
+/** 全息核心与标记预览 */
+@Preview(name = "全息核心与标记", showBackground = true, backgroundColor = 0xFF060B14)
 @Composable
 private fun BadgePreview() {
     PreviewTheme {
@@ -665,7 +685,7 @@ private fun BadgePreview() {
 }
 
 /** 页面头部预览 */
-@Preview(name = "页面头部", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393)
+@Preview(name = "页面头部", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393)
 @Composable
 private fun HeaderPreview() {
     PreviewTheme {
@@ -677,7 +697,7 @@ private fun HeaderPreview() {
 }
 
 /** 组件画廊预览 —— 按钮 / 卡片 / 面板 / 输入 / 日志一屏看全 */
-@Preview(name = "组件画廊", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852)
+@Preview(name = "组件画廊", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393, heightDp = 852)
 @Composable
 private fun KitPreview() {
     PreviewTheme {
@@ -693,7 +713,7 @@ private fun KitPreview() {
             Spacer(Modifier.height(14.dp))
             TermPanel("运行统计") {
                 PanelStat("已发送", "1024")
-                PanelStat("失败", "3", valueColor = Red)
+                PanelStat("失败", "3", valueColor = Danger)
                 PanelStat("运行时长", "00:42", valueColor = Gold)
             }
             Spacer(Modifier.height(14.dp))
@@ -707,8 +727,8 @@ private fun KitPreview() {
             Spacer(Modifier.height(14.dp))
             LogHeader(showClear = true) {}
             LogLine("22:15:03", "BLE 泛洪已启动", Gold)
-            LogLine("22:15:04", "数据包发送成功", Color(0xFF00CC00))
-            LogLine("22:15:05", "数据包发送失败", Red)
+            LogLine("22:15:04", "数据包发送成功", TacGreen)
+            LogLine("22:15:05", "数据包发送失败", Danger)
             Spacer(Modifier.height(14.dp))
             EmptyHint("点击上方按钮开始扫描，在线设备会实时列出")
             Spacer(Modifier.height(14.dp))

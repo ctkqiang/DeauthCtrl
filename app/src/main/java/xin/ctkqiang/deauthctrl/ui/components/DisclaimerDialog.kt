@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,16 +45,16 @@ fun DisclaimerDialog(
     onAccept: () -> Unit,
 ) {
     val openDialog = remember { mutableStateOf(true) }
-    val R = Color(0xFFD7000F)
-    val GOLD = Color(0xFFFFD23F)
-    val BG = Color(0xFF0F0F12)
-    val W = Color(0xFFEDEDEF)
-    val G = Color(0xFF8E8E96)
+    val R = Color(0xFF35C9FF)
+    val GOLD = Color(0xFF9BD7FF)
+    val BG = Color(0xFF0B1522)
+    val W = Color(0xFFE8F4FF)
+    val G = Color(0xFF7E93AD)
 
     if (openDialog.value) {
         AlertDialog(
             onDismissRequest = { },
-            shape = RoundedCornerShape(12.dp),
+            shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
             containerColor = BG,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -96,7 +96,7 @@ fun DisclaimerDialog(
             confirmButton = {
                 Surface(
                     onClick = { openDialog.value = false; onAccept() },
-                    shape = RoundedCornerShape(7.dp),
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                     color = R,
                     border = BorderStroke(1.dp, GOLD.copy(alpha = 0.9f)),
                 ) {
@@ -105,7 +105,7 @@ fun DisclaimerDialog(
                         fontFamily = FontFamily.Default,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
-                        color = Color.White,
+                        color = W,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                     )
