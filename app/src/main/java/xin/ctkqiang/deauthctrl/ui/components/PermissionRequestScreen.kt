@@ -41,9 +41,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 /** 一条权限在界面上的标题与说明 */
 data class PermissionCopy(val title: String, val reason: String)
@@ -78,9 +80,12 @@ object RequiredPermissions {
      *
      * 必须回查 PackageManager，不能相信请求回调里的布尔值：用户勾选「不再询问」
      * 之后系统一律回 false，而真实状态只有这里能读到。
+     * 静态预览（Layoutlib）的 PackageManager 不可用时返回空列表，让预览可渲染。
      */
     fun missing(context: Context): List<String> =
-        runtime.filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+        runCatching {
+            runtime.filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
+        }.getOrDefault(emptyList())
 
     /** 权限 → 界面标题与说明 */
     fun describe(permission: String): PermissionCopy = when (permission) {
@@ -217,4 +222,13 @@ private fun PermissionItem(title: String, desc: String) {
             Text(desc, fontFamily = Sans, fontSize = 12.sp, color = Gray)
         }
     }
+}
+
+// ─── Android Studio 预览 ──────────────────────────────────────────────────────
+
+/** 权限请求网关预览 */
+@Preview(name = "权限请求", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun PermissionScreenPreview() {
+    PreviewTheme { PermissionRequestScreen(onAllGranted = {}) }
 }

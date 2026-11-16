@@ -1,8 +1,11 @@
 package xin.ctkqiang.deauthctrl.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,8 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 /**
  * 法律免责声明对话框
@@ -118,5 +123,18 @@ fun DisclaimerDialog(
             },
             titleContentColor = R,
         )
+    }
+}
+
+// ─── Android Studio 预览 ──────────────────────────────────────────────────────
+
+/** 法律免责声明预览 */
+@Preview(name = "法律免责声明", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun DisclaimerPreview() {
+    PreviewTheme {
+        Box(Modifier.fillMaxSize().background(Color(0xFF08080A))) {
+            DisclaimerDialog(onAccept = {})
+        }
     }
 }

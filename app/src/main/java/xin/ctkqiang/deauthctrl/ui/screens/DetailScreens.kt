@@ -1,5 +1,6 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
+import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -69,6 +70,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -1844,4 +1846,188 @@ fun AboutDetailScreen(back: () -> Unit) {
             }
         }
     }
+}
+
+// ─── Android Studio 预览 ──────────────────────────────────────────────────────
+//
+// 每个详情页一个预览入口。真机预览（Preview on device）模式下 ViewModel
+// 可正常构造，静态预览降级为提示卡片。
+// 统一参数：Pixel 屏幕尺寸 + 中文环境 + 夜幕黑画布。
+
+@Preview(name = "BLE 泛洪引擎", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun BleDetailPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { BleSpamViewModel(app) } else null
+        if (vm == null) PreviewFallback("BLE 泛洪引擎") else BleDetailScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "蓝牙压制引擎", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun BtJamDetailPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { BluetoothJammerViewModel(app) } else null
+        if (vm == null) PreviewFallback("蓝牙压制引擎") else BtJamDetailScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "WiFi 干扰引擎", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun WifiDetailPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { WifiDisruptViewModel(app) } else null
+        if (vm == null) PreviewFallback("WiFi 干扰引擎") else WifiDetailScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "WiFi 压制引擎", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun WifiJamDetailPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { WifiJammerViewModel(app) } else null
+        if (vm == null) PreviewFallback("WiFi 压制引擎") else WifiJamDetailScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "WEB 服务器", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun WebServerPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { WebServerViewModel(app) } else null
+        if (vm == null) PreviewFallback("WEB 服务器") else WebServerDetailScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "ARP 网络扫描", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun ArpPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { ArpScanViewModel() }
+        if (vm == null) PreviewFallback("ARP 网络扫描") else ArpDetailScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "BLE 嗅探扫描", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun BleScannerPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { BleScannerViewModel(app) } else null
+        if (vm == null) PreviewFallback("BLE 嗅探扫描") else BleScannerScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "PING 泛洪", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun PingPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { PingViewModel() }
+        if (vm == null) PreviewFallback("PING 泛洪") else PingScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "HTTP 客户端", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun HttpClientPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { HttpClientViewModel() }
+        if (vm == null) PreviewFallback("HTTP 客户端") else HttpClientScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "端口扫描", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun PortScannerPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { PortScannerViewModel() }
+        if (vm == null) PreviewFallback("端口扫描") else PortScannerScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "WiFi 对讲机", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun WalkieTalkiePreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { WalkieTalkieViewModel(app) } else null
+        if (vm == null) PreviewFallback("WiFi 对讲机") else WalkieTalkieScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "设备雷达", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun RadarPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { RadarViewModel(app) } else null
+        if (vm == null) PreviewFallback("设备雷达") else RadarScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "文件快传", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun FileTransferPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { FileTransferViewModel(app) } else null
+        if (vm == null) PreviewFallback("文件快传") else FileTransferScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "加密保险箱", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun SecureVaultPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { SecureMediaViewModel(app) } else null
+        if (vm == null) PreviewFallback("加密保险箱") else SecureVaultScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "反弹 Shell", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun RevShellPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { RevShellViewModel() }
+        if (vm == null) PreviewFallback("反弹 Shell") else RevShellScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "Payload 生成器", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun PayloadPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { PayloadViewModel() }
+        if (vm == null) PreviewFallback("Payload 生成器") else PayloadScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "目录爆破", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun DirBrutePreview() {
+    PreviewTheme {
+        val vm = previewViewModel { DirBruteViewModel() }
+        if (vm == null) PreviewFallback("目录爆破") else DirBruteScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "CVE 搜索", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun CVEPreview() {
+    PreviewTheme {
+        val vm = previewViewModel { CVESearchViewModel() }
+        if (vm == null) PreviewFallback("CVE 搜索") else CVEScreen(vm, back = {})
+    }
+}
+
+@Preview(name = "关于", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun AboutPreview() {
+    PreviewTheme { AboutDetailScreen(back = {}) }
 }

@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +52,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
+import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 /**
  * CRT 扫描线叠加层
@@ -281,8 +283,18 @@ private fun CheckLevel.color(): Color = when (this) {
 @Composable
 fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    // 只在进入时采一次：这一屏展示的是"启动那一刻"的状态，展示过程中不该变化
-    val checks = remember { collectStartupChecks(context) }
+    // 只在进入时采一次：这一屏展示的是"启动那一刻"的状态，展示过程中不该变化。
+    // 静态预览（Layoutlib）读不到系统服务，采集失败时退化为占位自检项，保证预览可渲染。
+    val checks = remember {
+        runCatching { collectStartupChecks(context) }
+            .getOrElse {
+                listOf(
+                    StartupCheck("运行时权限", "预览模式", CheckLevel.OK),
+                    StartupCheck("网络接口", "预览模式", CheckLevel.OK),
+                    StartupCheck("可用内存", "预览模式", CheckLevel.OK),
+                )
+            }
+    }
 
     var shown by remember { mutableIntStateOf(0) }
     var blink by remember { mutableStateOf(true) }
@@ -338,5 +350,37 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
             }
         }
         ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Color(0xFFD7000F))
+    }
+}
+
+// ─── Android Studio 预览 ──────────────────────────────────────────────────────
+
+/** 启动自检预览 */
+@Preview(name = "启动自检", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun BootSequencePreview() {
+    PreviewTheme { BootSequence(onComplete = {}) }
+}
+
+/** 故障文字预览 */
+@Preview(name = "故障文字", showBackground = true, backgroundColor = 0xFF08080A)
+@Composable
+private fun GlitchTextPreview() {
+    PreviewTheme {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            GlitchText("DEAUTHCTRL", style = TextStyle(fontSize = 30.sp))
+        }
+    }
+}
+
+/** 扫描线预览 */
+@Preview(name = "扫描线叠加层", showBackground = true, backgroundColor = 0xFF08080A)
+@Composable
+private fun ScanlinePreview() {
+    PreviewTheme {
+        Box(Modifier.fillMaxSize()) {
+            Text("去认证控制", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFEDEDEF), modifier = Modifier.align(Alignment.Center))
+            ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Color(0xFFD7000F))
+        }
     }
 }

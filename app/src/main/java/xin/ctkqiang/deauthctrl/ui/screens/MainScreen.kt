@@ -1,6 +1,7 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
 import android.app.ActivityManager
+import android.app.Application
 import android.net.ConnectivityManager
 import android.net.TrafficStats
 import android.os.SystemClock
@@ -69,6 +70,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -117,10 +119,11 @@ fun MainScreen(
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
     mirrorVm: MirroringViewModel,
 ) {
-    // 首次启动免责声明：接受后写入偏好，之后启动不再弹出
+    // 首次启动免责声明：接受后写入偏好，之后启动不再弹出。
+    // 静态预览拿不到 SharedPreferences 时视为已接受，让预览直达主界面。
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE) }
-    var disclaimerAccepted by remember { mutableStateOf(prefs.getBoolean(KEY_DISCLAIMER_ACCEPTED, false)) }
+    val prefs = remember { runCatching { context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE) }.getOrNull() }
+    var disclaimerAccepted by remember { mutableStateOf(prefs?.getBoolean(KEY_DISCLAIMER_ACCEPTED, false) ?: true) }
 
     var boot by remember { mutableStateOf(true) }
     var selectedMirrorDevice by remember { mutableStateOf<MirroringDevice?>(null) }
@@ -144,7 +147,7 @@ fun MainScreen(
     Box(Modifier.fillMaxSize().background(Dark)) {
         if (!disclaimerAccepted) {
             DisclaimerDialog(onAccept = {
-                prefs.edit().putBoolean(KEY_DISCLAIMER_ACCEPTED, true).apply()
+                prefs?.edit()?.putBoolean(KEY_DISCLAIMER_ACCEPTED, true)?.apply()
                 disclaimerAccepted = true
             })
         }
@@ -250,32 +253,35 @@ private fun rememberSystemTelemetry(intervalMs: Long = TELEMETRY_INTERVAL_MS): S
 
         while (true) {
             delay(intervalMs)
-            val rx = TrafficStats.getTotalRxBytes()
-            val tx = TrafficStats.getTotalTxBytes()
-            val nowAt = SystemClock.elapsedRealtime()
-            val elapsedMs = (nowAt - previousAt).coerceAtLeast(1L)
+            // 静态预览（Layoutlib）读不到系统遥测时跳过本帧，保留上一帧读数
+            runCatching {
+                val rx = TrafficStats.getTotalRxBytes()
+                val tx = TrafficStats.getTotalTxBytes()
+                val nowAt = SystemClock.elapsedRealtime()
+                val elapsedMs = (nowAt - previousAt).coerceAtLeast(1L)
 
-            val supported = rx != TRAFFIC_UNSUPPORTED && tx != TRAFFIC_UNSUPPORTED && previousRx != TRAFFIC_UNSUPPORTED
-            val rxRate = if (supported) ((rx - previousRx).coerceAtLeast(0L) * 1000L / elapsedMs) else 0L
-            val txRate = if (supported) ((tx - previousTx).coerceAtLeast(0L) * 1000L / elapsedMs) else 0L
+                val supported = rx != TRAFFIC_UNSUPPORTED && tx != TRAFFIC_UNSUPPORTED && previousRx != TRAFFIC_UNSUPPORTED
+                val rxRate = if (supported) ((rx - previousRx).coerceAtLeast(0L) * 1000L / elapsedMs) else 0L
+                val txRate = if (supported) ((tx - previousTx).coerceAtLeast(0L) * 1000L / elapsedMs) else 0L
 
-            if (supported) {
-                previousRx = rx
-                previousTx = tx
+                if (supported) {
+                    previousRx = rx
+                    previousTx = tx
+                }
+                previousAt = nowAt
+
+                val memory = ActivityManager.MemoryInfo()
+                activityManager?.getMemoryInfo(memory)
+
+                value = SysTelemetry(
+                    rxBytesPerSec = rxRate,
+                    txBytesPerSec = txRate,
+                    memAvailBytes = memory.availMem,
+                    memTotalBytes = memory.totalMem,
+                    iface = activeInterfaceName(connectivity),
+                    trafficSupported = supported,
+                )
             }
-            previousAt = nowAt
-
-            val memory = ActivityManager.MemoryInfo()
-            activityManager?.getMemoryInfo(memory)
-
-            value = SysTelemetry(
-                rxBytesPerSec = rxRate,
-                txBytesPerSec = txRate,
-                memAvailBytes = memory.availMem,
-                memTotalBytes = memory.totalMem,
-                iface = activeInterfaceName(connectivity),
-                trafficSupported = supported,
-            )
         }
     }
     return telemetry
@@ -508,6 +514,59 @@ fun HomeScreen(
                         nav("about")
                     }
                     .padding(horizontal = 26.dp, vertical = 9.dp),
+            )
+        }
+    }
+}
+
+// ─── Android Studio 预览 ──────────────────────────────────────────────────────
+
+/** 状态栏预览 */
+@Preview(name = "状态栏", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393)
+@Composable
+private fun StatusBarPreview() {
+    PreviewTheme {
+        Column(Modifier.background(Dark).fillMaxSize().padding(16.dp)) {
+            StatusBar()
+        }
+    }
+}
+
+/** 主页预览 —— 完整 19 模块 + 运行态卡片 */
+@Preview(name = "主页", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun HomeScreenPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vms = remember(app) { if (app != null) createPreviewVms(app) else null }
+        if (vms == null) {
+            PreviewFallback("主页")
+        } else {
+            HomeScreen(
+                vms.bleVm, vms.wifiVm, vms.btVm, vms.wjVm, vms.wsVm, vms.arpVm,
+                vms.httpVm, vms.pingVm, vms.blescanVm, vms.portscanVm, vms.walkieVm,
+                vms.radarVm, vms.ftVm, vms.vaultVm, vms.revVm, vms.payloadVm,
+                vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm, nav = {},
+            )
+        }
+    }
+}
+
+/** 主路由预览 —— 免责声明 → 启动自检 → 主页完整流程 */
+@Preview(name = "主路由完整流程", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Composable
+private fun MainScreenPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vms = remember(app) { if (app != null) createPreviewVms(app) else null }
+        if (vms == null) {
+            PreviewFallback("主路由")
+        } else {
+            MainScreen(
+                vms.bleVm, vms.wifiVm, vms.btVm, vms.wjVm, vms.wsVm, vms.arpVm,
+                vms.httpVm, vms.pingVm, vms.blescanVm, vms.portscanVm, vms.walkieVm,
+                vms.radarVm, vms.ftVm, vms.vaultVm, vms.revVm, vms.payloadVm,
+                vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm,
             )
         }
     }

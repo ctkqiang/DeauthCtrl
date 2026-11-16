@@ -21,6 +21,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BluetoothSearching
+import androidx.compose.material.icons.outlined.Router
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -63,6 +69,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,6 +77,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 // ─── 红军网络特战队 · 设计系统 ───────────────────────────────────────────────
 //
@@ -573,6 +581,91 @@ fun ModuleCard(
                         Text(if (running) "停止" else "启动", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
                     }
                 }
+            }
+        }
+    }
+}
+
+// ─── Android Studio 预览 ──────────────────────────────────────────────────────
+//
+// 组件级预览不依赖 ViewModel，静态预览（Layoutlib）即可直接渲染。
+// 屏幕级预览见 ui/screens/MainScreen.kt 与 DetailScreens.kt 文件底部。
+
+/** 军徽与星标预览 */
+@Preview(name = "军徽与星标", showBackground = true, backgroundColor = 0xFF08080A)
+@Composable
+private fun BadgePreview() {
+    PreviewTheme {
+        Column(Modifier.background(Dark).fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            StarBadge(76.dp)
+            Spacer(Modifier.height(20.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Star(Gold, 12.dp)
+                Spacer(Modifier.width(12.dp))
+                PulseStar(active = true, size = 10.dp)
+                Spacer(Modifier.width(12.dp))
+                PulseStar(active = false, size = 10.dp)
+                Spacer(Modifier.width(12.dp))
+                Star(Red, 12.dp)
+                Spacer(Modifier.width(12.dp))
+                Star(GoldDim, 12.dp)
+            }
+        }
+    }
+}
+
+/** 页面头部预览 */
+@Preview(name = "页面头部", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393)
+@Composable
+private fun HeaderPreview() {
+    PreviewTheme {
+        Column(Modifier.background(Dark).fillMaxSize()) {
+            TerminalHeader("BLE 泛洪引擎", back = {})
+            Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/** 组件画廊预览 —— 按钮 / 卡片 / 面板 / 输入 / 日志一屏看全 */
+@Preview(name = "组件画廊", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852)
+@Composable
+private fun KitPreview() {
+    PreviewTheme {
+        Column(Modifier.background(Dark).padding(14.dp).verticalScroll(rememberScrollState())) {
+            SectionLabel("侦察")
+            ModuleCard("ARP 扫描", "扫描局域网在线设备", running = false, icon = Icons.Outlined.Router, onClick = {})
+            ModuleCard("BLE 扫描", "嗅探附近低功耗蓝牙设备", running = true, icon = Icons.Outlined.BluetoothSearching, onClick = {}, onToggle = {})
+            ModuleCard("CVE 搜索", "查询公开漏洞数据库", running = false, icon = Icons.Outlined.Search, onClick = {})
+            Spacer(Modifier.height(14.dp))
+            ActionButton(running = false, runLabel = "启动泛洪", stopLabel = "停止泛洪") {}
+            Spacer(Modifier.height(8.dp))
+            ActionButton(running = true, runLabel = "启动泛洪", stopLabel = "停止泛洪") {}
+            Spacer(Modifier.height(14.dp))
+            TermPanel("运行统计") {
+                PanelStat("已发送", "1024")
+                PanelStat("失败", "3", valueColor = Red)
+                PanelStat("运行时长", "00:42", valueColor = Gold)
+            }
+            Spacer(Modifier.height(14.dp))
+            TermInput("目标主机", value = "", placeholder = "例如 8.8.8.8 或 baidu.com") {}
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                SelectChip(selected = true, text = "低功率") {}
+                SelectChip(selected = false, text = "中功率") {}
+                SelectChip(selected = false, text = "高功率") {}
+            }
+            Spacer(Modifier.height(14.dp))
+            LogHeader(showClear = true) {}
+            LogLine("22:15:03", "BLE 泛洪已启动", Gold)
+            LogLine("22:15:04", "数据包发送成功", Color(0xFF00CC00))
+            LogLine("22:15:05", "数据包发送失败", Red)
+            Spacer(Modifier.height(14.dp))
+            EmptyHint("点击上方按钮开始扫描，在线设备会实时列出")
+            Spacer(Modifier.height(14.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StatChip("发送", "128")
+                StatChip("接收", "127")
+                StatChip("丢包", "0%")
             }
         }
     }
