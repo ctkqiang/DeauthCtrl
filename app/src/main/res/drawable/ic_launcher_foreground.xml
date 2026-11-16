@@ -1,25 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  DeauthCtrl 应用图标 · 全息菱形核心
+  视觉语言与应用 UI 同源：深海军蓝玻璃底、全息青 #35C9FF 主描边、
+  实心菱形准星、扫描弧光点、底部信号线。
+  小尺寸可辨识核心：青色实心菱形 + 白色光点。
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- 斜切玻璃底衬（深蓝玻璃） -->
     <path
-        android:fillColor="#FFFF0000"
-        android:pathData="M54,28 C41,28 30,38 30,50 L30,54 L34,54 L34,50 C34,40 42,32 54,32 C66,32 74,40 74,50 L74,54 L78,54 L78,50 C78,38 67,28 54,28 Z" />
+        android:fillColor="#0B1522"
+        android:pathData="M54,24 L84,54 L54,84 L24,54 Z" />
 
+    <!-- 主菱形描边（全息青） -->
     <path
-        android:fillColor="#FF000000"
-        android:pathData="M44,46 L50,46 L50,52 L44,52 Z M58,46 L64,46 L64,52 L58,52 Z" />
-
-    <path
-        android:fillColor="#FFFF0000"
-        android:pathData="M44,60 L64,60 L64,64 L44,64 Z" />
-
-    <path
-        android:fillColor="#FFFF0000"
-        android:strokeColor="#FFFF0000"
+        android:fillColor="#00000000"
+        android:strokeColor="#35C9FF"
         android:strokeWidth="3"
-        android:pathData="M34,72 L74,82 M74,72 L34,82" />
+        android:pathData="M54,24 L84,54 L54,84 L24,54 Z" />
+
+    <!-- 内部实心菱形（全息青） -->
+    <path
+        android:fillColor="#35C9FF"
+        android:pathData="M54,37 L71,54 L54,71 L37,54 Z" />
+
+    <!-- 中心准星镂空（透出背景色） -->
+    <path
+        android:fillColor="#060B14"
+        android:pathData="M54,46 L62,54 L54,62 L46,54 Z" />
+
+    <!-- 扫描弧（左上方，亮青） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7FE7FF"
+        android:strokeWidth="2.5"
+        android:pathData="M38,38 A22.6,22.6 0 0 1 54,31" />
+
+    <!-- 弧端光点（白） -->
+    <path
+        android:fillColor="#E8F4FF"
+        android:pathData="M54,29 a2,2 0 1 1 -0.01,0 Z" />
+
+    <!-- 底部信号线（双线，上长下短） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#35C9FF"
+        android:strokeWidth="2.5"
+        android:pathData="M44,75 L64,75" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#35C9FF"
+        android:strokeWidth="1.5"
+        android:pathData="M49,81 L59,81" />
 </vector>
