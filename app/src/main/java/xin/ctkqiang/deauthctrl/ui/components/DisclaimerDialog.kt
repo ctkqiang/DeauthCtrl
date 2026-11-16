@@ -1,7 +1,10 @@
 package xin.ctkqiang.deauthctrl.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
@@ -10,6 +13,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
@@ -36,11 +40,11 @@ fun DisclaimerDialog(
     onAccept: () -> Unit,
 ) {
     val openDialog = remember { mutableStateOf(true) }
-    val R = Color(0xFFFF0000)
-    val BG = Color(0xFF0A0A0A)
-    val W = Color(0xFFE6E6E6)
-    val G = Color(0xFF8A8A8A)
-    val B = Color(0xFF232323)
+    val R = Color(0xFFD7000F)
+    val GOLD = Color(0xFFFFD23F)
+    val BG = Color(0xFF0F0F12)
+    val W = Color(0xFFEDEDEF)
+    val G = Color(0xFF8E8E96)
 
     if (openDialog.value) {
         AlertDialog(
@@ -48,13 +52,17 @@ fun DisclaimerDialog(
             shape = RoundedCornerShape(12.dp),
             containerColor = BG,
             title = {
-                Text(
-                    "⚠ 法律警告",
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = R,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Star(GOLD, 10.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "法律警告",
+                        fontFamily = FontFamily.Default,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 17.sp,
+                        color = R,
+                    )
+                }
             },
             text = {
                 Text(
@@ -73,9 +81,9 @@ fun DisclaimerDialog(
 
 请负责任地使用。
                     """.trimIndent(),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    lineHeight = 18.sp,
+                    fontFamily = FontFamily.Default,
+                    fontSize = 12.sp,
+                    lineHeight = 19.sp,
                     color = W,
                     textAlign = TextAlign.Start,
                 )
@@ -85,11 +93,11 @@ fun DisclaimerDialog(
                     onClick = { openDialog.value = false; onAccept() },
                     shape = RoundedCornerShape(7.dp),
                     color = R,
-                    border = BorderStroke(1.dp, R),
+                    border = BorderStroke(1.dp, GOLD.copy(alpha = 0.9f)),
                 ) {
                     Text(
                         "我已知晓，继续",
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.Default,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         color = Color.White,
@@ -102,7 +110,7 @@ fun DisclaimerDialog(
                 TextButton(onClick = { /* 不可关闭：必须明确确认 */ }) {
                     Text(
                         "仅限授权使用",
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.Default,
                         fontSize = 11.sp,
                         color = G,
                     )

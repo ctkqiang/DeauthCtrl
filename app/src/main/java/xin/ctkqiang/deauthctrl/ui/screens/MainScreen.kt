@@ -12,8 +12,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,13 +54,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,7 +68,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,9 +95,10 @@ private const val KEY_DISCLAIMER_ACCEPTED = "disclaimer_accepted"
  * 应用主路由入口 Composable
  *
  * 整个应用的根组件，负责：
- * 1. 启动序列播放（BootSequence → 主界面）
- * 2. 页面路由导航（AnimatedContent 实现 21 个页面的过渡动画）
- * 3. 全局 ScanlineOverlay 叠加
+ * 1. 首次启动法律免责声明（接受后持久化）
+ * 2. 启动序列播放（BootSequence → 主界面）
+ * 3. 页面路由导航（AnimatedContent 实现 21 个页面的过渡动画）
+ * 4. 全局 ScanlineOverlay 叠加
  *
  * ## 路由系统
  * `navigate(target)` 进入目标页并把当前页压栈；`goBack()` 弹栈回上一屏。
@@ -184,7 +184,7 @@ fun MainScreen(
                 }
             }
         }
-        if (!boot) ScanlineOverlay(lineSpacing = 3.dp, alpha = 0.035f)
+        if (!boot) ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.02f)
     }
 }
 
@@ -281,28 +281,28 @@ private fun rememberSystemTelemetry(intervalMs: Long = TELEMETRY_INTERVAL_MS): S
     return telemetry
 }
 
-/** 实时状态栏 —— 四格真实系统指标，圆角卡片布局 */
+/** 实时状态栏 —— 四格真实系统指标，数值为军功金 */
 @Composable
 fun StatusBar() {
     val telemetry = rememberSystemTelemetry()
 
-    Surface(shape = RoundedCornerShape(10.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
+    Surface(shape = RoundedCornerShape(6.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
         Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            TelemetryCell("下行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.rxBytesPerSec) else TELEMETRY_PLACEHOLDER, Red)
-            TelemetryCell("上行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.txBytesPerSec) else TELEMETRY_PLACEHOLDER, Red)
-            TelemetryCell("内存", SysTelemetry.formatMemory(telemetry.memAvailBytes, telemetry.memTotalBytes), White)
-            TelemetryCell("网卡", telemetry.iface.ifEmpty { TELEMETRY_PLACEHOLDER }, White)
+            TelemetryCell("下行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.rxBytesPerSec) else TELEMETRY_PLACEHOLDER)
+            TelemetryCell("上行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.txBytesPerSec) else TELEMETRY_PLACEHOLDER)
+            TelemetryCell("内存", SysTelemetry.formatMemory(telemetry.memAvailBytes, telemetry.memTotalBytes))
+            TelemetryCell("网卡", telemetry.iface.ifEmpty { TELEMETRY_PLACEHOLDER })
         }
     }
 }
 
-/** 状态栏单项 —— 值在上（加粗着色）、中文标签在下 */
+/** 状态栏单项 —— 金色数值在上、中文标签在下 */
 @Composable
-private fun TelemetryCell(label: String, value: String, valueColor: Color) {
+private fun TelemetryCell(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = valueColor)
+        Text(value, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold)
         Spacer(Modifier.height(1.dp))
-        Text(label, fontFamily = Mono, fontSize = 9.sp, color = Gray)
+        Text(label, fontFamily = Sans, fontSize = 9.sp, color = Gray)
     }
 }
 
@@ -329,7 +329,7 @@ private const val CASCADE_MAX_STEPS = 6
  * 主屏幕 / 功能入口页
  *
  * ## 信息层次（自上而下）
- * 1. 标题与副标题（GlitchText + 中文副标题）
+ * 1. 军徽 + 「去认证控制」大标题 + 红客特遣队绶带
  * 2. [StatusBar] —— 真实系统遥测
  * 3. **运行中** 分区 —— 仅在有模块运行时出现，当前状态第一眼可见
  * 4. 功能分区：侦察 / 网络 / 无线 / 工具（每张卡片带专属图标）
@@ -410,19 +410,45 @@ fun HomeScreen(
             .padding(horizontal = 16.dp, vertical = 14.dp)
             .verticalScroll(rememberScrollState()),
     ) {
-        GlitchText("DEAUTHCTRL", style = TextStyle(fontSize = 30.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
+        // ─── 军徽头部 ─────────────────────────────────────────────
+        StarBadge(68.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Spacer(Modifier.height(10.dp))
+        Text(
+            "去认证控制",
+            fontFamily = Sans,
+            fontSize = 27.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 3.sp,
+            color = White,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
         Spacer(Modifier.height(4.dp))
-        Text("去认证控制系统 · v1.0", fontFamily = Mono, fontSize = 11.sp, color = Gray, modifier = Modifier.align(Alignment.CenterHorizontally))
-        Text("哪吒网络安全  |  中国红客", fontFamily = Mono, fontSize = 10.sp, color = GrayDark, modifier = Modifier.align(Alignment.CenterHorizontally))
-        Spacer(Modifier.height(14.dp))
+        Text(
+            "★ DEAUTHCTRL · 红客特遣队 ★",
+            fontFamily = Sans,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            color = Gold,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            "哪吒网络安全",
+            fontFamily = Sans,
+            fontSize = 10.sp,
+            color = Gray,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        Spacer(Modifier.height(16.dp))
         StatusBar()
         Spacer(Modifier.height(18.dp))
 
         if (activeEntries.isNotEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
-                RunDot(active = true, size = 7.dp)
+                PulseStar(active = true, size = 7.dp)
                 Spacer(Modifier.width(8.dp))
-                Text("运行中 · ${activeEntries.size}", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("运行中 · ${activeEntries.size}", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
             }
             activeEntries.forEach { entry ->
                 ModuleCard(entry.name, entry.desc, entry.running, entry.icon, delayMs = 0L, onClick = { nav(entry.route) }, onToggle = entry.toggle)
@@ -446,18 +472,33 @@ fun HomeScreen(
             Spacer(Modifier.height(6.dp))
         }
 
-        AsciiDivider(modifier = Modifier.padding(vertical = 12.dp))
-        Text("中国红客  |  国产自主  |  安全可控", fontFamily = Mono, fontSize = 11.sp, color = Gray, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.align(Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Star(Gold, 7.dp)
+            Spacer(Modifier.width(7.dp))
+            Text("中国红客", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+            Spacer(Modifier.width(10.dp))
+            Star(Gold, 7.dp)
+            Spacer(Modifier.width(7.dp))
+            Text("国产自主", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+            Spacer(Modifier.width(10.dp))
+            Star(Gold, 7.dp)
+            Spacer(Modifier.width(7.dp))
+            Text("安全可控", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+        }
+        Spacer(Modifier.height(12.dp))
         Surface(
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp),
-            shape = RoundedCornerShape(8.dp),
-            color = Color.Transparent,
-            border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
+            shape = RoundedCornerShape(6.dp),
+            color = Red.copy(alpha = 0.08f),
+            border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
         ) {
             Text(
                 "关 于",
-                fontFamily = Mono,
+                fontFamily = Sans,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = Red,

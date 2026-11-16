@@ -84,14 +84,17 @@ import xin.ctkqiang.deauthctrl.ui.components.AsciiDivider
 import xin.ctkqiang.deauthctrl.ui.components.Dark
 import xin.ctkqiang.deauthctrl.ui.components.EmptyHint
 import xin.ctkqiang.deauthctrl.ui.components.GhostButton
+import xin.ctkqiang.deauthctrl.ui.components.Gold
 import xin.ctkqiang.deauthctrl.ui.components.Gray
 import xin.ctkqiang.deauthctrl.ui.components.LogHeader
 import xin.ctkqiang.deauthctrl.ui.components.LogLine
 import xin.ctkqiang.deauthctrl.ui.components.Mono
 import xin.ctkqiang.deauthctrl.ui.components.PanelStat
 import xin.ctkqiang.deauthctrl.ui.components.Red
+import xin.ctkqiang.deauthctrl.ui.components.Sans
 import xin.ctkqiang.deauthctrl.ui.components.RedDim
 import xin.ctkqiang.deauthctrl.ui.components.SelectChip
+import xin.ctkqiang.deauthctrl.ui.components.StarBadge
 import xin.ctkqiang.deauthctrl.ui.components.StatChip
 import xin.ctkqiang.deauthctrl.ui.components.SurfaceBg
 import xin.ctkqiang.deauthctrl.ui.components.TermInput
@@ -172,7 +175,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
         PageEnter {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 TermPanel("广播载荷") {
-                    Text("伪造协议", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                    Text("伪造协议", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         vm.getProfiles().forEach { p ->
                             SelectChip(selected = p == profile, text = p.displayName) {
@@ -182,7 +185,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("循环模式", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                    Text("循环模式", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         vm.getCycleModes().forEach { m ->
                             SelectChip(selected = m == cycleMode, text = m.displayName) {
@@ -196,7 +199,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
 
                 TermPanel("发送参数") {
-                    Text("功率档位", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                    Text("功率档位", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         vm.getTxPowerLevels().forEach { p ->
                             SelectChip(selected = p == txPower, text = p.displayName) {
@@ -207,7 +210,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("发送间隔", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                        Text("发送间隔", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Text("${interval.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                     }
                     Slider(interval, { interval = it; vm.setInterval(interval.toLong()) }, valueRange = 20f..100f, steps = 7, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
@@ -218,7 +221,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                             vm.setMaxPackets(maxPacketsText.toLongOrNull() ?: -1L)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text("（留空=不限）", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                        Text("（留空=不限）", fontFamily = Sans, fontSize = 10.sp, color = Gray)
                     }
                 }
 
@@ -381,9 +384,9 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
 
                 when (val s = ss) {
-                    is ScanState.Scanning -> Text("正在扫描 2.4/5GHz 频段…", fontFamily = Mono, fontSize = 12.sp, color = White)
+                    is ScanState.Scanning -> Text("正在扫描 2.4/5GHz 频段…", fontFamily = Sans, fontSize = 12.sp, color = White)
                     is ScanState.Results -> {
-                        Text("发现 ${s.networks.size} 个网络 · 点击选择目标", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                        Text("发现 ${s.networks.size} 个网络 · 点击选择目标", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Spacer(Modifier.height(4.dp))
                         LazyColumn(Modifier.fillMaxWidth().height(200.dp)) {
                             items(s.networks, key = { it.bssid }) { n ->
@@ -408,18 +411,18 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                         Spacer(Modifier.height(8.dp))
                         TermPanel("泛洪参数") {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("目标网络", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                                Text("目标网络", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 Text(sel?.ssid ?: "-", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
                             Spacer(Modifier.height(6.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("干扰时长", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                                Text("干扰时长", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 Text("${dur}s", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
                             Slider(dur.toFloat(), { dur = it.toInt().coerceIn(1, 60) }, valueRange = 1f..60f, steps = 14, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                             Spacer(Modifier.height(4.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("切换间隔", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                                Text("切换间隔", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 Text("${toggle.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
                             Slider(toggle, { toggle = it; vm.setToggleInterval(toggle.toLong()) }, valueRange = 40f..500f, steps = 22, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
@@ -438,9 +441,9 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                     is HotspotResult.Progress -> {
                         Spacer(Modifier.height(8.dp))
                         LinearProgressIndicator(progress = { r.cycle.toFloat() / r.totalCycles }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                        Text("周期 ${r.cycle}/${r.totalCycles}", fontFamily = Mono, fontSize = 10.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                        Text("周期 ${r.cycle}/${r.totalCycles}", fontFamily = Sans, fontSize = 10.sp, color = White, modifier = Modifier.padding(top = 3.dp))
                     }
-                    is HotspotResult.Completed -> Text("泛洪完成", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(top = 6.dp))
+                    is HotspotResult.Completed -> Text("泛洪完成", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(top = 6.dp))
                     is HotspotResult.Error -> Text("[!] ${r.message}", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(top = 6.dp))
                     else -> {}
                 }
@@ -485,7 +488,7 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermPanel("配置") {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("信道切换间隔", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                        Text("信道切换间隔", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Text("${ms.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                     }
                     Slider(ms, { ms = it; vm.setInterval(ms.toLong()) }, valueRange = 60f..300f, steps = 11, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
@@ -501,15 +504,15 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
                     Column {
                         Spacer(Modifier.height(8.dp))
                         LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                        Text("压制目标 ${tc} 个 · 轮次 ${stats.cycles} · 启动 ${stats.hotspotStarts} · 失败 ${stats.hotspotFailures}", fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                        Text("压制目标 ${tc} 个 · 轮次 ${stats.cycles} · 启动 ${stats.hotspotStarts} · 失败 ${stats.hotspotFailures}", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
                 when (val s = ss) {
-                    is JammerScanState.Scanning -> Text("正在扫描目标…", fontFamily = Mono, fontSize = 12.sp, color = White)
+                    is JammerScanState.Scanning -> Text("正在扫描目标…", fontFamily = Sans, fontSize = 12.sp, color = White)
                     is JammerScanState.Results -> {
-                        Text("发现目标 ${s.networks.size} 个", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                        Text("发现目标 ${s.networks.size} 个", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                         Spacer(Modifier.height(4.dp))
                         LazyColumn(Modifier.fillMaxWidth().weight(0.4f)) {
                             items(s.networks.take(12)) { n ->
@@ -611,7 +614,7 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
                         TermPanel("服务器信息") {
                             PanelStat("监听地址", host)
                             Spacer(Modifier.height(8.dp))
-                            Text("响应头（服务器实际发出的字段）", fontFamily = Mono, fontSize = 10.sp, color = Red, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+                            Text("响应头（服务器实际发出的字段）", fontFamily = Sans, fontSize = 10.sp, color = Red, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
                             headerFields.forEach { field ->
                                 val shown = if (field.startsWith(CONTENT_LENGTH_PREFIX)) {
                                     "$CONTENT_LENGTH_PREFIX <随页面大小变化>"
@@ -620,10 +623,10 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
                                 }
                                 Text("  $shown", fontFamily = Mono, fontSize = 11.sp, color = if (field.startsWith("HTTP/")) White else Gray)
                             }
-                            Text("  其余状态: $otherStatuses", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                            Text("  其余状态: $otherStatuses", fontFamily = Sans, fontSize = 10.sp, color = Gray)
                             Spacer(Modifier.height(8.dp))
                             AsciiDivider(modifier = Modifier.padding(vertical = 4.dp))
-                            Text("浏览器访问地址", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 2.dp))
+                            Text("浏览器访问地址", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 2.dp))
                             Text(url, fontFamily = Mono, fontSize = 12.sp, color = White, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -705,7 +708,7 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
                         color = Red,
                         trackColor = Track,
                     )
-                    Text("已探测 ${stats.hostsScanned}/${stats.hostCount} 台主机", fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                    Text("已探测 ${stats.hostsScanned}/${stats.hostCount} 台主机", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -728,7 +731,7 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
                             Row(Modifier.fillMaxWidth().padding(bottom = 5.dp)) {
                                 Text("IP 地址".padEnd(18), fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
                                 Text("MAC 地址".padEnd(20), fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
-                                Text("主机名", fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
+                                Text("主机名", fontFamily = Sans, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
                             }
                             AsciiDivider(modifier = Modifier.padding(vertical = 2.dp))
                             devices.take(ARP_DEVICE_RENDER_LIMIT).forEach { d ->
@@ -740,7 +743,7 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
                             }
                             if (devices.size > ARP_DEVICE_RENDER_LIMIT) {
                                 Spacer(Modifier.height(4.dp))
-                                Text("… 另有 ${devices.size - ARP_DEVICE_RENDER_LIMIT} 台未渲染（仅影响显示，统计数字仍为全量）", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                Text("… 另有 ${devices.size - ARP_DEVICE_RENDER_LIMIT} 台未渲染（仅影响显示，统计数字仍为全量）", fontFamily = Sans, fontSize = 10.sp, color = Gray)
                             }
                         }
                     }
@@ -802,7 +805,7 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
                 if (running) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                    Text("已发现 ${devices.size} 台设备", fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                    Text("已发现 ${devices.size} 台设备", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
                 }
 
                 if (!running && devices.isEmpty() && error == null) {
@@ -825,7 +828,7 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
 
                         if (selDev.rssiHistory.size > 1) {
                             Spacer(Modifier.height(8.dp))
-                            Text("信号强度走势 (dBm)", fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
+                            Text("信号强度走势 (dBm)", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
                             Box(Modifier.fillMaxWidth().height(60.dp).background(Color(0xFF020202)).border(0.5.dp, Track, RoundedCornerShape(4.dp))) {
                                 Canvas(Modifier.fillMaxSize()) {
                                     val h = size.height; val w = size.width
@@ -843,13 +846,13 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
                                     }
                                 }
                             }
-                            Text("最低:${selDev.rssiHistory.minOrNull() ?: 0}  最高:${selDev.rssiHistory.maxOrNull() ?: 0}  当前:${selDev.rssi}", fontFamily = Mono, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(top = 2.dp))
+                            Text("最低:${selDev.rssiHistory.minOrNull() ?: 0}  最高:${selDev.rssiHistory.maxOrNull() ?: 0}  当前:${selDev.rssi}", fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(top = 2.dp))
                         }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Text("已发现 ${devices.size} 台设备 · 点击查看详情", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("已发现 ${devices.size} 台设备 · 点击查看详情", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(devices) { d ->
@@ -933,7 +936,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
 
                 if (results.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("探测结果 · $host", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                    Text("探测结果 · $host", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                     Spacer(Modifier.height(4.dp))
                     LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
                         items(results) { r ->
@@ -984,7 +987,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                 TermInput("请求地址", url, placeholder = "https://example.com") { vm.setUrl(it) }
 
                 Spacer(Modifier.height(8.dp))
-                Text("请求方法", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                Text("请求方法", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     HttpClientManager.SUPPORTED_METHODS.forEach { m ->
                         SelectChip(selected = m == verb, text = m) { vm.setMethod(m) }
@@ -1016,9 +1019,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                 resp?.let { r ->
                     Spacer(Modifier.height(10.dp))
                     AsciiDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    Text(
-                        "状态 ${r.statusCode} · 耗时 ${r.timeMs}ms",
-                        fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    Text("状态 ${r.statusCode} · 耗时 ${r.timeMs}ms", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold,
                         color = if (r.statusCode < 400) White else Red,
                     )
                     PanelStat("响应大小", vm.formatBytes(r.bodyBytes.toLong()))
@@ -1027,7 +1028,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                         PanelStat("重定向落点", r.finalUrl, Gray)
                     }
                     if (r.truncated) {
-                        Text("[!] 响应体超过 ${vm.formatBytes(HttpClientManager.MAX_BODY_BYTES.toLong())}，已截断", fontFamily = Mono, fontSize = 10.sp, color = Red, modifier = Modifier.padding(top = 3.dp))
+                        Text("[!] 响应体超过 ${vm.formatBytes(HttpClientManager.MAX_BODY_BYTES.toLong())}，已截断", fontFamily = Sans, fontSize = 10.sp, color = Red, modifier = Modifier.padding(top = 3.dp))
                     }
 
                     if (r.headers.isNotEmpty()) {
@@ -1040,7 +1041,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                     }
 
                     Spacer(Modifier.height(8.dp))
-                    Text("响应体", fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 4.dp))
+                    Text("响应体", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 4.dp))
                     LazyColumn(
                         Modifier
                             .fillMaxWidth()
@@ -1122,7 +1123,7 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
                 if (running) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(progress = { scanned.toFloat() / maxOf(1, total) }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                    Text("已扫描 $scanned/$total · 开放 ${open.size}", fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                    Text("已扫描 $scanned/$total · 开放 ${open.size}", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
                 }
 
                 error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
@@ -1134,22 +1135,22 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
 
                 if (results.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("扫描报告 · $host", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                    Text("扫描报告 · $host", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                     Spacer(Modifier.height(4.dp))
                     LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                         item {
                             TermPanel("扫描报告 · $host") {
-                                if (open.isEmpty()) Text("未发现开放端口", fontFamily = Mono, fontSize = 11.sp, color = Gray)
+                                if (open.isEmpty()) Text("未发现开放端口", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 open.forEach { p ->
                                     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text("${p.port}/tcp", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.width(72.dp))
-                                        Text("开放", fontFamily = Mono, fontSize = 10.sp, color = Red, modifier = Modifier.width(44.dp))
+                                        Text("开放", fontFamily = Sans, fontSize = 10.sp, color = Red, modifier = Modifier.width(44.dp))
                                         Text(p.service, fontFamily = Mono, fontSize = 11.sp, color = White)
                                     }
                                     if (p.banner.isNotEmpty()) Text("  └ ${p.banner}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
                                 }
                                 Spacer(Modifier.height(4.dp))
-                                Text("共扫描 $total 个端口，${open.size} 个开放", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                Text("共扫描 $total 个端口，${open.size} 个开放", fontFamily = Sans, fontSize = 10.sp, color = Gray)
                             }
                         }
                     }
@@ -1217,7 +1218,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                                         Text(p.ip, fontFamily = Mono, fontSize = 10.sp, color = Gray)
                                         if (p.isTalking) {
                                             Spacer(Modifier.width(6.dp))
-                                            Text("说话中", fontFamily = Mono, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
+                                            Text("说话中", fontFamily = Sans, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -1237,11 +1238,11 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                         },
                         shape = RoundedCornerShape(8.dp),
                         color = if (isLive) Red.copy(alpha = 0.15f) else Color.Transparent,
-                        border = BorderStroke(1.5.dp, if (isLive) Red else Red.copy(alpha = 0.3f)),
+                        border = BorderStroke(1.5.dp, if (isLive) Gold else Red.copy(alpha = 0.3f)),
                     ) {
                         Text(
                             if (isLive) "直播中 · ${countdown}s" else "直播模式",
-                            fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                            fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold,
                             color = if (isLive) Red else Red.copy(alpha = 0.5f),
                             modifier = Modifier.padding(vertical = 11.dp).fillMaxWidth(),
                             textAlign = TextAlign.Center,
@@ -1262,12 +1263,12 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                                 )
                             }
                             .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.12f))
-                            .border(2.dp, Red.copy(alpha = if (active) 1f else 0.3f), RoundedCornerShape(10.dp)),
+                            .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.3f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             if (active) "●●● 发送中 ●●●" else "按住说话",
-                            fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                            fontFamily = Sans, fontSize = 16.sp, fontWeight = FontWeight.Bold,
                             color = if (active) White else Red,
                         )
                     }
@@ -1366,14 +1367,14 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
 
                 Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp).background(Color(0xFF001100)).border(0.5.dp, Color(0xFF003300), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(if (running) "模式: 扫描中" else "模式: 待机", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
-                    Text("增益: 自动", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
-                    Text("量程: 100米", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
+                    Text("增益: 自动", fontFamily = Sans, fontSize = 8.sp, color = scopeGreen)
+                    Text("量程: 100米", fontFamily = Sans, fontSize = 8.sp, color = scopeGreen)
                     Text("方位角: ${"%.0f".format(sweepAngle)}°", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
-                    Text("目标: ${targets.size}", fontFamily = Mono, fontSize = 8.sp, color = Color(0xFFFF8800))
+                    Text("目标: ${targets.size}", fontFamily = Sans, fontSize = 8.sp, color = Color(0xFFFF8800))
                 }
 
                 Spacer(Modifier.height(6.dp))
-                Text("目标列表 · ${targets.size}", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("目标列表 · ${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(targets.sortedByDescending { it.rssi }) { t ->
@@ -1417,7 +1418,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
 
                 if (running) {
                     Spacer(Modifier.height(6.dp))
-                    Text("本机地址: ${vm.localIp}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                    Text("本机地址: ${vm.localIp}", fontFamily = Sans, fontSize = 10.sp, color = Gray)
                     if (peers.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
                         TermPanel("已发现设备 (${peers.size})") {
@@ -1450,7 +1451,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
                             fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center,
                         )
                     }
-                    Text("已发送: $sent 个文件", fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
+                    Text("已发送: $sent 个文件", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
                 }
 
                 if (received != null) {
@@ -1468,7 +1469,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
                             color = Red.copy(alpha = 0.1f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.3f)),
                         ) {
-                            Text("打开文件", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
+                            Text("打开文件", fontFamily = Sans, fontSize = 11.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -1515,7 +1516,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
                         } else vm.createPhotoIntent()?.let { photoLauncher.launch(it) }
                     }, shape = RoundedCornerShape(8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
-                        Text("拍照", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text("拍照", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1524,7 +1525,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
                         } else vm.createVideoIntent()?.let { videoLauncher.launch(it) }
                     }, shape = RoundedCornerShape(8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
-                        Text("摄像", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text("摄像", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1540,12 +1541,12 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
                 Surface(modifier = Modifier.fillMaxWidth().clickable { filePicker.launch(arrayOf("*/*")) }, shape = RoundedCornerShape(8.dp), color = Red.copy(alpha = 0.08f), border = BorderStroke(1.dp, Red.copy(alpha = 0.25f))) {
-                    Text("导入文件加密", fontFamily = Mono, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
+                    Text("导入文件加密", fontFamily = Sans, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
                 }
 
                 error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.padding(top = 4.dp)) }
                 Spacer(Modifier.height(8.dp))
-                Text("保险库文件 · ${entries.size} 个", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("保险库文件 · ${entries.size} 个", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
 
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
@@ -1571,10 +1572,10 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                                 val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", decrypted!!)
                                 ctx.startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "*/*"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
                             }, shape = RoundedCornerShape(7.dp), color = Red, border = BorderStroke(1.dp, Red)) {
-                                Text("打开", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                                Text("打开", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                             }
                             Surface(modifier = Modifier.weight(1f).clickable { vm.clearDecrypted() }, shape = RoundedCornerShape(7.dp), color = Color.Transparent, border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
-                                Text("清除", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                                Text("清除", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                             }
                         }
                     }
@@ -1614,7 +1615,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                Text("会话日志", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("会话日志", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
                     if (logs.isEmpty()) item { EmptyHint("等待连接建立，会话内容会显示在这里") }
@@ -1636,7 +1637,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
                         color = Red.copy(alpha = 0.15f),
                         border = BorderStroke(1.dp, Red.copy(alpha = 0.4f)),
                     ) {
-                        Text("发送命令", fontFamily = Mono, fontSize = 12.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp), textAlign = TextAlign.Center)
+                        Text("发送命令", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp), textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -1670,7 +1671,7 @@ fun PayloadScreen(vm: PayloadViewModel, back: () -> Unit) {
                     vm.generate()
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("已生成 ${payloads.size} 个载荷 · 目标 $ip:$port", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("已生成 ${payloads.size} 个载荷 · 目标 $ip:$port", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(payloads) { p ->
@@ -1711,14 +1712,14 @@ fun DirBruteScreen(vm: DirBruteViewModel, back: () -> Unit) {
                 if (running) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(progress = { done.toFloat() / maxOf(1, total) }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                    Text("已测试 $done/$total 个路径 · 命中 ${results.size}", fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                    Text("已测试 $done/$total 个路径 · 命中 ${results.size}", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
                 }
                 if (!running && results.isEmpty()) {
                     Spacer(Modifier.height(8.dp))
                     EmptyHint("输入目标 URL 后启动枚举，命中路径会实时列出")
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("命中路径 · ${results.size}", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("命中路径 · ${results.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(results) { r ->
@@ -1765,7 +1766,7 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
                     EmptyHint("输入 CVE 编号、厂商或产品名后搜索")
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("搜索结果 · ${results.size}", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("搜索结果 · ${results.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(results) { r ->
@@ -1773,7 +1774,7 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
                         TermPanel("${r.id}  ${if (r.cvss != null) "CVSS ${"%.1f".format(r.cvss)}" else ""}") {
                             Text(r.description, fontFamily = Mono, fontSize = 10.sp, color = White)
                             Spacer(Modifier.height(4.dp))
-                            Text("发布时间: ${r.published}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                            Text("发布时间: ${r.published}", fontFamily = Sans, fontSize = 9.sp, color = Gray)
                         }
                     }
                 }
@@ -1803,6 +1804,26 @@ fun AboutDetailScreen(back: () -> Unit) {
         TerminalHeader("关于", back)
         PageEnter {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(14.dp)) {
+                StarBadge(56.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "去认证控制",
+                    fontFamily = Sans,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 20.sp,
+                    letterSpacing = 2.sp,
+                    color = White,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Text(
+                    "★ DEAUTHCTRL v1.0 ★",
+                    fontFamily = Sans,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Gold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Spacer(Modifier.height(14.dp))
                 TermPanel("系统信息") {
                     InfoRow("作者", "钟智强 (ctkqiang)")
                     InfoRow("代号", "哪吒网络安全")
@@ -1814,10 +1835,10 @@ fun AboutDetailScreen(back: () -> Unit) {
 
                 Spacer(Modifier.height(14.dp))
                 Text("$ uname -a", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-                Text("  DeauthCtrl v1.0  |  中国红客  |  国产自主  |  安全可控", fontFamily = Mono, fontSize = 11.sp, color = White)
+                Text("  DeauthCtrl v1.0  |  中国红客  |  国产自主  |  安全可控", fontFamily = Sans, fontSize = 11.sp, color = White)
                 Spacer(Modifier.height(6.dp))
                 Text("$ whoami", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-                Text("  哪吒网络安全 (ctkqiang)", fontFamily = Mono, fontSize = 11.sp, color = White)
+                Text("  哪吒网络安全 (ctkqiang)", fontFamily = Sans, fontSize = 11.sp, color = White)
                 Spacer(Modifier.height(14.dp))
                 EmptyHint("本应用仅供授权安全研究与教育用途，请勿用于非法活动")
             }

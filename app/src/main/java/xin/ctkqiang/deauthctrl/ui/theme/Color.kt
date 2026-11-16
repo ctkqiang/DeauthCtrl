@@ -18,14 +18,14 @@ import androidx.compose.ui.graphics.Color
  * - **Theme Tokens**: Material3 darkColorScheme 所需的标准映射
  */
 
-/** 标准红色 — 标题、按钮、强调文字、运行状态 */
-val Red = Color(0xFFFF0000)
-/** 亮红色 — hover 高亮、次要强调 */
-val RedBright = Color(0xFFFF3333)
-/** 暗红色 — 非活跃状态、分隔线 */
-val RedDark = Color(0xFFCC0000)
-/** 红色 10% 透明度 — 卡片/面板激活背景 */
-val RedBackground = Color(0x1AFF0000)
+/** 军旗红 —— 标题、按钮、强调文字、运行状态 */
+val Red = Color(0xFFD7000F)
+/** 亮红 —— hover 高亮、次要强调 */
+val RedBright = Color(0xFFFF4B3E)
+/** 暗红 —— 非活跃状态、分隔线（仅装饰） */
+val RedDark = Color(0xFF7A1416)
+/** 红色 10% 透明度 —— 卡片/面板激活背景 */
+val RedBackground = Color(0x1AD7000F)
 
 /** Matrix 绿 — 备用终端绿色（当前未在 UI 中使用） */
 val MatrixGreen = Color(0xFF00FF41)
@@ -35,8 +35,8 @@ val MatrixGreenDim = Color(0xFF00AA2E)
 /** 霓虹青色 — GlitchText 偏移层、特殊装饰 */
 val NeonCyan = Color(0xFF00FFFF)
 val NeonCyanDark = Color(0xFF003333)
-/** 霓虹琥珀色 — 警告/次要强调 */
-val NeonAmber = Color(0xFFFFB000)
+/** 霓虹琥珀色/金星黄 — 警告/军功金强调 */
+val NeonAmber = Color(0xFFFFD23F)
 
 /** 纯黑 — 最深背景色 */
 val Black = Color(0xFF000000)
