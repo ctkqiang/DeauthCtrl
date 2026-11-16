@@ -1782,14 +1782,15 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     drawCircle(blip.copy(alpha = bright * 0.10f), 10.dp.toPx(), Offset(x, y))
                     drawCircle(blip.copy(alpha = bright * 0.35f), 5.dp.toPx(), Offset(x, y))
 
-                    // 命中扩散波：每个目标周期性弹出一个环
-                    val hit = ((sweepDeg / 360f) * 3f + i * 0.37f) % 1f
-                    drawCircle(
-                        blip.copy(alpha = (1f - hit) * bright * 0.8f),
-                        5.dp.toPx() + 30.dp.toPx() * hit,
-                        Offset(x, y),
-                        style = Stroke(1.2f),
-                    )
+                    // 红色涟漪 blip：两圈错相扩散环 + 内层光晕 —— 显示设备就在附近
+                    val rippleBase = ((sweepDeg / 360f) * 2f + i * 0.37f) % 1f
+                    val ripple = Color(0xFFFF4D5E)
+                    listOf(0f, 0.5f).forEach { off ->
+                        val ph = (rippleBase + off) % 1f
+                        val rr = 3.dp.toPx() + 24.dp.toPx() * ph
+                        drawCircle(ripple.copy(alpha = (1f - ph) * 0.16f * bright), rr, Offset(x, y), style = Stroke(5f))
+                        drawCircle(ripple.copy(alpha = (1f - ph) * 0.8f * bright), rr, Offset(x, y), style = Stroke(1.4f))
+                    }
 
                     // 核心点 + 十字准星
                     drawCircle(blip.copy(alpha = bright), 2.4.dp.toPx(), Offset(x, y))
