@@ -72,6 +72,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -113,6 +114,7 @@ import xin.ctkqiang.deauthctrl.ui.components.TermInput
 import xin.ctkqiang.deauthctrl.ui.components.TermPanel
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.White
+import xin.ctkqiang.deauthctrl.ui.components.drawTacticalCorners
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
@@ -1627,6 +1629,21 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     val cross = 7.dp.toPx()
                     drawLine(blip.copy(alpha = bright * 0.8f), Offset(x - cross, y), Offset(x + cross, y), 1f)
                     drawLine(blip.copy(alpha = bright * 0.8f), Offset(x, y - cross), Offset(x, y + cross), 1f)
+
+                    // 目标锁定框：光束扫过时弹出四角括号（三角洲 HUD 锁定）
+                    if (bright > 0.55f) {
+                        val lockSize = 26.dp.toPx()
+                        withTransform({
+                            translate(x - lockSize / 2f, y - lockSize / 2f)
+                        }) {
+                            drawTacticalCorners(
+                                blip.copy(alpha = (bright - 0.55f) / 0.45f),
+                                Size(lockSize, lockSize),
+                                len = 7.dp.toPx(),
+                                stroke = 1.3.dp.toPx(),
+                            )
+                        }
+                    }
 
                     // 编号标签
                     val tag = textMeasurer.measure("${i + 1}", TextStyle(fontFamily = Mono, fontSize = 9.sp, color = blip.copy(alpha = bright)))

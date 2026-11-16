@@ -14,6 +14,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,11 +66,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -188,7 +191,38 @@ fun MainScreen(
                 }
             }
         }
-        if (!boot) ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.02f)
+        if (!boot) {
+            TacticalGrid()
+            ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.02f)
+        }
+    }
+}
+
+/**
+ * 战地战术网格 —— 全屏微弱方格参考线
+ *
+ * 三角洲作战地图的底纹。drawBehind 一次绘制，随内容重绘但成本极低。
+ */
+@Composable
+private fun TacticalGrid(modifier: Modifier = Modifier) {
+    Canvas(modifier.fillMaxSize()) {
+        val step = 30.dp.toPx()
+        val line = Color(0xFF14141B)
+        var x = 0f
+        while (x < size.width) {
+            drawLine(line, Offset(x, 0f), Offset(x, size.height), 0.6f)
+            x += step
+        }
+        var y = 0f
+        while (y < size.height) {
+            drawLine(line, Offset(0f, y), Offset(size.width, y), 0.6f)
+            y += step
+        }
+        // 十字准星中心标记（极淡）
+        val cx = size.width / 2f; val cy = size.height / 2f
+        drawCircle(line.copy(alpha = 0.8f), 1.5f, Offset(cx, cy))
+        drawLine(line.copy(alpha = 0.6f), Offset(cx - 6.dp.toPx(), cy), Offset(cx + 6.dp.toPx(), cy), 0.8f)
+        drawLine(line.copy(alpha = 0.6f), Offset(cx, cy - 6.dp.toPx()), Offset(cx, cy + 6.dp.toPx()), 0.8f)
     }
 }
 
@@ -431,20 +465,13 @@ fun HomeScreen(
                     letterSpacing = 3.sp,
                     color = White,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "★ DEAUTHCTRL · 红客特遣队 ★",
-                    fontFamily = Sans,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    color = Gold,
-                )
+                Spacer(Modifier.height(2.dp))
+                GlitchText("TAC-OPS · 三角洲红队", glitchIntervalMs = 3200, style = TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "哪吒网络安全",
-                    fontFamily = Sans,
-                    fontSize = 10.sp,
+                    "呼号: 哪吒  ·  战备等级: 最高  ·  加密信道: AES-256",
+                    fontFamily = Mono,
+                    fontSize = 9.sp,
                     color = Gray,
                 )
                 Spacer(Modifier.height(16.dp))

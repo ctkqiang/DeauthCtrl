@@ -8,9 +8,15 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -204,16 +210,16 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
     // 1. 运行时权限 —— 这一项失败会让所有扫描类功能一起失效
     val missing = RequiredPermissions.missing(context)
     add(
-        if (missing.isEmpty()) StartupCheck("运行时权限", "全部已授予", CheckLevel.OK)
-        else StartupCheck("运行时权限", "缺 ${missing.size} 项，相关功能不可用", CheckLevel.FAIL)
+        if (missing.isEmpty()) StartupCheck("作战授权", "全部已授予", CheckLevel.OK)
+        else StartupCheck("作战授权", "缺 ${missing.size} 项，相关功能不可用", CheckLevel.FAIL)
     )
 
     // 2. 蓝牙适配器
     when (val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter) {
-        null -> add(StartupCheck("蓝牙适配器", "此设备没有蓝牙硬件", CheckLevel.FAIL))
+        null -> add(StartupCheck("短波通讯", "此设备没有蓝牙硬件", CheckLevel.FAIL))
         else -> add(
-            if (adapter.isEnabled) StartupCheck("蓝牙适配器", "已就绪", CheckLevel.OK)
-            else StartupCheck("蓝牙适配器", "已关闭，BLE 功能需先开启", CheckLevel.WARN)
+            if (adapter.isEnabled) StartupCheck("短波通讯", "已就绪", CheckLevel.OK)
+            else StartupCheck("短波通讯", "已关闭，BLE 功能需先开启", CheckLevel.WARN)
         )
     }
 
@@ -225,15 +231,15 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
     }
     val scanGranted = ContextCompat.checkSelfPermission(context, scanPermission) == PackageManager.PERMISSION_GRANTED
     add(
-        if (scanGranted) StartupCheck("BLE 扫描权限", "已授予", CheckLevel.OK)
-        else StartupCheck("BLE 扫描权限", "未授予，BLE 嗅探不可用", CheckLevel.FAIL)
+        if (scanGranted) StartupCheck("电子侦察授权", "已授予", CheckLevel.OK)
+        else StartupCheck("电子侦察授权", "未授予，BLE 嗅探不可用", CheckLevel.FAIL)
     )
 
     // 4. 活跃网络接口 —— 局域网类功能（Web 服务、文件快传、对讲机）都依赖它
     val iface = activeInterfaceName(context.getSystemService(ConnectivityManager::class.java))
     add(
-        if (iface.isNullOrEmpty()) StartupCheck("网络接口", "无活动网络，局域网功能受限", CheckLevel.WARN)
-        else StartupCheck("网络接口", "$iface 在线", CheckLevel.OK)
+        if (iface.isNullOrEmpty()) StartupCheck("战地链路", "无活动网络，局域网功能受限", CheckLevel.WARN)
+        else StartupCheck("战地链路", "$iface 在线", CheckLevel.OK)
     )
 
     // 5. 可用内存
@@ -243,8 +249,8 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
         val detail = "${formatGigabytes(memory.availMem)} / ${formatGigabytes(memory.totalMem)}"
         val low = memory.availMem.toDouble() / memory.totalMem < LOW_MEMORY_RATIO
         add(
-            if (low) StartupCheck("可用内存", "$detail（偏低）", CheckLevel.WARN)
-            else StartupCheck("可用内存", detail, CheckLevel.OK)
+            if (low) StartupCheck("战术内存", "$detail（偏低）", CheckLevel.WARN)
+            else StartupCheck("战术内存", detail, CheckLevel.OK)
         )
     }
 
@@ -252,8 +258,8 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
     val free = context.filesDir.usableSpace
     if (free > 0L) {
         add(
-            if (free < LOW_STORAGE_BYTES) StartupCheck("存储空间", "${formatGigabytes(free)}（偏低）", CheckLevel.WARN)
-            else StartupCheck("存储空间", "${formatGigabytes(free)} 可用", CheckLevel.OK)
+            if (free < LOW_STORAGE_BYTES) StartupCheck("储备空间", "${formatGigabytes(free)}（偏低）", CheckLevel.WARN)
+            else StartupCheck("储备空间", "${formatGigabytes(free)} 可用", CheckLevel.OK)
         )
     }
 }
@@ -289,9 +295,9 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
         runCatching { collectStartupChecks(context) }
             .getOrElse {
                 listOf(
-                    StartupCheck("运行时权限", "预览模式", CheckLevel.OK),
-                    StartupCheck("网络接口", "预览模式", CheckLevel.OK),
-                    StartupCheck("可用内存", "预览模式", CheckLevel.OK),
+                    StartupCheck("作战授权", "预览模式", CheckLevel.OK),
+                    StartupCheck("战地链路", "预览模式", CheckLevel.OK),
+                    StartupCheck("战术内存", "预览模式", CheckLevel.OK),
                 )
             }
     }
@@ -313,12 +319,14 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) { while (true) { delay(500); blink = !blink } }
 
     Box(modifier = modifier.fillMaxSize().background(Color(0xFF08080A)), contentAlignment = Alignment.Center) {
+        // 夜视数据流雨背景
+        DataRain(Modifier.fillMaxSize(), color = Color(0xFF00E676))
         Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             StarBadge(56.dp)
             Spacer(Modifier.height(12.dp))
             Text("去认证控制", fontFamily = FontFamily.Default, fontWeight = FontWeight.Black, fontSize = 23.sp, letterSpacing = 3.sp, color = Color(0xFFEDEDEF))
             Spacer(Modifier.height(3.dp))
-            Text("DEAUTHCTRL v1.0  ·  哪吒网络安全", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Color(0xFFFFD23F))
+            GlitchText("Δ DELTA-06 · 哪吒网络安全", glitchIntervalMs = 2200, style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier)
             Spacer(Modifier.height(18.dp))
             AsciiDivider()
             Spacer(Modifier.height(12.dp))
@@ -338,9 +346,9 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
                 AsciiDivider()
                 Spacer(Modifier.height(8.dp))
                 val summary = when {
-                    failed > 0 -> "> 就绪 — $failed 项异常，$warned 项警告"
-                    warned > 0 -> "> 就绪 — $warned 项警告"
-                    else -> "> 全项通过"
+                    failed > 0 -> "> 部署警告 — $failed 项异常，$warned 项警告"
+                    warned > 0 -> "> 部署就绪 — $warned 项警告"
+                    else -> "> 部署就绪 — 三角洲红队待命"
                 }
                 Text(
                     if (blink) "$summary _" else summary,
@@ -381,6 +389,38 @@ private fun ScanlinePreview() {
         Box(Modifier.fillMaxSize()) {
             Text("去认证控制", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFEDEDEF), modifier = Modifier.align(Alignment.Center))
             ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Color(0xFFD7000F))
+        }
+    }
+}
+
+
+/**
+ * 数据流雨 —— 夜视仪风格的加密代码流
+ *
+ * 启动屏背景：22 列下落的字符流，头部亮点 + 渐隐尾迹。
+ * 用线条代替字符绘制，性能友好；相位驱动全部在绘制层。
+ */
+@Composable
+fun DataRain(modifier: Modifier = Modifier, color: Color = Color(0xFF00E676)) {
+    val t = rememberInfiniteTransition()
+    val phase by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart))
+    Canvas(modifier) {
+        val cols = 22
+        val colW = size.width / cols
+        val tailLen = size.height * 0.20f
+        val seg = 9.dp.toPx()
+        for (i in 0 until cols) {
+            val seed = (i * 0.618034f) % 1f
+            val head = ((phase + seed) % 1f) * (size.height + tailLen)
+            val x = i * colW + colW / 2f
+            drawCircle(color.copy(alpha = 0.65f), 1.4f, Offset(x, head))
+            var y = head
+            var k = 0
+            while (y > 0f && k < 14) {
+                drawLine(color.copy(alpha = (1f - k / 14f) * 0.20f), Offset(x, y), Offset(x, y - seg), 1f)
+                y -= seg
+                k++
+            }
         }
     }
 }

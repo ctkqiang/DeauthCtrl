@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
@@ -131,6 +132,41 @@ val Mono = FontFamily.Monospace
 val Sans = FontFamily.Default
 
 // ─── 五角星 ──────────────────────────────────────────────────────────────────
+
+/**
+ * 目标锁定框（四角括号）
+ *
+ * 三角洲战术 HUD 的核心符号：四角括号 = 目标已被锁定。
+ * 用于运行中的模块卡片与雷达目标高亮。
+ */
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTacticalCorners(
+    color: Color,
+    size: Size,
+    len: Float,
+    stroke: Float,
+) {
+    val w = size.width; val h = size.height
+    // 左上
+    drawLine(color, Offset(0f, len), Offset(0f, 0f), stroke)
+    drawLine(color, Offset(0f, 0f), Offset(len, 0f), stroke)
+    // 右上
+    drawLine(color, Offset(w - len, 0f), Offset(w, 0f), stroke)
+    drawLine(color, Offset(w, 0f), Offset(w, len), stroke)
+    // 左下
+    drawLine(color, Offset(0f, h - len), Offset(0f, h), stroke)
+    drawLine(color, Offset(0f, h), Offset(len, h), stroke)
+    // 右下
+    drawLine(color, Offset(w - len, h), Offset(w, h), stroke)
+    drawLine(color, Offset(w, h), Offset(w, h - len), stroke)
+}
+
+/** 目标锁定框 Composable —— 四角括号叠加层，配合 [ModuleCard] 运行态使用 */
+@Composable
+fun TacticalCorners(color: Color, modifier: Modifier = Modifier, len: Dp = 9.dp, stroke: Dp = 1.5.dp) {
+    Canvas(modifier) {
+        drawTacticalCorners(color, size, len.toPx(), stroke.toPx())
+    }
+}
 
 /**
  * 五角星
@@ -244,7 +280,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
         }
         Spacer(Modifier.width(12.dp))
         Text(title, fontFamily = Sans, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
-        Text("root@deauth:~#", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+        Text("Δ TAC-06 // root@deauth:~#", fontFamily = Mono, fontSize = 10.sp, color = Gray)
         Text("▊", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold.copy(alpha = cursorAlpha))
     }
 }
@@ -534,6 +570,7 @@ fun ModuleCard(
             color = bg,
             border = BorderStroke(1.dp, border),
         ) {
+            Box {
             Row(Modifier.padding(horizontal = 13.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier.size(40.dp).clip(RoundedCornerShape(6.dp))
@@ -581,6 +618,13 @@ fun ModuleCard(
                         Text(if (running) "停止" else "启动", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
                     }
                 }
+            }
+            // 目标锁定框：运行中的模块 = 被锁定的目标
+            if (running) {
+                val lock = rememberInfiniteTransition()
+                val lockAlpha by lock.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+                TacticalCorners(Gold.copy(alpha = lockAlpha), Modifier.matchParentSize(), len = 8.dp, stroke = 1.4.dp)
+            }
             }
         }
     }
