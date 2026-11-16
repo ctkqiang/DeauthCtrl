@@ -19,6 +19,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,9 +29,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.BluetoothDisabled
@@ -411,110 +412,117 @@ fun HomeScreen(
     val activeEntries = entries.filter { it.running }
     val haptic = LocalHapticFeedback.current
 
-    Column(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 14.dp)
-            .verticalScroll(rememberScrollState()),
+    // 主页用 LazyColumn 而非 verticalScroll：19 张卡片懒加载，
+    // 滚动与遥测刷新时只组合可见项，避免整页重组导致的卡顿
+    LazyColumn(
+        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
     ) {
         // ─── 军徽头部 ─────────────────────────────────────────────
-        StarBadge(68.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "去认证控制",
-            fontFamily = Sans,
-            fontSize = 27.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 3.sp,
-            color = White,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "★ DEAUTHCTRL · 红客特遣队 ★",
-            fontFamily = Sans,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            color = Gold,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            "哪吒网络安全",
-            fontFamily = Sans,
-            fontSize = 10.sp,
-            color = Gray,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-        Spacer(Modifier.height(16.dp))
-        StatusBar()
-        Spacer(Modifier.height(18.dp))
+        item(key = "header") {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                StarBadge(68.dp)
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "去认证控制",
+                    fontFamily = Sans,
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 3.sp,
+                    color = White,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "★ DEAUTHCTRL · 红客特遣队 ★",
+                    fontFamily = Sans,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    color = Gold,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "哪吒网络安全",
+                    fontFamily = Sans,
+                    fontSize = 10.sp,
+                    color = Gray,
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+        item(key = "status") { StatusBar() }
+        item(key = "status_gap") { Spacer(Modifier.height(18.dp)) }
 
         if (activeEntries.isNotEmpty()) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
-                PulseStar(active = true, size = 7.dp)
-                Spacer(Modifier.width(8.dp))
-                Text("运行中 · ${activeEntries.size}", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+            item(key = "running_header") {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
+                    PulseStar(active = true, size = 7.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("运行中 · ${activeEntries.size}", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+                }
             }
-            activeEntries.forEach { entry ->
+            items(activeEntries, key = { "running_" + it.route }) { entry ->
                 ModuleCard(entry.name, entry.desc, entry.running, entry.icon, delayMs = 0L, onClick = { nav(entry.route) }, onToggle = entry.toggle)
             }
-            Spacer(Modifier.height(8.dp))
+            item(key = "running_gap") { Spacer(Modifier.height(8.dp)) }
         }
 
         groups.forEach { group ->
-            SectionLabel(group.label)
+            item(key = "label_" + group.label) { SectionLabel(group.label) }
             group.routes.mapNotNull { entriesByRoute[it] }.forEachIndexed { index, entry ->
-                ModuleCard(
-                    name = entry.name,
-                    desc = entry.desc,
-                    running = entry.running,
-                    icon = entry.icon,
-                    delayMs = index.coerceAtMost(CASCADE_MAX_STEPS) * CASCADE_STEP_MS,
-                    onClick = { nav(entry.route) },
-                    onToggle = entry.toggle,
-                )
+                item(key = "card_" + entry.route) {
+                    ModuleCard(
+                        name = entry.name,
+                        desc = entry.desc,
+                        running = entry.running,
+                        icon = entry.icon,
+                        delayMs = index.coerceAtMost(CASCADE_MAX_STEPS) * CASCADE_STEP_MS,
+                        onClick = { nav(entry.route) },
+                        onToggle = entry.toggle,
+                    )
+                }
             }
-            Spacer(Modifier.height(6.dp))
+            item(key = "group_gap_" + group.label) { Spacer(Modifier.height(6.dp)) }
         }
 
-        Spacer(Modifier.height(10.dp))
-        Row(
-            Modifier.align(Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Star(Gold, 7.dp)
-            Spacer(Modifier.width(7.dp))
-            Text("中国红客", fontFamily = Sans, fontSize = 11.sp, color = Gray)
-            Spacer(Modifier.width(10.dp))
-            Star(Gold, 7.dp)
-            Spacer(Modifier.width(7.dp))
-            Text("国产自主", fontFamily = Sans, fontSize = 11.sp, color = Gray)
-            Spacer(Modifier.width(10.dp))
-            Star(Gold, 7.dp)
-            Spacer(Modifier.width(7.dp))
-            Text("安全可控", fontFamily = Sans, fontSize = 11.sp, color = Gray)
-        }
-        Spacer(Modifier.height(12.dp))
-        Surface(
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp),
-            shape = RoundedCornerShape(6.dp),
-            color = Red.copy(alpha = 0.08f),
-            border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
-        ) {
-            Text(
-                "关 于",
-                fontFamily = Sans,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Red,
-                modifier = Modifier
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        nav("about")
-                    }
-                    .padding(horizontal = 26.dp, vertical = 9.dp),
-            )
+        item(key = "footer") {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Star(Gold, 7.dp)
+                    Spacer(Modifier.width(7.dp))
+                    Text("中国红客", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    Spacer(Modifier.width(10.dp))
+                    Star(Gold, 7.dp)
+                    Spacer(Modifier.width(7.dp))
+                    Text("国产自主", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    Spacer(Modifier.width(10.dp))
+                    Star(Gold, 7.dp)
+                    Spacer(Modifier.width(7.dp))
+                    Text("安全可控", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                }
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    color = Red.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
+                ) {
+                    Text(
+                        "关 于",
+                        fontFamily = Sans,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Red,
+                        modifier = Modifier
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                nav("about")
+                            }
+                            .padding(horizontal = 26.dp, vertical = 9.dp),
+                    )
+                }
+            }
         }
     }
 }
