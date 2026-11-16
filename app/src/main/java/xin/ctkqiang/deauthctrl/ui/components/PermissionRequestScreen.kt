@@ -9,6 +9,10 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +32,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,6 +131,9 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var missing by remember { mutableStateOf(RequiredPermissions.missing(context)) }
+    // 权限卡片首次组合时从下方滑入 + 淡入
+    var cardShown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { cardShown = true }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val remaining = RequiredPermissions.missing(context)
@@ -137,29 +145,34 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             StarBadge(64.dp)
             Spacer(Modifier.height(12.dp))
-            Text("去认证控制", fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 0.sp, color = White)
+            Text("哪吒网络安全终端", fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 0.sp, color = White)
             Spacer(Modifier.height(4.dp))
             Text("> 战前授权 · 授予所需权限", fontFamily = Sans, fontSize = 12.sp, color = Gray)
             Spacer(Modifier.height(28.dp))
 
-            Surface(modifier = Modifier.fillMaxWidth(), shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
-                Column(Modifier.padding(18.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Star(Gold, 9.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            if (missing.isEmpty()) "权限已齐备" else "还需 ${missing.size} 项权限",
-                            fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Red,
-                        )
-                    }
-                    Spacer(Modifier.height(14.dp))
-                    if (missing.isEmpty()) {
-                        PermissionItem("全部已授予", "可以进入主界面")
-                    } else {
-                        missing.forEachIndexed { index, permission ->
-                            if (index > 0) Spacer(Modifier.height(10.dp))
-                            val copy = RequiredPermissions.describe(permission)
-                            PermissionItem(copy.title, copy.reason)
+            AnimatedVisibility(
+                visible = cardShown,
+                enter = fadeIn(tween(350)) + slideInVertically(tween(400)) { it / 3 },
+            ) {
+                Surface(modifier = Modifier.fillMaxWidth(), shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
+                    Column(Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Star(Gold, 9.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                if (missing.isEmpty()) "权限已齐备" else "还需 ${missing.size} 项权限",
+                                fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Red,
+                            )
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        if (missing.isEmpty()) {
+                            PermissionItem("全部已授予", "可以进入主界面")
+                        } else {
+                            missing.forEachIndexed { index, permission ->
+                                if (index > 0) Spacer(Modifier.height(10.dp))
+                                val copy = RequiredPermissions.describe(permission)
+                                PermissionItem(copy.title, copy.reason)
+                            }
                         }
                     }
                 }
@@ -201,7 +214,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
             }
 
             Spacer(Modifier.height(28.dp))
-            Text("去认证控制 · 仅供授权安全研究使用", fontFamily = Sans, fontSize = 11.sp, color = GoldDim)
+            Text("哪吒网络安全终端 · 仅供授权安全研究使用", fontFamily = Sans, fontSize = 11.sp, color = GoldDim)
         }
         ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Red)
     }

@@ -5,17 +5,22 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -54,16 +59,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.random.Random
 import kotlin.math.abs
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -76,6 +84,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -163,6 +172,86 @@ private fun PageEnter(locked: Boolean = false, content: @Composable () -> Unit) 
                 TacticalCorners(TacGreen.copy(alpha = lockAlpha), Modifier.matchParentSize(), len = 12.dp, stroke = 1.6.dp)
             }
         }
+    }
+}
+
+// ─── 详情页通用动效 ──────────────────────────────────────────────────────────
+
+/**
+ * 错误提示条
+ *
+ * 错误出现时横向抖动 0.4 秒：失败信号不该安静地躺在页面里。
+ * 位移只写在绘制层，不触发布局或重组。
+ */
+@Composable
+private fun ErrorBanner(msg: String) {
+    val shake = remember { Animatable(0f) }
+    val amplitude = with(LocalDensity.current) { 6.dp.toPx() }
+    LaunchedEffect(msg) {
+        shake.snapTo(0f)
+        shake.animateTo(
+            targetValue = 0f,
+            animationSpec = keyframes {
+                durationMillis = 400
+                0f at 0
+                (-amplitude) at 45
+                amplitude at 90
+                (-amplitude * 0.8f) at 140
+                amplitude * 0.55f at 195
+                (-amplitude * 0.3f) at 255
+                amplitude * 0.15f at 315
+            },
+        )
+    }
+    Text(
+        "[!] $msg",
+        fontFamily = Sans,
+        fontSize = 11.sp,
+        color = Danger,
+        modifier = Modifier.padding(top = 4.dp).graphicsLayer { translationX = shake.value },
+    )
+}
+
+/**
+ * 实时统计行 —— 数值变化时淡入切换
+ *
+ * 与 [PanelStat] 版式一致，仅用于运行中高频刷新的统计面板；
+ * 静态信息面板继续用 [PanelStat]，不为一次性数据付动画成本。
+ */
+@Composable
+private fun LiveStat(label: String, value: String, valueColor: Color = White) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 2.5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontFamily = Sans, fontSize = 11.sp, color = Gray)
+        AnimatedContent(
+            targetState = value,
+            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
+            label = "live_stat_value",
+        ) { v ->
+            Text(v, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = valueColor)
+        }
+    }
+}
+
+/**
+ * 呼吸空状态提示 —— 等待态也有生命感
+ *
+ * alpha 在 0.85..1 之间 1.6 秒往复；值读取发生在绘制层，不引起重组。
+ */
+@Composable
+private fun HintBreathing(text: String) {
+    val breath = rememberInfiniteTransition(label = "empty_hint_breath")
+    val alpha = breath.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "empty_hint_alpha",
+    )
+    Box(Modifier.graphicsLayer { this.alpha = alpha.value }) {
+        EmptyHint(text)
     }
 }
 
@@ -255,11 +344,11 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
 
-                ActionButton(running, "启动泛洪", "停止泛洪") {
+                ActionButton(running, "执行泛洪", "停止泛洪") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stopSpam() else vm.startSpam()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
                 AnimatedVisibility(running) {
                     Column { Spacer(Modifier.height(8.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track) }
                 }
@@ -280,12 +369,12 @@ private fun BleStatsPanel(vm: BleSpamViewModel) {
     Spacer(Modifier.height(8.dp))
     TermPanel("运行统计") {
         val upSec = stats.uptimeMs / 1000
-        PanelStat("已发送", "${stats.sent}")
-        PanelStat("失败", "${stats.failed}", if (stats.failed > 0) Danger else White)
-        PanelStat("总尝试", "${stats.total}")
-        PanelStat("成功率", "%.1f%%".format(stats.successRate * 100), if (stats.successRate > 0.5f) White else Danger)
-        PanelStat("发包速率", "%.1f pps".format(stats.pps))
-        PanelStat("运行时长", "%02d:%02d".format(upSec / 60, upSec % 60))
+        LiveStat("已发送", "${stats.sent}")
+        LiveStat("失败", "${stats.failed}", if (stats.failed > 0) Danger else White)
+        LiveStat("总尝试", "${stats.total}")
+        LiveStat("成功率", "%.1f%%".format(stats.successRate * 100), if (stats.successRate > 0.5f) White else Danger)
+        LiveStat("发包速率", "%.1f pps".format(stats.pps))
+        LiveStat("运行时长", "%02d:%02d".format(upSec / 60, upSec % 60))
         if (stats.failRateRecent > 0.3f) {
             Spacer(Modifier.height(4.dp))
             Text("[!] 近期失败率 %.0f%%，建议增大发送间隔".format(stats.failRateRecent * 100), fontFamily = Mono, fontSize = 10.sp, color = Danger)
@@ -304,7 +393,7 @@ private fun BleLogPanel(vm: BleSpamViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     LazyColumn(state = list, modifier = Modifier.fillMaxWidth().height(200.dp)) {
-        if (log.isEmpty()) item { EmptyHint("启动泛洪后，发包记录会实时显示在这里") }
+        if (log.isEmpty()) item { HintBreathing("启动泛洪后，发包记录会实时显示在这里") }
         items(log.asReversed()) { e ->
             LogLine(
                 tf.format(Date(e.timestamp)),
@@ -343,11 +432,11 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "启动压制", "停止压制") {
+                ActionButton(running, "执行压制", "停止压制") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
                 AnimatedVisibility(running) {
                     Column { Spacer(Modifier.height(8.dp)); LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track) }
                 }
@@ -376,10 +465,10 @@ private fun BtJamLivePanel(vm: BluetoothJammerViewModel) {
         if (stats.blePackets > 0 || stats.inquiryCycles > 0) {
             Spacer(Modifier.height(8.dp))
             TermPanel("运行统计") {
-                PanelStat("BLE 数据包", "${stats.blePackets}")
-                PanelStat("扫描轮次", "${stats.inquiryCycles}")
-                PanelStat("发现设备", "${stats.devicesFound}")
-                PanelStat("运行时长", "${stats.uptimeMs / 1000}秒")
+                LiveStat("BLE 数据包", "${stats.blePackets}")
+                LiveStat("扫描轮次", "${stats.inquiryCycles}")
+                LiveStat("发现设备", "${stats.devicesFound}")
+                LiveStat("运行时长", "${stats.uptimeMs / 1000}秒")
             }
         }
         if (devices.isNotEmpty()) {
@@ -408,7 +497,7 @@ private fun BtJamLogPanel(vm: BluetoothJammerViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     LazyColumn(Modifier.fillMaxWidth().height(180.dp)) {
-        if (log.isEmpty()) item { EmptyHint("启动压制后，运行日志会实时显示在这里") }
+        if (log.isEmpty()) item { HintBreathing("启动压制后，运行日志会实时显示在这里") }
         items(log.asReversed()) { e ->
             LogLine(tf.format(Date(e.timestamp)), "[${e.module}] ${e.message}", White)
         }
@@ -464,7 +553,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                             }
                         }
                     }
-                    is ScanState.Error -> Text("[!] ${s.message}", fontFamily = Mono, fontSize = 12.sp, color = Danger)
+                    is ScanState.Error -> ErrorBanner(s.message)
                     else -> {}
                 }
 
@@ -490,7 +579,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                             Slider(toggle, { toggle = it; vm.setToggleInterval(toggle.toLong()) }, valueRange = 40f..500f, steps = 22, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                         }
                         Spacer(Modifier.height(8.dp))
-                        ActionButton(fl, "启动干扰", "停止干扰") {
+                        ActionButton(fl, "执行干扰", "停止干扰") {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             vm.setDuration(dur)
                             vm.setToggleInterval(toggle.toLong())
@@ -520,17 +609,17 @@ private fun WifiLivePanel(vm: WifiDisruptViewModel, fl: Boolean) {
                 Text("周期 ${r.cycle}/${r.totalCycles}", fontFamily = Sans, fontSize = 10.sp, color = White, modifier = Modifier.padding(top = 3.dp))
             }
             is HotspotResult.Completed -> Text("泛洪完成", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(top = 6.dp))
-            is HotspotResult.Error -> Text("[!] ${r.message}", fontFamily = Mono, fontSize = 12.sp, color = Danger, modifier = Modifier.padding(top = 6.dp))
+            is HotspotResult.Error -> ErrorBanner(r.message)
             else -> {}
         }
 
         if (fl || stats.startCount > 0 || stats.stopCount > 0) {
             Spacer(Modifier.height(8.dp))
             TermPanel("运行统计") {
-                PanelStat("周期", "${stats.cycles}/${stats.totalCycles}")
-                PanelStat("热点启动", "${stats.startCount}")
-                PanelStat("热点停止", "${stats.stopCount}")
-                PanelStat("运行时长", "${stats.uptimeMs / 1000}秒")
+                LiveStat("周期", "${stats.cycles}/${stats.totalCycles}")
+                LiveStat("热点启动", "${stats.startCount}")
+                LiveStat("热点停止", "${stats.stopCount}")
+                LiveStat("运行时长", "${stats.uptimeMs / 1000}秒")
             }
         }
     }
@@ -566,11 +655,11 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "启动压制", "停止压制") {
+                ActionButton(running, "执行压制", "停止压制") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 // 高频数据区独立订阅：压制期间目标计数/轮次统计/扫描结果/日志均高频刷新
                 WifiJamLivePanel(vm, running = running, modifier = Modifier.weight(1f))
@@ -609,7 +698,7 @@ private fun WifiJamLivePanel(vm: WifiJammerViewModel, running: Boolean, modifier
                     }
                 }
             }
-            is JammerScanState.Error -> Text("[!] ${s.message}", fontFamily = Mono, fontSize = 12.sp, color = Danger)
+            is JammerScanState.Error -> ErrorBanner(s.message)
             else -> {}
         }
 
@@ -617,7 +706,7 @@ private fun WifiJamLivePanel(vm: WifiJammerViewModel, running: Boolean, modifier
         LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
         Spacer(Modifier.height(4.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(0.5f)) {
-            if (log.isEmpty()) item { EmptyHint("启动压制后，运行日志会实时显示在这里") }
+            if (log.isEmpty()) item { HintBreathing("启动压制后，运行日志会实时显示在这里") }
             items(log.asReversed()) { e ->
                 LogLine(tf.format(Date(e.timestamp)), "[${e.module}] ${e.message}", White)
             }
@@ -684,11 +773,11 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "启动服务器", "停止服务器") {
+                ActionButton(running, "执行服务器", "停止服务器") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stopServer() else vm.startServer()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 AnimatedVisibility(running) {
                     Column {
@@ -730,16 +819,16 @@ private fun WebServerStatsPanel(vm: WebServerViewModel, running: Boolean) {
     val stats by vm.stats.collectAsState()
     Spacer(Modifier.height(8.dp))
     TermPanel("运行统计") {
-        PanelStat("总请求", "${stats.totalRequests}")
-        PanelStat("成功响应", "${stats.served200}")
-        PanelStat("未找到", "${stats.notFound404}")
-        PanelStat("方法拒绝", "${stats.rejectedMethod}")
-        PanelStat("错误请求", "${stats.badRequests}")
-        PanelStat("处理异常", "${stats.handlerErrors}")
-        PanelStat("活动连接", "${stats.activeConnections}")
-        PanelStat("每分钟请求", "%.1f".format(stats.requestsPerMinute))
-        PanelStat("运行时长", vm.formatUptime(stats.uptimeMs))
-        PanelStat("状态", if (running) "监听中" else "已停止", if (running) White else Gray)
+        LiveStat("总请求", "${stats.totalRequests}")
+        LiveStat("成功响应", "${stats.served200}")
+        LiveStat("未找到", "${stats.notFound404}")
+        LiveStat("方法拒绝", "${stats.rejectedMethod}")
+        LiveStat("错误请求", "${stats.badRequests}")
+        LiveStat("处理异常", "${stats.handlerErrors}")
+        LiveStat("活动连接", "${stats.activeConnections}")
+        LiveStat("每分钟请求", "%.1f".format(stats.requestsPerMinute))
+        LiveStat("运行时长", vm.formatUptime(stats.uptimeMs))
+        LiveStat("状态", if (running) "监听中" else "已停止", if (running) White else Gray)
     }
 }
 
@@ -752,7 +841,7 @@ private fun WebServerLogPanel(vm: WebServerViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     if (log.isEmpty()) {
-        EmptyHint("启动服务器后，访问日志会实时显示在这里")
+        HintBreathing("启动服务器后，访问日志会实时显示在这里")
     } else {
         Column(Modifier.fillMaxWidth()) {
             log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -788,12 +877,12 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
         TerminalHeader("ARP 网络扫描", back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "开始扫描", "取消扫描") {
+                ActionButton(running, "执行扫描", "取消扫描") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.scan()
                 }
 
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 // 高频数据区独立订阅：扫描期间探测进度/统计/设备/日志每秒多次刷新
                 ArpLivePanel(vm, running = running)
@@ -825,15 +914,15 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
 
         Spacer(Modifier.height(8.dp))
         TermPanel("扫描统计") {
-            PanelStat("网段", stats.subnet.ifEmpty { "—" })
-            PanelStat("本机地址", stats.localIp.ifEmpty { "—" })
-            PanelStat("已探测", "${stats.hostsScanned} / ${stats.hostCount}")
-            PanelStat("在线主机", "${stats.hostsReachable}", if (stats.hostsReachable > 0) White else Gray)
-            PanelStat("缓存命中", "${stats.arpCacheHits}")
-            PanelStat("反向解析", "${stats.hostnameResolved}")
-            PanelStat("发现设备", "${stats.deviceCount}")
-            PanelStat("耗时", vm.formatElapsed(stats.elapsedMs))
-            PanelStat("状态", if (running) "扫描中" else "空闲", if (running) White else Gray)
+            LiveStat("网段", stats.subnet.ifEmpty { "—" })
+            LiveStat("本机地址", stats.localIp.ifEmpty { "—" })
+            LiveStat("已探测", "${stats.hostsScanned} / ${stats.hostCount}")
+            LiveStat("在线主机", "${stats.hostsReachable}", if (stats.hostsReachable > 0) White else Gray)
+            LiveStat("缓存命中", "${stats.arpCacheHits}")
+            LiveStat("反向解析", "${stats.hostnameResolved}")
+            LiveStat("发现设备", "${stats.deviceCount}")
+            LiveStat("耗时", vm.formatElapsed(stats.elapsedMs))
+            LiveStat("状态", if (running) "扫描中" else "空闲", if (running) White else Gray)
         }
 
         if (devices.isNotEmpty()) {
@@ -863,7 +952,7 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
         LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
         Spacer(Modifier.height(4.dp))
         if (log.isEmpty()) {
-            EmptyHint("扫描开始后，战地日志会实时显示在这里")
+            HintBreathing("扫描开始后，战地日志会实时显示在这里")
         } else {
             Column(Modifier.fillMaxWidth()) {
                 log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -880,7 +969,7 @@ private fun ArpIdleHint(vm: ArpScanViewModel) {
     val devices by vm.devices.collectAsState()
     if (devices.isEmpty()) {
         Spacer(Modifier.height(8.dp))
-        EmptyHint("执行上方任务扫描局域网，在线设备会实时列出")
+        HintBreathing("执行上方任务扫描局域网，在线设备会实时列出")
     }
 }
 
@@ -908,11 +997,11 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
         TerminalHeader("BLE 嗅探扫描", back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "开始嗅探", "停止嗅探") {
+                ActionButton(running, "执行嗅探", "停止嗅探") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 // 高频数据区独立订阅：嗅探期间设备列表与 RSSI 每秒多次刷新
                 BleScannerLivePanel(vm, running = running, selected = selected, onSelect = { selected = it }, modifier = Modifier.weight(1f))
@@ -942,7 +1031,7 @@ private fun BleScannerLivePanel(
 
         if (!running && devices.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            EmptyHint("执行上方任务开始嗅探，附近 BLE 设备会实时出现")
+            HintBreathing("执行上方任务开始嗅探，附近 BLE 设备会实时出现")
         }
 
         if (selDev != null) {
@@ -1028,7 +1117,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
                 TermInput("目标主机", host, placeholder = "例如 8.8.8.8 或 baidu.com") { vm.setHost(it) }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "开始探测", "停止探测") {
+                ActionButton(running, "执行探测", "停止探测") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
@@ -1037,7 +1126,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 // 高频数据区独立订阅：探测期间每秒多次返回结果，隔离后只重组统计与列表
                 PingLivePanel(vm, running = running, host = host, error = error)
@@ -1059,7 +1148,7 @@ private fun PingLivePanel(vm: PingViewModel, running: Boolean, host: String, err
     Column {
         if (!running && sent == 0 && error == null) {
             Spacer(Modifier.height(8.dp))
-            EmptyHint("填入目标后执行上方任务，探测结果实时返回")
+            HintBreathing("填入目标后执行上方任务，探测结果实时返回")
         }
 
         if (sent > 0) {
@@ -1151,7 +1240,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 resp?.let { r ->
                     Spacer(Modifier.height(10.dp))
@@ -1205,19 +1294,19 @@ private fun HttpStatsPanel(vm: HttpClientViewModel, running: Boolean) {
     val stats by vm.stats.collectAsState()
     Spacer(Modifier.height(8.dp))
     TermPanel("请求统计") {
-        PanelStat("总请求", "${stats.attempts}")
-        PanelStat("成功 2xx", "${stats.successCount}")
-        PanelStat("重定向 3xx", "${stats.redirectCount}")
-        PanelStat("客户端错误 4xx", "${stats.clientErrorCount}")
-        PanelStat("服务端错误 5xx", "${stats.serverErrorCount}")
-        PanelStat("失败", "${stats.failureCount}", if (stats.failureCount > 0) Danger else White)
-        PanelStat("接收流量", vm.formatBytes(stats.bytesReceived))
-        PanelStat("平均耗时", "${stats.averageDurationMs} ms")
-        PanelStat("最近状态", if (stats.lastStatusCode == 0) "-" else "${stats.lastStatusCode}")
-        PanelStat("最近耗时", "${stats.lastDurationMs} ms")
-        if (stats.lastError.isNotEmpty()) PanelStat("最近错误", stats.lastError, Danger)
-        if (stats.redirected && stats.lastFinalUrl.isNotEmpty()) PanelStat("最近落点", stats.lastFinalUrl, Gray)
-        PanelStat("状态", if (running) "运行中" else "空闲", if (running) White else Gray)
+        LiveStat("总请求", "${stats.attempts}")
+        LiveStat("成功 2xx", "${stats.successCount}")
+        LiveStat("重定向 3xx", "${stats.redirectCount}")
+        LiveStat("客户端错误 4xx", "${stats.clientErrorCount}")
+        LiveStat("服务端错误 5xx", "${stats.serverErrorCount}")
+        LiveStat("失败", "${stats.failureCount}", if (stats.failureCount > 0) Danger else White)
+        LiveStat("接收流量", vm.formatBytes(stats.bytesReceived))
+        LiveStat("平均耗时", "${stats.averageDurationMs} ms")
+        LiveStat("最近状态", if (stats.lastStatusCode == 0) "-" else "${stats.lastStatusCode}")
+        LiveStat("最近耗时", "${stats.lastDurationMs} ms")
+        if (stats.lastError.isNotEmpty()) LiveStat("最近错误", stats.lastError, Danger)
+        if (stats.redirected && stats.lastFinalUrl.isNotEmpty()) LiveStat("最近落点", stats.lastFinalUrl, Gray)
+        LiveStat("状态", if (running) "运行中" else "空闲", if (running) White else Gray)
     }
 }
 
@@ -1230,7 +1319,7 @@ private fun HttpLogPanel(vm: HttpClientViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     if (log.isEmpty()) {
-        EmptyHint("发送请求后，传输日志会实时显示在这里")
+        HintBreathing("发送请求后，传输日志会实时显示在这里")
     } else {
         Column(Modifier.fillMaxWidth()) {
             log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -1264,11 +1353,11 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("目标主机", host, placeholder = "例如 192.168.1.1") { vm.setHost(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "开始扫描", "取消扫描") {
+                ActionButton(running, "执行扫描", "取消扫描") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 // 高频数据区独立订阅：扫描期间进度与结果持续刷新
                 PortScanLivePanel(vm, running = running, host = host, error = error)
@@ -1294,7 +1383,7 @@ private fun PortScanLivePanel(vm: PortScannerViewModel, running: Boolean, host: 
 
         if (!running && results.isEmpty() && error == null) {
             Spacer(Modifier.height(8.dp))
-            EmptyHint("输入目标主机后启动扫描，开放端口会实时列出")
+            HintBreathing("输入目标主机后启动扫描，开放端口会实时列出")
         }
 
         if (results.isNotEmpty()) {
@@ -1351,11 +1440,11 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
         TerminalHeader("WiFi 对讲机", back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "启动对讲", "停止对讲") {
+                ActionButton(running, "执行对讲", "停止对讲") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 // 高频数据区独立订阅：对讲期间在线设备与说话状态持续刷新
                 WalkiePeersPanel(vm, running = running)
@@ -1471,7 +1560,7 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
         TerminalHeader("设备雷达", back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "启动雷达", "停止雷达") {
+                ActionButton(running, "执行雷达", "停止雷达") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
@@ -1496,8 +1585,11 @@ private val ScopeRed = Color(0xFFFFB547)
 /**
  * 雷达扫描盘 —— 全动画 Canvas
  *
- * 扫描周期 3.6 秒一圈。所有随时间变化的值都来自 [sweepDeg] 的
- * 绘制层读取：每一帧只有 Canvas 重绘，不发生任何重组。
+ * 扫描针由 withFrameNanos 帧循环驱动（Choreographer 逐帧回调）：
+ * 物理上保证持续旋转 —— 启动 100°/s（3.6 秒一圈），待机 25°/s 慢转。
+ * 所有随时间变化的值都在 draw 阶段读取：扫描期间零重组。
+ * 视觉层：渐变光束 + 8 层磷光尾迹 + 针尾拖影 + 目标磷光轨迹 +
+ * 目标-中心连线 + 扫过命中白闪 + 锁定框 + 声呐 ping + 噪点 + 罗盘。
  */
 @Composable
 private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier = Modifier) {
@@ -1506,16 +1598,38 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
     val textMeasurer = rememberTextMeasurer()
     val haptic = LocalHapticFeedback.current
 
-    val scan = rememberInfiniteTransition(label = "radar_sweep")
-    val sweepDeg by scan.animateFloat(0f, 360f, infiniteRepeatable(tween(3600, easing = LinearEasing), RepeatMode.Restart))
-
-    // 每完成一整圈扫描触发一次触觉反馈
-    var prevAngle by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        snapshotFlow { sweepDeg }.collect { cur ->
-            if (cur < prevAngle) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            prevAngle = cur
+    // ── 帧循环驱动扫描角：不依赖 InfiniteTransition，任何环境必然旋转 ──
+    var sweepDeg by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(running) {
+        var last = 0L
+        while (true) {
+            withFrameNanos { now ->
+                if (last == 0L) { last = now; return@withFrameNanos }
+                val dtMs = (now - last) / 1_000_000f
+                last = now
+                val speed = if (running) 100f else 25f // 度/秒
+                val next = (sweepDeg + dtMs / 1000f * speed) % 360f
+                if (next < sweepDeg && running) {
+                    // 每完成一整圈扫描触发一次触觉反馈
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+                sweepDeg = next
+            }
         }
+    }
+
+    // ── 目标磷光轨迹：最近 8 个历史位置（目标移动留下的余晖） ──
+    val trails = remember { mutableStateMapOf<String, List<TrailPoint>>() }
+    LaunchedEffect(targets) {
+        val current = targets.associate { t -> t.id to TrailPoint(t.angleDeg, (t.distanceM / 100f).coerceIn(0.06f, 0.94f)) }
+        val merged = HashMap<String, List<TrailPoint>>()
+        trails.forEach { (id, hist) ->
+            val cur = current[id]
+            merged[id] = if (cur != null) (hist + cur).takeLast(8) else hist.takeLast(3)
+        }
+        current.forEach { (id, pt) -> merged.putIfAbsent(id, listOf(pt)) }
+        trails.clear()
+        trails.putAll(merged)
     }
 
     // 开机辉光：启动后从中心向外扩散一次
@@ -1570,8 +1684,9 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                 drawText(m, topLeft = Offset(cx + lr * cos(a) - m.size.width / 2f, cy + lr * sin(a) - m.size.height / 2f))
             }
 
-            // ── 磷光尾迹：8 层扇形 ──
             val sweepRad = Math.toRadians(sweepDeg.toDouble()).toFloat()
+
+            // ── 磷光尾迹：8 层扇形 ──
             for (i in 0 until 8) {
                 val startDeg = sweepDeg - (i + 1) * 7f
                 drawArc(
@@ -1600,9 +1715,30 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                 topLeft = Offset(cx - r, cy - r),
                 size = Size(r * 2f, r * 2f),
             )
-            // ── 扫描针：细长亮针 + 针尖光点，雷达视觉主角 ──
+
+            // ── 目标-中心连线（数据链） ──
+            if (running || targets.isNotEmpty()) {
+                targets.forEach { t ->
+                    val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
+                    val tr = dist * r
+                    val ta = Math.toRadians(t.angleDeg.toDouble()).toFloat()
+                    val blip = if (t.type == "wifi") ScopeRed else ScopeGreen
+                    drawLine(blip.copy(alpha = 0.10f), Offset(cx, cy), Offset(cx + tr * cos(ta), cy + tr * sin(ta)), 0.8f)
+                }
+            }
+
+            // ── 扫描针：光晕针 + 细亮针 + 针尾拖影 + 针尖光点 ──
             val tipX = cx + r * cos(sweepRad)
             val tipY = cy + r * sin(sweepRad)
+            for (i in 1..5) {
+                val backRad = sweepRad - i * 0.035f
+                drawLine(
+                    g.copy(alpha = (0.5f - i * 0.09f).coerceAtLeast(0.05f)),
+                    Offset(cx, cy),
+                    Offset(cx + r * cos(backRad), cy + r * sin(backRad)),
+                    (3f - i * 0.5f).coerceAtLeast(0.6f),
+                )
+            }
             drawLine(g.copy(alpha = 0.35f), Offset(cx, cy), Offset(tipX, tipY), 4f)
             drawLine(g.copy(alpha = 0.95f), Offset(cx, cy), Offset(tipX, tipY), 1.6f)
             drawCircle(g.copy(alpha = 0.55f), 4.dp.toPx(), Offset(tipX, tipY))
@@ -1612,13 +1748,13 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
             val ping = ((sweepDeg / 360f) * 2f) % 1f
             drawCircle(g.copy(alpha = (1f - ping) * 0.30f), r * ping, Offset(cx, cy), style = Stroke(1.2f))
 
-            // ── 开机辉光：启动后扩散一次 ──
+            // ── 开机辉光：启动后扩散 ──
             if (powered) {
                 val glow = (((sweepDeg / 360f) * 6f) % 1f)
                 drawCircle(g.copy(alpha = (1f - glow) * 0.22f), r * glow, Offset(cx, cy), style = Stroke(4f))
             }
 
-            // ── 目标 blip：扫过点亮 + 磷光余晖 + 命中波 + 编号 ──
+            // ── 目标 blip：磷光轨迹 + 扫过点亮 + 命中白闪 + 锁定框 + 编号 ──
             if (running || targets.isNotEmpty()) {
                 targets.forEachIndexed { i, t ->
                     val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
@@ -1634,6 +1770,14 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     val bright = (1f - abs(d) / 50f).coerceIn(0.10f, 1f)
 
                     val blip = if (t.type == "wifi") ScopeRed else ScopeGreen
+
+                    // 磷光轨迹：历史位置渐隐余晖
+                    trails[t.id]?.dropLast(1)?.forEachIndexed { k, pt ->
+                        val pta = Math.toRadians(pt.angleDeg.toDouble()).toFloat()
+                        val pxa = cx + pt.dist01 * r * cos(pta)
+                        val pya = cy + pt.dist01 * r * sin(pta)
+                        drawCircle(blip.copy(alpha = 0.05f + k * 0.045f), 1.6.dp.toPx(), Offset(pxa, pya))
+                    }
 
                     drawCircle(blip.copy(alpha = bright * 0.10f), 10.dp.toPx(), Offset(x, y))
                     drawCircle(blip.copy(alpha = bright * 0.35f), 5.dp.toPx(), Offset(x, y))
@@ -1652,6 +1796,14 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     val cross = 7.dp.toPx()
                     drawLine(blip.copy(alpha = bright * 0.8f), Offset(x - cross, y), Offset(x + cross, y), 1f)
                     drawLine(blip.copy(alpha = bright * 0.8f), Offset(x, y - cross), Offset(x, y + cross), 1f)
+
+                    // 命中白闪：光束扫过瞬间的白色爆闪
+                    if (bright > 0.85f) {
+                        val flash = (bright - 0.85f) / 0.15f
+                        drawCircle(Color(0xFFE8F4FF).copy(alpha = flash * 0.9f), 8.dp.toPx(), Offset(x, y))
+                        drawLine(Color(0xFFE8F4FF).copy(alpha = flash * 0.8f), Offset(x - 11.dp.toPx(), y), Offset(x + 11.dp.toPx(), y), 1.4f)
+                        drawLine(Color(0xFFE8F4FF).copy(alpha = flash * 0.8f), Offset(x, y - 11.dp.toPx()), Offset(x, y + 11.dp.toPx()), 1.4f)
+                    }
 
                     // 目标锁定框：光束扫过时弹出四角括号（全息 HUD 锁定）
                     if (bright > 0.55f) {
@@ -1689,6 +1841,9 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
         }
     }
 }
+
+/** 雷达目标磷光轨迹点（角度 + 归一化距离） */
+private data class TrailPoint(val angleDeg: Float, val dist01: Float)
 
 /** 雷达目标列表面板 —— 独立订阅目标流，卡片式行 + 信号强度条 */
 @Composable
@@ -1757,11 +1912,11 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
         TerminalHeader("文件快传", back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "启动快传", "停止快传") {
+                ActionButton(running, "执行快传", "停止快传") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
 
                 if (running) {
                     Spacer(Modifier.height(6.dp))
@@ -1802,7 +1957,7 @@ private fun FileTransferLivePanel(
             }
         } else {
             Spacer(Modifier.height(6.dp))
-            EmptyHint("未发现目标 —— 输入对方 IP 手动投递")
+            HintBreathing("未发现目标 —— 输入对方 IP 手动投递")
             Spacer(Modifier.height(6.dp))
             TermInput("对方 IP", manualIp, placeholder = "192.168.x.x") { onManualIp(it) }
         }
@@ -1914,7 +2069,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                     Text("导入文件加密", fontFamily = Sans, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
                 }
 
-                error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 11.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+                error?.let { ErrorBanner(it) }
                 Spacer(Modifier.height(8.dp))
                 Text("保险库文件 · ${entries.size} 个", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
@@ -1972,7 +2127,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("监听端口", port, placeholder = "例如 4444") { vm.setPort(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "开始监听", "停止监听") {
+                ActionButton(running, "执行监听", "停止监听") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
@@ -2012,7 +2167,7 @@ private fun RevShellLogPanel(vm: RevShellViewModel, modifier: Modifier = Modifie
     Text("会话日志", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
     Spacer(Modifier.height(4.dp))
     LazyColumn(state = list, modifier = Modifier.fillMaxWidth().then(modifier)) {
-        if (logs.isEmpty()) item { EmptyHint("等待目标上线，会话内容会显示在这里") }
+        if (logs.isEmpty()) item { HintBreathing("等待目标上线，会话内容会显示在这里") }
         items(logs) { l ->
             LogLine(
                 if (l.direction == "in") "收到" else if (l.direction == "out") "发出" else "系统",
@@ -2058,7 +2213,7 @@ fun PayloadScreen(vm: PayloadViewModel, back: () -> Unit) {
                             SelectionContainer { Text(p.template, fontFamily = Mono, fontSize = 9.sp, color = White) }
                         }
                     }
-                    if (payloads.isEmpty()) item { EmptyHint("填写目标 IP 与端口后点击生成，所有语言的载荷会在这里列出") }
+                    if (payloads.isEmpty()) item { HintBreathing("填写目标 IP 与端口后点击生成，所有语言的载荷会在这里列出") }
                 }
             }
         }
@@ -2081,7 +2236,7 @@ fun DirBruteScreen(vm: DirBruteViewModel, back: () -> Unit) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("目标 URL", url, placeholder = "http://example.com") { vm.setUrl(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "开始枚举", "停止枚举") {
+                ActionButton(running, "执行枚举", "停止枚举") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
@@ -2106,7 +2261,7 @@ private fun DirBruteLivePanel(vm: DirBruteViewModel, running: Boolean) {
         }
         if (!running && results.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            EmptyHint("输入目标 URL 后启动枚举，命中路径会实时列出")
+            HintBreathing("输入目标 URL 后启动枚举，命中路径会实时列出")
         }
         Spacer(Modifier.height(8.dp))
         Text("命中路径 · ${results.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
@@ -2151,7 +2306,7 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
                 if (status.isNotBlank()) Text(status, fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 4.dp))
                 if (!running && results.isEmpty() && status.isBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    EmptyHint("输入 CVE 编号、厂商或产品名后搜索")
+                    HintBreathing("输入 CVE 编号、厂商或产品名后搜索")
                 }
                 Spacer(Modifier.height(8.dp))
                 Text("搜索结果 · ${results.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
@@ -2195,7 +2350,7 @@ fun AboutDetailScreen(back: () -> Unit) {
                 StarBadge(56.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "去认证控制",
+                    "哪吒网络安全终端",
                     fontFamily = Sans,
                     fontWeight = FontWeight.Black,
                     fontSize = 20.sp,
@@ -2228,7 +2383,7 @@ fun AboutDetailScreen(back: () -> Unit) {
                 Text("$ whoami", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
                 Text("  哪吒网络安全 (ctkqiang)", fontFamily = Sans, fontSize = 11.sp, color = White)
                 Spacer(Modifier.height(14.dp))
-                EmptyHint("本应用仅供授权安全研究与教育用途，请勿用于非法活动")
+                HintBreathing("本应用仅供授权安全研究与教育用途，请勿用于非法活动")
             }
         }
     }

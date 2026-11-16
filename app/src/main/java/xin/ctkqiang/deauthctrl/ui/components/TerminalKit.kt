@@ -403,6 +403,8 @@ fun ActionButton(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.45f, stiffness = 520f))
+    // 按下时文字随按钮轻微下沉，与缩放叠加
+    val textShift by animateFloatAsState(if (pressed) 1f else 0f, spring(dampingRatio = 0.45f, stiffness = 520f))
 
     val breath = rememberInfiniteTransition()
     val borderAlpha by breath.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse))
@@ -420,7 +422,7 @@ fun ActionButton(
         border = BorderStroke(1.5.dp, if (running) TacGreen.copy(alpha = borderAlpha) else Gold.copy(alpha = 0.9f)),
     ) {
         Row(
-            Modifier.padding(vertical = 13.dp),
+            Modifier.padding(vertical = 13.dp).graphicsLayer { translationY = textShift.dp.toPx() },
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -464,16 +466,20 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
 @Composable
 fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
+    // 选中态切换用 200ms 颜色渐变，底 / 边 / 文字同步过渡
+    val containerColor by animateColorAsState(if (selected) Red else Color.Transparent, tween(200))
+    val borderColor by animateColorAsState(if (selected) Gold.copy(alpha = 0.7f) else BorderDim, tween(200))
+    val contentColor by animateColorAsState(if (selected) White else Gray, tween(200))
     Surface(
         modifier = Modifier.clickable {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-        color = if (selected) Red else Color.Transparent,
-        border = BorderStroke(1.dp, if (selected) Gold.copy(alpha = 0.7f) else BorderDim),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
     ) {
-        Text(text, fontFamily = Sans, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = if (selected) White else Gray, modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp))
+        Text(text, fontFamily = Sans, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = contentColor, modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp))
     }
 }
 
@@ -546,6 +552,24 @@ fun LogLine(timestamp: String, text: String, textColor: Color = White) {
 // ─── 主页模块卡片 ────────────────────────────────────────────────────────────
 
 /**
+ * 运行态图标呼吸缩放
+ *
+ * 运行中：图标以 1.2 秒为周期在 1f ↔ 1.15f 之间循环缩放；
+ * 停止时恒为 1f，不创建无限动画。
+ */
+@Composable
+private fun iconBreathScale(running: Boolean): Float {
+    if (!running) return 1f
+    val breath = rememberInfiniteTransition()
+    val scale by breath.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+    )
+    return scale
+}
+
+/**
  * 主页功能模块卡片
  *
  * 左：图标底（运行中电光青微光）；中：名称（运行中带菱形脉冲）+ 中文描述；
@@ -555,6 +579,7 @@ fun LogLine(timestamp: String, text: String, textColor: Color = White) {
  * - 入场：delayMs 延迟后 fade + 上滑（级联节奏）
  * - 按压：spring 弹性缩放，卡片与右侧按钮使用独立交互源
  * - 状态切换：边框 / 背景 / 文字颜色 350ms 平滑过渡
+ * - 运行态：图标 1.2 秒呼吸缩放，四角锁定框呼吸闪烁
  */
 @Composable
 fun ModuleCard(
@@ -582,6 +607,7 @@ fun ModuleCard(
         val bg by animateColorAsState(if (running) TacGreen.copy(alpha = 0.05f) else SurfaceBg, tween(350))
         val descColor by animateColorAsState(if (running) TacGreenDim else Gray, tween(350))
         val iconTint by animateColorAsState(if (running) TacGreen else Gray, tween(350))
+        val iconBreath = iconBreathScale(running)
 
         Surface(
             modifier = Modifier
@@ -604,7 +630,7 @@ fun ModuleCard(
                         .border(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(20.dp))
+                    Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(20.dp).graphicsLayer { scaleX = iconBreath; scaleY = iconBreath })
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {

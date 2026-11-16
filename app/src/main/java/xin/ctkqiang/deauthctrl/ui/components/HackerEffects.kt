@@ -15,6 +15,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -41,9 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -64,7 +67,8 @@ import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
  * CRT 扫描线叠加层
  *
  * 在屏幕上方绘制均匀分布的水平线条，模拟 CRT 显示器的扫描线效果。
- * 使用 Compose drawBehind 直接绘制，性能优异——不分配额外 Composable。
+ * 使用 drawWithCache 缓存整张扫描线的 Path：尺寸不变时缓存命中，
+ * 每帧只在绘制层 drawPath 一次，避免逐帧构造上百条线段带来的开销。
  *
  * 线条颜色由 color 参数指定，通过 alpha 控制透明度。
  * 在深色背景上使用 0.02-0.04 的 alpha 值效果最佳，
@@ -80,13 +84,18 @@ fun ScanlineOverlay(
     alpha: Float = 0.03f,
     color: Color = Color(0xFF35C9FF),
 ) {
-    val px = with(androidx.compose.ui.platform.LocalDensity.current) { lineSpacing.toPx() }
+    val spacingPx = with(androidx.compose.ui.platform.LocalDensity.current) { lineSpacing.toPx() }
     Box(
-        Modifier.fillMaxSize().drawBehind {
+        Modifier.fillMaxSize().drawWithCache {
+            val path = Path()
             var y = 0f
             while (y < size.height) {
-                drawLine(color.copy(alpha = alpha), Offset(0f, y), Offset(size.width, y), 1f)
-                y += px
+                path.moveTo(0f, y)
+                path.lineTo(size.width, y)
+                y += spacingPx
+            }
+            onDrawBehind {
+                drawPath(path, color.copy(alpha = alpha), style = Stroke(1f))
             }
         },
     )
@@ -304,6 +313,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
 
     var shown by remember { mutableIntStateOf(0) }
     var blink by remember { mutableStateOf(true) }
+    var titleShown by remember { mutableStateOf(false) }
 
     val failed = checks.count { it.level == CheckLevel.FAIL }
     val warned = checks.count { it.level == CheckLevel.WARN }
@@ -316,17 +326,26 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
         delay(DONE_HOLD_MS)
         onComplete()
     }
+    LaunchedEffect(Unit) { titleShown = true }
     LaunchedEffect(Unit) { while (true) { delay(500); blink = !blink } }
 
     Box(modifier = modifier.fillMaxSize().background(Color(0xFF060B14)), contentAlignment = Alignment.Center) {
         // 全息数据流雨背景
         DataRain(Modifier.fillMaxSize(), color = Color(0xFF45E0FF))
         Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            StarBadge(56.dp)
-            Spacer(Modifier.height(12.dp))
-            Text("去认证控制", fontFamily = FontFamily.Default, fontWeight = FontWeight.Black, fontSize = 23.sp, letterSpacing = 0.sp, color = Color(0xFFE8F4FF))
-            Spacer(Modifier.height(3.dp))
-            GlitchText("哪吒网络安全 · 全息战术终端", glitchIntervalMs = 2200, style = TextStyle(fontFamily = FontFamily.Default, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier)
+            // 标题区一次性入场：淡入 + 0.9 起始缩放，随后各列自检项逐条接上
+            AnimatedVisibility(
+                visible = titleShown,
+                enter = fadeIn(tween(350)) + scaleIn(initialScale = 0.9f),
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    StarBadge(56.dp)
+                    Spacer(Modifier.height(12.dp))
+                    Text("哪吒网络安全终端", fontFamily = FontFamily.Default, fontWeight = FontWeight.Black, fontSize = 23.sp, letterSpacing = 0.sp, color = Color(0xFFE8F4FF))
+                    Spacer(Modifier.height(3.dp))
+                    GlitchText("哪吒网络安全 · 全息战术终端", glitchIntervalMs = 2200, style = TextStyle(fontFamily = FontFamily.Default, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier)
+                }
+            }
             Spacer(Modifier.height(18.dp))
             AsciiDivider()
             Spacer(Modifier.height(12.dp))
@@ -387,7 +406,7 @@ private fun GlitchTextPreview() {
 private fun ScanlinePreview() {
     PreviewTheme {
         Box(Modifier.fillMaxSize()) {
-            Text("去认证控制", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFE8F4FF), modifier = Modifier.align(Alignment.Center))
+            Text("哪吒网络安全终端", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFE8F4FF), modifier = Modifier.align(Alignment.Center))
             ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Color(0xFF35C9FF))
         }
     }

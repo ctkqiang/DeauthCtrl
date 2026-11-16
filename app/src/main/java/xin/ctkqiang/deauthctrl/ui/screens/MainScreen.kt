@@ -7,16 +7,31 @@ import android.net.TrafficStats
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,10 +43,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bluetooth
@@ -53,10 +71,13 @@ import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.WifiOff
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -66,14 +87,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -161,8 +188,8 @@ fun MainScreen(
             AnimatedContent(
                 targetState = screen,
                 transitionSpec = {
-                    (fadeIn(tween(300)) + slideInHorizontally(tween(350)) { it / 5 })
-                        .togetherWith(fadeOut(tween(200)) + slideOutHorizontally(tween(300)) { -it / 5 })
+                    (fadeIn(tween(280)) + scaleIn(initialScale = 0.94f, animationSpec = tween(320)))
+                        .togetherWith(fadeOut(tween(180)) + scaleOut(targetScale = 0.96f, animationSpec = tween(220)))
                 },
             ) { current ->
                 when (current) {
@@ -201,29 +228,40 @@ fun MainScreen(
 /**
  * 全息战术网格 —— 全屏微弱方格参考线
  *
- * 全息战术终端的底纹。一次绘制，随内容重绘但成本极低。
+ * 全息战术终端的底纹。网格 Path 在 [drawWithCache] 缓存块内构建，
+ * 尺寸变化时才重建；每帧 onDrawBehind 只执行一次 drawPath。
  */
 @Composable
 private fun TacticalGrid(modifier: Modifier = Modifier) {
-    Canvas(modifier.fillMaxSize()) {
-        val step = 30.dp.toPx()
-        val line = Color(0xFF0E1B2E)
-        var x = 0f
-        while (x < size.width) {
-            drawLine(line, Offset(x, 0f), Offset(x, size.height), 0.6f)
-            x += step
-        }
-        var y = 0f
-        while (y < size.height) {
-            drawLine(line, Offset(0f, y), Offset(size.width, y), 0.6f)
-            y += step
-        }
-        // 十字准星中心标记（极淡）
-        val cx = size.width / 2f; val cy = size.height / 2f
-        drawCircle(line.copy(alpha = 0.8f), 1.5f, Offset(cx, cy))
-        drawLine(line.copy(alpha = 0.6f), Offset(cx - 6.dp.toPx(), cy), Offset(cx + 6.dp.toPx(), cy), 0.8f)
-        drawLine(line.copy(alpha = 0.6f), Offset(cx, cy - 6.dp.toPx()), Offset(cx, cy + 6.dp.toPx()), 0.8f)
-    }
+    Canvas(
+        modifier.fillMaxSize().drawWithCache {
+            val step = 30.dp.toPx()
+            val grid = Path()
+            var x = 0f
+            while (x < size.width) {
+                grid.moveTo(x, 0f)
+                grid.lineTo(x, size.height)
+                x += step
+            }
+            var y = 0f
+            while (y < size.height) {
+                grid.moveTo(0f, y)
+                grid.lineTo(size.width, y)
+                y += step
+            }
+            // 十字准星中心标记（极淡）并入同一 Path，保证每帧只 drawPath 一次
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val arm = 6.dp.toPx()
+            grid.moveTo(cx - arm, cy)
+            grid.lineTo(cx + arm, cy)
+            grid.moveTo(cx, cy - arm)
+            grid.lineTo(cx, cy + arm)
+            onDrawBehind {
+                drawPath(grid, Color(0xFF0E1B2E), style = Stroke(width = 0.6f))
+            }
+        },
+    ) {}
 }
 
 // ─── 实时系统遥测 ────────────────────────────────────────────────────────────
@@ -337,11 +375,20 @@ fun StatusBar() {
     }
 }
 
-/** 状态栏单项 —— 电光青数值在上、中文标签在下 */
+/** 状态栏单项 —— 电光青数值在上、中文标签在下；数值变化时快速翻牌过渡 */
 @Composable
 private fun TelemetryCell(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TacGreen)
+        AnimatedContent(
+            targetState = value,
+            transitionSpec = {
+                (fadeIn(tween(140)) + slideInVertically(tween(180)) { it / 2 })
+                    .togetherWith(fadeOut(tween(100)) + slideOutVertically(tween(120)) { -it / 2 })
+            },
+            label = "telemetry",
+        ) { v ->
+            Text(v, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TacGreen)
+        }
         Spacer(Modifier.height(1.dp))
         Text(label, fontFamily = Sans, fontSize = 9.sp, color = Gray)
     }
@@ -370,7 +417,7 @@ private const val CASCADE_MAX_STEPS = 6
  * 主屏幕 / 功能入口页
  *
  * ## 信息层次（自上而下）
- * 1. 全息设备核心 + 「去认证控制」大标题 + 全息终端标识
+ * 1. 全息设备核心 + 「哪吒网络安全终端」大标题 + 全息终端标识
  * 2. [StatusBar] —— 真实系统遥测
  * 3. **运行中** 分区 —— 仅在有模块运行时出现，当前状态第一眼可见
  * 4. 功能分区：侦察 / 网络 / 无线 / 工具（每张卡片带专属图标）
@@ -446,19 +493,22 @@ fun HomeScreen(
     val activeEntries = entries.filter { it.running }
     val haptic = LocalHapticFeedback.current
 
-    // 主页用 LazyColumn 而非 verticalScroll：19 张卡片懒加载，
+    // 主页用 LazyVerticalGrid 而非 LazyColumn：19 个模块以 2 列网格懒加载，
     // 滚动与遥测刷新时只组合可见项，避免整页重组导致的卡顿
-    LazyColumn(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // ─── 全息核心头部 ─────────────────────────────────────────
-        item(key = "header") {
+        // ─── 全息核心头部（跨两列） ───────────────────────────────
+        item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 StarBadge(68.dp)
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "去认证控制",
+                    "哪吒网络安全终端",
                     fontFamily = Sans,
                     fontSize = 27.sp,
                     fontWeight = FontWeight.Black,
@@ -477,28 +527,32 @@ fun HomeScreen(
                 Spacer(Modifier.height(16.dp))
             }
         }
-        item(key = "status") { StatusBar() }
-        item(key = "status_gap") { Spacer(Modifier.height(18.dp)) }
+        item(key = "status", span = { GridItemSpan(maxLineSpan) }) { StatusBar() }
+        item(key = "status_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
 
         if (activeEntries.isNotEmpty()) {
-            item(key = "running_header") {
+            item(key = "running_header", span = { GridItemSpan(maxLineSpan) }) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                     PulseStar(active = true, size = 7.dp)
                     Spacer(Modifier.width(8.dp))
                     Text("执行中 · ${activeEntries.size} 项任务", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TacGreen)
                 }
             }
-            items(activeEntries, key = { "running_" + it.route }) { entry ->
+            items(
+                items = activeEntries,
+                key = { "running_" + it.route },
+                span = { GridItemSpan(maxLineSpan) },
+            ) { entry ->
                 ModuleCard(entry.name, entry.desc, entry.running, entry.icon, delayMs = 0L, onClick = { nav(entry.route) }, onToggle = entry.toggle)
             }
-            item(key = "running_gap") { Spacer(Modifier.height(8.dp)) }
+            item(key = "running_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(2.dp)) }
         }
 
         groups.forEach { group ->
-            item(key = "label_" + group.label) { SectionLabel(group.label) }
+            item(key = "label_" + group.label, span = { GridItemSpan(maxLineSpan) }) { SectionLabel(group.label) }
             group.routes.mapNotNull { entriesByRoute[it] }.forEachIndexed { index, entry ->
                 item(key = "card_" + entry.route) {
-                    ModuleCard(
+                    HomeGridCard(
                         name = entry.name,
                         desc = entry.desc,
                         running = entry.running,
@@ -509,10 +563,10 @@ fun HomeScreen(
                     )
                 }
             }
-            item(key = "group_gap_" + group.label) { Spacer(Modifier.height(6.dp)) }
+            item(key = "group_gap_" + group.label, span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(4.dp)) }
         }
 
-        item(key = "footer") {
+        item(key = "footer", span = { GridItemSpan(maxLineSpan) }) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -547,6 +601,171 @@ fun HomeScreen(
                                 nav("about")
                             }
                             .padding(horizontal = 26.dp, vertical = 9.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── 主页网格卡片 ────────────────────────────────────────────────────────────
+
+/**
+ * 主页 2 列网格的竖版模块卡
+ *
+ * 结构：顶部 30dp 图标 → 名称（运行中带脉冲菱形）→ 单行描述 → 全宽按钮条。
+ * 运行态：电光青呼吸边框 + 四角锁定框；呼吸相位只在绘制阶段读取，不产生逐帧重组。
+ * 入场：delayMs 延迟后 fade + 上滑，保留原有级联节奏。
+ */
+@Composable
+private fun HomeGridCard(
+    name: String,
+    desc: String,
+    running: Boolean,
+    icon: ImageVector,
+    delayMs: Long = 0L,
+    onClick: () -> Unit,
+    onToggle: (() -> Unit)? = null,
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { if (delayMs > 0) delay(delayMs); visible = true }
+
+    val haptic = LocalHapticFeedback.current
+    val cardInteraction = remember { MutableInteractionSource() }
+    val cardPressed by cardInteraction.collectIsPressedAsState()
+    val cardScale by animateFloatAsState(if (cardPressed) 0.965f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
+    val actionInteraction = remember { MutableInteractionSource() }
+    val actionPressed by actionInteraction.collectIsPressedAsState()
+    val actionScale by animateFloatAsState(if (actionPressed) 0.93f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
+
+    // 运行态的呼吸节奏 —— 只在 graphicsLayer 绘制块内读取 value，避免逐帧重组
+    val breathAlpha: State<Float>? = if (running) {
+        rememberInfiniteTransition().animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        )
+    } else null
+
+    AnimatedVisibility(visible = visible, enter = fadeIn(tween(320)) + slideInVertically(tween(380)) { it / 5 }) {
+        val bg by animateColorAsState(if (running) TacGreen.copy(alpha = 0.05f) else SurfaceBg, tween(350))
+        val iconTint by animateColorAsState(if (running) TacGreen else Gray, tween(350))
+        val descColor by animateColorAsState(if (running) TacGreenDim else Gray, tween(350))
+        val cardShape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
+        val barShape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .scale(cardScale)
+                .clickable(interactionSource = cardInteraction, indication = LocalIndication.current) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onClick()
+                },
+            shape = cardShape,
+            color = bg,
+            border = if (running) null else BorderStroke(1.dp, BorderDim),
+        ) {
+            Box {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 10.dp)) {
+                    Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(30.dp))
+                    Spacer(Modifier.height(9.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            name,
+                            fontFamily = Sans,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (running) {
+                            Spacer(Modifier.width(5.dp))
+                            PulseStar(active = true, size = 5.dp)
+                        }
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        desc,
+                        fontFamily = Sans,
+                        fontSize = 10.5.sp,
+                        color = descColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    if (onToggle == null) {
+                        // 纯入口：透明底 + 暗框「进入」
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .scale(actionScale)
+                                .clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onClick()
+                                },
+                            shape = barShape,
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, BorderDim),
+                        ) {
+                            Text(
+                                "进入",
+                                fontFamily = Sans,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Red,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
+                            )
+                        }
+                    } else {
+                        // 可启停：执行 = 红底白字；中止 = 青字 + 呼吸边
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .scale(actionScale)
+                                .clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onToggle()
+                                },
+                            shape = barShape,
+                            color = if (running) Color.Transparent else Red,
+                        ) {
+                            Box {
+                                Text(
+                                    if (running) "中止" else "执行",
+                                    fontFamily = Sans,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (running) TacGreen else White,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
+                                )
+                                if (running) {
+                                    Box(
+                                        Modifier.matchParentSize()
+                                            .graphicsLayer { alpha = breathAlpha?.value ?: 1f }
+                                            .border(1.dp, TacGreen, barShape),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                if (running) {
+                    // 呼吸边框 + 四角锁定框（TacticalCorners）
+                    Box(
+                        Modifier.matchParentSize()
+                            .graphicsLayer { alpha = breathAlpha?.value ?: 1f }
+                            .border(1.2.dp, TacGreen, cardShape),
+                    )
+                    TacticalCorners(
+                        color = TacGreen,
+                        modifier = Modifier.matchParentSize().graphicsLayer { alpha = breathAlpha?.value ?: 1f },
+                        len = 8.dp,
+                        stroke = 1.4.dp,
                     )
                 }
             }
