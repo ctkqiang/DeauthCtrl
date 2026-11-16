@@ -61,8 +61,16 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import kotlin.random.Random
+import kotlin.math.abs
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -99,6 +107,7 @@ import xin.ctkqiang.deauthctrl.ui.components.RedDim
 import xin.ctkqiang.deauthctrl.ui.components.SelectChip
 import xin.ctkqiang.deauthctrl.ui.components.StarBadge
 import xin.ctkqiang.deauthctrl.ui.components.StatChip
+import xin.ctkqiang.deauthctrl.ui.components.Star
 import xin.ctkqiang.deauthctrl.ui.components.SurfaceBg
 import xin.ctkqiang.deauthctrl.ui.components.TermInput
 import xin.ctkqiang.deauthctrl.ui.components.TermPanel
@@ -1423,22 +1432,20 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
 // 设备雷达
 // ══════════════════════════════════════════════════════════════════════════
 
-/** 设备雷达页 —— 军用 AN/APG 风格 PPI 雷达 + 磷光轨迹 + 罗盘标尺 + 目标识别 */
+/**
+ * 设备雷达页 —— 磷光 PPI 雷达
+ *
+ * 全部视觉动画运行在 Canvas 绘制层（draw 阶段读取状态，零重组）：
+ * - 渐变扫描光束 + 8 层磷光尾迹扇形，光束前沿亮线
+ * - 目标被光束扫过时点亮、扫过后留下磷光余晖（真雷达的灵魂）
+ * - 每目标周期性命中扩散波 + 全局声呐 ping 环
+ * - 背景噪点闪烁 + 开机辉光扩散 + 北东南西方位罗盘
+ * - 底部 CRT 状态行随扫描实时刷新，每圈触觉反馈一次
+ */
 @Composable
 fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
-    val running by vm.isRunning.collectAsState(); val targets by vm.targets.collectAsState()
+    val running by vm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
-    val sweep = rememberInfiniteTransition()
-    val sweepAngle by sweep.animateFloat(0f, 360f, infiniteRepeatable(tween(8000, easing = LinearEasing)))
-
-    // 每完成一整圈扫描触发一次触觉反馈
-    var prevAngle by remember { mutableStateOf(0f) }
-    LaunchedEffect(Unit) {
-        snapshotFlow { sweepAngle }.collect { cur ->
-            if (cur < prevAngle) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            prevAngle = cur
-        }
-    }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
@@ -1448,94 +1455,245 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     if (running) vm.stop() else vm.start()
                 }
-                if (running) {
-                    Spacer(Modifier.height(6.dp))
-                    LinearProgressIndicator(Modifier.fillMaxWidth(), color = Color(0xFF00FF00), trackColor = Track)
-                }
-
-                if (!running && targets.isEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    EmptyHint("点击上方按钮开始扫描，检测到的设备会标在雷达上")
-                }
 
                 Spacer(Modifier.height(8.dp))
-                val scopeGreen = Color(0xFF00FF00)
-                val scopeGreenDim = Color(0xFF004400)
-                Box(Modifier.fillMaxWidth().weight(0.6f).background(Color(0xFF001100)).border(2.dp, Color(0xFF003300), RoundedCornerShape(6.dp))) {
-                    Canvas(Modifier.fillMaxSize().padding(16.dp)) {
-                        val cx = size.width / 2; val cy = size.height / 2
-                        val maxR = minOf(cx, cy) * 0.82f
-                        val g = scopeGreen
-
-                        drawCircle(Color(0xFF001800), maxR, Offset(cx, cy))
-
-                        listOf(0.25f, 0.5f, 0.75f, 1.0f).forEachIndexed { i, s ->
-                            val r = maxR * s
-                            drawCircle(g.copy(alpha = 0.25f), r, Offset(cx, cy), style = Stroke(if (i == 3) 1.2f else 0.6f))
-                        }
-                        drawLine(g.copy(alpha = 0.2f), Offset(cx - maxR, cy), Offset(cx + maxR, cy), 0.6f)
-                        drawLine(g.copy(alpha = 0.2f), Offset(cx, cy - maxR), Offset(cx, cy + maxR), 0.6f)
-                        for (deg in 0..350 step 10) {
-                            val a = Math.toRadians(deg.toDouble()).toFloat()
-                            val isMajor = deg % 30 == 0
-                            val len = if (isMajor) 0.92f else 0.96f
-                            drawLine(g.copy(alpha = if (isMajor) 0.35f else 0.15f), Offset(cx + maxR * len * cos(a), cy + maxR * len * sin(a)), Offset(cx + maxR * cos(a), cy + maxR * sin(a)), if (isMajor) 0.7f else 0.3f)
-                        }
-
-                        val sweepRad = Math.toRadians(sweepAngle.toDouble()).toFloat()
-                        for (i in 0..8) {
-                            val trailAngle = sweepRad - i * 0.025f
-                            val trailAlpha = 0.55f - i * 0.06f
-                            drawLine(g.copy(alpha = trailAlpha.coerceAtLeast(0.02f)), Offset(cx, cy), Offset(cx + maxR * cos(trailAngle), cy + maxR * sin(trailAngle)), (2.5f - i * 0.25f).coerceAtLeast(0.3f))
-                        }
-                        drawCircle(g.copy(alpha = 0.95f), 5.dp.toPx(), Offset(cx, cy))
-
-                        if (running || targets.isNotEmpty()) {
-                            targets.forEach { t ->
-                                val r = ((t.distanceM / 100f).coerceIn(0.03f, 1f) * maxR).coerceAtLeast(3f)
-                                val angleRad = Math.toRadians(t.angleDeg.toDouble()).toFloat()
-                                val x = cx + r * cos(angleRad); val y = cy + r * sin(angleRad)
-                                val isWifi = t.type == "wifi"
-                                val dotColor = if (isWifi) Color.Red else Color.White
-                                drawCircle(dotColor.copy(alpha = 0.15f), 10.dp.toPx(), Offset(x, y))
-                                drawCircle(dotColor.copy(alpha = 0.4f), 6.dp.toPx(), Offset(x, y))
-                                drawCircle(dotColor.copy(alpha = 0.9f), 3.5.dp.toPx(), Offset(x, y))
-                            }
-                        }
-                    }
-                }
-
-                Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp).background(Color(0xFF001100)).border(0.5.dp, Color(0xFF003300), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(if (running) "模式: 扫描中" else "模式: 待机", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
-                    Text("增益: 自动", fontFamily = Sans, fontSize = 8.sp, color = scopeGreen)
-                    Text("量程: 100米", fontFamily = Sans, fontSize = 8.sp, color = scopeGreen)
-                    Text("方位角: ${"%.0f".format(sweepAngle)}°", fontFamily = Mono, fontSize = 8.sp, color = scopeGreen)
-                    Text("目标: ${targets.size}", fontFamily = Sans, fontSize = 8.sp, color = Color(0xFFFF8800))
-                }
+                RadarScope(vm, running = running, modifier = Modifier.fillMaxWidth().weight(0.62f))
 
                 Spacer(Modifier.height(6.dp))
-                // 高频数据区独立订阅：扫描期间目标列表持续刷新，雷达画面仍实时重绘
-                RadarTrackPanel(vm, scopeGreenDim = scopeGreenDim, modifier = Modifier.weight(1f))
+                RadarTrackPanel(vm, modifier = Modifier.weight(1f))
             }
         }
     }
 }
 
-/** 雷达目标列表面板 —— 独立订阅目标流 */
+/** 磷光色 —— 老式示波管绿 */
+private val ScopeGreen = Color(0xFF00E676)
+/** 磷光暗底 */
+private val ScopeBack = Color(0xFF00231A)
+/** WiFi 目标警示红 */
+private val ScopeRed = Color(0xFFFF3B30)
+
+/**
+ * 雷达扫描盘 —— 全动画 Canvas
+ *
+ * 扫描周期 3.6 秒一圈。所有随时间变化的值都来自 [sweepDeg] 的
+ * 绘制层读取：每一帧只有 Canvas 重绘，不发生任何重组。
+ */
 @Composable
-private fun RadarTrackPanel(vm: RadarViewModel, scopeGreenDim: Color, modifier: Modifier = Modifier) {
+private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier = Modifier) {
+    // draw 阶段读取 targets：目标更新只触发重绘，不触发重组
+    val targets by vm.targets.collectAsState()
+    val textMeasurer = rememberTextMeasurer()
+    val haptic = LocalHapticFeedback.current
+
+    val scan = rememberInfiniteTransition(label = "radar_sweep")
+    val sweepDeg by scan.animateFloat(0f, 360f, infiniteRepeatable(tween(3600, easing = LinearEasing), RepeatMode.Restart))
+
+    // 每完成一整圈扫描触发一次触觉反馈
+    var prevAngle by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        snapshotFlow { sweepDeg }.collect { cur ->
+            if (cur < prevAngle) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            prevAngle = cur
+        }
+    }
+
+    // 开机辉光：启动后从中心向外扩散一次
+    var powered by remember { mutableStateOf(false) }
+    LaunchedEffect(running) { if (running) powered = true }
+
+    // 背景噪点：固定位置 + 相位闪烁
+    val noise = remember { List(80) { Random.nextFloat() to Random.nextFloat() } }
+
+    Box(
+        modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(ScopeBack)
+            .border(1.dp, Color(0xFF00382A), RoundedCornerShape(8.dp)),
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val r = minOf(cx, cy) * 0.84f
+            val g = ScopeGreen
+
+            // ── 噪点闪烁 ──
+            noise.forEachIndexed { i, (nx, ny) ->
+                val a = ((sin(i * 1.7f + sweepDeg * 0.35f) + 1f) / 2f) * 0.09f
+                drawCircle(g.copy(alpha = a), 1f, Offset(nx * size.width, ny * size.height))
+            }
+
+            // ── 距离环 + 十字基线 ──
+            listOf(0.25f, 0.5f, 0.75f, 1f).forEachIndexed { i, s ->
+                drawCircle(g.copy(alpha = 0.26f), r * s, Offset(cx, cy), style = Stroke(if (i == 3) 1.6f else 0.7f))
+            }
+            drawLine(g.copy(alpha = 0.15f), Offset(cx - r, cy), Offset(cx + r, cy), 0.7f)
+            drawLine(g.copy(alpha = 0.15f), Offset(cx, cy - r), Offset(cx, cy + r), 0.7f)
+
+            // ── 方位刻度 ──
+            for (deg in 0 until 360 step 10) {
+                val a = Math.toRadians(deg.toDouble()).toFloat()
+                val major = deg % 30 == 0
+                val inner = r * (if (major) 0.94f else 0.97f)
+                drawLine(
+                    g.copy(alpha = if (major) 0.5f else 0.2f),
+                    Offset(cx + inner * cos(a), cy + inner * sin(a)),
+                    Offset(cx + r * cos(a), cy + r * sin(a)),
+                    if (major) 1.2f else 0.5f,
+                )
+            }
+            // 罗盘方位字
+            listOf("北" to 0f, "东" to 90f, "南" to 180f, "西" to 270f).forEach { (ch, deg) ->
+                val a = Math.toRadians(deg.toDouble()).toFloat()
+                val lr = r * 0.86f
+                val m = textMeasurer.measure(ch, TextStyle(fontFamily = Sans, fontSize = 10.sp, color = g.copy(alpha = 0.8f)))
+                drawText(m, topLeft = Offset(cx + lr * cos(a) - m.size.width / 2f, cy + lr * sin(a) - m.size.height / 2f))
+            }
+
+            // ── 磷光尾迹：8 层扇形 ──
+            val sweepRad = Math.toRadians(sweepDeg.toDouble()).toFloat()
+            for (i in 0 until 8) {
+                val startDeg = sweepDeg - (i + 1) * 7f
+                drawArc(
+                    g.copy(alpha = (0.09f - i * 0.01f).coerceAtLeast(0.015f)),
+                    startAngle = startDeg,
+                    sweepAngle = 5.5f,
+                    useCenter = true,
+                    topLeft = Offset(cx - r, cy - r),
+                    size = Size(r * 2f, r * 2f),
+                )
+            }
+
+            // ── 主光束：渐变扇形（中心透亮、边缘衰减） ──
+            val beam = Brush.sweepGradient(
+                0f to g.copy(alpha = 0f),
+                0.35f to g.copy(alpha = 0.10f),
+                0.65f to g.copy(alpha = 0.30f),
+                1f to g.copy(alpha = 0f),
+                center = Offset(cx, cy),
+            )
+            drawArc(
+                brush = beam,
+                startAngle = sweepDeg - 30f,
+                sweepAngle = 60f,
+                useCenter = true,
+                topLeft = Offset(cx - r, cy - r),
+                size = Size(r * 2f, r * 2f),
+            )
+            // 光束前沿亮线
+            drawLine(g.copy(alpha = 0.95f), Offset(cx, cy), Offset(cx + r * cos(sweepRad), cy + r * sin(sweepRad)), 2f)
+
+            // ── 全局声呐 ping：每 1.8 秒一发扩散环 ──
+            val ping = ((sweepDeg / 360f) * 2f) % 1f
+            drawCircle(g.copy(alpha = (1f - ping) * 0.30f), r * ping, Offset(cx, cy), style = Stroke(1.2f))
+
+            // ── 开机辉光：启动后扩散一次 ──
+            if (powered) {
+                val glow = (((sweepDeg / 360f) * 6f) % 1f)
+                drawCircle(g.copy(alpha = (1f - glow) * 0.22f), r * glow, Offset(cx, cy), style = Stroke(4f))
+            }
+
+            // ── 目标 blip：扫过点亮 + 磷光余晖 + 命中波 + 编号 ──
+            if (running || targets.isNotEmpty()) {
+                targets.forEachIndexed { i, t ->
+                    val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
+                    val tr = dist * r
+                    val ta = Math.toRadians(t.angleDeg.toDouble()).toFloat()
+                    val x = cx + tr * cos(ta)
+                    val y = cy + tr * sin(ta)
+
+                    // 光束扫过窗口 ±50° 内最亮，扫过后磷光余晖
+                    var d = sweepDeg - t.angleDeg
+                    while (d > 180f) d -= 360f
+                    while (d < -180f) d += 360f
+                    val bright = (1f - abs(d) / 50f).coerceIn(0.10f, 1f)
+
+                    val blip = if (t.type == "wifi") ScopeRed else ScopeGreen
+
+                    drawCircle(blip.copy(alpha = bright * 0.10f), 10.dp.toPx(), Offset(x, y))
+                    drawCircle(blip.copy(alpha = bright * 0.35f), 5.dp.toPx(), Offset(x, y))
+
+                    // 命中扩散波：每个目标周期性弹出一个环
+                    val hit = ((sweepDeg / 360f) * 3f + i * 0.37f) % 1f
+                    drawCircle(
+                        blip.copy(alpha = (1f - hit) * bright * 0.8f),
+                        5.dp.toPx() + 30.dp.toPx() * hit,
+                        Offset(x, y),
+                        style = Stroke(1.2f),
+                    )
+
+                    // 核心点 + 十字准星
+                    drawCircle(blip.copy(alpha = bright), 2.4.dp.toPx(), Offset(x, y))
+                    val cross = 7.dp.toPx()
+                    drawLine(blip.copy(alpha = bright * 0.8f), Offset(x - cross, y), Offset(x + cross, y), 1f)
+                    drawLine(blip.copy(alpha = bright * 0.8f), Offset(x, y - cross), Offset(x, y + cross), 1f)
+
+                    // 编号标签
+                    val tag = textMeasurer.measure("${i + 1}", TextStyle(fontFamily = Mono, fontSize = 9.sp, color = blip.copy(alpha = bright)))
+                    drawText(tag, topLeft = Offset(x + 9.dp.toPx(), y - 16.dp.toPx()))
+                }
+            }
+
+            // ── 中心原点（呼吸） ──
+            drawCircle(g.copy(alpha = 0.45f + 0.35f * sin(sweepDeg * 0.3f)), 2.dp.toPx(), Offset(cx, cy))
+
+            // ── 底部 CRT 状态行（画布内绘制，随扫描刷新且零重组） ──
+            val statusY = size.height - 8.dp.toPx()
+            val modeTxt = if (running) "模式: 扫描" else "模式: 待机"
+            val azTxt = "方位: %03d°".format(sweepDeg.toInt() % 360)
+            val status = textMeasurer.measure(
+                "$modeTxt   增益: 自动   量程: 100米   $azTxt   目标: ${targets.size}",
+                TextStyle(fontFamily = Mono, fontSize = 9.sp, color = g.copy(alpha = 0.85f)),
+            )
+            drawText(status, topLeft = Offset((size.width - status.size.width) / 2f, statusY))
+        }
+    }
+}
+
+/** 雷达目标列表面板 —— 独立订阅目标流，卡片式行 + 信号强度条 */
+@Composable
+private fun RadarTrackPanel(vm: RadarViewModel, modifier: Modifier = Modifier) {
     val targets by vm.targets.collectAsState()
     Column(modifier) {
-        Text("目标列表 · ${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Star(Gold, 8.dp)
+            Spacer(Modifier.width(7.dp))
+            Text("目标列表 · ${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+        }
         Spacer(Modifier.height(4.dp))
-        LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-            items(targets.sortedByDescending { it.rssi }, key = { it.name + it.type }) { t ->
-                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (t.type == "wifi") "WIFI" else " BLE", fontFamily = Mono, fontSize = 8.sp, color = if (t.type == "wifi") Red else Color.White, modifier = Modifier.width(36.dp))
-                    Text(t.name.take(14), fontFamily = Mono, fontSize = 10.sp, color = White, modifier = Modifier.weight(1f))
-                    Text(" ${t.rssi}dBm".padStart(7), fontFamily = Mono, fontSize = 9.sp, color = if (t.rssi > -50) Red else if (t.rssi > -70) Color(0xFF00CC00) else Gray)
-                    Text(" ${"%.1f".format(t.distanceM)}米".padStart(8), fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                    Text(" 方位${t.angleDeg.toInt().toString().padStart(3)}°".padStart(9), fontFamily = Mono, fontSize = 9.sp, color = scopeGreenDim)
+        if (targets.isEmpty()) {
+            EmptyHint("启动雷达后，检测到的设备会亮在扫描盘上")
+        } else {
+            LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+                items(targets.sortedByDescending { it.rssi }, key = { it.name + it.type }) { t ->
+                    val wifi = t.type == "wifi"
+                    val barColor = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Color(0xFF4C6A5E)
+                    Surface(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        color = SurfaceBg,
+                        border = BorderStroke(1.dp, BorderDim),
+                    ) {
+                        Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(if (wifi) "WIFI" else "BLE", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (wifi) ScopeRed else ScopeGreen, modifier = Modifier.width(34.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
+                                Spacer(Modifier.height(3.dp))
+                                // 信号强度条
+                                Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF1B2B26))) {
+                                    Box(
+                                        Modifier.fillMaxWidth(((t.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
+                                            .clip(RoundedCornerShape(2.dp)).background(barColor),
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("${t.rssi}dBm", fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Gray)
+                                Text("${"%.1f".format(t.distanceM)}米 · 方位${t.angleDeg.toInt()}°", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                            }
+                        }
+                    }
                 }
             }
         }
