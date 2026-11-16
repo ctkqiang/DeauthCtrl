@@ -341,7 +341,7 @@ fun StatusBar() {
 @Composable
 private fun TelemetryCell(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold)
+        Text(value, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TacGreen)
         Spacer(Modifier.height(1.dp))
         Text(label, fontFamily = Sans, fontSize = 9.sp, color = Gray)
     }
@@ -485,7 +485,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                     PulseStar(active = true, size = 7.dp)
                     Spacer(Modifier.width(8.dp))
-                    Text("运行中 · ${activeEntries.size}", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+                    Text("执行中 · ${activeEntries.size} 项任务", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TacGreen)
                 }
             }
             items(activeEntries, key = { "running_" + it.route }) { entry ->
@@ -528,6 +528,8 @@ fun HomeScreen(
                     Spacer(Modifier.width(7.dp))
                     Text("安全可控", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                 }
+                Spacer(Modifier.height(6.dp))
+                Text("Δ DELTA-06 // TAC-OPS // 加密信道已建立", fontFamily = Mono, fontSize = 8.sp, color = TacGreen.copy(alpha = 0.7f))
                 Spacer(Modifier.height(12.dp))
                 Surface(
                     modifier = Modifier.padding(bottom = 4.dp),

@@ -112,6 +112,8 @@ import xin.ctkqiang.deauthctrl.ui.components.Star
 import xin.ctkqiang.deauthctrl.ui.components.SurfaceBg
 import xin.ctkqiang.deauthctrl.ui.components.TermInput
 import xin.ctkqiang.deauthctrl.ui.components.TermPanel
+import xin.ctkqiang.deauthctrl.ui.components.TacGreen
+import xin.ctkqiang.deauthctrl.ui.components.TacticalCorners
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.ui.components.drawTacticalCorners
@@ -140,12 +142,26 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/** 详情页内容整体入场动画 —— 每页进入时轻微淡入上滑 */
+/**
+ * 详情页内容整体入场动画 —— 每页进入时轻微淡入上滑
+ *
+ * [locked] 为 true 时页面四角显示夜视绿呼吸锁定框：
+ * 任务执行中的页面 = 被三角洲 HUD 锁定的目标。
+ */
 @Composable
-private fun PageEnter(content: @Composable () -> Unit) {
+private fun PageEnter(locked: Boolean = false, content: @Composable () -> Unit) {
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { shown = true }
-    AnimatedVisibility(visible = shown, enter = fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 8 }) { content() }
+    AnimatedVisibility(visible = shown, enter = fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 8 }) {
+        Box {
+            content()
+            if (locked) {
+                val lock = rememberInfiniteTransition()
+                val lockAlpha by lock.animateFloat(0.3f, 0.9f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+                TacticalCorners(TacGreen.copy(alpha = lockAlpha), Modifier.matchParentSize(), len = 12.dp, stroke = 1.6.dp)
+            }
+        }
+    }
 }
 
 /** 进度条未激活段底色 */
@@ -182,7 +198,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("BLE 泛洪引擎", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 TermPanel("广播载荷") {
                     Text("伪造协议", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
@@ -315,7 +331,7 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("蓝牙压制引擎", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 TermPanel("状态") {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -419,7 +435,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WiFi 干扰引擎", back)
-        PageEnter {
+        PageEnter(locked = fl) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running = ss is ScanState.Scanning, runLabel = "扫描附近网络", stopLabel = "正在扫描…") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -537,7 +553,7 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WiFi 压制引擎", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermPanel("配置") {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -655,7 +671,7 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WEB 服务器", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 TermPanel("网页文件") {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -768,7 +784,7 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("ARP 网络扫描", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "开始扫描", "取消扫描") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -845,7 +861,7 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
         LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
         Spacer(Modifier.height(4.dp))
         if (log.isEmpty()) {
-            EmptyHint("扫描开始后，内核日志会实时显示在这里")
+            EmptyHint("扫描开始后，战地日志会实时显示在这里")
         } else {
             Column(Modifier.fillMaxWidth()) {
                 log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -862,7 +878,7 @@ private fun ArpIdleHint(vm: ArpScanViewModel) {
     val devices by vm.devices.collectAsState()
     if (devices.isEmpty()) {
         Spacer(Modifier.height(8.dp))
-        EmptyHint("点击上方按钮扫描局域网，在线设备会实时列出")
+        EmptyHint("执行上方任务扫描局域网，在线设备会实时列出")
     }
 }
 
@@ -888,7 +904,7 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("BLE 嗅探扫描", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "开始嗅探", "停止嗅探") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -924,7 +940,7 @@ private fun BleScannerLivePanel(
 
         if (!running && devices.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            EmptyHint("点击上方按钮开始嗅探，附近 BLE 设备会实时出现")
+            EmptyHint("执行上方任务开始嗅探，附近 BLE 设备会实时出现")
         }
 
         if (selDev != null) {
@@ -1005,7 +1021,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("PING 泛洪", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("目标主机", host, placeholder = "例如 8.8.8.8 或 baidu.com") { vm.setHost(it) }
 
@@ -1041,7 +1057,7 @@ private fun PingLivePanel(vm: PingViewModel, running: Boolean, host: String, err
     Column {
         if (!running && sent == 0 && error == null) {
             Spacer(Modifier.height(8.dp))
-            EmptyHint("填入主机名或 IP 地址，点击上方按钮开始探测")
+            EmptyHint("填入目标后执行上方任务，探测结果实时返回")
         }
 
         if (sent > 0) {
@@ -1101,7 +1117,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("HTTP 客户端", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 TermInput("请求地址", url, placeholder = "https://example.com") { vm.setUrl(it) }
 
@@ -1242,7 +1258,7 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("端口扫描", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("目标主机", host, placeholder = "例如 192.168.1.1") { vm.setHost(it) }
                 Spacer(Modifier.height(8.dp))
@@ -1331,7 +1347,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WiFi 对讲机", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "启动对讲", "停止对讲") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1451,7 +1467,7 @@ fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "启动雷达", "停止雷达") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1682,7 +1698,7 @@ private fun RadarTrackPanel(vm: RadarViewModel, modifier: Modifier = Modifier) {
             EmptyHint("启动雷达后，检测到的设备会亮在扫描盘上")
         } else {
             LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-                items(targets.sortedByDescending { it.rssi }, key = { it.name + it.type }) { t ->
+                items(targets.sortedByDescending { it.rssi }, key = { it.id }) { t ->
                     val wifi = t.type == "wifi"
                     val barColor = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Color(0xFF4C6A5E)
                     Surface(
@@ -1732,7 +1748,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("文件快传", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "启动快传", "停止快传") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -1779,7 +1795,7 @@ private fun FileTransferLivePanel(
             }
         } else {
             Spacer(Modifier.height(6.dp))
-            EmptyHint("未发现设备 —— 输入对方 IP 手动发送")
+            EmptyHint("未发现目标 —— 输入对方 IP 手动投递")
             Spacer(Modifier.height(6.dp))
             TermInput("对方 IP", manualIp, placeholder = "192.168.x.x") { onManualIp(it) }
         }
@@ -1945,7 +1961,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("反弹 Shell", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("监听端口", port, placeholder = "例如 4444") { vm.setPort(it) }
                 Spacer(Modifier.height(8.dp))
@@ -1989,7 +2005,7 @@ private fun RevShellLogPanel(vm: RevShellViewModel, modifier: Modifier = Modifie
     Text("会话日志", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
     Spacer(Modifier.height(4.dp))
     LazyColumn(state = list, modifier = Modifier.fillMaxWidth().then(modifier)) {
-        if (logs.isEmpty()) item { EmptyHint("等待连接建立，会话内容会显示在这里") }
+        if (logs.isEmpty()) item { EmptyHint("等待目标上线，会话内容会显示在这里") }
         items(logs) { l ->
             LogLine(
                 if (l.direction == "in") "收到" else if (l.direction == "out") "发出" else "系统",
@@ -2054,7 +2070,7 @@ fun DirBruteScreen(vm: DirBruteViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("目录爆破", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("目标 URL", url, placeholder = "http://example.com") { vm.setUrl(it) }
                 Spacer(Modifier.height(8.dp))
@@ -2113,11 +2129,11 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("CVE 搜索", back)
-        PageEnter {
+        PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 TermInput("搜索关键词", query, placeholder = "CVE 编号 / 厂商 / 产品名") { vm.setQuery(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running = running, runLabel = "开始搜索", stopLabel = "搜索中…") {
+                ActionButton(running = running, runLabel = "执行搜索", stopLabel = "搜索中…") {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     vm.search()
                 }

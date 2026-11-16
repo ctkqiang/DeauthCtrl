@@ -104,6 +104,12 @@ val Gold = Color(0xFFFFD23F)
 /** 暗金 —— 装饰与未激活金星 */
 val GoldDim = Color(0xFF9A7B22)
 
+/** 夜视绿 —— 三角洲功能色：运行状态、锁定框、实时数据 */
+val TacGreen = Color(0xFF00E676)
+
+/** 夜视绿暗 —— 弱信号/未激活 */
+val TacGreenDim = Color(0xFF00695C)
+
 /** 正文白 */
 val White = Color(0xFFEDEDEF)
 
@@ -237,10 +243,10 @@ fun PulseStar(active: Boolean, size: Dp = 9.dp, modifier: Modifier = Modifier) {
     val scale by pulse.animateFloat(0.82f, 1.12f, infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse))
 
     Box(modifier.size(size * 2.4f), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(size * 2.4f).graphicsLayer { this.alpha = alpha * 0.20f }.clip(CircleShape).background(Gold))
-        Box(Modifier.size(size * 1.5f).graphicsLayer { this.alpha = alpha * 0.38f }.clip(CircleShape).background(Gold))
+        Box(Modifier.size(size * 2.4f).graphicsLayer { this.alpha = alpha * 0.20f }.clip(CircleShape).background(TacGreen))
+        Box(Modifier.size(size * 1.5f).graphicsLayer { this.alpha = alpha * 0.38f }.clip(CircleShape).background(TacGreen))
         Box(Modifier.graphicsLayer { scaleX = scale; scaleY = scale }) {
-            Star(Gold, size)
+            Star(TacGreen, size)
         }
     }
 }
@@ -321,7 +327,7 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
         ) {
             Star(Gold, 8.dp)
             Spacer(Modifier.width(7.dp))
-            Text(title, fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red)
+            Text("Δ $title", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red)
         }
         Column(Modifier.padding(12.dp)) { content() }
     }
@@ -390,8 +396,8 @@ fun ActionButton(
                 onClick()
             },
         shape = RoundedCornerShape(7.dp),
-        color = if (running) Red.copy(alpha = 0.08f) else Red,
-        border = BorderStroke(1.5.dp, if (running) Gold.copy(alpha = borderAlpha) else Gold.copy(alpha = 0.9f)),
+        color = if (running) TacGreen.copy(alpha = 0.08f) else Red,
+        border = BorderStroke(1.5.dp, if (running) TacGreen.copy(alpha = borderAlpha) else Gold.copy(alpha = 0.9f)),
     ) {
         Row(
             Modifier.padding(vertical = 13.dp),
@@ -401,7 +407,7 @@ fun ActionButton(
             if (running) {
                 PulseStar(active = true, size = 6.dp)
                 Spacer(Modifier.width(8.dp))
-                Text("■ $stopLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text("■ $stopLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TacGreen)
             } else {
                 Text("▶ $runLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White)
             }
@@ -457,7 +463,7 @@ fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
 @Composable
 fun StatChip(label: String, value: String, active: Boolean = true) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(vertical = 2.dp)) {
-        Text(value, fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (active) Gold else Gray)
+        Text(value, fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (active) TacGreen else Gray)
         Spacer(Modifier.height(1.dp))
         Text(label, fontFamily = Sans, fontSize = 9.sp, color = Gray)
     }
@@ -480,7 +486,7 @@ fun PanelStat(label: String, value: String, valueColor: Color = White) {
  * 金星 + 「实时日志」标题 + 右侧可选「清空」按钮。
  */
 @Composable
-fun LogHeader(title: String = "实时日志", showClear: Boolean = false, onClear: () -> Unit = {}) {
+fun LogHeader(title: String = "Δ 战地日志", showClear: Boolean = false, onClear: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Star(Gold, 8.dp)
         Spacer(Modifier.width(7.dp))
@@ -552,10 +558,10 @@ fun ModuleCard(
     val actionScale by animateFloatAsState(if (actionPressed) 0.92f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
 
     AnimatedVisibility(visible = visible, enter = fadeIn(tween(350)) + slideInVertically(tween(400)) { it / 4 }) {
-        val border by animateColorAsState(if (running) Gold.copy(alpha = 0.45f) else BorderDim, tween(350))
-        val bg by animateColorAsState(if (running) Red.copy(alpha = 0.05f) else SurfaceBg, tween(350))
-        val descColor by animateColorAsState(if (running) GoldDim else Gray, tween(350))
-        val iconTint by animateColorAsState(if (running) Gold else Gray, tween(350))
+        val border by animateColorAsState(if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, tween(350))
+        val bg by animateColorAsState(if (running) TacGreen.copy(alpha = 0.05f) else SurfaceBg, tween(350))
+        val descColor by animateColorAsState(if (running) TacGreenDim else Gray, tween(350))
+        val iconTint by animateColorAsState(if (running) TacGreen else Gray, tween(350))
 
         Surface(
             modifier = Modifier
@@ -574,8 +580,8 @@ fun ModuleCard(
             Row(Modifier.padding(horizontal = 13.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier.size(40.dp).clip(RoundedCornerShape(6.dp))
-                        .background(if (running) Red.copy(alpha = 0.16f) else SurfaceAlt)
-                        .border(1.dp, if (running) Gold.copy(alpha = 0.5f) else BorderDim, RoundedCornerShape(6.dp)),
+                        .background(if (running) TacGreen.copy(alpha = 0.14f) else SurfaceAlt)
+                        .border(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(20.dp))
@@ -613,9 +619,9 @@ fun ModuleCard(
                         },
                         shape = RoundedCornerShape(6.dp),
                         color = if (running) Color.Transparent else Red,
-                        border = BorderStroke(1.dp, if (running) Gold.copy(alpha = 0.55f) else Gold.copy(alpha = 0.9f)),
+                        border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.6f) else Gold.copy(alpha = 0.9f)),
                     ) {
-                        Text(if (running) "停止" else "启动", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) Red else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
+                        Text(if (running) "中止" else "执行", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) TacGreen else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
                     }
                 }
             }
@@ -623,7 +629,7 @@ fun ModuleCard(
             if (running) {
                 val lock = rememberInfiniteTransition()
                 val lockAlpha by lock.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse))
-                TacticalCorners(Gold.copy(alpha = lockAlpha), Modifier.matchParentSize(), len = 8.dp, stroke = 1.4.dp)
+                TacticalCorners(TacGreen.copy(alpha = lockAlpha), Modifier.matchParentSize(), len = 8.dp, stroke = 1.4.dp)
             }
             }
         }
