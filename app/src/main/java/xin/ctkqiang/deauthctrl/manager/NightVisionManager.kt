@@ -68,6 +68,10 @@ class NightVisionManager(private val context: Context) {
     /** 增益 1x-8x，调用方滑杆控制 */
     @Volatile var gain: Float = 4f
     @Volatile private var stopFlag = false
+    /** 传感器方向(通常后置 90°、前置 270°) —— 输出画面需按此旋转 */
+    @Volatile private var sensorOrientation = 90
+    /** 镜头朝向 —— 前置需要水平镜像 */
+    @Volatile private var lensFacing = CameraCharacteristics.LENS_FACING_BACK
 
     private var threadRef: HandlerThread? = null
     private var handler: Handler? = null
@@ -75,6 +79,17 @@ class NightVisionManager(private val context: Context) {
     private var session: CameraCaptureSession? = null
     private var reader: ImageReader? = null
     private var processThread: Thread? = null
+    private var detectThread: Thread? = null
+
+    /** OpenCV 目标检测器(人脸 + 人体) */
+    val detector = ThreatDetector(context)
+
+    /** 最新检测报告 —— UI 据此叠加红框/涟漪/触觉 */
+    private val _threat = MutableStateFlow<ThreatReport?>(null)
+    val threat: StateFlow<ThreatReport?> = _threat
+
+    /** 最新增强帧(检测线程消费,拿帧即置空实现丢帧策略) */
+    private val pendingFrame = java.util.concurrent.atomic.AtomicReference<Bitmap?>(null)
 
     @Suppress("MissingPermission")
     fun start(cameraId: String) {
@@ -84,6 +99,9 @@ class NightVisionManager(private val context: Context) {
             handler = Handler(threadRef!!.looper)
             // 动态选择相机支持的 YUV 尺寸(硬编码 640×480 在不支持的机型上会直接抛异常)
             val chars = cameraManager.getCameraCharacteristics(cameraId)
+            sensorOrientation = chars.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90
+            lensFacing = chars.get(CameraCharacteristics.LENS_FACING)
+                ?: CameraCharacteristics.LENS_FACING_BACK
             val map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             val yuvSizes = map?.getOutputSizes(ImageFormat.YUV_420_888).orEmpty()
             if (yuvSizes.isEmpty()) {
@@ -103,11 +121,20 @@ class NightVisionManager(private val context: Context) {
                     cam.createCaptureSession(surfaces, object : CameraCaptureSession.StateCallback() {
                         override fun onConfigured(s: CameraCaptureSession) {
                             session = s
+                            val chars = cameraManager.getCameraCharacteristics(cam.id)
+                            // 夜视曝光策略:AE 自动 + 最大正曝光补偿 + 最低目标帧率。
+                            // 低帧率让 AE 敢用长曝光,暗部细节才出得来;
+                            // 固定 ISO 反而会与 AE 冲突并压制暗光表现。
+                            val evMax = chars.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE)?.upper ?: 0
+                            val fpsMin = chars.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+                                ?.minByOrNull { it.upper }
                             val req = cam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                                 addTarget(reader!!.surface)
-                                // 夜视关键参数：ISO 上限拉满、允许最长曝光
                                 set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-                                set(CaptureRequest.SENSOR_SENSITIVITY, isoLimit(cam))
+                                set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, evMax)
+                                if (fpsMin != null) {
+                                    set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsMin)
+                                }
                             }
                             s.setRepeatingRequest(req.build(), null, handler)
                             _running.value = true
@@ -141,16 +168,22 @@ class NightVisionManager(private val context: Context) {
                     }
                 }
             }
+
+            // 目标检测线程(自动启动):消费最新增强帧,丢帧策略保持实时性。
+            // OpenCV 不可用时 detect 内部静默返回空报告,画面增强不受影响。
+            detectThread = thread(name = "nv-detect") {
+                while (!stopFlag) {
+                    val bmp = pendingFrame.getAndSet(null)
+                    if (bmp == null) { Thread.sleep(25); continue }
+                    try {
+                        _threat.value = detector.detect(bmp)
+                    } catch (_: Throwable) {
+                    }
+                }
+            }
         } catch (t: Throwable) {
             _error.value = t.message ?: t.javaClass.simpleName
         }
-    }
-
-    /** 查镜头 ISO 上限，用于把灵敏度推向最大（不影响手动增益滑杆） */
-    private fun isoLimit(dev: CameraDevice): Int {
-        val chars = cameraManager.getCameraCharacteristics(dev.id)
-        val range = chars.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE)
-        return range?.upper ?: 1600
     }
 
     /**
@@ -186,12 +219,29 @@ class NightVisionManager(private val context: Context) {
             }
         }
         out.setPixels(pixels, 0, w, 0, 0, w, h)
-        _frame.value = out
+
+        // 按传感器方向旋转画面(否则横倒/颠倒);前置镜头额外水平镜像
+        if (sensorOrientation != 0 || lensFacing == CameraCharacteristics.LENS_FACING_FRONT) {
+            val matrix = android.graphics.Matrix()
+            matrix.postRotate(sensorOrientation.toFloat())
+            if (lensFacing == CameraCharacteristics.LENS_FACING_FRONT) {
+                matrix.postScale(-1f, 1f)
+            }
+            val rotated = Bitmap.createBitmap(out, 0, 0, w, h, matrix, true)
+            if (rotated !== out) out.recycle()
+            _frame.value = rotated
+            pendingFrame.set(rotated)
+        } else {
+            _frame.value = out
+            pendingFrame.set(out)
+        }
     }
 
     fun stop() {
         stopFlag = true
         _running.value = false
+        _threat.value = null
+        pendingFrame.set(null)
         runCatching { session?.close() }
         runCatching { device?.close() }
         runCatching { reader?.close() }

@@ -16,7 +16,7 @@ import xin.ctkqiang.deauthctrl.manager.VoiceSdrManager
 
 class TacticalCameraViewModel(app: Application) : AndroidViewModel(app) {
     val manager = TacticalCameraManager(app)
-    override fun onCleared() { manager.close(); manager.stopReceive() }
+    override fun onCleared() { manager.close() }
 }
 
 class VoiceSdrViewModel(app: Application) : AndroidViewModel(app) {

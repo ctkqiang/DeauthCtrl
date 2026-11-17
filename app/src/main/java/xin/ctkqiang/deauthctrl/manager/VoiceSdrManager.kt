@@ -19,6 +19,7 @@ data class SpectrumFrame(
     val peakHz: Float,
     val peakDb: Float,
     val rmsDb: Float,
+    val noiseFloorDb: Float,    // 噪声底估计(bin 幅度中位数)
     val timeMs: Long,
 )
 
@@ -105,11 +106,14 @@ class VoiceSdrManager(private val context: Context) {
                         }
                     }
                     val rmsDb = (20f * log10((sqrt(sumSq / BINS) / FFT_SIZE / 32768f).coerceAtLeast(1e-9))).toFloat()
+                    // 噪声底:bin 幅度的中位数(比平均值更抗峰值干扰)
+                    val sorted = bins.copyOf().apply { sort() }
                     _frame.value = SpectrumFrame(
                         bins = bins,
                         peakHz = peakHz,
                         peakDb = peakDb,
                         rmsDb = rmsDb.coerceIn(-120f, 0f),
+                        noiseFloorDb = sorted[BINS / 2].coerceIn(-120f, 0f),
                         timeMs = System.currentTimeMillis(),
                     )
                 }

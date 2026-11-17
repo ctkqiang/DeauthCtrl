@@ -17,6 +17,8 @@ enum class ShellMode { LOCAL, ROOT }
 data class TerminalSpec(
     val shellPath: String,
     val args: Array<String>,
+    /** PATH 环境变量值 —— 由 TerminalManager 按成功候选联动调整 */
+    val path: String,
     val env: Array<String>,
     val cwd: String,
     /** 会话标识（argv[0] 语义，如 "sh" / "su"）。 */
@@ -97,7 +99,8 @@ object TerminalSpecs {
     fun prepareShellCandidates(context: Context): List<String> {
         val bin = privateBin(context)
         val filesCopy = prepareCopy(File(bin, "toybox"))
-        val cacheCopy = prepareCopy(File(context.cacheDir, "sh-toybox"))
+        val cacheToybox = File(context.cacheDir, "sh-toybox")
+        val cacheCopy = prepareCopy(cacheToybox)
 
         val candidates = mutableListOf<String>()
         if (File(DEFAULT_SHELL).exists()) candidates.add(DEFAULT_SHELL)
@@ -106,9 +109,27 @@ object TerminalSpecs {
             // files 副本就位时顺带建命令 symlink 分发
             ensureApplets(bin, c)
         }
-        cacheCopy?.let { candidates.add(it.absolutePath) }
+        cacheCopy?.let { c ->
+            candidates.add(c.absolutePath)
+            // cache 副本同样分发命令(部分厂商 ROM 只允许 cache 目录 exec)
+            ensureApplets(File(context.cacheDir, "sh-bin"), c)
+        }
         return candidates.distinct()
     }
+
+    /** 成功候选对应的命令 applet 目录;null = 系统 sh(无需私有分发) */
+    fun appletDirFor(shellPath: String, context: Context): String? {
+        val app = context.applicationContext
+        return when {
+            shellPath.startsWith(privateBin(app).absolutePath) -> privateBin(app).absolutePath
+            shellPath.startsWith(app.cacheDir.absolutePath) ->
+                File(app.cacheDir, "sh-bin").absolutePath
+            else -> null
+        }
+    }
+
+    /** 纯系统 PATH(候选为系统 sh 或私有 exec 全部被禁时使用) */
+    fun systemPath(): String = LOCAL_PATH
 
     /** 复制 toybox 副本并赋执行位；失败返回 null */
     private fun prepareCopy(target: File): File? {
@@ -132,13 +153,24 @@ object TerminalSpecs {
         }
     }
 
-    /** 为 toybox 副本建立常用命令 symlink 分发（幂等） */
+    /** 为 toybox 副本建立常用命令 symlink 分发（幂等,跨目录用相对目标） */
     private fun ensureApplets(bin: File, toybox: File) {
+        val target = if (toybox.parentFile?.absolutePath == bin.absolutePath) {
+            toybox.name
+        } else {
+            "../" + toybox.name
+        }
         // "sh" 入口也需要（toybox 按 argv[0] 分发 applet）
         APPLETS.forEach { name ->
             val link = File(bin, name)
+            // 旧版本可能残留不可执行的同名普通文件(而非 symlink):
+            // 存在但不可执行时一律删除重建 —— 否则 PATH 命中它只会得到
+            // "Permission denied",且永远无法自愈
+            if (link.exists() && !link.canExecute()) {
+                runCatching { link.delete() }
+            }
             if (!link.exists()) {
-                runCatching { android.system.Os.symlink(toybox.name, link.absolutePath) }
+                runCatching { android.system.Os.symlink(target, link.absolutePath) }
             }
         }
     }
@@ -160,12 +192,12 @@ object TerminalSpecs {
 
         when (mode) {
             ShellMode.LOCAL -> {
-                // 候选按序尝试;TerminalManager 会在 exec 失败时自动切换
+                // 候选按序尝试;TerminalManager 会在 exec 失败时自动切换,
+                // 并据成功候选决定 PATH 前缀(见 TerminalManager.start)
                 shellPath = prepareShellCandidates(appContext).firstOrNull() ?: DEFAULT_SHELL
                 args = arrayOf("sh")
                 label = "sh"
-                // 私有 bin 优先：命令分发走 toybox 副本，系统路径兜底。
-                path = privateBin(appContext).absolutePath + ":" + LOCAL_PATH
+                path = LOCAL_PATH
             }
 
             ShellMode.ROOT -> {
@@ -194,7 +226,7 @@ object TerminalSpecs {
             "PS1=哪吒终端 $ ",
             "SHELL=$shellPath",
         )
-        return TerminalSpec(shellPath, args, env, home, label)
+        return TerminalSpec(shellPath, args, path, env, home, label)
     }
 
     /**

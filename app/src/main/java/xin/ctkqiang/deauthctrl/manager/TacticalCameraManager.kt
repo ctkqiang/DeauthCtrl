@@ -17,24 +17,15 @@ import android.view.Surface
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.net.InetSocketAddress
-import java.net.ServerSocket
-import java.net.Socket
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import java.nio.ByteBuffer
 
-/** 收到的一张战术照片 —— JPEG 原始字节 + 元数据 */
-data class ReceivedPhoto(
-    val from: String,
+/** 一次已捕获的战术照片 —— 拍摄与发送分离,用户确认后再投递 */
+data class CapturedShot(
+    val jpeg: ByteArray,
     val width: Int,
     val height: Int,
-    val jpeg: ByteArray,
-    val receivedMs: Long,
+    val timeMs: Long,
 )
 
 /**
@@ -88,13 +79,13 @@ class TacticalCameraManager(private val context: Context) {
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError
 
-    // ── 接收台状态 ──
-    private val _receiving = MutableStateFlow(false)
-    val receiving: StateFlow<Boolean> = _receiving
-    private val _received = MutableStateFlow<List<ReceivedPhoto>>(emptyList())
-    val received: StateFlow<List<ReceivedPhoto>> = _received
-    private var serverSocket: ServerSocket? = null
-    private val receiveStop = AtomicBoolean(false)
+    /** 已拍摄、待发送的照片(拍摄与发送分离) */
+    private val _pendingShot = MutableStateFlow<CapturedShot?>(null)
+    val pendingShot: StateFlow<CapturedShot?> = _pendingShot
+
+    /** 实际预览分辨率 —— UI 据此动态决定显示区宽高比(不硬编码) */
+    private val _previewSize = MutableStateFlow<Size?>(null)
+    val previewSize: StateFlow<Size?> = _previewSize
 
     /** 打开相机并启动预览（Texture 由界面 AndroidView 提供） */
     @Suppress("MissingPermission")
@@ -110,6 +101,7 @@ class TacticalCameraManager(private val context: Context) {
             val previewSize = choosePreviewSize(map, texture)
             val maxJpeg = map.getOutputSizes(ImageFormat.JPEG)!!.maxByOrNull { it.width.toLong() * it.height }!!
 
+            _previewSize.value = previewSize
             texture.setDefaultBufferSize(previewSize.width, previewSize.height)
             previewSurface = Surface(texture)
             imageReader = ImageReader.newInstance(maxJpeg.width, maxJpeg.height, ImageFormat.JPEG, 2)
@@ -156,8 +148,36 @@ class TacticalCameraManager(private val context: Context) {
         _lastError.value = message
     }
 
-    /** 拍摄：最高分辨率 JPEG → Base64 → 发送到目标 IP（后台线程） */
-    fun captureAndSend(targetIp: String, senderName: String) {
+    /** 拍摄：最高分辨率 JPEG 捕获，结果存为待发送照片（不自动发送） */
+    fun capture() {
+        captureInternal()
+    }
+
+    /** 把待发送照片投递给一组目标 IP（Base64 编码在发送线程执行） */
+    fun sendPending(targetIps: List<String>, senderName: String) {
+        val shot = _pendingShot.value ?: run {
+            _lastError.value = "没有待发送的照片 —— 先拍摄"
+            return
+        }
+        thread {
+            val host = PhotoRelayHost(context.applicationContext)
+            val results = targetIps.map { ip ->
+                host.sendTo(ip, shot.jpeg, senderName, shot.width, shot.height)
+            }
+            _lastError.value = when {
+                results.isEmpty() -> "没有可发送的目标"
+                results.size == 1 -> results.first()
+                else -> "已发送 · ${shot.jpeg.size / 1024}KB JPEG → ${results.size} 台设备"
+            }
+        }
+    }
+
+    /** 丢弃待发送照片 */
+    fun clearPending() {
+        _pendingShot.value = null
+    }
+
+    private fun captureInternal() {
         val dev = device ?: run { _lastError.value = "相机未就绪"; return }
         val reader = imageReader ?: return
         val size = Size(reader.width, reader.height)
@@ -169,15 +189,14 @@ class TacticalCameraManager(private val context: Context) {
                     val buf: ByteBuffer = image.planes[0].buffer
                     val bytes = ByteArray(buf.remaining())
                     buf.get(bytes)
-                    val b64 = Base64.getEncoder().encodeToString(bytes)
-                    val payload = buildString {
-                        append("{\"type\":\"photo\",\"from\":\"")
-                        append(senderName.replace("\"", "\\\""))
-                        append("\",\"w\":").append(image.width)
-                        append(",\"h\":").append(image.height)
-                        append(",\"b64\":\"").append(b64).append("\"}")
-                    }
-                    thread { sendOverTcp(targetIp, payload, bytes.size) }
+                    _pendingShot.value = CapturedShot(
+                        jpeg = bytes,
+                        width = image.width,
+                        height = image.height,
+                        timeMs = System.currentTimeMillis(),
+                    )
+                    _lastError.value = "已捕获 · " + image.width + "×" + image.height + " · " +
+                        (bytes.size / 1024) + "KB —— 选择目标后发送"
                 } catch (t: Throwable) {
                     _lastError.value = t.message
                 } finally {
@@ -206,93 +225,6 @@ class TacticalCameraManager(private val context: Context) {
         }
     }
 
-    /** 4 字节大端长度前缀 + UTF-8 JSON */
-    private fun sendOverTcp(ip: String, json: String, jpegBytes: Int) {
-        runCatching {
-            Socket().use { sock ->
-                sock.connect(InetSocketAddress(ip, PHOTO_PORT), 4000)
-                DataOutputStream(sock.getOutputStream()).use { out ->
-                    val bytes = json.toByteArray(StandardCharsets.UTF_8)
-                    out.writeInt(bytes.size)
-                    out.write(bytes)
-                    out.flush()
-                }
-            }
-        }.onSuccess {
-            _lastError.value = "已发送 · ${jpegBytes / 1024}KB JPEG → $ip"
-        }.onFailure {
-            _lastError.value = "发送失败: ${it.message}"
-        }
-    }
-
-    /** 开启接收台：监听 10088，接收照片并解码入库 */
-    fun startReceive() {
-        if (_receiving.value) return
-        receiveStop.set(false)
-        thread {
-            runCatching {
-                serverSocket = ServerSocket(PHOTO_PORT)
-                _receiving.value = true
-                while (!receiveStop.get()) {
-                    val client = serverSocket!!.accept()
-                    thread { handleClient(client) }
-                }
-            }.onFailure {
-                _receiving.value = false
-                _lastError.value = "接收台启动失败: ${it.message}"
-            }
-        }
-    }
-
-    private fun handleClient(socket: Socket) {
-        try {
-            DataInputStream(socket.getInputStream()).use { input ->
-                val len = input.readInt()
-                if (len <= 0 || len > MAX_PAYLOAD) return
-                val bytes = ByteArray(len)
-                input.readFully(bytes)
-                val json = String(bytes, StandardCharsets.UTF_8)
-                parseAndStore(json)
-            }
-        } catch (_: Exception) {
-        } finally {
-            runCatching { socket.close() }
-        }
-    }
-
-    /** 极简 JSON 解析（载荷结构自产自销，避免引入 JSON 依赖） */
-    private fun parseAndStore(json: String) {
-        fun field(key: String): String =
-            Regex("\"$key\":\"(.*?)\"").find(json)?.groupValues?.get(1) ?: ""
-
-        fun intField(key: String): Int =
-            Regex("\"$key\":(\\d+)").find(json)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-
-        val b64 = field("b64")
-        if (b64.isEmpty()) return
-        val jpeg = runCatching { Base64.getDecoder().decode(b64) }.getOrNull() ?: return
-        val photo = ReceivedPhoto(
-            from = field("from").ifBlank { "未知" },
-            width = intField("w"),
-            height = intField("h"),
-            jpeg = jpeg,
-            receivedMs = System.currentTimeMillis(),
-        )
-        // 落盘：供后续查看与导出
-        runCatching {
-            val dir = java.io.File(context.filesDir, "photo_relay")
-            dir.mkdirs()
-            val f = java.io.File(dir, "rx_${photo.receivedMs}.jpg")
-            f.writeBytes(jpeg)
-        }
-        _received.value = (listOf(photo) + _received.value).takeLast(20)
-    }
-
-    fun stopReceive() {
-        receiveStop.set(true)
-        runCatching { serverSocket?.close() }
-        _receiving.value = false
-    }
 
     fun close() {
         runCatching { session?.close() }
@@ -301,6 +233,7 @@ class TacticalCameraManager(private val context: Context) {
         runCatching { previewSurface?.release() }
         cameraThread?.quitSafely()
         session = null; device = null; imageReader = null
+        _previewSize.value = null
         _opened.value = false
     }
 
@@ -313,8 +246,4 @@ class TacticalCameraManager(private val context: Context) {
             ?: Size(1280, 720)
     }
 
-    companion object {
-        const val PHOTO_PORT = 10088
-        private const val MAX_PAYLOAD = 96 * 1024 * 1024
-    }
 }

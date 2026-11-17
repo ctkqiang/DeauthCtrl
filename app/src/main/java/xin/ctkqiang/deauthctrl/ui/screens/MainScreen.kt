@@ -73,8 +73,10 @@ import androidx.compose.material.icons.outlined.NetworkPing
 import androidx.compose.material.icons.outlined.Radar
 import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material.icons.outlined.VideoCall
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.WifiOff
@@ -113,6 +115,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.manager.SshClientManager
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
 import xin.ctkqiang.deauthctrl.mirroring.ui.DashboardScreen
 import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringState
@@ -121,7 +124,8 @@ import xin.ctkqiang.deauthctrl.mirroring.ui.RemoteViewerScreen
 import xin.ctkqiang.deauthctrl.ui.components.*
 import xin.ctkqiang.deauthctrl.ui.theme.TEAM_THEMES
 import xin.ctkqiang.deauthctrl.viewmodel.*
-import xin.ctkqiang.deauthctrl.viewmodel.TerminalViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.DbViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.SshClientViewModel
 
 // ─── 路由名常量 ──────────────────────────────────────────────────────────────
 
@@ -159,8 +163,10 @@ fun MainScreen(
     revVm: RevShellViewModel, payloadVm: PayloadViewModel,
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
     mirrorVm: MirroringViewModel,
-    terminalVm: TerminalViewModel,
+    terminalVm: SshClientViewModel,
+    dbVm: DbViewModel,
     settingsVm: SettingsViewModel,
+    initialPhotoId: Long? = null,
 ) {
     // 首次启动免责声明：接受后写入偏好，之后启动不再弹出。
     // 静态预览拿不到 SharedPreferences 时视为已接受，让预览直达主界面。
@@ -181,6 +187,16 @@ fun MainScreen(
 
     var screen by remember { mutableStateOf(ROUTE_HOME) }
     val backStack = remember { mutableStateListOf<String>() }
+    var openPhotoId by remember { mutableStateOf<Long?>(null) }
+
+    // 通知点击直达:清栈并进入战术相机,自动打开对应照片
+    LaunchedEffect(initialPhotoId) {
+        if (initialPhotoId != null) {
+            backStack.clear()
+            openPhotoId = initialPhotoId
+            screen = "taccam"
+        }
+    }
 
     /** 进入目标路由，先把当前路由压栈；重复进入同一路由不压栈 */
     val navigate: (String) -> Unit = { target ->
@@ -235,13 +251,20 @@ fun MainScreen(
                     "payload" -> PayloadScreen(payloadVm, back = goBack)
                     "brute" -> DirBruteScreen(bruteVm, back = goBack)
                     "cve" -> CVEScreen(cveVm, back = goBack)
-                    "terminal" -> TerminalScreen(terminalVm, back = goBack)
-                    "taccam" -> TacticalCameraScreen(viewModel(), back = goBack)
+                    "terminal" -> SshTerminalScreen(terminalVm, back = goBack)
+                    "dbview" -> DbViewScreen(dbVm, radarVm, blescanVm, wifiVm, back = goBack)
+                    "taccam" -> TacticalCameraScreen(viewModel(), operatorName = username, back = goBack, openPhotoId = openPhotoId)
                     "sdr" -> VoiceSdrScreen(viewModel(), back = goBack)
                     "irremote" -> IrRemoteScreen(viewModel(), back = goBack)
                     "nfc" -> NfcScreen(viewModel(), back = goBack)
                     "nightvision" -> NightVisionScreen(viewModel(), back = goBack)
                     "tacmap" -> TacticalMapScreen(viewModel(), back = goBack)
+                    "netmap" -> NetMapScreen(
+                        radarVm,
+                        mapVm = viewModel(),
+                        back = goBack,
+                        onOpenDossier = { id -> selectedTargetId = id; navigate("target") },
+                    )
                     "conference" -> ConferenceScreen(viewModel(), operatorName = username, back = goBack)
                     ROUTE_ABOUT -> SettingsScreen(settingsVm, back = goBack)
                 }
@@ -464,7 +487,7 @@ fun HomeScreen(
     revVm: RevShellViewModel, payloadVm: PayloadViewModel,
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
     mirrorVm: MirroringViewModel,
-    terminalVm: TerminalViewModel,
+    terminalVm: SshClientViewModel,
     settingsVm: SettingsViewModel,
     nav: (String) -> Unit,
 ) {
@@ -484,7 +507,8 @@ fun HomeScreen(
     val revr by revVm.isRunning.collectAsState()
     val bruter by bruteVm.isRunning.collectAsState()
     val cver by cveVm.isRunning.collectAsState()
-    val terminalr by terminalVm.isRunning.collectAsState()
+    val terminalr by terminalVm.status.collectAsState()
+    val sshOnline = terminalr is SshClientManager.Status.Connected
     val mirrorState by mirrorVm.state.collectAsState()
     val mirrorr = mirrorState is MirroringState.HostLive
 
@@ -499,6 +523,7 @@ fun HomeScreen(
         HomeEntry("BLE 扫描", "嗅探附近低功耗蓝牙设备", "blescan", blesr, { if (blesr) blescanVm.stop() else blescanVm.start() }, Icons.Outlined.BluetoothSearching),
         HomeEntry("端口扫描", "扫描目标主机开放端口", "portscan", portr, { if (portr) portscanVm.stop() else portscanVm.start() }, Icons.Outlined.GridView),
         HomeEntry("设备雷达", "雷达图定位附近设备", "radar", radarr, { if (radarr) radarVm.stop() else radarVm.start() }, Icons.Outlined.Radar),
+        HomeEntry("网络测绘", "OSM 地图实时绘制 WiFi/BLE 设备", "netmap", false, null, Icons.Outlined.TravelExplore),
         HomeEntry("CVE 搜索", "查询公开漏洞数据库", "cve", cver, null, Icons.Outlined.Search),
         HomeEntry("语音频谱", "麦克风 FFT 实时频谱分析", "sdr", false, null, Icons.Outlined.Equalizer),
         HomeEntry("战术相机", "最大分辨率拍照 · Base64 局域网传输", "taccam", false, null, Icons.Outlined.CameraAlt),
@@ -523,15 +548,16 @@ fun HomeScreen(
         HomeEntry("加密保险箱", "加密照片·视频·录音", "vault", false, null, Icons.Outlined.Lock),
         HomeEntry("Payload 生成", "生成反弹 Shell 载荷", "payload", false, null, Icons.Outlined.Terminal),
         HomeEntry("反弹 Shell", "监听反弹 Shell 连接", "revshell", revr, { if (revr) revVm.stop() else revVm.start() }, Icons.Outlined.Lan),
-        HomeEntry("终端", "Termux 引擎 · 真实 pty 本地 Shell", "terminal", terminalr, { if (terminalr) terminalVm.stop() else terminalVm.start() }, Icons.Outlined.Terminal),
+        HomeEntry("SSH 客户端", "远程服务器终端 · 密码认证", "terminal", sshOnline, null, Icons.Outlined.Terminal),
+        HomeEntry("数据库", "SQLite 信号情报库 · 刷新注入", "dbview", false, null, Icons.Outlined.Storage),
         HomeEntry("局域网会议", "多方视频 · 屏幕/摄像头 · PTT 语音", "conference", false, null, Icons.Outlined.VideoCall),
     )
 
     val groups = listOf(
-        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "cve", "sdr", "taccam")),
+        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "netmap", "cve", "sdr", "taccam")),
         HomeGroup("网络", listOf("webserver", "http", "brute", "ping")),
         HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc")),
-        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal")),
+        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "dbview")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }
@@ -867,7 +893,7 @@ private fun MainScreenPreview() {
                 vms.httpVm, vms.pingVm, vms.blescanVm, vms.portscanVm, vms.walkieVm,
                 vms.radarVm, vms.ftVm, vms.vaultVm, vms.revVm, vms.payloadVm,
                 vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm, terminalVm = vms.terminalVm,
-                settingsVm = vms.settingsVm,
+                dbVm = vms.dbVm, settingsVm = vms.settingsVm,
             )
         }
     }

@@ -15,5 +15,31 @@ import android.app.Application
 class DeauthApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        // 战术照片中继常开:同网段设备随时可投递,收到即发系统通知
+        xin.ctkqiang.deauthctrl.manager.PhotoRelayHost(this).start()
+
+        // 全局崩溃现场捕获:写入 filesDir/crash.log,便于定位雷达等模块的崩溃
+        installCrashLogger()
+    }
+
+    /** 崩溃日志兜底 —— 原处理器照常执行,现场先落盘 */
+    private fun installCrashLogger() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            runCatching {
+                val log = java.io.File(filesDir, "crash.log")
+                // 先把堆栈完整写入 StringWriter,再落盘 —— 直接 append PrintWriter
+                // 对象只会存下 "java.io.PrintWriter@xxxx" 这种引用文本,查不到现场
+                val sw = java.io.StringWriter()
+                throwable.printStackTrace(java.io.PrintWriter(sw))
+                val text = buildString {
+                    appendLine("=== DeauthCtrl crash @ ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())} ===")
+                    appendLine("thread: ${thread.name}")
+                    appendLine(sw.toString())
+                }
+                log.appendText(text + "\n")
+            }
+            previous?.uncaughtException(thread, throwable)
+        }
     }
 }

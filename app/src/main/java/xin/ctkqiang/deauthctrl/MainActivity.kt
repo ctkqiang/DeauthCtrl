@@ -5,13 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -19,7 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import xin.ctkqiang.deauthctrl.ui.components.PermissionRequestScreen
 import xin.ctkqiang.deauthctrl.ui.components.RequiredPermissions
 import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
-import xin.ctkqiang.deauthctrl.ui.theme.Black
+import xin.ctkqiang.deauthctrl.ui.screens.OperatorPromptScreen
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
 import xin.ctkqiang.deauthctrl.ui.theme.HudThemeState
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
@@ -69,6 +69,16 @@ import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
  */
 class MainActivity : ComponentActivity() {
 
+    /** 通知点击带来的照片 id —— 直达相机页并打开该照片 */
+    private val pendingPhotoId = mutableStateOf<Long?>(null)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val id = intent.getLongExtra(xin.ctkqiang.deauthctrl.manager.PhotoRelayHost.EXTRA_PHOTO_ID, -1L)
+        if (id > 0) pendingPhotoId.value = id
+    }
+
     /**
      * Activity 创建入口
      *
@@ -82,7 +92,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        window.statusBarColor = Black.toArgb()
+        // 系统状态栏与导航栏全透明:内容绘制到屏幕边缘(edge-to-edge 已开启),
+        // 不染色、不加深 —— 全息 HUD 界面直接透出系统区域
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            window.isNavigationBarContrastEnforced = false
+            window.isStatusBarContrastEnforced = false
+        }
         WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
@@ -95,12 +112,29 @@ class MainActivity : ComponentActivity() {
         HudThemeState.hapticsEnabled = prefs.getBoolean(KEY_HAPTICS_ENABLED, true)
         HudThemeState.radarAlertEnabled = prefs.getBoolean(KEY_RADAR_ALERT_ENABLED, true)
 
+        val firstPhotoId = intent.getLongExtra(xin.ctkqiang.deauthctrl.manager.PhotoRelayHost.EXTRA_PHOTO_ID, -1L)
+        if (firstPhotoId > 0) pendingPhotoId.value = firstPhotoId
+
         setContent {
             DeauthCtrlTheme(darkTheme = true) {
                 val activity = this@MainActivity
                 var granted by remember { mutableStateOf(!hasMissingPermissions()) }
                 val settingsVm: SettingsViewModel = viewModel()
                 val teamId by settingsVm.teamId.collectAsState()
+                val photoId by pendingPhotoId
+
+                // Android 13+ 通知权限:一次性请求(不阻塞主流程,未授权则照片静默接收)
+                val notifLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+                ) {}
+                LaunchedEffect(Unit) {
+                    if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                        checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                        != android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notifLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
 
                 // 用户去系统设置授权后返回，必须重新核对；否则会永远停在权限页
                 DisposableEffect(activity) {
@@ -114,8 +148,23 @@ class MainActivity : ComponentActivity() {
                 // key(teamId)：切队时强制整棵 UI 树重组，
                 // 使所有界面读取到 HudThemeState 刚写入的新全局色板
                 key(teamId) {
-                    if (granted) {
-                        MainScreen(
+                    // 首次启动:未设置呼号时先询问用户名,再进入主界面
+                    var operatorName by remember {
+                        mutableStateOf(prefs.getString(KEY_OPERATOR_NAME, "") ?: "")
+                    }
+                    when {
+                        !granted -> PermissionRequestScreen { granted = true }
+                        operatorName.isBlank() -> OperatorPromptScreen(
+                            onConfirm = { name ->
+                                settingsVm.setUsername(name.trim())
+                                operatorName = name.trim()
+                            },
+                            onSkip = {
+                                settingsVm.setUsername("哪吒")
+                                operatorName = "哪吒"
+                            },
+                        )
+                        else -> MainScreen(
                             bleVm = viewModel(),
                             wifiVm = viewModel(),
                             btVm = viewModel(),
@@ -136,10 +185,10 @@ class MainActivity : ComponentActivity() {
                             cveVm = viewModel(),
                             mirrorVm = viewModel(),
                             terminalVm = viewModel(),
+                            dbVm = viewModel(),
                             settingsVm = settingsVm,
+                            initialPhotoId = photoId,
                         )
-                    } else {
-                        PermissionRequestScreen { granted = true }
                     }
                 }
             }

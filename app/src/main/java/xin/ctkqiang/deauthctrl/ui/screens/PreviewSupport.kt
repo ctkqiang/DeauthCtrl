@@ -27,6 +27,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.CVESearchViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.DbViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.DirBruteViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.FileTransferViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.HttpClientViewModel
@@ -37,7 +38,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.RevShellViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.SecureMediaViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.SettingsViewModel
-import xin.ctkqiang.deauthctrl.viewmodel.TerminalViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.SshClientViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WalkieTalkieViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
@@ -102,7 +103,8 @@ internal class PreviewVms(
     val bruteVm: DirBruteViewModel,
     val cveVm: CVESearchViewModel,
     val mirrorVm: MirroringViewModel,
-    val terminalVm: TerminalViewModel,
+    val terminalVm: SshClientViewModel,
+    val dbVm: DbViewModel,
     val settingsVm: SettingsViewModel,
 )
 
@@ -128,7 +130,8 @@ internal fun createPreviewVms(app: Application): PreviewVms? = runCatching {
         bruteVm = DirBruteViewModel(),
         cveVm = CVESearchViewModel(),
         mirrorVm = MirroringViewModel(app),
-        terminalVm = TerminalViewModel(app),
+        terminalVm = SshClientViewModel(),
+        dbVm = DbViewModel(app),
         settingsVm = SettingsViewModel(app),
     )
 }.getOrNull()

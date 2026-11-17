@@ -2,6 +2,8 @@ package xin.ctkqiang.deauthctrl.manager
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult as BleScanResult
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
@@ -65,7 +67,6 @@ class RadarManager(private val context: Context) {
 
     private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     private val btManager = context.applicationContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-    private val btAdapter: BluetoothAdapter? = btManager?.adapter
 
     val targets = ConcurrentHashMap<String, RadarTarget>()
 
@@ -76,6 +77,16 @@ class RadarManager(private val context: Context) {
 
     private var scanJob: Job? = null
     @Volatile private var btDiscoveryActive = false
+
+    /** 扫描相位 —— BLE 扫描与经典发现互斥,分时轮换避免互相打断 */
+    @Volatile private var phase = PHASE_BLE
+    /** 经典发现相位的窗口终点 */
+    @Volatile private var phaseEndAt = 0L
+    @Volatile private var bleScanning = false
+    /** BLE 相位窗口终点 */
+    @Volatile private var bleScanEndAt = 0L
+    /** BLE 扫描失败后的重试时间点 */
+    @Volatile private var bleRetryAt = 0L
 
     private val wifiReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
@@ -195,23 +206,106 @@ class RadarManager(private val context: Context) {
             }
         } catch (_: Exception) {}
 
-        // kick off first BT discovery (must run on main thread)
-        CoroutineScope(Dispatchers.Main).launch { startBtDiscovery() }
+        // 扫描相位机由 onTick 驱动:先跑 BLE 相位,窗口结束换班经典发现
+        phase = PHASE_BLE
+        phaseEndAt = 0L
+        bleScanEndAt = 0L
+        bleRetryAt = 0L
 
         scanJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 try {
                     val scanStarted = wifiManager.startScan()
-                    if (!scanStarted) { delay(5000); continue }
+                    if (!scanStarted) { delay(2000) }
                 } catch (_: Exception) {}
+                // 无论系统是否接受新扫描,都读取缓存结果注入目标表 ——
+                // 部分 ROM(MIUI 等)对前台应用也做 WiFi 扫描节流,startScan 被
+                // 静默拒绝时只靠 SCAN_RESULTS_AVAILABLE 广播会收不到 WiFi 目标
+                runCatching { wifiManager.scanResults.orEmpty() }
+                    .getOrDefault(emptyList())
+                    .forEach { r -> addWifiTarget(r) }
                 delay(3000)
             }
         }
     }
 
+    /** BLE 扫描回调 —— 结果直接进目标表;失败退避,防止节拍内密集重试触发系统限流 */
+    private val bleScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: BleScanResult) {
+            try {
+                val device = result.device ?: return
+                val rssi = result.rssi
+                val addr = device.address ?: return
+                val name = device.name ?: result.scanRecord?.deviceName ?: "(BLE设备)"
+                addBtTarget(device, addr, name, rssi)
+            } catch (_: Exception) {}
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            bleScanning = false
+            bleRetryAt = System.currentTimeMillis() + BLE_FAIL_BACKOFF_MS
+        }
+    }
+
+    /**
+     * BLE 相位:扫满一个窗口后让位;扫描器每次现取,不缓存 ——
+     * 蓝牙关闭时 bluetoothLeScanner 返回 null,构造期缓存会把 null 永久固化
+     * (蓝牙之后打开也不会恢复),参见 BleScannerManager 的同款注释。
+     */
+    private fun tickBlePhase() {
+        val now = System.currentTimeMillis()
+        if (bleScanning) {
+            if (now >= bleScanEndAt) {
+                stopBleScan()
+                switchToDiscovery()
+            }
+            return
+        }
+        val scanner = btManager?.adapter?.bluetoothLeScanner
+        if (scanner != null && now >= bleRetryAt) {
+            try {
+                scanner.startScan(bleScanCallback)
+                bleScanning = true
+                bleScanEndAt = now + BLE_SCAN_WINDOW_MS
+                return
+            } catch (_: Exception) {
+                bleScanning = false
+            }
+        }
+        // 扫不动(无扫描器 / 失败退避中)且相位已到期:换班经典发现
+        if (now >= phaseEndAt) switchToDiscovery()
+    }
+
+    /**
+     * 经典发现相位:空闲即拉起发现;窗口到期且发现已结束才让位给 BLE。
+     * 发现结束得早(设备少)且窗口余量充足时重新拉起一轮,提高覆盖。
+     */
+    private fun tickDiscoveryPhase() {
+        val now = System.currentTimeMillis()
+        if (btDiscoveryActive) return // 等 ACTION_DISCOVERY_FINISHED 自然结束,不与 BLE 抢硬件
+        if (now + DISCOVERY_RESTART_MIN_MS < phaseEndAt) {
+            tickScope.launch { startBtDiscovery() }
+        } else {
+            phase = PHASE_BLE
+            bleScanEndAt = 0L
+            bleRetryAt = 0L
+        }
+    }
+
+    private fun switchToDiscovery() {
+        phase = PHASE_DISCOVERY
+        phaseEndAt = System.currentTimeMillis() + DISCOVERY_WINDOW_MS
+    }
+
+    private fun stopBleScan() {
+        if (!bleScanning) return
+        bleScanning = false
+        runCatching { btManager?.adapter?.bluetoothLeScanner?.stopScan(bleScanCallback) }
+    }
+
     private fun startBtDiscovery() {
         try {
-            val adapter = btAdapter ?: return
+            val adapter = btManager?.adapter ?: return
             if (adapter.isDiscovering) {
                 btDiscoveryActive = true
                 return
@@ -220,16 +314,30 @@ class RadarManager(private val context: Context) {
         } catch (_: Exception) {}
     }
 
+    private val tickScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    /**
+     * 每 500ms 被 ViewModel 轮询一次,推进扫描相位机。
+     *
+     * Android 框架层不允许经典发现(startDiscovery)与 BLE 扫描(startScan)
+     * 同时运行 —— 启动其中一个会中止另一个。原先两者在 500ms 节拍里抢跑
+     * 互相打断,蓝牙/BLE 设备基本进不了目标表;现在按相位分时轮换:
+     * BLE 扫 10s → 经典发现 13s → BLE 扫 10s → …
+     */
     fun onTick() {
         if (!isRunning) return
-        CoroutineScope(Dispatchers.Main).launch { startBtDiscovery() }
+        when (phase) {
+            PHASE_BLE -> tickBlePhase()
+            else -> tickDiscoveryPhase()
+        }
     }
 
     fun stop() {
         isRunning = false; scanJob?.cancel()
         try { context.unregisterReceiver(wifiReceiver) } catch (_: Exception) {}
         try { context.unregisterReceiver(btReceiver) } catch (_: Exception) {}
-        try { btAdapter?.cancelDiscovery() } catch (_: Exception) {}
+        try { btManager?.adapter?.cancelDiscovery() } catch (_: Exception) {}
+        stopBleScan()
         btDiscoveryActive = false
     }
 
@@ -359,6 +467,19 @@ class RadarManager(private val context: Context) {
     }
 
     companion object {
+        /** 扫描相位:Ble 扫描与经典发现互斥(Android 框架层),分时轮换 */
+        private const val PHASE_BLE = 0
+        private const val PHASE_DISCOVERY = 1
+
+        /** BLE 相位窗口:一个相位内连续扫描时长 */
+        private const val BLE_SCAN_WINDOW_MS = 10_000L
+        /** 经典发现相位窗口:覆盖一轮完整 inquiry(~12s)加余量 */
+        private const val DISCOVERY_WINDOW_MS = 13_000L
+        /** 发现提前结束且窗口余量大于该值才重启一轮,避免拖长相位 */
+        private const val DISCOVERY_RESTART_MIN_MS = 6_000L
+        /** BLE 扫描失败后的重试退避,防止节拍内密集重试触发系统限流 */
+        private const val BLE_FAIL_BACKOFF_MS = 2_000L
+
         private val OUI_VENDORS = mapOf(
             "FC:FB:FB" to "Apple", "F0:18:98" to "Apple", "A4:83:E7" to "Apple",
             "D0:81:7A" to "Apple", "78:CA:39" to "Apple", "AC:BC:32" to "Apple",

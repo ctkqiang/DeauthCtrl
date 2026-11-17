@@ -142,8 +142,17 @@ class TerminalManager(context: Context) {
                     shellCandidates.addAll(TerminalSpecs.prepareShellCandidates(appContext))
                     candidateIndex = 0
                 }
+                val shellPath = shellCandidates.getOrElse(candidateIndex) { TerminalSpecs.DEFAULT_SHELL }
                 val base = TerminalSpecs.build(appContext, newMode)
-                base.copy(shellPath = shellCandidates.getOrElse(candidateIndex) { base.shellPath })
+                // PATH 与成功候选联动:私有副本可执行 → 对应 applet 目录优先;
+                // 系统 sh 成功 → 纯系统 PATH(避免 ls 解析到被禁的私有副本)
+                val appletDir = TerminalSpecs.appletDirFor(shellPath, appContext)
+                val resolvedPath = (appletDir?.let { "$it:" } ?: "") + TerminalSpecs.systemPath()
+                base.copy(
+                    shellPath = shellPath,
+                    path = resolvedPath,
+                    env = base.env.map { e -> if (e.startsWith("PATH=")) "PATH=$resolvedPath" else e }.toTypedArray(),
+                )
             } else {
                 candidateIndex = 0
                 TerminalSpecs.build(appContext, newMode)

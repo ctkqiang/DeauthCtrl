@@ -186,7 +186,16 @@ class TerminalClientBridge(
 
     override fun shouldBackButtonBeMappedToEscape(): Boolean = false
 
-    override fun shouldEnforceCharBasedInput(): Boolean = false
+    /**
+     * 强制字符输入模式(返回 true):
+     * inputType 从 TYPE_NULL 切换为 TYPE_TEXT_VARIATION_VISIBLE_PASSWORD |
+     * NO_SUGGESTIONS,让输入法只走标准 commitText 通道。
+     *
+     * 双字符根因:部分输入法(三星/小米/百度等)在 TYPE_NULL 下会同时
+     * 发送按键事件与 commitText,两条通道各写一次 → "ls" 变 "llss"。
+     * 此开关是 Termux 官方针对该问题的修复方案(见其 issue #686 注释)。
+     */
+    override fun shouldEnforceCharBasedInput(): Boolean = true
 
     override fun shouldUseCtrlSpaceWorkaround(): Boolean = false
 

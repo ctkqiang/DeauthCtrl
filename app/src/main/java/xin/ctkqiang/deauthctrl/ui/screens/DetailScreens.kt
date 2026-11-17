@@ -1,10 +1,10 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
 import android.app.Application
-import android.content.pm.ActivityInfo
 import android.content.Intent
+import android.location.LocationManager
+import android.provider.Settings
 import android.net.Uri
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -42,12 +42,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -65,6 +67,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -534,6 +537,9 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
     var toggle by remember { mutableFloatStateOf(vm.getToggleInterval().toFloat()) }
     val haptic = LocalHapticFeedback.current
 
+    // 进入页面自动扫描附近网络(仅被动扫描;干扰泛洪仍需手动执行)
+    LaunchedEffect(Unit) { if (ss is ScanState.Idle) vm.scanNetworks() }
+
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WiFi 干扰引擎", back)
         PageEnter(locked = fl) {
@@ -547,17 +553,29 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                 when (val s = ss) {
                     is ScanState.Scanning -> Text("正在扫描 2.4/5GHz 频段…", fontFamily = Sans, fontSize = 12.sp, color = White)
                     is ScanState.Results -> {
-                        Text("发现 ${s.networks.size} 个网络 · 点击选择目标", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                        val sorted = s.networks.sortedByDescending { it.signalStrength }
+                        Text("发现 ${sorted.size} 个网络 · 按信号排序 · 点击选择目标", fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Spacer(Modifier.height(4.dp))
-                        LazyColumn(Modifier.fillMaxWidth().height(200.dp)) {
-                            items(s.networks, key = { it.bssid }) { n ->
+                        LazyColumn(Modifier.fillMaxWidth().height(220.dp)) {
+                            items(sorted, key = { it.bssid }) { n ->
                                 val on = sel?.bssid == n.bssid
+                                val barColor = if (n.signalStrength > -50) Danger else if (n.signalStrength > -70) Warn else TacGreenDim
                                 Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); sel = n; vm.selectTarget(n) }, color = if (on) Red.copy(alpha = 0.08f) else Color.Transparent) {
-                                    Row(Modifier.padding(vertical = 5.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Row(Modifier.padding(vertical = 6.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(if (on) "▸" else " ", fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.width(18.dp))
-                                        Text(n.bssid.take(17).padEnd(17), fontFamily = Mono, fontSize = 11.sp, color = Gray)
-                                        Text(n.ssid.ifBlank { "<隐藏>" }.take(18), fontFamily = Mono, fontSize = 12.sp, color = if (on) White else Gray, modifier = Modifier.weight(1f))
-                                        Text("CH${n.channel.toString().padStart(2)} ${n.signalStrength}dBm", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                        Column(Modifier.weight(1f)) {
+                                            Text(n.ssid.ifBlank { "<隐藏>" }.take(18), fontFamily = Mono, fontSize = 12.sp, color = if (on) White else Gray)
+                                            Text("${n.bssid} · ${n.security} · ${n.band}", fontFamily = Mono, fontSize = 8.sp, color = Gray.copy(alpha = 0.8f))
+                                        }
+                                        // 信号强度条
+                                        Box(Modifier.width(36.dp).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
+                                            Box(
+                                                Modifier.fillMaxWidth(((n.signalStrength + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
+                                                    .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
+                                            )
+                                        }
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("CH${n.channel.toString().padStart(2)} ${n.signalStrength}dBm", fontFamily = Mono, fontSize = 10.sp, color = if (n.signalStrength > -50) RedDim else if (n.signalStrength > -70) White else Gray)
                                     }
                                 }
                             }
@@ -883,6 +901,12 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
     val error by vm.error.collectAsState()
     val haptic = LocalHapticFeedback.current
 
+    // 进入页面自动扫描局域网,离开自动停止(被动扫描,无破坏性)
+    DisposableEffect(Unit) {
+        if (!vm.isRunning.value) vm.scan()
+        onDispose { vm.stop() }
+    }
+
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("ARP 网络扫描", back)
         PageEnter(locked = running) {
@@ -1003,6 +1027,12 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     var selected by remember { mutableStateOf<String?>(null) }
 
+    // 进入页面自动开始嗅探,离开自动停止 —— 被动扫描,无破坏性
+    DisposableEffect(Unit) {
+        if (!vm.isRunning.value) vm.start()
+        onDispose { vm.stop() }
+    }
+
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("BLE 嗅探扫描", back)
         PageEnter(locked = running) {
@@ -1036,7 +1066,13 @@ private fun BleScannerLivePanel(
         if (running) {
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-            Text("已发现 ${devices.size} 台设备", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+            Row(Modifier.fillMaxWidth().padding(top = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("已发现 ${devices.size} 台设备", fontFamily = Sans, fontSize = 11.sp, color = White)
+                Text(
+                    "最强 ${devices.maxOfOrNull { it.rssi }?.let { "${it}dBm" } ?: "--"}",
+                    fontFamily = Mono, fontSize = 9.sp, color = Gold,
+                )
+            }
         }
 
         if (!running && devices.isEmpty()) {
@@ -1088,10 +1124,19 @@ private fun BleScannerLivePanel(
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             items(devices, key = { it.address }) { d ->
                 val sel = d.address == selected
+                val barColor = if (d.rssi > -50) Danger else if (d.rssi > -70) Warn else TacGreenDim
                 Surface(modifier = Modifier.fillMaxWidth().clickable { onSelect(if (sel) null else d.address) }, color = if (sel) Red.copy(alpha = 0.06f) else Color.Transparent) {
-                    Row(Modifier.padding(vertical = 5.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.padding(vertical = 6.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(if (sel) "▸" else " ", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.width(14.dp))
                         Text(d.name.take(20), fontFamily = Mono, fontSize = 11.sp, color = if (sel) Red else White, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+                        // 信号强度条
+                        Box(Modifier.width(36.dp).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
+                            Box(
+                                Modifier.fillMaxWidth(((d.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
+                                    .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
+                            )
+                        }
+                        Spacer(Modifier.width(6.dp))
                         Text(" ${d.rssi}dBm".padStart(7), fontFamily = Mono, fontSize = 10.sp, color = if (d.rssi > -50) RedDim else if (d.rssi > -70) White else Gray)
                         Text("  ${d.address}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
                     }
@@ -1443,8 +1488,6 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     val active = talking || isLive
-    val breathPulse = rememberInfiniteTransition()
-    val breathAlpha by breathPulse.animateFloat(0.4f, 0.9f, infiniteRepeatable(tween(800, easing = FastOutSlowInEasing), RepeatMode.Reverse))
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WiFi 对讲机", back)
@@ -1462,7 +1505,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                 Spacer(Modifier.weight(1f))
 
                 if (running) {
-                    Spacer(Modifier.height(8.dp))
+                    // ── 直播模式开关 ──
                     Surface(
                         modifier = Modifier.fillMaxWidth().clickable {
                             haptic.hud()
@@ -1473,38 +1516,81 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                         border = BorderStroke(1.5.dp, if (isLive) Gold else Red.copy(alpha = 0.3f)),
                     ) {
                         Text(
-                            if (isLive) "直播中 · ${countdown}s" else "直播模式",
-                            fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                            if (isLive) "直播中 · 自动发送 ${countdown}s" else "直播模式 · 免按自动发送",
+                            fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                             color = if (isLive) Red else Red.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(vertical = 11.dp).fillMaxWidth(),
+                            modifier = Modifier.padding(vertical = 9.dp).fillMaxWidth(),
                             textAlign = TextAlign.Center,
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // ── 圆形 PTT 大按钮:战术罗盘式 ──
+                    val breathPulse = rememberInfiniteTransition()
+                    val breathAlpha by breathPulse.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+                    val ripplePhase by breathPulse.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing)))
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth().height(96.dp)
-                            .pointerInput(isLive) {
-                                detectTapGestures(
-                                    onPress = {
-                                        haptic.hud()
-                                        if (!isLive) vm.startTalk()
-                                        tryAwaitRelease()
-                                        if (!isLive) vm.stopTalk()
-                                    },
-                                )
-                            }
-                            .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.12f))
-                            .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.3f), CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
+                        Modifier.align(Alignment.CenterHorizontally).size(150.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            if (active) "●●● 发送中 ●●●" else "按住说话",
-                            fontFamily = Sans, fontSize = 16.sp, fontWeight = FontWeight.Bold,
-                            color = if (active) White else Red,
-                        )
+                        // 发送中扩散波纹环
+                        if (active) {
+                            Canvas(Modifier.fillMaxSize()) {
+                                val c = Offset(size.width / 2f, size.height / 2f)
+                                val maxR = size.minDimension / 2f
+                                drawCircle(Red.copy(alpha = 0.15f), maxR, c)
+                                drawCircle(Red.copy(alpha = (1f - ripplePhase) * 0.55f), maxR * (0.45f + ripplePhase * 0.55f), c, style = Stroke(3f))
+                                drawCircle(Gold.copy(alpha = (1f - ripplePhase) * 0.35f), maxR * (0.45f + ripplePhase * 0.55f), c, style = Stroke(7f))
+                                // 外圈刻度(战术罗盘感)
+                                for (i in 0 until 12) {
+                                    val a = Math.toRadians(i * 30.0)
+                                    drawLine(
+                                        Red.copy(alpha = 0.5f),
+                                        Offset(c.x + maxR * 0.86f * kotlin.math.cos(a).toFloat(), c.y + maxR * 0.86f * kotlin.math.sin(a).toFloat()),
+                                        Offset(c.x + maxR * 0.95f * kotlin.math.cos(a).toFloat(), c.y + maxR * 0.95f * kotlin.math.sin(a).toFloat()),
+                                        2f,
+                                    )
+                                }
+                            }
+                        }
+                        // 圆盘本体
+                        Box(
+                            modifier = Modifier
+                                .size(if (active) 138.dp else 130.dp)
+                                .pointerInput(isLive) {
+                                    detectTapGestures(
+                                        onPress = {
+                                            haptic.hud()
+                                            if (!isLive) vm.startTalk()
+                                            tryAwaitRelease()
+                                            if (!isLive) vm.stopTalk()
+                                        },
+                                    )
+                                }
+                                .clip(CircleShape)
+                                .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.10f))
+                                .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.35f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Star(if (active) White else Red, 14.dp)
+                                Spacer(Modifier.height(7.dp))
+                                Text(
+                                    if (active) "发送中" else "按住说话",
+                                    fontFamily = Sans, fontSize = if (active) 15.sp else 14.sp, fontWeight = FontWeight.Black,
+                                    color = if (active) White else Red,
+                                )
+                                Text("PTT", fontFamily = Mono, fontSize = 8.sp, color = if (active) White.copy(alpha = 0.8f) else Gray)
+                            }
+                        }
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "按住圆盘发送语音 · 松开停止 · 直播模式免按",
+                        fontFamily = Sans, fontSize = 9.sp, color = Gray,
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
+                    )
+                    Spacer(Modifier.height(10.dp))
                 }
             }
         }
@@ -1585,6 +1671,12 @@ fun RadarScreen(
         onDispose { vm.stopCompass() }
     }
 
+    // 进入页面自动启动雷达扫描,离开自动停止(被动扫描,无破坏性)
+    DisposableEffect(Unit) {
+        if (!vm.isRunning.value) vm.start()
+        onDispose { vm.stop() }
+    }
+
     // 新目标触觉警报：首次发现某设备时震动一次
     LaunchedEffect(radarAlertOn) {
         vm.contact.collect { event ->
@@ -1610,47 +1702,64 @@ fun RadarScreen(
         }
     }
 
-    // 战术雷达站：进入锁定横屏，盘面占左半屏，目标列表在右侧
-    val activity = LocalContext.current as? ComponentActivity
-    DisposableEffect(Unit) {
-        val prev = activity?.requestedOrientation
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        onDispose { activity?.requestedOrientation = prev ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    // 战术雷达站:竖屏布局 —— 上方大扫描盘撑满屏宽,目标列表在下方
+    // 定位开关轮询:Android 9+ 定位关闭时 WiFi 扫描结果为空(BLE 不受影响)
+    val locationOn by produceState(initialValue = true) {
+        val lm = context.applicationContext.getSystemService(android.content.Context.LOCATION_SERVICE) as? LocationManager
+        while (true) {
+            value = runCatching { lm?.isLocationEnabled == true }.getOrDefault(true)
+            delay(2000)
+        }
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
         PageEnter(locked = running) {
-            Row(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
-                // ── 左：雷达主体 ──
-                Column(Modifier.weight(0.62f).fillMaxSize()) {
-                    ActionButton(running, "执行雷达", "停止雷达") {
-                        haptic.hud()
-                        if (running) vm.stop() else vm.start()
-                    }
-                    Spacer(Modifier.height(5.dp))
-                    CompassStrip(vm)
-                    Spacer(Modifier.height(5.dp))
-                    RadarScope(
-                        vm,
-                        running = running,
-                        typeFilter = typeFilter,
-                        query = query,
-                        focusedId = focusedId,
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                    )
-                    Spacer(Modifier.height(5.dp))
-                    RadarFilterBar(
-                        typeFilter = typeFilter,
-                        onTypeFilter = { typeFilter = it; focusedId = null },
-                        query = query,
-                        onQuery = { query = it; focusedId = null },
-                    )
+            Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+                ActionButton(running, "执行雷达", "停止雷达") {
+                    haptic.hud()
+                    if (running) vm.stop() else vm.start()
                 }
-
-                Spacer(Modifier.width(10.dp))
-
-                // ── 右：目标列表 ──
+                // 定位关闭横幅:WiFi 目标此时不可能进雷达,给出原因与快捷入口
+                if (!locationOn) {
+                    Spacer(Modifier.height(5.dp))
+                    Surface(
+                        shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                        color = Warn.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, Warn.copy(alpha = 0.5f)),
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("定位服务关闭 —— WiFi 目标不可见(BLE 不受影响)", fontFamily = Sans, fontSize = 10.sp, color = Warn, modifier = Modifier.weight(1f))
+                            Text(
+                                "打开设置 ▸",
+                                fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold,
+                                modifier = Modifier.clickable {
+                                    haptic.hud()
+                                    runCatching { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                                },
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(5.dp))
+                CompassStrip(vm)
+                Spacer(Modifier.height(5.dp))
+                RadarScope(
+                    vm,
+                    running = running,
+                    typeFilter = typeFilter,
+                    query = query,
+                    focusedId = focusedId,
+                    modifier = Modifier.fillMaxWidth().weight(1.25f),
+                )
+                Spacer(Modifier.height(5.dp))
+                RadarFilterBar(
+                    typeFilter = typeFilter,
+                    onTypeFilter = { typeFilter = it; focusedId = null },
+                    query = query,
+                    onQuery = { query = it; focusedId = null },
+                )
+                Spacer(Modifier.height(5.dp))
                 RadarTrackPanel(
                     vm,
                     typeFilter = typeFilter,
@@ -1658,7 +1767,7 @@ fun RadarScreen(
                     focusedId = focusedId,
                     onFocus = { id -> focusedId = if (focusedId == id) null else id },
                     onSelect = { id -> haptic.hud(); onSelectTarget(id) },
-                    modifier = Modifier.weight(0.38f).fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                 )
             }
         }
@@ -2102,7 +2211,12 @@ private fun RadarTrackPanel(
             EmptyHint(if (targets.isEmpty()) "启动雷达后，检测到的设备会亮在扫描盘上" else "过滤条件下没有匹配设备")
         } else {
             LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-                items(filtered.sortedByDescending { it.rssi }, key = { it.id }) { t ->
+                items(
+                    // 类型前缀 + 去重:BLE 扫描与经典发现可能瞬时上报同一地址,
+                    // 重复 key 会让 Compose 抛 "Key was already used" 崩溃
+                    filtered.sortedByDescending { it.rssi }.distinctBy { "${it.type}_${it.id}" },
+                    key = { "${it.type}_${it.id}" },
+                ) { t ->
                     val wifi = t.type == "wifi"
                     val barColor = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else TacGreenDim
                     val expanded = t.id == focusedId
