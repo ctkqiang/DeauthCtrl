@@ -111,19 +111,25 @@ object TerminalSpecs {
     }
 
     /** 复制 toybox 副本并赋执行位；失败返回 null */
-    private fun prepareCopy(target: File): File? = try {
-        if (target.canExecute() && target.length() > 0L) return target
-        val systemSh = File(DEFAULT_SHELL).canonicalFile
-        if (!systemSh.exists() || !systemSh.canRead()) null
-        else {
-            target.parentFile?.mkdirs()
-            systemSh.copyTo(target, overwrite = true)
-            target.setReadable(true, false)
-            target.setExecutable(true, false)
-            if (target.canExecute()) target else null
+    private fun prepareCopy(target: File): File? {
+        return try {
+            if (target.canExecute() && target.length() > 0L) {
+                target
+            } else {
+                val systemSh = File(DEFAULT_SHELL).canonicalFile
+                if (!systemSh.exists() || !systemSh.canRead()) {
+                    null
+                } else {
+                    target.parentFile?.mkdirs()
+                    systemSh.copyTo(target, overwrite = true)
+                    target.setReadable(true, false)
+                    target.setExecutable(true, false)
+                    if (target.canExecute()) target else null
+                }
+            }
+        } catch (_: Exception) {
+            null
         }
-    } catch (_: Exception) {
-        null
     }
 
     /** 为 toybox 副本建立常用命令 symlink 分发（幂等） */

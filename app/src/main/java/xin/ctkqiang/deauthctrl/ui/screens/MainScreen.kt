@@ -55,7 +55,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.BluetoothDisabled
 import androidx.compose.material.icons.outlined.BluetoothSearching
+import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Cast
+import androidx.compose.material.icons.outlined.Contactless
+import androidx.compose.material.icons.outlined.Equalizer
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.Nightlight
+import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Http
 import androidx.compose.material.icons.outlined.Lan
@@ -69,6 +75,7 @@ import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.VideoCall
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Icon
@@ -105,13 +112,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
 import xin.ctkqiang.deauthctrl.mirroring.ui.DashboardScreen
 import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringState
 import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
 import xin.ctkqiang.deauthctrl.mirroring.ui.RemoteViewerScreen
 import xin.ctkqiang.deauthctrl.ui.components.*
+import xin.ctkqiang.deauthctrl.ui.theme.TEAM_THEMES
 import xin.ctkqiang.deauthctrl.viewmodel.*
+import xin.ctkqiang.deauthctrl.viewmodel.TerminalViewModel
 
 // ─── 路由名常量 ──────────────────────────────────────────────────────────────
 
@@ -149,6 +159,8 @@ fun MainScreen(
     revVm: RevShellViewModel, payloadVm: PayloadViewModel,
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
     mirrorVm: MirroringViewModel,
+    terminalVm: TerminalViewModel,
+    settingsVm: SettingsViewModel,
 ) {
     // 首次启动免责声明：接受后写入偏好，之后启动不再弹出。
     // 静态预览拿不到 SharedPreferences 时视为已接受，让预览直达主界面。
@@ -158,6 +170,14 @@ fun MainScreen(
 
     var boot by remember { mutableStateOf(true) }
     var selectedMirrorDevice by remember { mutableStateOf<MirroringDevice?>(null) }
+    var selectedTargetId by remember { mutableStateOf<String?>(null) }
+
+    // 雷达红点触觉警报开关：全局触觉 × 雷达警报 两级门控
+    val hapticsOn by settingsVm.hapticsEnabled.collectAsState()
+    val radarAlertOn by settingsVm.radarAlertEnabled.collectAsState()
+
+    // 操作员呼号 —— 会议模块与头部行共用
+    val username by settingsVm.username.collectAsState()
 
     var screen by remember { mutableStateOf(ROUTE_HOME) }
     val backStack = remember { mutableStateListOf<String>() }
@@ -193,7 +213,7 @@ fun MainScreen(
                 },
             ) { current ->
                 when (current) {
-                    ROUTE_HOME -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, revVm, payloadVm, bruteVm, cveVm, mirrorVm = mirrorVm, nav = navigate)
+                    ROUTE_HOME -> HomeScreen(bleVm, wifiVm, btVm, wjVm, wsVm, arpVm, httpVm, pingVm, blescanVm, portscanVm, walkieVm, radarVm, ftVm, vaultVm, revVm, payloadVm, bruteVm, cveVm, mirrorVm = mirrorVm, terminalVm = terminalVm, settingsVm = settingsVm, nav = navigate)
                     ROUTE_MIRRORING -> DashboardScreen(vm = mirrorVm, onConnectDevice = { d -> selectedMirrorDevice = d; navigate(ROUTE_REMOTE_VIEWER) }, back = goBack)
                     ROUTE_REMOTE_VIEWER -> RemoteViewerScreen(vm = mirrorVm, device = selectedMirrorDevice, back = goBack)
                     "ble" -> BleDetailScreen(bleVm, back = goBack)
@@ -207,14 +227,23 @@ fun MainScreen(
                     "blescan" -> BleScannerScreen(blescanVm, back = goBack)
                     "portscan" -> PortScannerScreen(portscanVm, back = goBack)
                     "walkie" -> WalkieTalkieScreen(walkieVm, back = goBack)
-                    "radar" -> RadarScreen(radarVm, back = goBack)
+                    "radar" -> RadarScreen(radarVm, back = goBack, radarAlertOn = hapticsOn && radarAlertOn, onSelectTarget = { id -> selectedTargetId = id; navigate("target") })
+                    "target" -> selectedTargetId?.let { TargetDossierScreen(radarVm, it, back = goBack) } ?: RadarScreen(radarVm, back = goBack, radarAlertOn = hapticsOn && radarAlertOn, onSelectTarget = { id -> selectedTargetId = id; navigate("target") })
                     "filetransfer" -> FileTransferScreen(ftVm, back = goBack)
                     "vault" -> SecureVaultScreen(vaultVm, back = goBack)
                     "revshell" -> RevShellScreen(revVm, back = goBack)
                     "payload" -> PayloadScreen(payloadVm, back = goBack)
                     "brute" -> DirBruteScreen(bruteVm, back = goBack)
                     "cve" -> CVEScreen(cveVm, back = goBack)
-                    ROUTE_ABOUT -> AboutDetailScreen(back = goBack)
+                    "terminal" -> TerminalScreen(terminalVm, back = goBack)
+                    "taccam" -> TacticalCameraScreen(viewModel(), back = goBack)
+                    "sdr" -> VoiceSdrScreen(viewModel(), back = goBack)
+                    "irremote" -> IrRemoteScreen(viewModel(), back = goBack)
+                    "nfc" -> NfcScreen(viewModel(), back = goBack)
+                    "nightvision" -> NightVisionScreen(viewModel(), back = goBack)
+                    "tacmap" -> TacticalMapScreen(viewModel(), back = goBack)
+                    "conference" -> ConferenceScreen(viewModel(), operatorName = username, back = goBack)
+                    ROUTE_ABOUT -> SettingsScreen(settingsVm, back = goBack)
                 }
             }
         }
@@ -435,6 +464,8 @@ fun HomeScreen(
     revVm: RevShellViewModel, payloadVm: PayloadViewModel,
     bruteVm: DirBruteViewModel, cveVm: CVESearchViewModel,
     mirrorVm: MirroringViewModel,
+    terminalVm: TerminalViewModel,
+    settingsVm: SettingsViewModel,
     nav: (String) -> Unit,
 ) {
     val br by bleVm.isRunning.collectAsState()
@@ -453,8 +484,14 @@ fun HomeScreen(
     val revr by revVm.isRunning.collectAsState()
     val bruter by bruteVm.isRunning.collectAsState()
     val cver by cveVm.isRunning.collectAsState()
+    val terminalr by terminalVm.isRunning.collectAsState()
     val mirrorState by mirrorVm.state.collectAsState()
     val mirrorr = mirrorState is MirroringState.HostLive
+
+    // 操作员身份 —— 设置页可改呼号与队伍，头部行实时跟随
+    val username by settingsVm.username.collectAsState()
+    val teamId by settingsVm.teamId.collectAsState()
+    val squad = TEAM_THEMES.firstOrNull { it.id == teamId } ?: TEAM_THEMES.first()
 
     // 每次重组都重建：启停闭包捕获的是当帧运行态，缓存成 remember 会读到过期状态
     val entries = listOf(
@@ -463,6 +500,12 @@ fun HomeScreen(
         HomeEntry("端口扫描", "扫描目标主机开放端口", "portscan", portr, { if (portr) portscanVm.stop() else portscanVm.start() }, Icons.Outlined.GridView),
         HomeEntry("设备雷达", "雷达图定位附近设备", "radar", radarr, { if (radarr) radarVm.stop() else radarVm.start() }, Icons.Outlined.Radar),
         HomeEntry("CVE 搜索", "查询公开漏洞数据库", "cve", cver, null, Icons.Outlined.Search),
+        HomeEntry("语音频谱", "麦克风 FFT 实时频谱分析", "sdr", false, null, Icons.Outlined.Equalizer),
+        HomeEntry("战术相机", "最大分辨率拍照 · Base64 局域网传输", "taccam", false, null, Icons.Outlined.CameraAlt),
+        HomeEntry("数字夜视", "高感光捕获 · 荧光绿增益成像", "nightvision", false, null, Icons.Outlined.Nightlight),
+        HomeEntry("战术地图", "OpenStreetMap 夜战视图 · GPS 标记", "tacmap", false, null, Icons.Outlined.Map),
+        HomeEntry("红外遥控", "小米/三星等机型红外发射器", "irremote", false, null, Icons.Outlined.Sensors),
+        HomeEntry("NFC 工作台", "读卡 · NDEF 读写 · UID 采集", "nfc", false, null, Icons.Outlined.Contactless),
 
         HomeEntry("WEB 服务", "本机搭建网页服务器", "webserver", wsr, { if (wsr) wsVm.stopServer() else wsVm.startServer() }, Icons.Outlined.Language),
         HomeEntry("HTTP 请求", "发送自定义 HTTP 请求", "http", httpr, null, Icons.Outlined.Http),
@@ -480,13 +523,15 @@ fun HomeScreen(
         HomeEntry("加密保险箱", "加密照片·视频·录音", "vault", false, null, Icons.Outlined.Lock),
         HomeEntry("Payload 生成", "生成反弹 Shell 载荷", "payload", false, null, Icons.Outlined.Terminal),
         HomeEntry("反弹 Shell", "监听反弹 Shell 连接", "revshell", revr, { if (revr) revVm.stop() else revVm.start() }, Icons.Outlined.Lan),
+        HomeEntry("终端", "Termux 引擎 · 真实 pty 本地 Shell", "terminal", terminalr, { if (terminalr) terminalVm.stop() else terminalVm.start() }, Icons.Outlined.Terminal),
+        HomeEntry("局域网会议", "多方视频 · 屏幕/摄像头 · PTT 语音", "conference", false, null, Icons.Outlined.VideoCall),
     )
 
     val groups = listOf(
-        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "cve")),
+        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "cve", "sdr", "taccam")),
         HomeGroup("网络", listOf("webserver", "http", "brute", "ping")),
-        HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam")),
-        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "vault", "payload", "revshell")),
+        HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc")),
+        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }
@@ -519,7 +564,7 @@ fun HomeScreen(
                 GlitchText("全息战术终端", glitchIntervalMs = 3200, style = TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "操作员: 哪吒 · 全息终端 · 加密信道: AES-256",
+                    "操作员: $username · ${squad.teamName} · 全息终端 · 加密信道: AES-256",
                     fontFamily = Mono,
                     fontSize = 9.sp,
                     color = Gray,
@@ -590,14 +635,14 @@ fun HomeScreen(
                     border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
                 ) {
                     Text(
-                        "关 于",
+                        "设置 · 关于",
                         fontFamily = Sans,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Red,
                         modifier = Modifier
                             .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.hud()
                                 nav("about")
                             }
                             .padding(horizontal = 26.dp, vertical = 9.dp),
@@ -659,7 +704,7 @@ private fun HomeGridCard(
                 .fillMaxWidth()
                 .scale(cardScale)
                 .clickable(interactionSource = cardInteraction, indication = LocalIndication.current) {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     onClick()
                 },
             shape = cardShape,
@@ -703,7 +748,7 @@ private fun HomeGridCard(
                                 .fillMaxWidth()
                                 .scale(actionScale)
                                 .clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    haptic.hud()
                                     onClick()
                                 },
                             shape = barShape,
@@ -727,7 +772,7 @@ private fun HomeGridCard(
                                 .fillMaxWidth()
                                 .scale(actionScale)
                                 .clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    haptic.hud()
                                     onToggle()
                                 },
                             shape = barShape,
@@ -786,7 +831,7 @@ private fun StatusBarPreview() {
     }
 }
 
-/** 主页预览 —— 完整 19 模块 + 运行态卡片 */
+/** 主页预览 —— 完整 20 模块 + 运行态卡片 */
 @Preview(name = "主页", showBackground = true, backgroundColor = 0xFF060B14, widthDp = 393, heightDp = 852, locale = "zh")
 @Composable
 private fun HomeScreenPreview() {
@@ -800,7 +845,8 @@ private fun HomeScreenPreview() {
                 vms.bleVm, vms.wifiVm, vms.btVm, vms.wjVm, vms.wsVm, vms.arpVm,
                 vms.httpVm, vms.pingVm, vms.blescanVm, vms.portscanVm, vms.walkieVm,
                 vms.radarVm, vms.ftVm, vms.vaultVm, vms.revVm, vms.payloadVm,
-                vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm, nav = {},
+                vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm, terminalVm = vms.terminalVm,
+                settingsVm = vms.settingsVm, nav = {},
             )
         }
     }
@@ -820,7 +866,8 @@ private fun MainScreenPreview() {
                 vms.bleVm, vms.wifiVm, vms.btVm, vms.wjVm, vms.wsVm, vms.arpVm,
                 vms.httpVm, vms.pingVm, vms.blescanVm, vms.portscanVm, vms.walkieVm,
                 vms.radarVm, vms.ftVm, vms.vaultVm, vms.revVm, vms.payloadVm,
-                vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm,
+                vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm, terminalVm = vms.terminalVm,
+                settingsVm = vms.settingsVm,
             )
         }
     }

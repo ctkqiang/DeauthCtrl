@@ -5,7 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -19,10 +21,15 @@ import xin.ctkqiang.deauthctrl.ui.components.RequiredPermissions
 import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
 import xin.ctkqiang.deauthctrl.ui.theme.Black
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
+import xin.ctkqiang.deauthctrl.ui.theme.HudThemeState
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.HttpClientViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.KEY_HAPTICS_ENABLED
+import xin.ctkqiang.deauthctrl.viewmodel.KEY_OPERATOR_NAME
+import xin.ctkqiang.deauthctrl.viewmodel.KEY_RADAR_ALERT_ENABLED
+import xin.ctkqiang.deauthctrl.viewmodel.KEY_TEAM_ID
 import xin.ctkqiang.deauthctrl.viewmodel.PingViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.PortScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
@@ -35,6 +42,8 @@ import xin.ctkqiang.deauthctrl.viewmodel.PayloadViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.DirBruteViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.CVESearchViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.SecureMediaViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.SettingsViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.TerminalViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WalkieTalkieViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiJammerViewModel
 import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
@@ -79,10 +88,19 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = false
         }
 
+        // 组合开始前应用持久化的队伍主题与触觉开关：
+        // 先写入全局色板，再进入 setContent，首帧即是用户所选配色。
+        val prefs = getSharedPreferences("deauthctrl_prefs", MODE_PRIVATE)
+        HudThemeState.applyTeam(prefs.getString(KEY_TEAM_ID, "") ?: "")
+        HudThemeState.hapticsEnabled = prefs.getBoolean(KEY_HAPTICS_ENABLED, true)
+        HudThemeState.radarAlertEnabled = prefs.getBoolean(KEY_RADAR_ALERT_ENABLED, true)
+
         setContent {
             DeauthCtrlTheme(darkTheme = true) {
                 val activity = this@MainActivity
                 var granted by remember { mutableStateOf(!hasMissingPermissions()) }
+                val settingsVm: SettingsViewModel = viewModel()
+                val teamId by settingsVm.teamId.collectAsState()
 
                 // 用户去系统设置授权后返回，必须重新核对；否则会永远停在权限页
                 DisposableEffect(activity) {
@@ -93,30 +111,36 @@ class MainActivity : ComponentActivity() {
                     onDispose { activity.lifecycle.removeObserver(observer) }
                 }
 
-                if (granted) {
-                    MainScreen(
-                        bleVm = viewModel(),
-                        wifiVm = viewModel(),
-                        btVm = viewModel(),
-                        wjVm = viewModel(),
-                        wsVm = viewModel(),
-                        arpVm = viewModel(),
-                        httpVm = viewModel(),
-                        pingVm = viewModel(),
-                        blescanVm = viewModel(),
-                        portscanVm = viewModel(),
-                        walkieVm = viewModel(),
-                        vaultVm = viewModel(),
-                        radarVm = viewModel(),
-                        ftVm = viewModel(),
-                        revVm = viewModel(),
-                        payloadVm = viewModel(),
-                        bruteVm = viewModel(),
-                        cveVm = viewModel(),
-                        mirrorVm = viewModel(),
-                    )
-                } else {
-                    PermissionRequestScreen { granted = true }
+                // key(teamId)：切队时强制整棵 UI 树重组，
+                // 使所有界面读取到 HudThemeState 刚写入的新全局色板
+                key(teamId) {
+                    if (granted) {
+                        MainScreen(
+                            bleVm = viewModel(),
+                            wifiVm = viewModel(),
+                            btVm = viewModel(),
+                            wjVm = viewModel(),
+                            wsVm = viewModel(),
+                            arpVm = viewModel(),
+                            httpVm = viewModel(),
+                            pingVm = viewModel(),
+                            blescanVm = viewModel(),
+                            portscanVm = viewModel(),
+                            walkieVm = viewModel(),
+                            vaultVm = viewModel(),
+                            radarVm = viewModel(),
+                            ftVm = viewModel(),
+                            revVm = viewModel(),
+                            payloadVm = viewModel(),
+                            bruteVm = viewModel(),
+                            cveVm = viewModel(),
+                            mirrorVm = viewModel(),
+                            terminalVm = viewModel(),
+                            settingsVm = settingsVm,
+                        )
+                    } else {
+                        PermissionRequestScreen { granted = true }
+                    }
                 }
             }
         }

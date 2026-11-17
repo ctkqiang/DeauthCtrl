@@ -17,6 +17,8 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -30,6 +32,8 @@
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.consumerir" android:required="false" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
 
     <application
         android:name=".DeauthApp"
@@ -45,6 +49,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.DeauthCtrl">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -55,6 +60,23 @@
         <service
             android:name=".WalkieTalkieService"
             android:foregroundServiceType="microphone"
+            android:exported="false" />
+
+        <service
+            android:name=".manager.CardEmulationService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.HOST_APDU_SERVICE"
+                android:resource="@xml/card_emulation" />
+        </service>
+
+        <service
+            android:name=".manager.ConferenceHostService"
+            android:foregroundServiceType="mediaProjection"
             android:exported="false" />
 
         <service

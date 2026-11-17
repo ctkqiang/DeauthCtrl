@@ -8,6 +8,8 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -19,6 +21,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,6 +50,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -57,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
@@ -82,7 +87,7 @@ import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 fun ScanlineOverlay(
     lineSpacing: Dp = 4.dp,
     alpha: Float = 0.03f,
-    color: Color = Color(0xFF35C9FF),
+    color: Color = Red,
 ) {
     val spacingPx = with(androidx.compose.ui.platform.LocalDensity.current) { lineSpacing.toPx() }
     Box(
@@ -137,10 +142,10 @@ fun GlitchText(
     }
 
     Box(modifier = modifier) {
-        if (showRed) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFF35C9FF).copy(alpha = 0.7f), modifier = Modifier.offset(x = offsetX.dp))
+        if (showRed) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Red.copy(alpha = 0.7f), modifier = Modifier.offset(x = offsetX.dp))
         if (showBright) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color.White.copy(alpha = 0.6f), modifier = Modifier.offset(x = -offsetX.dp / 2))
         if (showGold) Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFFFF4FD8).copy(alpha = 0.4f), modifier = Modifier.offset(x = -offsetX.dp))
-        Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Color(0xFF35C9FF))
+        Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = style, color = Red)
     }
 }
 
@@ -151,7 +156,7 @@ fun GlitchText(
  * 已由 [PulseStar] 取代，保留供兼容。
  */
 @Composable
-fun PulseDot(color: Color = Color(0xFF35C9FF), size: Dp = 10.dp, modifier: Modifier = Modifier) {
+fun PulseDot(color: Color = Red, size: Dp = 10.dp, modifier: Modifier = Modifier) {
     var phase by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) { while (true) { delay(60); phase += 0.06f } }
     val a = (sin(phase * PI).toFloat() * 0.45f + 0.5f)
@@ -167,7 +172,7 @@ fun PulseDot(color: Color = Color(0xFF35C9FF), size: Dp = 10.dp, modifier: Modif
  */
 @Composable
 fun AsciiDivider(modifier: Modifier = Modifier) {
-    Text("─".repeat(48), fontFamily = FontFamily.Monospace, fontSize = 8.sp, color = Color(0xFF35C9FF).copy(alpha = 0.35f), modifier = modifier)
+    Text("─".repeat(48), fontFamily = FontFamily.Monospace, fontSize = 8.sp, color = Red.copy(alpha = 0.35f), modifier = modifier)
 }
 
 // ─── 启动自检 ────────────────────────────────────────────────────────────────
@@ -282,16 +287,21 @@ private fun CheckLevel.tag(): String = when (this) {
 
 /** 等级 → 配色。OK 用通行绿，WARN 用琥珀，FAIL 用危险红 */
 private fun CheckLevel.color(): Color = when (this) {
-    CheckLevel.OK -> Color(0xFF00C853)
-    CheckLevel.WARN -> Color(0xFFFFB547)
-    CheckLevel.FAIL -> Color(0xFFFF5A5A)
+    CheckLevel.OK -> TacGreen
+    CheckLevel.WARN -> Warn
+    CheckLevel.FAIL -> Danger
 }
 
 /**
- * 启动自检序列
+ * 启动自检序列 —— 三阶段战术点火动画
  *
- * 全息核心 + 标题 + 逐行浮现的真实自检结果。
- * 只有存在 FAIL 项时，末尾结论才用危险色；全项通过或仅有警告都算可用状态。
+ * 阶段 1「核心点火」：菱形核心缩放放大 + 双层辉光扩散环（像增强管预热）
+ * 阶段 2「战术识别」：DEAUTHCTRL 等宽大标题淡入 + 四角锁定框合拢
+ * 阶段 3「系统自检」：真实自检项逐行浮现，顶部进度条同步推进，
+ *   底部轮播军语 + 版本号；FAIL 项时结论用危险色
+ *
+ * 所有动画由 Animatable 驱动（帧精确、不依赖无限循环），
+ * 进度条与自检行共用同一个时间轴，节奏一致。
  *
  * @param onComplete 自检展示完毕后的回调，通常用于切换到主屏幕
  */
@@ -311,74 +321,212 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
             }
     }
 
+    // ── 动画状态 ──
+    val coreScale = remember { Animatable(0.25f) }
+    val coreGlow = remember { Animatable(0f) }
+    val titleAlpha = remember { Animatable(0f) }
+    val lockAlpha = remember { Animatable(0f) }
+    val progress = remember { Animatable(0f) }
+
     var shown by remember { mutableIntStateOf(0) }
+    var phase by remember { mutableIntStateOf(0) }
     var blink by remember { mutableStateOf(true) }
-    var titleShown by remember { mutableStateOf(false) }
+    val motto = remember { mutableStateOf(BOOT_MOTTOS.first()) }
 
     val failed = checks.count { it.level == CheckLevel.FAIL }
     val warned = checks.count { it.level == CheckLevel.WARN }
 
     LaunchedEffect(checks) {
+        // ── 阶段 1：核心点火 ──
+        coreScale.animateTo(1f, tween(700, easing = FastOutSlowInEasing))
+        coreGlow.animateTo(1f, tween(900))
+        delay(150)
+        phase = 1
+        // ── 阶段 2：战术识别 ──
+        titleAlpha.animateTo(1f, tween(450))
+        lockAlpha.animateTo(1f, tween(600))
+        delay(450)
+        phase = 2
+        // ── 阶段 3：系统自检（进度条与行浮现共用时间轴） ──
         checks.indices.forEach { index ->
+            launch { progress.animateTo((index + 1f) / checks.size, tween(CHECK_REVEAL_INTERVAL_MS.toInt(), easing = LinearEasing)) }
             delay(CHECK_REVEAL_INTERVAL_MS)
             shown = index + 1
         }
         delay(DONE_HOLD_MS)
         onComplete()
     }
-    LaunchedEffect(Unit) { titleShown = true }
     LaunchedEffect(Unit) { while (true) { delay(500); blink = !blink } }
+    // 自检期间军语轮播
+    LaunchedEffect(phase) {
+        var i = 0
+        while (phase == 2) {
+            motto.value = BOOT_MOTTOS[i % BOOT_MOTTOS.size]
+            i++
+            delay(1100)
+        }
+    }
 
-    Box(modifier = modifier.fillMaxSize().background(Color(0xFF060B14)), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.fillMaxSize().background(Dark)) {
         // 全息数据流雨背景
-        DataRain(Modifier.fillMaxSize(), color = Color(0xFF45E0FF))
-        Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // 标题区一次性入场：淡入 + 0.9 起始缩放，随后各列自检项逐条接上
+        DataRain(Modifier.fillMaxSize(), color = TacGreen)
+
+        Column(Modifier.align(Alignment.Center).padding(horizontal = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            // ── 战术核心：菱形 + 双层辉光扩散环 ──
+            Box(Modifier.size(96.dp)) {
+                Canvas(Modifier.fillMaxSize().graphicsLayer {
+                    scaleX = coreScale.value
+                    scaleY = coreScale.value
+                    alpha = coreScale.value
+                }) {
+                    val c = Offset(size.width / 2f, size.height / 2f)
+                    val r = size.minDimension / 2f
+                    // 双层向外扩散的辉光环（点火脉冲）
+                    for (ring in 0..1) {
+                        val ph = ((coreGlow.value * 1.6f + ring * 0.5f) % 1f)
+                        drawCircle(
+                            Red.copy(alpha = (1f - ph) * 0.5f),
+                            r * (0.30f + ph * 0.70f),
+                            c,
+                            style = Stroke(1.6.dp.toPx()),
+                        )
+                    }
+                    // 玻璃底光
+                    drawCircle(Red.copy(alpha = 0.10f), r * 0.86f, c)
+                    drawCircle(Red.copy(alpha = 0.45f), r * 0.92f, c, style = Stroke(1.dp.toPx()))
+                    // 中心菱形
+                    val d = Path().apply {
+                        moveTo(c.x, c.y - r * 0.52f)
+                        lineTo(c.x + r * 0.52f, c.y)
+                        lineTo(c.x, c.y + r * 0.52f)
+                        lineTo(c.x - r * 0.52f, c.y)
+                        close()
+                    }
+                    drawPath(d, Gold)
+                    // 菱形外细框
+                    drawPath(d, Red.copy(alpha = 0.55f), style = Stroke(1.2.dp.toPx()))
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            // ── 阶段 2：战术识别标题 ──
             AnimatedVisibility(
-                visible = titleShown,
-                enter = fadeIn(tween(350)) + scaleIn(initialScale = 0.9f),
+                visible = phase >= 1,
+                enter = fadeIn(tween(300)),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    StarBadge(56.dp)
-                    Spacer(Modifier.height(12.dp))
-                    Text("哪吒网络安全终端", fontFamily = FontFamily.Default, fontWeight = FontWeight.Black, fontSize = 23.sp, letterSpacing = 0.sp, color = Color(0xFFE8F4FF))
+                    Text(
+                        "DEAUTHCTRL",
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 27.sp,
+                        letterSpacing = 6.sp,
+                        color = White,
+                        modifier = Modifier.graphicsLayer { alpha = titleAlpha.value },
+                    )
                     Spacer(Modifier.height(3.dp))
-                    GlitchText("哪吒网络安全 · 全息战术终端", glitchIntervalMs = 2200, style = TextStyle(fontFamily = FontFamily.Default, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier)
+                    Text(
+                        "哪吒网络安全终端 · 全息战术系统",
+                        fontFamily = FontFamily.Default,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Red,
+                        modifier = Modifier.graphicsLayer { alpha = titleAlpha.value },
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "TACTICAL BOOT SEQUENCE // AUTH: 授权安全研究",
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 8.sp,
+                        color = Gray,
+                        modifier = Modifier.graphicsLayer { alpha = titleAlpha.value },
+                    )
                 }
             }
-            Spacer(Modifier.height(18.dp))
-            AsciiDivider()
-            Spacer(Modifier.height(12.dp))
 
-            checks.forEachIndexed { index, check ->
-                AnimatedVisibility(visible = index < shown, enter = fadeIn(tween(200)) + slideInVertically(tween(250))) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("  > ${check.label}", fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF35C9FF), modifier = Modifier.weight(1f))
-                        Text("${check.detail}  ", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Color(0xFF7E93AD))
-                        Text(check.level.tag(), fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = check.level.color())
+            Spacer(Modifier.height(16.dp))
+
+            // ── 阶段 3：自检清单 ──
+            if (phase >= 2) {
+                AsciiDivider()
+                Spacer(Modifier.height(10.dp))
+                checks.forEachIndexed { index, check ->
+                    AnimatedVisibility(visible = index < shown, enter = fadeIn(tween(180)) + slideInVertically(tween(240))) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("  > ${check.label}", fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.weight(1f))
+                            Text("${check.detail}  ", fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Gray)
+                            Text(check.level.tag(), fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = check.level.color())
+                        }
                     }
                 }
-            }
 
-            if (shown >= checks.size) {
-                Spacer(Modifier.height(14.dp))
-                AsciiDivider()
-                Spacer(Modifier.height(8.dp))
-                val summary = when {
-                    failed > 0 -> "> 部署警告 — $failed 项异常，$warned 项警告"
-                    warned > 0 -> "> 部署就绪 — $warned 项警告"
-                    else -> "> 系统就绪 — 全息终端待命"
+                if (shown >= checks.size) {
+                    Spacer(Modifier.height(12.dp))
+                    AsciiDivider()
+                    Spacer(Modifier.height(8.dp))
+                    val summary = when {
+                        failed > 0 -> "> 部署警告 — $failed 项异常，$warned 项警告"
+                        warned > 0 -> "> 部署就绪 — $warned 项警告"
+                        else -> "> 系统就绪 — 全息终端待命"
+                    }
+                    Text(
+                        if (blink) "$summary _" else summary,
+                        fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                        color = if (failed > 0) Danger else TacGreen,
+                    )
+                } else {
+                    // 自检进行中的军语
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "⟫ ${motto.value}",
+                        fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Gold,
+                    )
                 }
-                Text(
-                    if (blink) "$summary _" else summary,
-                    fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                    color = if (failed > 0) Color(0xFFFF5A5A) else Color(0xFF00C853),
-                )
             }
         }
-        ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Color(0xFF35C9FF))
+
+        // ── 顶部启动进度条 ──
+        Box(
+            Modifier.align(Alignment.TopCenter).fillMaxWidth().height(2.dp).background(SurfaceAlt),
+        ) {
+            Box(
+                Modifier.fillMaxWidth(progress.value).height(2.dp).background(Red),
+            )
+        }
+
+        // ── 四角锁定框（随阶段 2 合拢显现） ──
+        TacticalCorners(
+            color = Red,
+            modifier = Modifier.fillMaxSize().padding(20.dp).graphicsLayer { alpha = lockAlpha.value * 0.85f },
+            len = 14.dp,
+            stroke = 1.4.dp,
+        )
+
+        // ── 底部版本行 ──
+        Row(
+            Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("DEAUTHCTRL v1.0", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
+            Text("  //  ", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = GrayDark)
+            Text("中国红客 · 国产自主 · 安全可控", fontFamily = FontFamily.Default, fontSize = 9.sp, color = Gray)
+        }
+
+        ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Red)
     }
 }
+
+/** 自检期间的轮播军语 */
+private val BOOT_MOTTOS = listOf(
+    "链路加密已建立 · AES-256",
+    "战术终端自检中",
+    "信号侦测阵列上线",
+    "全息投影校准",
+    "战术网络待命",
+    "陀螺仪航向锁定",
+)
 
 // ─── Android Studio 预览 ──────────────────────────────────────────────────────
 
@@ -406,8 +554,8 @@ private fun GlitchTextPreview() {
 private fun ScanlinePreview() {
     PreviewTheme {
         Box(Modifier.fillMaxSize()) {
-            Text("哪吒网络安全终端", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFE8F4FF), modifier = Modifier.align(Alignment.Center))
-            ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Color(0xFF35C9FF))
+            Text("哪吒网络安全终端", fontFamily = FontFamily.Default, fontSize = 18.sp, fontWeight = FontWeight.Black, color = White, modifier = Modifier.align(Alignment.Center))
+            ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.04f, color = Red)
         }
     }
 }
@@ -420,7 +568,7 @@ private fun ScanlinePreview() {
  * 用线条代替字符绘制，性能友好；相位驱动全部在绘制层。
  */
 @Composable
-fun DataRain(modifier: Modifier = Modifier, color: Color = Color(0xFF45E0FF)) {
+fun DataRain(modifier: Modifier = Modifier, color: Color = TacGreen) {
     val t = rememberInfiniteTransition()
     val phase by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart))
     Canvas(modifier) {

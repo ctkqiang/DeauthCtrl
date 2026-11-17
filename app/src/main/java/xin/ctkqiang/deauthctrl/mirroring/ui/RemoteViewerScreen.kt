@@ -33,6 +33,16 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.delay
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
+import xin.ctkqiang.deauthctrl.ui.components.Danger
+import xin.ctkqiang.deauthctrl.ui.components.Dark
+import xin.ctkqiang.deauthctrl.ui.components.Gold
+import xin.ctkqiang.deauthctrl.ui.components.Gray
+import xin.ctkqiang.deauthctrl.ui.components.Mono
+import xin.ctkqiang.deauthctrl.ui.components.Red
+import xin.ctkqiang.deauthctrl.ui.components.Sans
+import xin.ctkqiang.deauthctrl.ui.components.SurfaceBg
+import xin.ctkqiang.deauthctrl.ui.components.TacGreen
+import xin.ctkqiang.deauthctrl.ui.components.White
 
 @Composable
 fun RemoteViewerScreen(
@@ -40,9 +50,8 @@ fun RemoteViewerScreen(
     device: MirroringDevice?,
     back: () -> Unit,
 ) {
-    val Red = Color(0xFFFF0000); val Gray = Color(0xFF888888)
-    val Green = Color(0xFF00FF00); val Black80 = Color(0xDD000000)
-    val White = Color(0xFFEEEEEE)
+    // 全息 HUD 主题色 —— 与全应用统一，切队换肤即时生效
+    val overlayBg = Dark.copy(alpha = 0.88f)
 
     val state by vm.state.collectAsState()
     var viewW by remember { mutableStateOf(1f) }
@@ -139,10 +148,10 @@ fun RemoteViewerScreen(
                 )
             }
             state is MirroringState.Error -> {
-                Text("连接失败\n${(state as MirroringState.Error).message}", fontFamily = FontFamily.Monospace, fontSize = 14.sp, color = Red, modifier = Modifier.align(Alignment.Center))
+                Text("连接失败\n${(state as MirroringState.Error).message}", fontFamily = Mono, fontSize = 14.sp, color = Danger, modifier = Modifier.align(Alignment.Center))
             }
             else -> {
-                Text("等待连接...", fontFamily = FontFamily.Monospace, fontSize = 14.sp, color = Gray, modifier = Modifier.align(Alignment.Center))
+                Text("等待连接...", fontFamily = Mono, fontSize = 14.sp, color = Gray, modifier = Modifier.align(Alignment.Center))
             }
         }
 
@@ -151,19 +160,19 @@ fun RemoteViewerScreen(
             visible = showOverlay, enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter),
         ) {
-            Box(Modifier.fillMaxWidth().background(Black80).padding(horizontal = 18.dp, vertical = 12.dp).statusBarsPadding()) {
+            Box(Modifier.fillMaxWidth().background(overlayBg).padding(horizontal = 18.dp, vertical = 12.dp).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
-                        Text(device?.name ?: "—", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = White)
+                        Text(device?.name ?: "—", fontFamily = Mono, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = White)
                         Text(
                             buildString {
                                 if (isLive) append("● 已连接  ") else if (state is MirroringState.ClientConnecting) append("○ 连接中  ") else append("—")
                                 append("${viewW.toInt()}×${viewH.toInt()}")
                             },
-                            fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = if (isLive) Green else Gray,
+                            fontFamily = Mono, fontSize = 9.sp, color = if (isLive) TacGreen else Gray,
                         )
                     }
-                    Text("✕", fontFamily = FontFamily.Monospace, fontSize = 20.sp, color = Red, modifier = Modifier.clickable { vm.disconnectClient(); back() })
+                    Text("✕", fontFamily = Mono, fontSize = 20.sp, color = Gold, modifier = Modifier.clickable { vm.disconnectClient(); back() })
                 }
             }
         }
@@ -174,14 +183,14 @@ fun RemoteViewerScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             Row(
-                Modifier.fillMaxWidth().background(Black80).padding(horizontal = 18.dp, vertical = 8.dp).navigationBarsPadding(),
+                Modifier.fillMaxWidth().background(overlayBg).padding(horizontal = 18.dp, vertical = 8.dp).navigationBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Text("单击 ↦ 界面", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
-                Text("|", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
-                Text("拖动 ↦ 控制", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
-                Text("|", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
-                Text("双击 ↦ 断开", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
+                Text("单击 ↦ 界面", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text("|", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text("拖动 ↦ 控制", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text("|", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text("双击 ↦ 断开", fontFamily = Mono, fontSize = 9.sp, color = Gray)
             }
         }
 
@@ -191,7 +200,7 @@ fun RemoteViewerScreen(
             val alpha by pulse.animateFloat(0.3f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse))
             Text(
                 "正在连接 ${device?.name ?: ""}...",
-                fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = White.copy(alpha = alpha),
+                fontFamily = Mono, fontSize = 13.sp, color = White.copy(alpha = alpha),
                 modifier = Modifier.align(Alignment.Center),
             )
         }

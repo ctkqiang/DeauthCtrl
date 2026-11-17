@@ -1,9 +1,6 @@
 /build
 /.gradle/
-/.kotlin/
 /app/build/
-/terminal-emulator/build/
-/terminal-view/build/
 *.iml
 .idea/
 *.apk

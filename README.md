@@ -43,6 +43,7 @@
 | 11  | **系统信息**  | 关于页 — 作者/架构/许可             | 终端命令风格 (`uname -a` / `whoami`) |
 | 12  | **权限管理**  | 运行时权限请求网关                  | `RequestMultiplePermissions`         |
 | 13  | **WiFi 对讲** | 局域网 PTT 语音通话 · 免提模式 · 说话者识别 | UDP 广播发现 + AudioRecord/AudioTrack PCM 流 |
+| 14  | **本地终端**  | 真实 pty + 系统 shell · 可选 root (su) · 文本选择/复制粘贴 · Extra keys | Termux 引擎 v0.118.3 (`terminal-emulator` + `terminal-view`，Apache 2.0) + JNI fork/exec |
 
 ---
 

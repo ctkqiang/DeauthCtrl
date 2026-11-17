@@ -1,8 +1,10 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
 import android.app.Application
+import android.content.pm.ActivityInfo
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -28,6 +30,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +57,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -71,6 +75,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.random.Random
 import kotlin.math.abs
@@ -119,15 +124,19 @@ import xin.ctkqiang.deauthctrl.ui.components.SelectChip
 import xin.ctkqiang.deauthctrl.ui.components.StarBadge
 import xin.ctkqiang.deauthctrl.ui.components.StatChip
 import xin.ctkqiang.deauthctrl.ui.components.Star
+import xin.ctkqiang.deauthctrl.ui.components.SurfaceAlt
 import xin.ctkqiang.deauthctrl.ui.components.SurfaceBg
 import xin.ctkqiang.deauthctrl.ui.components.TermInput
 import xin.ctkqiang.deauthctrl.ui.components.TermPanel
 import xin.ctkqiang.deauthctrl.ui.components.TacGreen
+import xin.ctkqiang.deauthctrl.ui.components.TacGreenDim
 import xin.ctkqiang.deauthctrl.ui.components.TacticalCorners
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.ui.components.drawTacticalCorners
+import xin.ctkqiang.deauthctrl.ui.components.proximityVibrate
+import xin.ctkqiang.deauthctrl.ui.components.hud
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
@@ -142,6 +151,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.PortScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.RevShellViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.SecureMediaViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.SettingsViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WalkieTalkieViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WebServerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.WifiDisruptViewModel
@@ -345,7 +355,7 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
 
                 ActionButton(running, "执行泛洪", "停止泛洪") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stopSpam() else vm.startSpam()
                 }
                 error?.let { ErrorBanner(it) }
@@ -433,7 +443,7 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行压制", "停止压制") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
@@ -529,7 +539,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
         PageEnter(locked = fl) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running = ss is ScanState.Scanning, runLabel = "扫描附近网络", stopLabel = "正在扫描…") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     vm.scanNetworks()
                 }
                 Spacer(Modifier.height(8.dp))
@@ -542,7 +552,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                         LazyColumn(Modifier.fillMaxWidth().height(200.dp)) {
                             items(s.networks, key = { it.bssid }) { n ->
                                 val on = sel?.bssid == n.bssid
-                                Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); sel = n; vm.selectTarget(n) }, color = if (on) Red.copy(alpha = 0.08f) else Color.Transparent) {
+                                Surface(modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); sel = n; vm.selectTarget(n) }, color = if (on) Red.copy(alpha = 0.08f) else Color.Transparent) {
                                     Row(Modifier.padding(vertical = 5.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(if (on) "▸" else " ", fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.width(18.dp))
                                         Text(n.bssid.take(17).padEnd(17), fontFamily = Mono, fontSize = 11.sp, color = Gray)
@@ -580,7 +590,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                         }
                         Spacer(Modifier.height(8.dp))
                         ActionButton(fl, "执行干扰", "停止干扰") {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptic.hud()
                             vm.setDuration(dur)
                             vm.setToggleInterval(toggle.toLong())
                             if (fl) vm.stopFlood() else vm.startFlood()
@@ -656,7 +666,7 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行压制", "停止压制") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
@@ -774,7 +784,7 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行服务器", "停止服务器") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stopServer() else vm.startServer()
                 }
                 error?.let { ErrorBanner(it) }
@@ -878,7 +888,7 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "执行扫描", "取消扫描") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.scan()
                 }
 
@@ -998,7 +1008,7 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "执行嗅探", "停止嗅探") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
@@ -1118,7 +1128,7 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行探测", "停止探测") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
 
@@ -1230,7 +1240,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "发送请求", "取消请求") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.cancel() else vm.send()
                 }
                 if (!running && url.isNotBlank()) {
@@ -1354,7 +1364,7 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
                 TermInput("目标主机", host, placeholder = "例如 192.168.1.1") { vm.setHost(it) }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行扫描", "取消扫描") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
@@ -1441,7 +1451,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "执行对讲", "停止对讲") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
@@ -1455,7 +1465,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                     Spacer(Modifier.height(8.dp))
                     Surface(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptic.hud()
                             vm.toggleLive()
                         },
                         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -1477,7 +1487,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                             .pointerInput(isLive) {
                                 detectTapGestures(
                                     onPress = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        haptic.hud()
                                         if (!isLive) vm.startTalk()
                                         tryAwaitRelease()
                                         if (!isLive) vm.stopTalk()
@@ -1542,45 +1552,208 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
 // ══════════════════════════════════════════════════════════════════════════
 
 /**
- * 设备雷达页 —— 磷光 PPI 雷达
+ * 设备雷达页 —— 磷光 PPI 雷达 + 真实罗盘
  *
  * 全部视觉动画运行在 Canvas 绘制层（draw 阶段读取状态，零重组）：
  * - 渐变扫描光束 + 8 层磷光尾迹扇形，光束前沿亮线
  * - 目标被光束扫过时点亮、扫过后留下磷光余晖（真雷达的灵魂）
- * - 每目标周期性命中扩散波 + 全局声呐 ping 环
- * - 背景噪点闪烁 + 开机辉光扩散 + 北东南西方位罗盘
- * - 底部 CRT 状态行随扫描实时刷新，每圈触觉反馈一次
+ * - 红色目标 blip 高亮醒目：大光晕 + 双脉动环 + 亮核十字（敌目标优先辨识）
+ * - 真实罗盘：旋转矢量传感器（陀螺仪+地磁融合）驱动，盘面随真机转动，
+ *   北东南西方位永远指向真实方向；顶部固定三角为机头航向指针
+ * - 背景噪点闪烁 + 开机辉光扩散 + 声呐 ping 环
+ * - 设备过滤：类型芯片（全部/WIFI/BLE）+ 名称搜索 + 聚焦锁定
+ * - 新目标出现触发触觉警报（受设置页开关控制）
  */
 @Composable
-fun RadarScreen(vm: RadarViewModel, back: () -> Unit) {
+fun RadarScreen(
+    vm: RadarViewModel,
+    back: () -> Unit,
+    radarAlertOn: Boolean,
+    onSelectTarget: (String) -> Unit,
+) {
     val running by vm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
+
+    // 过滤状态：类型 + 关键词 + 聚焦目标
+    var typeFilter by remember { mutableStateOf("all") }
+    var query by remember { mutableStateOf("") }
+    var focusedId by remember { mutableStateOf<String?>(null) }
+
+    // 进入页面启动罗盘传感器，离开时释放（扫描可独立继续运行）
+    DisposableEffect(Unit) {
+        vm.startCompass()
+        onDispose { vm.stopCompass() }
+    }
+
+    // 新目标触觉警报：首次发现某设备时震动一次
+    LaunchedEffect(radarAlertOn) {
+        vm.contact.collect { event ->
+            if (event != null && radarAlertOn) {
+                haptic.hud(HapticFeedbackType.LongPress)
+            }
+        }
+    }
+
+    // 聚焦目标距离振动：越近振幅越大、节奏越快；越远渐弱；超出雷达量程静默
+    val context = LocalContext.current
+    LaunchedEffect(focusedId, radarAlertOn) {
+        while (true) {
+            val t = focusedId?.let { id -> vm.targets.value.firstOrNull { it.id == id } }
+            if (t == null || !radarAlertOn || t.distanceM > 100f) {
+                delay(1200)
+                continue
+            }
+            // 距离 100m → 轻微 0.12 振幅 / 2.6s 间隔；贴脸 0m → 满幅 1.0 / 0.4s 急促
+            val strength = ((100f - t.distanceM) / 100f).coerceIn(0f, 1f)
+            proximityVibrate(context, amplitude01 = 0.12f + 0.88f * strength)
+            delay((2600f - strength * 2200f).coerceAtLeast(350f).toLong())
+        }
+    }
+
+    // 战术雷达站：进入锁定横屏，盘面占左半屏，目标列表在右侧
+    val activity = LocalContext.current as? ComponentActivity
+    DisposableEffect(Unit) {
+        val prev = activity?.requestedOrientation
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose { activity?.requestedOrientation = prev ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
         PageEnter(locked = running) {
-            Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "执行雷达", "停止雷达") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    if (running) vm.stop() else vm.start()
+            Row(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
+                // ── 左：雷达主体 ──
+                Column(Modifier.weight(0.62f).fillMaxSize()) {
+                    ActionButton(running, "执行雷达", "停止雷达") {
+                        haptic.hud()
+                        if (running) vm.stop() else vm.start()
+                    }
+                    Spacer(Modifier.height(5.dp))
+                    CompassStrip(vm)
+                    Spacer(Modifier.height(5.dp))
+                    RadarScope(
+                        vm,
+                        running = running,
+                        typeFilter = typeFilter,
+                        query = query,
+                        focusedId = focusedId,
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    RadarFilterBar(
+                        typeFilter = typeFilter,
+                        onTypeFilter = { typeFilter = it; focusedId = null },
+                        query = query,
+                        onQuery = { query = it; focusedId = null },
+                    )
                 }
 
-                Spacer(Modifier.height(8.dp))
-                RadarScope(vm, running = running, modifier = Modifier.fillMaxWidth().weight(0.62f))
+                Spacer(Modifier.width(10.dp))
 
-                Spacer(Modifier.height(6.dp))
-                RadarTrackPanel(vm, modifier = Modifier.weight(1f))
+                // ── 右：目标列表 ──
+                RadarTrackPanel(
+                    vm,
+                    typeFilter = typeFilter,
+                    query = query,
+                    focusedId = focusedId,
+                    onFocus = { id -> focusedId = if (focusedId == id) null else id },
+                    onSelect = { id -> haptic.hud(); onSelectTarget(id) },
+                    modifier = Modifier.weight(0.38f).fillMaxSize(),
+                )
             }
         }
     }
 }
 
-/** 全息青磷光 —— 扫描盘主色 */
-private val ScopeGreen = Color(0xFF45E0FF)
-/** 深空底色 —— 全息投影暗面 */
-private val ScopeBack = Color(0xFF04121C)
-/** WiFi 目标警示琥珀 */
-private val ScopeRed = Color(0xFFFFB547)
+/** 罗盘航姿条 —— 真实传感器读数：航向/俯仰/横滚/北基准/传感器状态 */
+@Composable
+private fun CompassStrip(vm: RadarViewModel) {
+    val heading by vm.heading.collectAsState()
+    val pitch by vm.pitch.collectAsState()
+    val roll by vm.roll.collectAsState()
+    val online by vm.compassOnline.collectAsState()
+    val northRef by vm.northRef.collectAsState()
+
+    Surface(
+        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, BorderDim),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 9.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    "H ${heading.toInt().toString().padStart(3, '0')}°",
+                    fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TacGreen,
+                )
+                Text("航向 · $northRef", fontFamily = Sans, fontSize = 7.sp, color = Gray)
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("%+d°".format(pitch.toInt()), fontFamily = Mono, fontSize = 11.sp, color = Gold)
+                Text("俯仰", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("%+d°".format(roll.toInt()), fontFamily = Mono, fontSize = 11.sp, color = Gold)
+                Text("横滚", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(if (online) "陀螺仪+地磁 · 融合在线" else "传感器离线", fontFamily = Mono, fontSize = 8.sp, color = if (online) TacGreen else Danger)
+                Text("旋转矢量 · ROTATION_VECTOR", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+            }
+        }
+    }
+}
+
+/** 雷达过滤条 —— 类型芯片 + 名称搜索 */
+@Composable
+private fun RadarFilterBar(
+    typeFilter: String,
+    onTypeFilter: (String) -> Unit,
+    query: String,
+    onQuery: (String) -> Unit,
+) {
+    Column {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf("all" to "全部", "wifi" to "WIFI", "bt" to "BLE").forEach { (key, label) ->
+                Surface(
+                    modifier = Modifier.clickable { onTypeFilter(key) },
+                    shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                    color = if (typeFilter == key) Red.copy(alpha = 0.16f) else SurfaceBg,
+                    border = BorderStroke(1.dp, if (typeFilter == key) Red.copy(alpha = 0.7f) else BorderDim),
+                ) {
+                    Text(
+                        label,
+                        fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        color = if (typeFilter == key) Red else Gray,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    )
+                }
+            }
+            BasicTextField(
+                value = query,
+                onValueChange = onQuery,
+                singleLine = true,
+                textStyle = TextStyle(fontFamily = Mono, fontSize = 10.sp, color = White),
+                cursorBrush = SolidColor(Gold),
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                    .background(SurfaceAlt)
+                    .border(1.dp, BorderDim, CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                decorationBox = { inner ->
+                    if (query.isEmpty()) {
+                        Text("筛选设备名…", fontFamily = Sans, fontSize = 10.sp, color = Gray.copy(alpha = 0.5f))
+                    }
+                    inner()
+                },
+            )
+        }
+    }
+}
 
 /**
  * 雷达扫描盘 —— 全动画 Canvas
@@ -1592,9 +1765,17 @@ private val ScopeRed = Color(0xFFFFB547)
  * 目标-中心连线 + 扫过命中白闪 + 锁定框 + 声呐 ping + 噪点 + 罗盘。
  */
 @Composable
-private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier = Modifier) {
-    // draw 阶段读取 targets：目标更新只触发重绘，不触发重组
+private fun RadarScope(
+    vm: RadarViewModel,
+    running: Boolean,
+    typeFilter: String,
+    query: String,
+    focusedId: String?,
+    modifier: Modifier = Modifier,
+) {
+    // draw 阶段读取 targets/heading：更新只触发重绘，不触发重组
     val targets by vm.targets.collectAsState()
+    val heading by vm.heading.collectAsState()
     val textMeasurer = rememberTextMeasurer()
     val haptic = LocalHapticFeedback.current
 
@@ -1610,8 +1791,8 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                 val speed = if (running) 100f else 25f // 度/秒
                 val next = (sweepDeg + dtMs / 1000f * speed) % 360f
                 if (next < sweepDeg && running) {
-                    // 每完成一整圈扫描触发一次触觉反馈
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    // 每完成一整圈扫描触发一次轻触觉反馈
+                    haptic.hud(HapticFeedbackType.TextHandleMove)
                 }
                 sweepDeg = next
             }
@@ -1632,6 +1813,14 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
         trails.putAll(merged)
     }
 
+    // ── 过滤后的可见目标：聚焦目标永远显示，其余按类型/关键词过滤 ──
+    val visibleTargets = targets.filter { t ->
+        t.id == focusedId ||
+            ((typeFilter == "all" || t.type == typeFilter) &&
+                (query.isBlank() || t.name.contains(query, ignoreCase = true)))
+    }
+    val focusedTarget = focusedId?.let { id -> targets.firstOrNull { it.id == id } }
+
     // 开机辉光：启动后从中心向外扩散一次
     var powered by remember { mutableStateOf(false) }
     LaunchedEffect(running) { if (running) powered = true }
@@ -1642,14 +1831,14 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
     Box(
         modifier
             .clip(CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
-            .background(ScopeBack)
-            .border(1.dp, Color(0xFF0E3A55), CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
+            .background(Dark)
+            .border(1.dp, BorderDim, CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val cx = size.width / 2f
             val cy = size.height / 2f
-            val r = minOf(cx, cy) * 0.84f
-            val g = ScopeGreen
+            val r = minOf(cx, cy) * 0.88f
+            val g = TacGreen
 
             // ── 噪点闪烁 ──
             noise.forEachIndexed { i, (nx, ny) ->
@@ -1664,11 +1853,11 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
             drawLine(g.copy(alpha = 0.15f), Offset(cx - r, cy), Offset(cx + r, cy), 0.7f)
             drawLine(g.copy(alpha = 0.15f), Offset(cx, cy - r), Offset(cx, cy + r), 0.7f)
 
-            // ── 方位刻度 ──
+            // ── 方位刻度：随真实罗盘航向旋转，刻度永远指向真实方位 ──
             for (deg in 0 until 360 step 10) {
-                val a = Math.toRadians(deg.toDouble()).toFloat()
+                val a = Math.toRadians((deg - heading).toDouble()).toFloat()
                 val major = deg % 30 == 0
-                val inner = r * (if (major) 0.94f else 0.97f)
+                val inner = r * (if (major) 0.93f else 0.965f)
                 drawLine(
                     g.copy(alpha = if (major) 0.5f else 0.2f),
                     Offset(cx + inner * cos(a), cy + inner * sin(a)),
@@ -1676,13 +1865,26 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     if (major) 1.2f else 0.5f,
                 )
             }
-            // 罗盘方位字
+            // 罗盘方位字：北东南西固定在真实方位，随陀螺仪反向旋转
             listOf("北" to 0f, "东" to 90f, "南" to 180f, "西" to 270f).forEach { (ch, deg) ->
-                val a = Math.toRadians(deg.toDouble()).toFloat()
-                val lr = r * 0.86f
-                val m = textMeasurer.measure(ch, TextStyle(fontFamily = Sans, fontSize = 10.sp, color = g.copy(alpha = 0.8f)))
+                val a = Math.toRadians((deg - heading).toDouble()).toFloat()
+                val lr = r * 0.83f
+                val m = textMeasurer.measure(ch, TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = g.copy(alpha = 0.9f)))
                 drawText(m, topLeft = Offset(cx + lr * cos(a) - m.size.width / 2f, cy + lr * sin(a) - m.size.height / 2f))
             }
+
+            // ── 机头航向指针：固定在屏幕顶部，指向设备当前朝向 ──
+            val bow = Path().apply {
+                moveTo(cx, cy - r * 0.99f)
+                lineTo(cx - 7.dp.toPx(), cy - r * 0.80f)
+                lineTo(cx + 7.dp.toPx(), cy - r * 0.80f)
+                close()
+            }
+            drawPath(bow, Gold.copy(alpha = 0.95f))
+
+            // 磁北参考细线：从中心指向当前航向的反向（即北向方位）
+            val northRad = Math.toRadians((-heading).toDouble()).toFloat()
+            drawLine(g.copy(alpha = 0.18f), Offset(cx, cy), Offset(cx + r * 0.35f * cos(northRad), cy + r * 0.35f * sin(northRad)), 0.9f)
 
             val sweepRad = Math.toRadians(sweepDeg.toDouble()).toFloat()
 
@@ -1716,14 +1918,14 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                 size = Size(r * 2f, r * 2f),
             )
 
-            // ── 目标-中心连线（数据链） ──
+            // ── 目标-中心连线（数据链）：随罗盘航向同步旋转 ──
             if (running || targets.isNotEmpty()) {
-                targets.forEach { t ->
+                visibleTargets.forEach { t ->
                     val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
                     val tr = dist * r
-                    val ta = Math.toRadians(t.angleDeg.toDouble()).toFloat()
-                    val blip = if (t.type == "wifi") ScopeRed else ScopeGreen
-                    drawLine(blip.copy(alpha = 0.10f), Offset(cx, cy), Offset(cx + tr * cos(ta), cy + tr * sin(ta)), 0.8f)
+                    val ta = Math.toRadians((t.angleDeg - heading).toDouble()).toFloat()
+                    val blip = if (t.type == "wifi") Danger else TacGreen
+                    drawLine(blip.copy(alpha = 0.12f), Offset(cx, cy), Offset(cx + tr * cos(ta), cy + tr * sin(ta)), 0.8f)
                 }
             }
 
@@ -1755,11 +1957,13 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
             }
 
             // ── 目标 blip：磷光轨迹 + 扫过点亮 + 命中白闪 + 锁定框 + 编号 ──
+            // 红点（WiFi）刻意放大加强：三层光晕 + 双脉动环 + 白芯十字，一眼锁定敌目标
             if (running || targets.isNotEmpty()) {
-                targets.forEachIndexed { i, t ->
+                visibleTargets.forEachIndexed { i, t ->
                     val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
                     val tr = dist * r
-                    val ta = Math.toRadians(t.angleDeg.toDouble()).toFloat()
+                    // 目标方位为世界坐标，绘制时减去航向 —— 转动机身，盘面目标随之旋转
+                    val ta = Math.toRadians((t.angleDeg - heading).toDouble()).toFloat()
                     val x = cx + tr * cos(ta)
                     val y = cy + tr * sin(ta)
 
@@ -1767,47 +1971,66 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
                     var d = sweepDeg - t.angleDeg
                     while (d > 180f) d -= 360f
                     while (d < -180f) d += 360f
-                    val bright = (1f - abs(d) / 50f).coerceIn(0.10f, 1f)
+                    val isFocused = t.id == focusedId
+                    // 聚焦模式下非聚焦目标大幅降噪淡出，聚焦目标恒定高亮
+                    val bright = ((1f - abs(d) / 50f).coerceIn(0.10f, 1f)) * (if (focusedId == null || isFocused) 1f else 0.16f)
+                    val blip = if (t.type == "wifi") Danger else TacGreen
 
-                    val blip = if (t.type == "wifi") ScopeRed else ScopeGreen
-
-                    // 磷光轨迹：历史位置渐隐余晖
+                    // 磷光轨迹：历史位置渐隐余晖（同样跟随航向旋转）
                     trails[t.id]?.dropLast(1)?.forEachIndexed { k, pt ->
-                        val pta = Math.toRadians(pt.angleDeg.toDouble()).toFloat()
+                        val pta = Math.toRadians((pt.angleDeg - heading).toDouble()).toFloat()
                         val pxa = cx + pt.dist01 * r * cos(pta)
                         val pya = cy + pt.dist01 * r * sin(pta)
-                        drawCircle(blip.copy(alpha = 0.05f + k * 0.045f), 1.6.dp.toPx(), Offset(pxa, pya))
+                        drawCircle(blip.copy(alpha = (0.05f + k * 0.045f) * (if (isFocused || focusedId == null) 1f else 0.16f)), 1.6.dp.toPx(), Offset(pxa, pya))
                     }
 
-                    drawCircle(blip.copy(alpha = bright * 0.10f), 10.dp.toPx(), Offset(x, y))
-                    drawCircle(blip.copy(alpha = bright * 0.35f), 5.dp.toPx(), Offset(x, y))
+                    // 醒目的红色 blip：大光晕 + 双脉动扩散环 + 亮核
+                    drawCircle(blip.copy(alpha = bright * 0.30f), 14.dp.toPx(), Offset(x, y))
+                    drawCircle(blip.copy(alpha = bright * 0.55f), 7.dp.toPx(), Offset(x, y))
 
-                    // 红色涟漪 blip：两圈错相扩散环 + 内层光晕 —— 显示设备就在附近
                     val rippleBase = ((sweepDeg / 360f) * 2f + i * 0.37f) % 1f
-                    val ripple = Color(0xFFFF4D5E)
                     listOf(0f, 0.5f).forEach { off ->
                         val ph = (rippleBase + off) % 1f
-                        val rr = 3.dp.toPx() + 24.dp.toPx() * ph
-                        drawCircle(ripple.copy(alpha = (1f - ph) * 0.16f * bright), rr, Offset(x, y), style = Stroke(5f))
-                        drawCircle(ripple.copy(alpha = (1f - ph) * 0.8f * bright), rr, Offset(x, y), style = Stroke(1.4f))
+                        val rr = 3.dp.toPx() + 30.dp.toPx() * ph
+                        drawCircle(blip.copy(alpha = (1f - ph) * 0.30f * bright), rr, Offset(x, y), style = Stroke(6f))
+                        drawCircle(blip.copy(alpha = (1f - ph) * 0.95f * bright), rr, Offset(x, y), style = Stroke(1.8f))
                     }
 
-                    // 核心点 + 十字准星
-                    drawCircle(blip.copy(alpha = bright), 2.4.dp.toPx(), Offset(x, y))
-                    val cross = 7.dp.toPx()
-                    drawLine(blip.copy(alpha = bright * 0.8f), Offset(x - cross, y), Offset(x + cross, y), 1f)
-                    drawLine(blip.copy(alpha = bright * 0.8f), Offset(x, y - cross), Offset(x, y + cross), 1f)
+                    // 核心点 + 白芯 + 十字准星
+                    drawCircle(blip.copy(alpha = bright), 3.2.dp.toPx(), Offset(x, y))
+                    drawCircle(White.copy(alpha = bright * 0.9f), 1.4.dp.toPx(), Offset(x, y))
+                    val cross = 8.dp.toPx()
+                    drawLine(blip.copy(alpha = bright * 0.85f), Offset(x - cross, y), Offset(x + cross, y), 1.2f)
+                    drawLine(blip.copy(alpha = bright * 0.85f), Offset(x, y - cross), Offset(x, y + cross), 1.2f)
 
                     // 命中白闪：光束扫过瞬间的白色爆闪
                     if (bright > 0.85f) {
                         val flash = (bright - 0.85f) / 0.15f
-                        drawCircle(Color(0xFFE8F4FF).copy(alpha = flash * 0.9f), 8.dp.toPx(), Offset(x, y))
-                        drawLine(Color(0xFFE8F4FF).copy(alpha = flash * 0.8f), Offset(x - 11.dp.toPx(), y), Offset(x + 11.dp.toPx(), y), 1.4f)
-                        drawLine(Color(0xFFE8F4FF).copy(alpha = flash * 0.8f), Offset(x, y - 11.dp.toPx()), Offset(x, y + 11.dp.toPx()), 1.4f)
+                        drawCircle(White.copy(alpha = flash * 0.9f), 8.dp.toPx(), Offset(x, y))
+                        drawLine(White.copy(alpha = flash * 0.8f), Offset(x - 11.dp.toPx(), y), Offset(x + 11.dp.toPx(), y), 1.4f)
+                        drawLine(White.copy(alpha = flash * 0.8f), Offset(x, y - 11.dp.toPx()), Offset(x, y + 11.dp.toPx()), 1.4f)
                     }
 
-                    // 目标锁定框：光束扫过时弹出四角括号（全息 HUD 锁定）
-                    if (bright > 0.55f) {
+                    // 聚焦目标：恒定金色锁定框 + 名称/RSSI/距离标签
+                    if (isFocused) {
+                        val lockSize = 42.dp.toPx()
+                        withTransform({
+                            translate(x - lockSize / 2f, y - lockSize / 2f)
+                        }) {
+                            drawTacticalCorners(
+                                Gold.copy(alpha = 0.95f),
+                                Size(lockSize, lockSize),
+                                len = 10.dp.toPx(),
+                                stroke = 1.8.dp.toPx(),
+                            )
+                        }
+                        val tag = textMeasurer.measure(
+                            "${t.name.take(12)} · ${t.rssi}dBm · %.1fm".format(t.distanceM),
+                            TextStyle(fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold),
+                        )
+                        drawText(tag, topLeft = Offset(x - tag.size.width / 2f, y + 24.dp.toPx()))
+                    } else if (bright > 0.55f) {
+                        // 普通目标锁定框：光束扫过时弹出四角括号（全息 HUD 锁定）
                         val lockSize = 26.dp.toPx()
                         withTransform({
                             translate(x - lockSize / 2f, y - lockSize / 2f)
@@ -1823,7 +2046,7 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
 
                     // 编号标签
                     val tag = textMeasurer.measure("${i + 1}", TextStyle(fontFamily = Mono, fontSize = 9.sp, color = blip.copy(alpha = bright)))
-                    drawText(tag, topLeft = Offset(x + 9.dp.toPx(), y - 16.dp.toPx()))
+                    drawText(tag, topLeft = Offset(x + 10.dp.toPx(), y - 18.dp.toPx()))
                 }
             }
 
@@ -1833,9 +2056,10 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
             // ── 底部 CRT 状态行（画布内绘制，随扫描刷新且零重组） ──
             val statusY = size.height - 8.dp.toPx()
             val modeTxt = if (running) "模式: 扫描" else "模式: 待机"
-            val azTxt = "方位: %03d°".format(sweepDeg.toInt() % 360)
+            val azTxt = "扫描: %03d°".format(sweepDeg.toInt() % 360)
+            val hdTxt = "航向: %03d°".format(heading.toInt() % 360)
             val status = textMeasurer.measure(
-                "$modeTxt   增益: 自动   量程: 100米   $azTxt   目标: ${targets.size}",
+                "$modeTxt   $azTxt   $hdTxt   量程: 100m   目标: ${visibleTargets.size}/${targets.size}",
                 TextStyle(fontFamily = Mono, fontSize = 9.sp, color = g.copy(alpha = 0.85f)),
             )
             drawText(status, topLeft = Offset((size.width - status.size.width) / 2f, statusY))
@@ -1846,53 +2070,117 @@ private fun RadarScope(vm: RadarViewModel, running: Boolean, modifier: Modifier 
 /** 雷达目标磷光轨迹点（角度 + 归一化距离） */
 private data class TrailPoint(val angleDeg: Float, val dist01: Float)
 
-/** 雷达目标列表面板 —— 独立订阅目标流，卡片式行 + 信号强度条 */
+/** 雷达目标列表面板 —— 过滤 + 聚焦降噪 + 点选展开内联技术详情 */
 @Composable
-private fun RadarTrackPanel(vm: RadarViewModel, modifier: Modifier = Modifier) {
+private fun RadarTrackPanel(
+    vm: RadarViewModel,
+    typeFilter: String,
+    query: String,
+    focusedId: String?,
+    onFocus: (String) -> Unit,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val targets by vm.targets.collectAsState()
+    val filtered = targets.filter { t ->
+        t.id == focusedId ||
+            ((typeFilter == "all" || t.type == typeFilter) &&
+                (query.isBlank() || t.name.contains(query, ignoreCase = true)))
+    }
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Star(Gold, 8.dp)
             Spacer(Modifier.width(7.dp))
-            Text("目标列表 · ${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+            Text("目标列表 · ${filtered.size}/${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+            Spacer(Modifier.weight(1f))
+            if (focusedId != null) {
+                Text("聚焦模式 · 降噪中", fontFamily = Mono, fontSize = 8.sp, color = Gold)
+            }
         }
         Spacer(Modifier.height(4.dp))
-        if (targets.isEmpty()) {
-            EmptyHint("启动雷达后，检测到的设备会亮在扫描盘上")
+        if (filtered.isEmpty()) {
+            EmptyHint(if (targets.isEmpty()) "启动雷达后，检测到的设备会亮在扫描盘上" else "过滤条件下没有匹配设备")
         } else {
             LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-                items(targets.sortedByDescending { it.rssi }, key = { it.id }) { t ->
+                items(filtered.sortedByDescending { it.rssi }, key = { it.id }) { t ->
                     val wifi = t.type == "wifi"
-                    val barColor = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Color(0xFF1E4A66)
+                    val barColor = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else TacGreenDim
+                    val expanded = t.id == focusedId
                     Surface(
-                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp).clickable { onFocus(t.id) },
                         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                        color = SurfaceBg,
-                        border = BorderStroke(1.dp, BorderDim),
+                        color = if (expanded) TacGreen.copy(alpha = 0.06f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (expanded) Gold.copy(alpha = 0.7f) else BorderDim),
                     ) {
-                        Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(if (wifi) "WIFI" else "BLE", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (wifi) ScopeRed else ScopeGreen, modifier = Modifier.width(34.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
-                                Spacer(Modifier.height(3.dp))
-                                // 信号强度条
-                                Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(Color(0xFF0E1B2E))) {
-                                    Box(
-                                        Modifier.fillMaxWidth(((t.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
-                                            .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
-                                    )
+                        Column {
+                            Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(if (wifi) "WIFI" else "BLE", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (wifi) Danger else TacGreen, modifier = Modifier.width(34.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
+                                    Spacer(Modifier.height(3.dp))
+                                    // 信号强度条
+                                    Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
+                                        Box(
+                                            Modifier.fillMaxWidth(((t.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
+                                                .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text("${t.rssi}dBm", fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else Gray)
+                                    Text("%.1fm · %03d°".format(t.distanceM, t.angleDeg.toInt()), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                                 }
                             }
-                            Spacer(Modifier.width(8.dp))
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("${t.rssi}dBm", fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.rssi > -50) ScopeRed else if (t.rssi > -70) ScopeGreen else Gray)
-                                Text("${"%.1f".format(t.distanceM)}米 · 方位${t.angleDeg.toInt()}°", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                            // ── 展开的内联技术详情：聚焦即降噪，详情就地展开 ──
+                            if (expanded) {
+                                Column(Modifier.padding(horizontal = 10.dp).padding(bottom = 8.dp)) {
+                                    InlineInfoRow("标识", if (wifi) t.id else t.address)
+                                    InlineInfoRow("厂商", "${t.vendor} · OUI ${t.vendorOui}")
+                                    InlineInfoRow("信号", "RSSI ${t.rssi}dBm · SNR ${t.snrDb}dB · 底噪 ${t.noiseDbm}dBm")
+                                    if (wifi) {
+                                        InlineInfoRow("射频", "${t.frequencyMhz}MHz · ${t.channel} · ${t.channelWidth}")
+                                        InlineInfoRow("安全", t.security.ifEmpty { "--" })
+                                    } else {
+                                        InlineInfoRow("类别", "${t.deviceClassMajor}${if (t.deviceClassDetail.isNotEmpty()) " · ${t.deviceClassDetail}" else ""}")
+                                        InlineInfoRow("链路", "${t.linkType} · 绑定: ${t.bondState}")
+                                    }
+                                    InlineInfoRow("跟踪", "命中 ${t.hitCount} 次 · 首见 ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))}")
+                                    Spacer(Modifier.height(5.dp))
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Surface(
+                                            modifier = Modifier.weight(1f).clickable { onSelect(t.id) },
+                                            shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                                            color = Red.copy(alpha = 0.14f),
+                                            border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
+                                        ) {
+                                            Text("打开完整档案 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                                        }
+                                        Surface(
+                                            modifier = Modifier.weight(1f).clickable { onFocus(t.id) },
+                                            shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                                            color = Color.Transparent,
+                                            border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
+                                        ) {
+                                            Text("取消聚焦", fontFamily = Sans, fontSize = 10.sp, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/** 内联详情行 —— 标签灰、数值白，等宽小字 */
+@Composable
+private fun InlineInfoRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(label, fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.width(38.dp))
+        Text(value, fontFamily = Mono, fontSize = 8.sp, color = White, modifier = Modifier.weight(1f))
     }
 }
 
@@ -1914,7 +2202,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 ActionButton(running, "执行快传", "停止快传") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
@@ -2036,7 +2324,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Surface(modifier = Modifier.weight(1f).clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.hud()
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
                             ctx.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
@@ -2045,7 +2333,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                         Text("拍照", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.hud()
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
                             ctx.checkSelfPermission(android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
@@ -2054,7 +2342,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                         Text("摄像", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.hud()
                         if (recording) { vm.stopRecording(); return@clickable }
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M &&
                             ctx.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -2129,7 +2417,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
                 TermInput("监听端口", port, placeholder = "例如 4444") { vm.setPort(it) }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行监听", "停止监听") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 if (running) {
@@ -2201,7 +2489,7 @@ fun PayloadScreen(vm: PayloadViewModel, back: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running = false, runLabel = "生成全部载荷", stopLabel = "") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     vm.generate()
                 }
                 Spacer(Modifier.height(8.dp))
@@ -2238,7 +2526,7 @@ fun DirBruteScreen(vm: DirBruteViewModel, back: () -> Unit) {
                 TermInput("目标 URL", url, placeholder = "http://example.com") { vm.setUrl(it) }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, "执行枚举", "停止枚举") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 // 高频数据区独立订阅：枚举期间进度与命中路径持续刷新
@@ -2297,7 +2585,7 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
                 TermInput("搜索关键词", query, placeholder = "CVE 编号 / 厂商 / 产品名") { vm.setQuery(it) }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running = running, runLabel = "执行搜索", stopLabel = "搜索中…") {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     vm.search()
                 }
                 if (running) {
@@ -2328,67 +2616,8 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 关于
+// 设置 · 关于 —— 已迁移至 SettingsScreen.kt（操作员偏好 + 队伍主题 + 触觉 + 系统信息）
 // ══════════════════════════════════════════════════════════════════════════
-
-/** 信息行 —— 「标签 … 值」两端对齐 */
-@Composable
-private fun InfoRow(label: String, value: String) {
-    PanelStat(label, value)
-}
-
-/**
- * 关于页面
- *
- * 显示应用与作者信息，终端命令风格排版。
- */
-@Composable
-fun AboutDetailScreen(back: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("关于", back)
-        PageEnter {
-            Column(Modifier.fillMaxSize().navigationBarsPadding().padding(14.dp)) {
-                StarBadge(56.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "哪吒网络安全终端",
-                    fontFamily = Sans,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 20.sp,
-                    letterSpacing = 0.sp,
-                    color = White,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-                Text(
-                    "◆ DEAUTHCTRL v1.0 ◆",
-                    fontFamily = Sans,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Gold,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-                Spacer(Modifier.height(14.dp))
-                TermPanel("系统信息") {
-                    InfoRow("作者", "钟智强 (ctkqiang)")
-                    InfoRow("代号", "哪吒网络安全")
-                    InfoRow("邮箱", "ctkqiang@dingtalk.com")
-                    InfoRow("仓库", "gitcode.com/ctkqiang_sr/DeauthCtrl")
-                    InfoRow("架构", "MVVM + StateFlow + Compose")
-                    InfoRow("许可", "授权安全研究")
-                }
-
-                Spacer(Modifier.height(14.dp))
-                Text("$ uname -a", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-                Text("  DeauthCtrl v1.0  |  中国红客  |  国产自主  |  安全可控", fontFamily = Sans, fontSize = 11.sp, color = White)
-                Spacer(Modifier.height(6.dp))
-                Text("$ whoami", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-                Text("  哪吒网络安全 (ctkqiang)", fontFamily = Sans, fontSize = 11.sp, color = White)
-                Spacer(Modifier.height(14.dp))
-                HintBreathing("本应用仅供授权安全研究与教育用途，请勿用于非法活动")
-            }
-        }
-    }
-}
 
 // ─── Android Studio 预览 ──────────────────────────────────────────────────────
 //
@@ -2508,7 +2737,7 @@ private fun RadarPreview() {
     PreviewTheme {
         val app = LocalContext.current.applicationContext as? Application
         val vm = if (app != null) previewViewModel { RadarViewModel(app) } else null
-        if (vm == null) PreviewFallback("设备雷达") else RadarScreen(vm, back = {})
+        if (vm == null) PreviewFallback("设备雷达") else RadarScreen(vm, back = {}, radarAlertOn = true, onSelectTarget = {})
     }
 }
 
@@ -2568,8 +2797,12 @@ private fun CVEPreview() {
     }
 }
 
-@Preview(name = "关于", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
+@Preview(name = "操作员设置", showBackground = true, backgroundColor = 0xFF08080A, widthDp = 393, heightDp = 852, locale = "zh")
 @Composable
-private fun AboutPreview() {
-    PreviewTheme { AboutDetailScreen(back = {}) }
+private fun SettingsPreview() {
+    PreviewTheme {
+        val app = LocalContext.current.applicationContext as? Application
+        val vm = if (app != null) previewViewModel { SettingsViewModel(app) } else null
+        if (vm == null) PreviewFallback("操作员设置") else SettingsScreen(vm, back = {})
+    }
 }

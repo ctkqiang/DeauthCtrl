@@ -181,7 +181,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
             Spacer(Modifier.height(14.dp))
             Button(
                 onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     if (missing.isEmpty()) onAllGranted() else launcher.launch(RequiredPermissions.runtime)
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -198,7 +198,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
             if (missing.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); context.openAppSettings() },
+                    modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); context.openAppSettings() },
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
                 ) {
                     Text("[ 去系统设置授权 ]", fontFamily = Sans, fontSize = 12.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
@@ -207,7 +207,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
 
             Spacer(Modifier.height(8.dp))
             Surface(
-                modifier = Modifier.fillMaxWidth().clickable { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onAllGranted() },
+                modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); onAllGranted() },
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
             ) {
                 Text("[ 跳过 —— 蓝牙与 WiFi 功能将不可用 ]", fontFamily = Sans, fontSize = 11.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)

@@ -4,36 +4,76 @@ import android.media.projection.MediaProjectionManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
+import xin.ctkqiang.deauthctrl.ui.components.ActionButton
+import xin.ctkqiang.deauthctrl.ui.components.BorderDim
+import xin.ctkqiang.deauthctrl.ui.components.Danger
+import xin.ctkqiang.deauthctrl.ui.components.Dark
+import xin.ctkqiang.deauthctrl.ui.components.EmptyHint
+import xin.ctkqiang.deauthctrl.ui.components.Gold
+import xin.ctkqiang.deauthctrl.ui.components.Gray
+import xin.ctkqiang.deauthctrl.ui.components.Mono
+import xin.ctkqiang.deauthctrl.ui.components.Red
+import xin.ctkqiang.deauthctrl.ui.components.Sans
+import xin.ctkqiang.deauthctrl.ui.components.Star
+import xin.ctkqiang.deauthctrl.ui.components.SurfaceBg
+import xin.ctkqiang.deauthctrl.ui.components.TacGreen
+import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
+import xin.ctkqiang.deauthctrl.ui.components.White
+import xin.ctkqiang.deauthctrl.ui.components.hud
 
-/** 屏幕镜像仪表板 */
+/**
+ * 屏幕镜像仪表板 —— 全息 HUD 统一设计
+ *
+ * 与全应用共享同一套视觉系统（TerminalHeader / TermPanel / ActionButton /
+ * CutCornerShape / 主题全局色），切队换肤即时生效。
+ */
 @Composable
 fun DashboardScreen(
     vm: MirroringViewModel,
@@ -56,52 +96,27 @@ fun DashboardScreen(
         }
     }
 
-    val Red = Color(0xFFFF0000)
-    val Dark = Color(0xFF0A0A0A)
-    val White = Color(0xFFEEEEEE)
-    val Gray = Color(0xFF777777)
+    val isHostActive = state is MirroringState.HostPreparing || state is MirroringState.HostLive
+    val isScanning = state is MirroringState.ClientScanning || state is MirroringState.ClientConnecting || state is MirroringState.ClientLive
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        Row(
-            Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("屏幕镜像", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Red)
-            TextButton(onClick = back) { Text("< 返回", fontFamily = FontFamily.Monospace, color = Gray, fontSize = 11.sp) }
-        }
+        TerminalHeader("屏幕镜像", back)
 
-        Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
-
-            // --- Host 按钮 ---
-            val isHostActive = state is MirroringState.HostPreparing || state is MirroringState.HostLive
-            Surface(
-                modifier = Modifier.fillMaxWidth().clickable {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    if (isHostActive) {
-                        vm.stopHost()
-                    } else {
-                        vm.startHostPrep()
-                        val pm = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE)
-                            as MediaProjectionManager
-                        projectionLauncher.launch(pm.createScreenCaptureIntent())
-                    }
-                },
-                shape = RoundedCornerShape(3.dp),
-                color = if (isHostActive) Color.Transparent else Red,
-                border = BorderStroke(1.5.dp, if (isHostActive) Red.copy(alpha = 0.3f) else Red),
+        Column(Modifier.fillMaxSize().navigationBarsPadding().padding(14.dp)) {
+            // ─── Host 共享主操作 ───
+            ActionButton(
+                running = isHostActive,
+                runLabel = "共享屏幕 (Host)",
+                stopLabel = "停止共享",
             ) {
-                Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalArrangement = Arrangement.Center) {
-                    Text("$ ", fontFamily = FontFamily.Monospace, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (isHostActive) Red else White)
-                    Text(
-                        when {
-                            state is MirroringState.HostPreparing -> "等待授权..."
-                            state is MirroringState.HostLive -> "● 停止共享屏幕 (Host)"
-                            else -> "开始共享屏幕 (Host)"
-                        },
-                        fontFamily = FontFamily.Monospace, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        color = if (isHostActive) Red else White,
-                    )
+                haptic.hud()
+                if (isHostActive) {
+                    vm.stopHost()
+                } else {
+                    vm.startHostPrep()
+                    val pm = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE)
+                        as MediaProjectionManager
+                    projectionLauncher.launch(pm.createScreenCaptureIntent())
                 }
             }
 
@@ -111,43 +126,47 @@ fun DashboardScreen(
                 val hostDotAlpha by hostPulse.animateFloat(0.3f, 1f, infiniteRepeatable(tween(1000), RepeatMode.Reverse))
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(color = Color(0xFF00CC00).copy(alpha = hostDotAlpha))) { append("● ") }
-                        withStyle(SpanStyle(color = Gray)) { append("正在广播 — ${vm.hostVideoPort}:10087") }
+                        withStyle(SpanStyle(color = TacGreen.copy(alpha = hostDotAlpha))) { append("● ") }
+                        withStyle(SpanStyle(color = Gray)) { append("正在广播 — ${vm.hostVideoPort}:10087 · 局域网内可被发现") }
                     },
-                    fontFamily = FontFamily.Monospace, fontSize = 10.sp,
+                    fontFamily = Mono, fontSize = 10.sp,
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-            Text("已发现的设备", fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Red, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(12.dp))
 
-            // --- Client 扫描 ---
-            val isScanning = state is MirroringState.ClientScanning || state is MirroringState.ClientConnecting || state is MirroringState.ClientLive
+            // ─── 目标设备面板 ───
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Star(Gold, 8.dp)
+                Spacer(Modifier.width(7.dp))
+                Text("已发现的设备 · ${devices.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+            }
+            Spacer(Modifier.height(6.dp))
 
             if (devices.isEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Text(
+                EmptyHint(
                     if (state is MirroringState.ClientScanning) "正在扫描局域网..."
                     else if (state is MirroringState.ClientConnecting) "正在连接..."
-                    else "未发现设备",
-                    fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Gray,
+                    else "未发现设备 —— 点击下方按钮扫描局域网",
                 )
                 Spacer(Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable {
                         if (isScanning) vm.stopScanning() else vm.startScanning()
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Red),
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                    color = Red.copy(alpha = 0.12f),
                     border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
                 ) {
                     Text(
                         if (isScanning) "停止扫描" else "扫描局域网",
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        color = Red, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
                     )
                 }
             } else {
-                LazyColumn(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     itemsIndexed(devices) { i, device ->
                         var visible by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) { delay(i * 60L); visible = true }
@@ -156,7 +175,7 @@ fun DashboardScreen(
                             enter = fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 4 },
                         ) {
                             DeviceRow(device) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.hud()
                                 vm.connectToDevice(device)
                                 onConnectDevice(device)
                             }
@@ -170,35 +189,34 @@ fun DashboardScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "[!] ${(state as MirroringState.Error).message}",
-                    fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Red,
+                    fontFamily = Mono, fontSize = 10.sp, color = Danger,
                 )
             }
         }
     }
 }
 
+/** 目标设备行 —— 主题化卡片：青边 + 切角 + 菱形标记 */
 @Composable
 private fun DeviceRow(device: MirroringDevice, onClick: () -> Unit) {
-    val Red = Color(0xFFFF0000)
-    val S = Color(0xFF0D0D0D)
-    val White = Color(0xFFEEEEEE)
-    val Gray = Color(0xFF777777)
-
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
-        shape = RoundedCornerShape(3.dp), color = S,
-        border = BorderStroke(1.dp, Red.copy(alpha = 0.2f)),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).clickable(onClick = onClick),
+        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, BorderDim),
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(device.name, fontFamily = FontFamily.Monospace, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
-                Text("${device.hostAddress}:${device.videoPort}", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
+            Column(Modifier.weight(1f)) {
+                Text(device.name, fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White)
+                Text("${device.hostAddress}:${device.videoPort}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
             }
-            Text("连接 >", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Red)
+            Star(Gold, 6.dp)
+            Spacer(Modifier.width(6.dp))
+            Text("连接 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red)
         }
     }
 }
