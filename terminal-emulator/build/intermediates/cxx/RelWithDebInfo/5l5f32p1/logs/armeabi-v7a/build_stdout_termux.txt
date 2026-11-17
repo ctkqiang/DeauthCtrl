@@ -1,2 +1,0 @@
-ninja: Entering directory `/Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/.cxx/RelWithDebInfo/5l5f32p1/armeabi-v7a'
-ninja: no work to do.

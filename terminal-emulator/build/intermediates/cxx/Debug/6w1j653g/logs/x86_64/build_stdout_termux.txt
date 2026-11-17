@@ -1,2 +1,0 @@
-ninja: Entering directory `/Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/.cxx/Debug/6w1j653g/x86_64'
-ninja: no work to do.

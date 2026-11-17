@@ -1,9 +1,0 @@
-<libraries>
-  <library
-      name=":@@:terminal-emulator::release"
-      project=":terminal-emulator"/>
-  <library
-      name="androidx.annotation:annotation:1.3.0@jar"
-      jars="/Users/johnmelodyme/.gradle/caches/modules-2/files-2.1/androidx.annotation/annotation/1.3.0/21f49f5f9b85fc49de712539f79123119740595/annotation-1.3.0.jar"
-      resolved="androidx.annotation:annotation:1.3.0"/>
-</libraries>
