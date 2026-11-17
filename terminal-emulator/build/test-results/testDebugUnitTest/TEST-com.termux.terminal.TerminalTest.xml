@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.termux.terminal.TerminalTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-16T14:44:27.069Z" hostname="M2.local" time="0.046">
+  <properties/>
+  <testcase name="testSoftTerminalReset" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testScrollDownInAltBuffer" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testParseColor" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testBel" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testTab" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testPaste" classname="com.termux.terminal.TerminalTest" time="0.001"/>
+  <testcase name="testSetCursorStyle" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testBackgroundColorErase" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testSelectGraphics" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testDeviceStatusReport" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testMouseClick" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testNormalization" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testAutomargins" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testLineDrawing" classname="com.termux.terminal.TerminalTest" time="0.001"/>
+  <testcase name="testScreen" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testCursorPositioning" classname="com.termux.terminal.TerminalTest" time="0.0"/>
+  <testcase name="testReportTerminalSize" classname="com.termux.terminal.TerminalTest" time="0.044"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

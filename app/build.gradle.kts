@@ -54,6 +54,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.09.00"))
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.compose.ui:ui")
@@ -65,7 +66,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // 战术地图 —— osmdroid (OpenStreetMap 开源渲染)
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("io.github.ehsannarmani:compose-charts:0.1.0")
+
+    // Termux 终端引擎（v0.118.3 vendor，Apache 2.0）：
+    // terminal-view 通过 api 依赖把 terminal-emulator 一并带入。
+    implementation(project(":terminal-view"))
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

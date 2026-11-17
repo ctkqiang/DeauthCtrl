@@ -1,0 +1,14 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml:1:1-13
+INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml:1:1-13
+	package
+		INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml
+uses-sdk
+INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml
+INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/src/main/AndroidManifest.xml

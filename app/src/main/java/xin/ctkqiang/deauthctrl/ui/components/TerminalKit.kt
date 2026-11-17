@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
@@ -88,53 +89,98 @@ import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 // - RedDim 只用于装饰，不允许承载需要被读到的文字
 // - 错误 / 失败 / 告警一律使用 Danger，不使用主色青
 
-/** 全息青 —— 主色：按钮、标题、强调、边框 */
-val Red = Color(0xFF35C9FF)
+// ─── 主题颜色 ────────────────────────────────────────────────────────────────
+//
+// 这些全局颜色由 HudThemeState.apply() 写入（见 ui/theme/HudPalette.kt），
+// 是 24 支队伍主题切换的落点：切队后 MainActivity 根部的 key(teamId)
+// 强制全树重组，重组期间所有界面读取到的即是新色板。
+// 属性声明为 var 仅为接收主题写入，业务代码一律只读，不直接改值。
 
-/** 亮青 —— 运行中名称、告警强调 */
-val RedBright = Color(0xFF7FE7FF)
+/** 全息主色 —— 按钮、标题、强调、边框 */
+@Volatile var Red = Color(0xFF35C9FF)
 
-/** 深青 —— 仅装饰用途 */
-val RedDim = Color(0xFF0E5C7A)
+/** 亮色 —— 运行中名称、告警强调 */
+@Volatile var RedBright = Color(0xFF7FE7FF)
+
+/** 深色 —— 仅装饰用途 */
+@Volatile var RedDim = Color(0xFF0E5C7A)
 
 /** 危险红 —— 错误 / 失败 / 危险状态 */
-val Danger = Color(0xFFFF5A5A)
+@Volatile var Danger = Color(0xFFFF5A5A)
 
 /** 琥珀橙 —— 警告 / 敌目标 */
-val Warn = Color(0xFFFFB547)
+@Volatile var Warn = Color(0xFFFFB547)
 
-/** 淡青 —— 关键数值、核心标记 */
-val Gold = Color(0xFF9BD7FF)
+/** 淡色 —— 关键数值、核心标记 */
+@Volatile var Gold = Color(0xFF9BD7FF)
 
-/** 暗青 —— 装饰与未激活标记 */
-val GoldDim = Color(0xFF2E5E7E)
+/** 暗色 —— 装饰与未激活标记 */
+@Volatile var GoldDim = Color(0xFF2E5E7E)
 
-/** 电光青 —— 运行状态、锁定框、实时数据 */
-val TacGreen = Color(0xFF45E0FF)
+/** 电光色 —— 运行状态、锁定框、实时数据 */
+@Volatile var TacGreen = Color(0xFF45E0FF)
 
-/** 电光青暗 —— 弱信号 / 未激活 */
-val TacGreenDim = Color(0xFF0E4E6E)
+/** 电光色暗 —— 弱信号 / 未激活 */
+@Volatile var TacGreenDim = Color(0xFF0E4E6E)
 
 /** 正文白 */
-val White = Color(0xFFE8F4FF)
+@Volatile var White = Color(0xFFE8F4FF)
 
 /** 次要文字灰 */
-val Gray = Color(0xFF7E93AD)
+@Volatile var Gray = Color(0xFF7E93AD)
 
 /** 三级文字灰 —— 仅装饰 */
-val GrayDark = Color(0xFF4C6078)
+@Volatile var GrayDark = Color(0xFF4C6078)
 
 /** 页面最底层背景 —— 深海军蓝 */
-val Dark = Color(0xFF060B14)
+@Volatile var Dark = Color(0xFF060B14)
 
 /** 卡片与面板底色 —— 玻璃面板 */
-val SurfaceBg = Color(0xFF0B1522)
+@Volatile var SurfaceBg = Color(0xFF0B1522)
 
 /** 输入框与图标底 */
-val SurfaceAlt = Color(0xFF101E30)
+@Volatile var SurfaceAlt = Color(0xFF101E30)
 
 /** 暗色边框与分隔线 */
-val BorderDim = Color(0xFF1B3A5C)
+@Volatile var BorderDim = Color(0xFF1B3A5C)
+
+/**
+ * 全局触觉门控
+ *
+ * 全应用唯一的触觉出口：设置页关闭「战术触觉」后，任何 hud() 调用都静默跳过。
+ * 替换规则：`haptic.performHapticFeedback(X)` → `haptic.hud()`（默认 LongPress）。
+ */
+fun HapticFeedback.hud(type: HapticFeedbackType = HapticFeedbackType.LongPress) {
+    if (xin.ctkqiang.deauthctrl.ui.theme.HudThemeState.hapticsEnabled) {
+        performHapticFeedback(type)
+    }
+}
+
+/**
+ * 距离比例振动 —— 雷达聚焦目标的接近告警
+ *
+ * 直接走 Vibrator 的 VibrationEffect.createOneShot(振幅)，
+ * 支持 1-255 的振幅分级（Compose HapticFeedback 只有固定类型，无法渐变）。
+ * 越近振幅越大，由调用方按距离换算 amplitude01（0-1）。
+ * 需要 VIBRATE 权限（已在 AndroidManifest 声明）。
+ */
+fun proximityVibrate(context: android.content.Context, amplitude01: Float, durationMs: Long = 45L) {
+    try {
+        val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            (context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager).defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val amp = (amplitude01.coerceIn(0f, 1f) * 255).toInt().coerceIn(1, 255)
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(durationMs, amp))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(durationMs)
+        }
+    } catch (_: Exception) {}
+}
 
 /** 全应用统一等宽字体 —— 数据、命令、日志 */
 val Mono = FontFamily.Monospace
@@ -296,7 +342,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
     ) {
         Surface(
             modifier = Modifier.scale(backScale).clickable(interactionSource = backInteraction, indication = LocalIndication.current) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                haptic.hud()
                 back()
             },
             shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -414,7 +460,7 @@ fun ActionButton(
             .fillMaxWidth()
             .scale(scale)
             .clickable(interactionSource = interaction, indication = LocalIndication.current) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                haptic.hud()
                 onClick()
             },
         shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
@@ -447,7 +493,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
 
     Surface(
         modifier = modifier.scale(scale).clickable(interactionSource = interaction, indication = LocalIndication.current) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptic.hud()
             onClick()
         },
         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -472,7 +518,7 @@ fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
     val contentColor by animateColorAsState(if (selected) White else Gray, tween(200))
     Surface(
         modifier = Modifier.clickable {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptic.hud()
             onClick()
         },
         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -614,7 +660,7 @@ fun ModuleCard(
                 .fillMaxWidth()
                 .scale(cardScale)
                 .clickable(interactionSource = cardInteraction, indication = LocalIndication.current) {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptic.hud()
                     onClick()
                 }
                 .padding(vertical = 5.dp),
@@ -648,7 +694,7 @@ fun ModuleCard(
                 if (onToggle == null) {
                     Surface(
                         modifier = Modifier.scale(actionScale).clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptic.hud()
                             onClick()
                         },
                         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -660,7 +706,7 @@ fun ModuleCard(
                 } else {
                     Surface(
                         modifier = Modifier.scale(actionScale).clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            haptic.hud()
                             onToggle()
                         },
                         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),

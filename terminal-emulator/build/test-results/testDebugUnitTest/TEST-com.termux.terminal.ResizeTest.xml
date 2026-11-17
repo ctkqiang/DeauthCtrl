@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.termux.terminal.ResizeTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-16T14:44:26.876Z" hostname="M2.local" time="0.184">
+  <properties/>
+  <testcase name="testResizeWhenInAltBuffer" classname="com.termux.terminal.ResizeTest" time="0.0"/>
+  <testcase name="testVerticalResize" classname="com.termux.terminal.ResizeTest" time="0.0"/>
+  <testcase name="testResizeWithWideChars" classname="com.termux.terminal.ResizeTest" time="0.002"/>
+  <testcase name="testResizeWithMoreWideChars" classname="com.termux.terminal.ResizeTest" time="0.007"/>
+  <testcase name="testShrinkingInAltBuffer" classname="com.termux.terminal.ResizeTest" time="0.0"/>
+  <testcase name="testResizeWithLineWrappingContinuing" classname="com.termux.terminal.ResizeTest" time="0.007"/>
+  <testcase name="testResizeWhenHasHistory" classname="com.termux.terminal.ResizeTest" time="0.0"/>
+  <testcase name="testResizeAfterHistoryWraparound" classname="com.termux.terminal.ResizeTest" time="0.161"/>
+  <testcase name="testCursorPositionWhenShrinking" classname="com.termux.terminal.ResizeTest" time="0.0"/>
+  <testcase name="testHorizontalResize" classname="com.termux.terminal.ResizeTest" time="0.002"/>
+  <testcase name="testResizeWithCombiningCharInLastColumn" classname="com.termux.terminal.ResizeTest" time="0.001"/>
+  <testcase name="testResizeAfterNewlineWhenInAltBuffer" classname="com.termux.terminal.ResizeTest" time="0.0"/>
+  <testcase name="testLineWrap" classname="com.termux.terminal.ResizeTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

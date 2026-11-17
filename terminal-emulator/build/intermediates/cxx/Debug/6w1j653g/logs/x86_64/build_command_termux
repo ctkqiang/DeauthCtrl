@@ -1,0 +1,4 @@
+/Users/johnmelodyme/Library/Android/sdk/cmake/3.22.1/bin/ninja \
+  -C \
+  /Users/johnmelodyme/Documents/ctkqiang/DeauthCtrl/terminal-emulator/.cxx/Debug/6w1j653g/x86_64 \
+  termux

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.termux.terminal.ControlSequenceIntroducerTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T14:44:24.367Z" hostname="M2.local" time="0.037">
+  <properties/>
+  <testcase name="testManyParameters" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.001"/>
+  <testcase name="testCsi3J" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.0"/>
+  <testcase name="testCsiSGRParameters" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.0"/>
+  <testcase name="testCsiS" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.0"/>
+  <testcase name="testCsiT" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.001"/>
+  <testcase name="testCsiX" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.0"/>
+  <testcase name="testUnderlineVariants" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.001"/>
+  <testcase name="testReportPixelSize" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.032"/>
+  <testcase name="testRepeat" classname="com.termux.terminal.ControlSequenceIntroducerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.termux.terminal.UnicodeInputTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-16T14:44:27.139Z" hostname="M2.local" time="0.001">
+  <properties/>
+  <testcase name="testWideCharacterDeletion" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testUnassignedCodePoint" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testOverlongUtf8Encoding" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testStuff" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testIllFormedUtf8SuccessorByteNotConsumed" classname="com.termux.terminal.UnicodeInputTest" time="0.001"/>
+  <testcase name="testWideCharacterWithoutWrapping" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testWideCharOverwriting" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testCombiningCharacterInFirstColumn" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testSimpleCombining" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testCombiningCharacterInLastColumn" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <testcase name="testWideCharacterInLastColumn" classname="com.termux.terminal.UnicodeInputTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
