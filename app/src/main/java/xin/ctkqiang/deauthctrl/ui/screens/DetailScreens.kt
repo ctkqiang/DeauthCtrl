@@ -33,6 +33,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -75,10 +76,12 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.random.Random
 import kotlin.math.abs
@@ -97,12 +100,17 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import xin.ctkqiang.deauthctrl.manager.HttpClientManager
 import xin.ctkqiang.deauthctrl.manager.JammerScanState
+import xin.ctkqiang.deauthctrl.manager.RadarTarget
+import xin.ctkqiang.deauthctrl.manager.WalkieRttStatus
 import xin.ctkqiang.deauthctrl.manager.WebServerManager
 import xin.ctkqiang.deauthctrl.model.HotspotResult
 import xin.ctkqiang.deauthctrl.model.ScanState
@@ -141,13 +149,16 @@ import xin.ctkqiang.deauthctrl.ui.components.drawTacticalCorners
 import xin.ctkqiang.deauthctrl.ui.components.proximityVibrate
 import xin.ctkqiang.deauthctrl.ui.components.hud
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.BearingEstimate
 import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BluetoothJammerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.CVESearchViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.DbViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.DirBruteViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.FileTransferViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.HttpClientViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.LocState
 import xin.ctkqiang.deauthctrl.viewmodel.PayloadViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.PingViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.PortScannerViewModel
@@ -163,8 +174,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * 详情页内容整体入场动画 —— 每页进入时轻微淡入上滑
@@ -618,8 +631,127 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
 
                 // 高频数据区独立订阅：泛洪期间周期进度与统计持续刷新
                 WifiLivePanel(vm, fl = fl)
+
+                // ── 真实注入引擎:root + 监控模式芯片才可用,无则如实显示不可用 ──
+                DeauthInjectionPanel(vm, preselectBssid = sel?.bssid, preselectChannel = sel?.channel)
             }
         }
+    }
+}
+
+/**
+ * 真实注入面板 —— root 门控的 aireplay-ng/nexutil 驱动
+ *
+ * 平台前提(不满足即不可用,面板如实呈现):
+ * - root(su) + 支持监控模式的芯片/固件(Nexmon/QCACLD 类补丁)
+ * - aircrack-ng 工具链(Android 移植版,如 kriswebdev/android_aircrack)
+ * 无 root 的 stock Android 无法注入 802.11 管理帧(SELinux 拒绝 raw socket),
+ * 面板只显示探测结果与安装指引,不假装可用。
+ */
+@Composable
+private fun DeauthInjectionPanel(
+    vm: WifiDisruptViewModel,
+    preselectBssid: String?,
+    preselectChannel: Int?,
+) {
+    val session by vm.deauthSession.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    var bssid by remember { mutableStateOf("") }
+    var channel by remember { mutableStateOf("") }
+    var client by remember { mutableStateOf("") }
+    var count by remember { mutableStateOf("64") }
+    var startError by remember { mutableStateOf<String?>(null) }
+
+    // 扫描列表选中目标后自动回填 BSSID/信道(用户仍可手改)
+    LaunchedEffect(preselectBssid, preselectChannel) {
+        if (bssid.isBlank() && preselectBssid != null) bssid = preselectBssid
+        if (channel.isBlank() && preselectChannel != null) channel = preselectChannel.toString()
+    }
+
+    Spacer(Modifier.height(8.dp))
+    TermPanel("真实注入 · DEAUTH INJECTION") {
+        Text(
+            "root + 监控模式芯片才能启用;无 root 的 stock Android 无法注入 802.11 管理帧",
+            fontFamily = Sans, fontSize = 8.sp, color = Warn, lineHeight = 12.sp,
+        )
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            QuickNavChip("探测能力", Gold, Modifier.weight(1f)) {
+                haptic.hud()
+                vm.probeDeauth()
+            }
+            if (session.running) {
+                QuickNavChip("■ 停止注入", Danger, Modifier.weight(1f)) {
+                    haptic.hud()
+                    vm.stopDeauth()
+                }
+            }
+        }
+        session.probe?.let { p ->
+            Spacer(Modifier.height(5.dp))
+            Text(p.detail, fontFamily = Mono, fontSize = 8.sp, color = if (p.rootGranted && p.monitorSupported) TacGreen else Gray)
+            if (p.rootGranted && (!p.aireplay || !p.monitorSupported)) {
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    "缺少:${if (!p.aireplay) " aireplay-ng" else ""}${if (!p.monitorSupported) " 监控模式固件(Nexmon/QCACLD)" else ""} —— 安装后重新探测",
+                    fontFamily = Sans, fontSize = 8.sp, color = Warn,
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        TermInput("目标 BSSID", bssid, placeholder = "AA:BB:CC:DD:EE:FF") { bssid = it; startError = null }
+        Spacer(Modifier.height(5.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            TermInput("信道", channel, placeholder = "如 6", modifier = Modifier.weight(1f)) { channel = it }
+            TermInput("客户端 MAC(可选)", client, placeholder = "留空=广播全部", modifier = Modifier.weight(1.6f)) { client = it }
+        }
+        Spacer(Modifier.height(5.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            TermInput("每轮帧数", count, placeholder = "0=持续循环", modifier = Modifier.weight(1f)) { count = it }
+            Surface(
+                modifier = Modifier.weight(1f).clickable {
+                    haptic.hud()
+                    startError = vm.startDeauth(
+                        bssid.trim(),
+                        channel.trim().toIntOrNull() ?: 0,
+                        client.trim().ifBlank { null },
+                        count.trim().toIntOrNull() ?: 0,
+                        0L,
+                    )
+                },
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                color = if (session.running) TacGreen.copy(alpha = 0.1f) else Red.copy(alpha = 0.14f),
+                border = BorderStroke(1.5.dp, if (session.running) TacGreen.copy(alpha = 0.7f) else Red.copy(alpha = 0.6f)),
+            ) {
+                Text(
+                    if (session.running) "注入中 · ${session.framesSent} 帧" else "开始注入",
+                    fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    color = if (session.running) TacGreen else Red,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 13.dp),
+                )
+            }
+        }
+        startError?.let {
+            Spacer(Modifier.height(4.dp))
+            Text("[!] $it", fontFamily = Sans, fontSize = 9.sp, color = Danger)
+        }
+        // 会话日志(最近 12 行)
+        if (session.log.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            session.log.takeLast(12).forEach { line ->
+                Text(
+                    "▸ ${line.text}",
+                    fontFamily = Mono, fontSize = 7.5.sp, color = if (line.text.startsWith("✖")) Danger else Gray,
+                    maxLines = 1,
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "注入会话由 su 驱动 aireplay-ng 执行;仅用于授权测试,目标必须是你拥有或获授权的网络",
+            fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.75f), lineHeight = 11.sp,
+        )
     }
 }
 
@@ -962,17 +1094,28 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
         if (devices.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             TermPanel("发现 ${devices.size} 台设备") {
-                Row(Modifier.fillMaxWidth().padding(bottom = 5.dp)) {
-                    Text("IP 地址".padEnd(18), fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
-                    Text("MAC 地址".padEnd(20), fontFamily = Mono, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
-                    Text("主机名", fontFamily = Sans, fontSize = 10.sp, color = RedDim, fontWeight = FontWeight.Bold)
-                }
-                AsciiDivider(modifier = Modifier.padding(vertical = 2.dp))
-                devices.take(ARP_DEVICE_RENDER_LIMIT).forEach { d ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                        Text(d.ip.padEnd(18), fontFamily = Mono, fontSize = 10.sp, color = White)
-                        Text(d.mac.ifEmpty { "(获取中)" }.padEnd(20), fontFamily = Mono, fontSize = 10.sp, color = if (d.mac.isNotEmpty()) Gray else RedDim.copy(alpha = 0.5f))
-                        Text(d.hostname.ifEmpty { d.latency }, fontFamily = Mono, fontSize = 10.sp, color = if (d.hostname.isNotEmpty()) RedDim else Gray)
+                devices.take(ARP_DEVICE_RENDER_LIMIT).forEachIndexed { i, d ->
+                    Surface(
+                        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                        color = SurfaceAlt.copy(alpha = 0.45f),
+                        border = BorderStroke(1.dp, BorderDim.copy(alpha = 0.6f)),
+                    ) {
+                        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("0${i + 1}".takeLast(2), fontFamily = Mono, fontSize = 9.sp, color = Gold, modifier = Modifier.width(24.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(d.ip, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
+                                Text(
+                                    "${d.mac.ifEmpty { "MAC 获取中" }} · ${d.hostname.ifEmpty { "主机名未知" }}",
+                                    fontFamily = Mono, fontSize = 8.sp,
+                                    color = if (d.mac.isNotEmpty()) Gray else RedDim.copy(alpha = 0.6f),
+                                )
+                            }
+                            // 在线状态点:有 MAC 即完成解析
+                            Box(Modifier.size(8.dp).clip(CircleShape).background(if (d.mac.isNotEmpty()) TacGreen else Warn.copy(alpha = 0.6f)))
+                            Spacer(Modifier.width(6.dp))
+                            Text(d.latency.ifBlank { "…" }, fontFamily = Mono, fontSize = 9.sp, color = Gray, modifier = Modifier.width(40.dp), textAlign = TextAlign.End)
+                        }
                     }
                 }
                 if (devices.size > ARP_DEVICE_RENDER_LIMIT) {
@@ -1083,6 +1226,10 @@ private fun BleScannerLivePanel(
         if (selDev != null) {
             Spacer(Modifier.height(8.dp))
             TermPanel("设备详情 · ${selDev.name}") {
+                if (selDev.isDroneRemoteId) {
+                    PanelStat("[!] 无人机", "Remote-ID 广播检测 (ASTM F3411)")
+                    Spacer(Modifier.height(4.dp))
+                }
                 PanelStat("地址", selDev.address)
                 PanelStat("发射功率", if (selDev.txPower > Int.MIN_VALUE) "${selDev.txPower}dBm" else "未知")
                 PanelStat("设备类型", selDev.deviceType.ifEmpty { "未知" })
@@ -1115,6 +1262,29 @@ private fun BleScannerLivePanel(
                     }
                     Text("最低:${selDev.rssiHistory.minOrNull() ?: 0}  最高:${selDev.rssiHistory.maxOrNull() ?: 0}  当前:${selDev.rssi}", fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(top = 2.dp))
                 }
+                // ── Wireshark 式原始广播十六进制 ──
+                if (selDev.advBytesHex.isNotBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("原始广播 · RAW ADVERTISEMENT (HEX)", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
+                    Surface(
+                        Modifier.fillMaxWidth(),
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = Color(0xFF04121C),
+                        border = BorderStroke(0.5.dp, Track),
+                    ) {
+                        SelectionContainer {
+                            Text(
+                                selDev.advBytesHex,
+                                fontFamily = Mono, fontSize = 8.sp, color = TacGreen, lineHeight = 12.sp,
+                                modifier = Modifier.padding(8.dp),
+                            )
+                        }
+                    }
+                    Text(
+                        "AD Structure: Length · Type · Value;广播字段与 Android BLE 栈解码值一致,可直接对照分析",
+                        fontFamily = Sans, fontSize = 7.5.sp, color = Gray, modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
         }
 
@@ -1128,7 +1298,7 @@ private fun BleScannerLivePanel(
                 Surface(modifier = Modifier.fillMaxWidth().clickable { onSelect(if (sel) null else d.address) }, color = if (sel) Red.copy(alpha = 0.06f) else Color.Transparent) {
                     Row(Modifier.padding(vertical = 6.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(if (sel) "▸" else " ", fontFamily = Mono, fontSize = 11.sp, color = Red, modifier = Modifier.width(14.dp))
-                        Text(d.name.take(20), fontFamily = Mono, fontSize = 11.sp, color = if (sel) Red else White, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+                        Text((if (d.isDroneRemoteId) "[DRONE] " else "") + d.name.take(20), fontFamily = Mono, fontSize = 11.sp, color = if (sel) Red else if (d.isDroneRemoteId) Gold else White, fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
                         // 信号强度条
                         Box(Modifier.width(36.dp).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
                             Box(
@@ -1471,12 +1641,12 @@ private fun PortScanLivePanel(vm: PortScannerViewModel, running: Boolean, host: 
 // ══════════════════════════════════════════════════════════════════════════
 
 /**
- * 对讲机详情页
+ * 对讲机详情页(v3)
  *
- * 局域网 PTT 实时语音。功能区块：
- * - 启动/停止按钮 + 在线设备列表（说话中高亮）
- * - 直播模式开关
- * - 按住说话按钮（按住收音，松开停止）
+ * 局域网 PTT 实时语音 + 射频遥测。功能区块：
+ * - 启动/停止按钮 + 本机 WiFi 链路遥测(SSID/频率/信道/速率/RSSI)
+ * - 在线设备列表(说话中高亮 + 本机实测 UDP 回显 RTT/丢包 + 对端自报链路)
+ * - 直播模式开关 + 固定底栏的按住说话大按钮(滚动不影响按压)
  */
 @Composable
 fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
@@ -1489,146 +1659,280 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
 
     val active = talking || isLive
 
+    // 页面可见期间 1Hz 刷新本机链路遥测(与对讲运行状态无关)
+    LaunchedEffect(Unit) {
+        while (true) {
+            withContext(Dispatchers.IO) { vm.refreshLocalLink() }
+            delay(1000)
+        }
+    }
+    // 按住 PTT 途中页面被销毁(导航/退场):必须补发停止,否则麦克风与 UDP 音频循环悬挂
+    DisposableEffect(Unit) {
+        onDispose { vm.stopTalk() }
+    }
+
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("WiFi 对讲机", back)
         PageEnter(locked = running) {
-            Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "执行对讲", "停止对讲") {
-                    haptic.hud()
-                    if (running) vm.stop() else vm.start()
+            Column(Modifier.fillMaxSize()) {
+                // ── 滚动区:整页滚动,PTT 圆盘固定在底栏外 ──
+                Column(
+                    Modifier.weight(1f).navigationBarsPadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp).padding(top = 12.dp),
+                ) {
+                    ActionButton(running, "执行对讲", "停止对讲") {
+                        haptic.hud()
+                        if (running) vm.stop() else vm.start()
+                    }
+                    error?.let { ErrorBanner(it) }
+                    // 本机 WiFi 链路遥测(对讲跑在 WiFi LAN 上,链路质量即通话质量上限)
+                    WalkieLinkPanel(vm)
+                    // 高频数据区独立订阅：对讲期间在线设备与说话状态持续刷新
+                    WalkiePeersPanel(vm, running = running)
+                    Spacer(Modifier.height(10.dp))
                 }
-                error?.let { ErrorBanner(it) }
-
-                // 高频数据区独立订阅：对讲期间在线设备与说话状态持续刷新
-                WalkiePeersPanel(vm, running = running)
-
-                Spacer(Modifier.weight(1f))
 
                 if (running) {
-                    // ── 直播模式开关 ──
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            haptic.hud()
-                            vm.toggleLive()
-                        },
-                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                        color = if (isLive) Red.copy(alpha = 0.15f) else Color.Transparent,
-                        border = BorderStroke(1.5.dp, if (isLive) Gold else Red.copy(alpha = 0.3f)),
+                    // ── 固定底栏:直播开关 + PTT 圆盘 + 提示 ──
+                    Column(
+                        Modifier.fillMaxWidth().navigationBarsPadding()
+                            .padding(horizontal = 12.dp).padding(bottom = 12.dp),
                     ) {
-                        Text(
-                            if (isLive) "直播中 · 自动发送 ${countdown}s" else "直播模式 · 免按自动发送",
-                            fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                            color = if (isLive) Red else Red.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(vertical = 9.dp).fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-
-                    Spacer(Modifier.height(14.dp))
-
-                    // ── 圆形 PTT 大按钮:战术罗盘式 ──
-                    val breathPulse = rememberInfiniteTransition()
-                    val breathAlpha by breathPulse.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse))
-                    val ripplePhase by breathPulse.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing)))
-                    Box(
-                        Modifier.align(Alignment.CenterHorizontally).size(150.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        // 发送中扩散波纹环
-                        if (active) {
-                            Canvas(Modifier.fillMaxSize()) {
-                                val c = Offset(size.width / 2f, size.height / 2f)
-                                val maxR = size.minDimension / 2f
-                                drawCircle(Red.copy(alpha = 0.15f), maxR, c)
-                                drawCircle(Red.copy(alpha = (1f - ripplePhase) * 0.55f), maxR * (0.45f + ripplePhase * 0.55f), c, style = Stroke(3f))
-                                drawCircle(Gold.copy(alpha = (1f - ripplePhase) * 0.35f), maxR * (0.45f + ripplePhase * 0.55f), c, style = Stroke(7f))
-                                // 外圈刻度(战术罗盘感)
-                                for (i in 0 until 12) {
-                                    val a = Math.toRadians(i * 30.0)
-                                    drawLine(
-                                        Red.copy(alpha = 0.5f),
-                                        Offset(c.x + maxR * 0.86f * kotlin.math.cos(a).toFloat(), c.y + maxR * 0.86f * kotlin.math.sin(a).toFloat()),
-                                        Offset(c.x + maxR * 0.95f * kotlin.math.cos(a).toFloat(), c.y + maxR * 0.95f * kotlin.math.sin(a).toFloat()),
-                                        2f,
-                                    )
-                                }
-                            }
+                        // ── 直播模式开关 ──
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                haptic.hud()
+                                vm.toggleLive()
+                            },
+                            shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                            color = if (isLive) Red.copy(alpha = 0.15f) else Color.Transparent,
+                            border = BorderStroke(1.5.dp, if (isLive) Gold else Red.copy(alpha = 0.3f)),
+                        ) {
+                            Text(
+                                if (isLive) "直播中 · 自动发送 ${countdown}s" else "直播模式 · 免按自动发送",
+                                fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                color = if (isLive) Red else Red.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(vertical = 9.dp).fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
                         }
-                        // 圆盘本体
+
+                        Spacer(Modifier.height(14.dp))
+
+                        // ── 圆形 PTT 大按钮:战术罗盘式 ──
+                        val breathPulse = rememberInfiniteTransition()
+                        val breathAlpha by breathPulse.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse))
+                        val ripplePhase by breathPulse.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing)))
                         Box(
-                            modifier = Modifier
-                                .size(if (active) 138.dp else 130.dp)
-                                .pointerInput(isLive) {
-                                    detectTapGestures(
-                                        onPress = {
-                                            haptic.hud()
-                                            if (!isLive) vm.startTalk()
-                                            tryAwaitRelease()
-                                            if (!isLive) vm.stopTalk()
-                                        },
-                                    )
-                                }
-                                .clip(CircleShape)
-                                .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.10f))
-                                .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.35f), CircleShape),
+                            Modifier.align(Alignment.CenterHorizontally).size(150.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Star(if (active) White else Red, 14.dp)
-                                Spacer(Modifier.height(7.dp))
-                                Text(
-                                    if (active) "发送中" else "按住说话",
-                                    fontFamily = Sans, fontSize = if (active) 15.sp else 14.sp, fontWeight = FontWeight.Black,
-                                    color = if (active) White else Red,
-                                )
-                                Text("PTT", fontFamily = Mono, fontSize = 8.sp, color = if (active) White.copy(alpha = 0.8f) else Gray)
+                            // 发送中扩散波纹环
+                            if (active) {
+                                Canvas(Modifier.fillMaxSize()) {
+                                    val c = Offset(size.width / 2f, size.height / 2f)
+                                    val maxR = size.minDimension / 2f
+                                    drawCircle(Red.copy(alpha = 0.15f), maxR, c)
+                                    drawCircle(Red.copy(alpha = (1f - ripplePhase) * 0.55f), maxR * (0.45f + ripplePhase * 0.55f), c, style = Stroke(3f))
+                                    drawCircle(Gold.copy(alpha = (1f - ripplePhase) * 0.35f), maxR * (0.45f + ripplePhase * 0.55f), c, style = Stroke(7f))
+                                    // 外圈刻度(战术罗盘感)
+                                    for (i in 0 until 12) {
+                                        val a = Math.toRadians(i * 30.0)
+                                        drawLine(
+                                            Red.copy(alpha = 0.5f),
+                                            Offset(c.x + maxR * 0.86f * kotlin.math.cos(a).toFloat(), c.y + maxR * 0.86f * kotlin.math.sin(a).toFloat()),
+                                            Offset(c.x + maxR * 0.95f * kotlin.math.cos(a).toFloat(), c.y + maxR * 0.95f * kotlin.math.sin(a).toFloat()),
+                                            2f,
+                                        )
+                                    }
+                                }
+                            }
+                            // 圆盘本体
+                            Box(
+                                modifier = Modifier
+                                    .size(if (active) 138.dp else 130.dp)
+                                    .pointerInput(isLive) {
+                                        detectTapGestures(
+                                            onPress = {
+                                                haptic.hud()
+                                                if (!isLive) vm.startTalk()
+                                                tryAwaitRelease()
+                                                if (!isLive) vm.stopTalk()
+                                            },
+                                        )
+                                    }
+                                    .clip(CircleShape)
+                                    .background(if (active) Red.copy(alpha = breathAlpha) else Red.copy(alpha = 0.10f))
+                                    .border(2.dp, if (active) Gold.copy(alpha = 0.95f) else Red.copy(alpha = 0.35f), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Star(if (active) White else Red, 14.dp)
+                                    Spacer(Modifier.height(7.dp))
+                                    Text(
+                                        if (active) "发送中" else "按住说话",
+                                        fontFamily = Sans, fontSize = if (active) 15.sp else 14.sp, fontWeight = FontWeight.Black,
+                                        color = if (active) White else Red,
+                                    )
+                                    Text("PTT", fontFamily = Mono, fontSize = 8.sp, color = if (active) White.copy(alpha = 0.8f) else Gray)
+                                }
                             }
                         }
+                        Text(
+                            "按住圆盘发送语音 · 松开停止 · 直播模式免按",
+                            fontFamily = Sans, fontSize = 9.sp, color = Gray,
+                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
+                        )
                     }
-                    Text(
-                        "按住圆盘发送语音 · 松开停止 · 直播模式免按",
-                        fontFamily = Sans, fontSize = 9.sp, color = Gray,
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
-                    )
-                    Spacer(Modifier.height(10.dp))
                 }
             }
         }
     }
 }
 
-/** 对讲机在线设备面板 —— 独立订阅设备流与说话状态 */
+/**
+ * 本机链路遥测面板 —— 对讲机跑在 WiFi LAN 上,链路质量即通话质量上限
+ *
+ * 全部取自 WifiManager.connectionInfo 真实返回值;对端节点的信号无法从
+ * 本机测量(UDP 发现不携带对端 RSSI),节点面板只显示对端「自报」链路。
+ */
+@Composable
+private fun WalkieLinkPanel(vm: WalkieTalkieViewModel) {
+    val link by vm.link.collectAsState()
+    val info = link.info
+    TermPanel("本机链路 · RF LINK", Modifier.padding(top = 8.dp)) {
+        if (info == null) {
+            Text("WiFi 服务不可用", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+        } else if (!info.connected) {
+            Text("WiFi 未连接 —— 热点模式下本机无上游链路可测", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+        } else {
+            fun rssiColor(level: Int?): Color = when (level) {
+                3, 4 -> TacGreen
+                2 -> Warn
+                1, 0 -> Danger
+                else -> Gray
+            }
+            fun quality(level: Int?): String = when (level) {
+                4 -> "优"; 3 -> "良"; 2 -> "中"; 1 -> "弱"; 0 -> "极弱"; else -> "—"
+            }
+            WalkieInfoRow("SSID", info.ssid ?: "不可见(定位未开启)")
+            WalkieInfoRow("BSSID", info.bssid ?: "不可见")
+            WalkieInfoRow("本机 IP · 网关", "${info.localIp ?: "—"} · ${info.gatewayIp ?: "—"}")
+            WalkieInfoRow(
+                "信号强度",
+                if (info.rssiDbm != null) "${info.rssiDbm} dBm · ${quality(info.signalLevel)}" else "系统未提供",
+            )
+            WalkieInfoRow("信道 · 频率", "CH${info.channel ?: "—"} · ${info.frequencyMhz ?: "—"} MHz")
+            val rate = when {
+                info.txLinkSpeedMbps != null && info.rxLinkSpeedMbps != null -> "TX ${info.txLinkSpeedMbps} · RX ${info.rxLinkSpeedMbps} Mbps"
+                info.linkSpeedMbps != null -> "${info.linkSpeedMbps} Mbps"
+                else -> "系统未提供"
+            }
+            WalkieInfoRow("协商速率", rate)
+            WalkieInfoRow("Wi-Fi 标准", info.wifiStandard ?: "系统未提供")
+            if (info.rssiDbm != null) {
+                // 信号条:RSSI -100..-30 → 0..5 格
+                val bars = ((info.rssiDbm + 100f) / 70f * 5f).toInt().coerceIn(0, 5)
+                Spacer(Modifier.height(3.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("▮".repeat(bars) + "▯".repeat(5 - bars), fontFamily = Mono, fontSize = 11.sp, color = rssiColor(info.signalLevel))
+                    Spacer(Modifier.width(6.dp))
+                    Text("(本机 ↔ AP 实测)", fontFamily = Sans, fontSize = 7.5.sp, color = Gray)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 对讲机链路行 —— 等宽键值对(标签更宽,容纳「本机 IP · 网关」类标签)
+ */
+@Composable
+private fun WalkieInfoRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(label, fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.width(98.dp))
+        Text(value, fontFamily = Mono, fontSize = 10.sp, color = White, modifier = Modifier.weight(1f))
+    }
+}
+
+/**
+ * 对讲机在线设备面板 —— 独立订阅设备流与说话状态
+ *
+ * 每节点两行:第一行名称/IP/说话中/网关标记;第二行链路质量 ——
+ * RTT/抖动/丢包为本机实测(UDP 回显),自报字段为对端上报其自身链路。
+ * 对端相对本机的 RSSI/距离在无 root 设备上不可得,不展示、不编造。
+ */
 @Composable
 private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
     val peers by vm.peers.collectAsState()
+    val link by vm.link.collectAsState()
     if (running && peers.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))
-        TermPanel("在线设备 (${peers.size})") {
-            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 130.dp)) {
-                itemsIndexed(peers) { i, p ->
+        TermPanel("在线节点 (${peers.size})") {
+            peers.forEachIndexed { i, p ->
+                // key(p.ip):列表重排时整体重建入场状态,避免 remember 复位后动画永不重放
+                androidx.compose.runtime.key(p.ip) {
                     var visible by remember { mutableStateOf(false) }
                     LaunchedEffect(Unit) { delay(i * 80L); visible = true }
                     AnimatedVisibility(
                         visible = visible,
                         enter = fadeIn(tween(300)) + androidx.compose.animation.slideInHorizontally(tween(350)) { it / 3 },
                     ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                                .background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent, CutCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(if (p.isTalking) "⬤ " else "○ ", fontFamily = Mono, fontSize = 10.sp, color = if (p.isTalking) Red else Gray)
+                    Column(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                            .background(if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent, CutCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(if (p.isTalking) "● " else "○ ", fontFamily = Mono, fontSize = 10.sp, color = if (p.isTalking) Red else Gray)
                             Text(p.name.take(16), fontFamily = Mono, fontSize = 11.sp, color = if (p.isTalking) Red else White, fontWeight = if (p.isTalking) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+                            if (link.info?.gatewayIp == p.ip) {
+                                Text("网关", fontFamily = Sans, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(end = 4.dp))
+                            }
                             Text(p.ip, fontFamily = Mono, fontSize = 10.sp, color = Gray)
                             if (p.isTalking) {
                                 Spacer(Modifier.width(6.dp))
                                 Text("说话中", fontFamily = Sans, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
                             }
                         }
+                        // 链路质量行:RTT 为本机实测,自报字段明确标注
+                        Spacer(Modifier.height(2.dp))
+                        Row(Modifier.padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            val rttText = when {
+                                p.rttEwmaMs != null -> {
+                                    val c = when { p.rttEwmaMs <= 30f -> TacGreen; p.rttEwmaMs <= 80f -> Warn; else -> Danger }
+                                    Text(
+                                        "回显 ${p.rttEwmaMs.toInt()}ms" + (p.jitterMs?.let { " · 抖动 ${it.toInt()}ms" } ?: "") + (p.lossPct?.let { " · 丢包 $it%" } ?: ""),
+                                        fontFamily = Mono, fontSize = 8.sp, color = c,
+                                    )
+                                }
+                                p.rttStatus == WalkieRttStatus.NoEcho -> Text("回显无响应(旧版本/弱网/已离开)", fontFamily = Mono, fontSize = 8.sp, color = Danger)
+                                else -> Text("回显测量中…", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                            }
+                            Spacer(Modifier.weight(1f))
+                            if (p.selfRssiDbm != null || p.selfFrequencyMhz != null) {
+                                Text(
+                                    "自报 ${p.selfRssiDbm?.let { "$it dBm" } ?: "—"} · ${p.selfFrequencyMhz?.let { "$it MHz" } ?: "—"}",
+                                    fontFamily = Mono, fontSize = 8.sp, color = Gold,
+                                )
+                            }
+                        }
+                    }
                     }
                 }
             }
+            Text(
+                "RTT/抖动/丢包 = 本机实测(UDP 回显);「自报」= 对端上报其自身↔AP 链路;" +
+                    "对端相对本机的 RSSI 在无 root 设备上不可得",
+                fontFamily = Sans, fontSize = 7.sp, color = Gray.copy(alpha = 0.8f),
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    } else if (running) {
+        Spacer(Modifier.height(8.dp))
+        TermPanel("在线节点 (0)") {
+            Text("未发现在线节点 —— 请确认对端在同一 WiFi 且已启动对讲", fontFamily = Sans, fontSize = 10.sp, color = Gray)
         }
     }
 }
@@ -1637,25 +1941,63 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
 // 设备雷达
 // ══════════════════════════════════════════════════════════════════════════
 
+/** 目标威胁分级 —— 雷达页实时标记与档案页战术评估共用同一套推演标准 */
+data class RadarThreatTier(val label: String, val color: Color, val desc: String)
+
 /**
- * 设备雷达页 —— 磷光 PPI 雷达 + 真实罗盘
+ * 按信号强度与估算距离推演目标威胁分级
  *
- * 全部视觉动画运行在 Canvas 绘制层（draw 阶段读取状态，零重组）：
- * - 渐变扫描光束 + 8 层磷光尾迹扇形，光束前沿亮线
- * - 目标被光束扫过时点亮、扫过后留下磷光余晖（真雷达的灵魂）
- * - 红色目标 blip 高亮醒目：大光晕 + 双脉动环 + 亮核十字（敌目标优先辨识）
- * - 真实罗盘：旋转矢量传感器（陀螺仪+地磁融合）驱动，盘面随真机转动，
- *   北东南西方位永远指向真实方向；顶部固定三角为机头航向指针
- * - 背景噪点闪烁 + 开机辉光扩散 + 声呐 ping 环
- * - 设备过滤：类型芯片（全部/WIFI/BLE）+ 名称搜索 + 聚焦锁定
- * - 新目标出现触发触觉警报（受设置页开关控制）
+ * 距离由 RSSI 路径损耗模型估算，非测量值（手机无测距硬件）；
+ * 分级阈值与档案页历史逻辑一致：贴身/强信号 → 高危，近距/稳定 → 中等，其余 → 远端背景。
+ */
+fun radarThreatTier(t: RadarTarget): RadarThreatTier = when {
+    t.distanceM < 8f || t.rssi > -45 -> RadarThreatTier(
+        "高危接近", Danger,
+        "目标信号极强 / 估算距离 ${"%.1f".format(t.distanceM)}m，位于贴身范围内，建议立即甄别身份",
+    )
+    t.distanceM < 25f || t.rssi > -65 -> RadarThreatTier(
+        "中等接近", Warn,
+        "目标位于 ${"%.1f".format(t.distanceM)}m 附近，信号稳定，持续跟踪其移动轨迹",
+    )
+    else -> RadarThreatTier(
+        "远端目标", TacGreen,
+        "目标距本机较远（${"%.1f".format(t.distanceM)}m），属环境背景设备，维持常规监视",
+    )
+}
+
+/**
+ * 设备雷达页 —— 磷光 PPI 雷达 + 战术仪表盘(v3)
+ *
+ * ## 布局
+ * 整页单一纵向滚动流(不再是「只有目标列表内部滚」):命令行(雷达开关+网络拓扑/信号库)
+ * → 罗盘 → 大圆盘(按屏宽动态定尺,封顶 440dp,底部状态带盘内实测预留绝不裁切)
+ * → 金属探测条 → 单行遥测 → 筛选 → 目标列表(随页面滚动,上限 30 行) → 网格节点。
+ * SSH 入口已移除 —— 终端不属于雷达页。
+ *
+ * ## 圆盘(Canvas draw 阶段读取状态,零重组)
+ * - 渐变扫描光束 + 8 层磷光尾迹扇形;目标扫过点亮、扫后磷光余晖
+ * - 高危接近目标红色警示环 + 「!」(与档案页同一套威胁分级)
+ * - 垫子坐标网格:25m 方格 + 轴距标签,便于协调定位;圆心即本机
+ * - 方位推演叠加:聚焦目标显示估计方位扇形/位置标记/置信椭圆(RssiLocalizationEngine)
+ * - 真实罗盘:旋转矢量传感器驱动,盘面随真机转动;顶部固定三角为机头航向指针
+ * - 背景噪点 + 开机辉光 + 声呐 ping;新目标触觉警报(受设置页开关控制)
+ *
+ * ## 面板
+ * - [MetalDetectStrip] 磁力计金属探测(相对基线异常,非距离测量)
+ * - [TacticalStatusStrip] 单行遥测:目标/高危/节点/情报库
+ * - [RadarTrackPanel] 威胁分级标签 + 方位推演行 + 情报入库快照
+ * - [MeshNodesPanel] 对讲机节点 + 微型 PTT
  */
 @Composable
 fun RadarScreen(
     vm: RadarViewModel,
+    walkieVm: WalkieTalkieViewModel,
+    dbVm: DbViewModel,
     back: () -> Unit,
     radarAlertOn: Boolean,
     onSelectTarget: (String) -> Unit,
+    onOpenNetmap: () -> Unit,
+    onOpenDb: () -> Unit,
 ) {
     val running by vm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
@@ -1667,14 +2009,15 @@ fun RadarScreen(
 
     // 进入页面启动罗盘传感器，离开时释放（扫描可独立继续运行）
     DisposableEffect(Unit) {
-        vm.startCompass()
-        onDispose { vm.stopCompass() }
+        vm.acquireCompass()
+        onDispose { vm.releaseCompass() }
     }
 
-    // 进入页面自动启动雷达扫描,离开自动停止(被动扫描,无破坏性)
+    // 页面级持有扫描:与档案页/网络拓扑共享引用计数 —— 进入档案页过渡期扫描不中断,
+    // 最后一个持有者离开才停止(主页开关显式启停的扫描不受页面接管)
     DisposableEffect(Unit) {
-        if (!vm.isRunning.value) vm.start()
-        onDispose { vm.stop() }
+        vm.acquireScan()
+        onDispose { vm.releaseScan() }
     }
 
     // 新目标触觉警报：首次发现某设备时震动一次
@@ -1702,7 +2045,6 @@ fun RadarScreen(
         }
     }
 
-    // 战术雷达站:竖屏布局 —— 上方大扫描盘撑满屏宽,目标列表在下方
     // 定位开关轮询:Android 9+ 定位关闭时 WiFi 扫描结果为空(BLE 不受影响)
     val locationOn by produceState(initialValue = true) {
         val lm = context.applicationContext.getSystemService(android.content.Context.LOCATION_SERVICE) as? LocationManager
@@ -1715,14 +2057,28 @@ fun RadarScreen(
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader("设备雷达", back)
         PageEnter(locked = running) {
-            Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
-                ActionButton(running, "执行雷达", "停止雷达") {
-                    haptic.hud()
-                    if (running) vm.stop() else vm.start()
+            // 整页唯一纵向滚动流:面板随页面滚动,圆盘按屏宽动态定尺
+            Column(
+                Modifier.fillMaxSize().navigationBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                // ── 命令行:雷达开关 + 网络拓扑/信号库(SSH 不属于雷达页,已移除) ──
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ActionButton(running, "执行雷达", "停止雷达", modifier = Modifier.weight(1f)) {
+                        haptic.hud()
+                        if (running) vm.stop() else vm.start()
+                    }
+                    QuickNavChip("网络拓扑", Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenNetmap() }
+                    QuickNavChip("信号库", Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenDb() }
                 }
                 // 定位关闭横幅:WiFi 目标此时不可能进雷达,给出原因与快捷入口
                 if (!locationOn) {
-                    Spacer(Modifier.height(5.dp))
+                    Spacer(Modifier.height(6.dp))
                     Surface(
                         shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
                         color = Warn.copy(alpha = 0.12f),
@@ -1741,34 +2097,353 @@ fun RadarScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(5.dp))
+                Spacer(Modifier.height(6.dp))
                 CompassStrip(vm)
-                Spacer(Modifier.height(5.dp))
-                RadarScope(
-                    vm,
-                    running = running,
-                    typeFilter = typeFilter,
-                    query = query,
-                    focusedId = focusedId,
-                    modifier = Modifier.fillMaxWidth().weight(1.25f),
-                )
-                Spacer(Modifier.height(5.dp))
+                Spacer(Modifier.height(6.dp))
+                // ── 雷达圆盘:动态尺寸 = min(可用宽度, 440dp);高度加状态带余量,盘面更大且文字不裁切 ──
+                BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val disc = minOf(maxWidth, RADAR_DISC_MAX)
+                    RadarScope(
+                        vm,
+                        walkieVm,
+                        running = running,
+                        typeFilter = typeFilter,
+                        query = query,
+                        focusedId = focusedId,
+                        modifier = Modifier.width(disc).height(disc + 34.dp),
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                MetalDetectStrip(vm)
+                Spacer(Modifier.height(6.dp))
+                TacticalStatusStrip(vm, walkieVm, dbVm)
+                Spacer(Modifier.height(6.dp))
                 RadarFilterBar(
                     typeFilter = typeFilter,
                     onTypeFilter = { typeFilter = it; focusedId = null },
                     query = query,
                     onQuery = { query = it; focusedId = null },
                 )
-                Spacer(Modifier.height(5.dp))
+                Spacer(Modifier.height(6.dp))
                 RadarTrackPanel(
                     vm,
+                    dbVm,
                     typeFilter = typeFilter,
                     query = query,
                     focusedId = focusedId,
                     onFocus = { id -> focusedId = if (focusedId == id) null else id },
                     onSelect = { id -> haptic.hud(); onSelectTarget(id) },
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(6.dp))
+                MeshNodesPanel(walkieVm)
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+/** 雷达圆盘直径上限 —— 超宽屏(平板)封顶,避免列表被推得太远 */
+private val RADAR_DISC_MAX = 440.dp
+
+/** 目标列表渲染行数上限 —— 整页滚动后列表去 Lazy 化,防止数百目标卡死页面 */
+private const val MAX_RADAR_TRACK_ROWS = 30
+
+/**
+ * 情报入库快照芯片 —— 位于目标列表头部右侧
+ *
+ * 把当前雷达目标快照 INSERT 进信号情报库（[DbViewModel.refresh]），
+ * 按钮短暂闪现入库条数作为反馈；无目标时提示「无目标」。
+ * 只入库雷达来源;BLE 嗅探 / WiFi 网络来源由信号库页统一采集。
+ */
+@Composable
+private fun SnapshotChip(vm: RadarViewModel, dbVm: DbViewModel) {
+    val haptic = LocalHapticFeedback.current
+    val lastRefresh by dbVm.lastRefresh.collectAsState()
+    val lastInserted by dbVm.lastInserted.collectAsState()
+    // 闪现消息:(触发时间, 文案) —— 所有反馈走同一套 1.6s 自动消失计时器
+    var flash by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    LaunchedEffect(lastRefresh) {
+        if (lastRefresh != null) flash = System.currentTimeMillis() to "+$lastInserted 已入库"
+    }
+    LaunchedEffect(flash) {
+        if (flash != null) { delay(1600); flash = null }
+    }
+    QuickNavChip(
+        label = flash?.second ?: "入库",
+        color = if (flash != null) TacGreen else Gold,
+        modifier = Modifier.width(52.dp),
+        onClick = {
+            haptic.hud()
+            if (vm.targets.value.isEmpty()) {
+                flash = System.currentTimeMillis() to "无目标"
+            } else {
+                dbVm.refresh(vm.targets.value, emptyList(), emptyList())
+            }
+        },
+    )
+}
+
+/** 快捷入口芯片 —— 斜切角小按钮,等宽字 */
+@Composable
+private fun QuickNavChip(label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+        color = color.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
+    ) {
+        Text(
+            label,
+            fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+            color = color, textAlign = TextAlign.Center, maxLines = 1,
+            modifier = Modifier.padding(horizontal = 3.dp, vertical = 7.dp),
+        )
+    }
+}
+
+/**
+ * 战术遥测单行条 —— 2×2 卡片瘦身为一行四格
+ *
+ * 随各模块轮询实时刷新:雷达目标 / 高危接近 / 网格节点 / 情报库。
+ * 节点未运行时显示「—」,不编造在线数。
+ */
+@Composable
+private fun TacticalStatusStrip(
+    vm: RadarViewModel,
+    walkieVm: WalkieTalkieViewModel,
+    dbVm: DbViewModel,
+) {
+    val targets by vm.targets.collectAsState()
+    val peers by walkieVm.peers.collectAsState()
+    val walkieRunning by walkieVm.isRunning.collectAsState()
+    val counts by dbVm.counts.collectAsState()
+
+    val high = targets.count { radarThreatTier(it).label == "高危接近" }
+    val dbTotal = counts.values.sum()
+
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, BorderDim),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CompactStat("目标", "${targets.size}", TacGreen, Modifier.weight(1f))
+            StatDivider()
+            CompactStat("高危", "$high", Danger, Modifier.weight(1f))
+            StatDivider()
+            CompactStat("节点", if (walkieRunning) "${peers.size}" else "—", Gold, Modifier.weight(1f))
+            StatDivider()
+            CompactStat("情报", "$dbTotal", White, Modifier.weight(1f))
+        }
+    }
+}
+
+/** 单行遥测格 —— 数值 + 标签横排 */
+@Composable
+private fun CompactStat(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(value, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = color)
+        Spacer(Modifier.width(4.dp))
+        Text(label, fontFamily = Sans, fontSize = 7.5.sp, color = Gray, maxLines = 1)
+    }
+}
+
+@Composable
+private fun StatDivider() {
+    Box(Modifier.width(1.dp).height(12.dp).background(BorderDim))
+    Spacer(Modifier.width(8.dp))
+}
+
+/**
+ * 金属探测条 —— 磁力计相对基线异常
+ *
+ * 点击重新校准基线。anomaly 只表示「附近磁场显著变化」(金属靠近/磁铁/环境),
+ * 不是距离测量,也无法定位金属方向 —— 文案如实标注。
+ */
+@Composable
+private fun MetalDetectStrip(vm: RadarViewModel) {
+    val metalState by vm.metal.collectAsState()
+    val m = metalState // delegated 属性无法 smart cast,先落本地
+    val haptic = LocalHapticFeedback.current
+    val anomaly = m?.anomaly == true
+    val accent = if (anomaly) Danger else TacGreen
+
+    Surface(
+        Modifier.fillMaxWidth().clickable {
+            haptic.hud()
+            vm.resetMetalBaseline()
+        },
+        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, if (anomaly) Danger.copy(alpha = 0.55f) else BorderDim),
+    ) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Star(accent, 7.dp)
+                Spacer(Modifier.width(6.dp))
+                Text("金属探测 · MAG", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accent)
+                Spacer(Modifier.weight(1f))
+                val status = when {
+                    m == null -> "磁力计不可用"
+                    !m.calibrated -> "校准中 ${(m.calProgress * 100).toInt()}%"
+                    anomaly -> "磁场异常"
+                    else -> "环境稳定"
+                }
+                val statusColor = when {
+                    m == null -> Gray
+                    !m.calibrated -> Gold
+                    anomaly -> Danger
+                    else -> TacGreen
+                }
+                Text(status, fontFamily = Sans, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = statusColor)
+            }
+            Spacer(Modifier.height(3.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (m == null) "--.-" else "%6.1f".format(m.microTesla),
+                    fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    color = if (anomaly) Danger else White,
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("µT", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                Spacer(Modifier.width(10.dp))
+                // 相对基线偏移条:满幅 ±10µT,异常区间描红
+                val delta01 = if (m == null) 0.5f else ((m.deltaUt / 10f).coerceIn(-1f, 1f) + 1f) / 2f
+                Canvas(Modifier.weight(1f).height(8.dp)) {
+                    val trackH = size.height * 0.5f
+                    drawRoundRect(Gray.copy(alpha = 0.25f), topLeft = Offset(0f, size.height / 2f - trackH / 2f), size = Size(size.width, trackH), cornerRadius = androidx.compose.ui.geometry.CornerRadius(trackH / 2f))
+                    val cx = size.width * delta01
+                    drawLine(accent.copy(alpha = 0.9f), Offset(cx, 0f), Offset(cx, size.height), 2f)
+                    drawCircle(accent, 3f, Offset(cx, size.height / 2f))
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    if (m == null) "Δ --.- µT" else "Δ %+.1f µT".format(m.deltaUt),
+                    fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                    color = if (anomaly) Danger else Gray,
+                )
+            }
+            Text(
+                "相对磁场异常检测 · 非距离测量 · 点击重新校准",
+                fontFamily = Sans, fontSize = 7.sp, color = Gray.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+/**
+ * 对讲机网格节点面板 —— 局域网 PTT 节点的实时状态与快捷操作(页面末端)
+ *
+ * 未运行时压缩为单行(一键启动);运行中显示在线节点(名称/IP/说话中)
+ * 与微型 PTT 圆钮(按住说话,松开停止,免提模式期间按钮无效)。
+ * 节点位置不画进扫描盘:UDP 发现不携带 RSSI,无距离数据可推演,不编造坐标。
+ */
+@Composable
+private fun MeshNodesPanel(vm: WalkieTalkieViewModel) {
+    val running by vm.isRunning.collectAsState()
+    val talking by vm.isTalking.collectAsState()
+    val isLive by vm.isLive.collectAsState()
+    val peers by vm.peers.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val active = talking || isLive
+
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, if (running) Gold.copy(alpha = 0.45f) else BorderDim),
+    ) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Star(Gold, 7.dp)
+                Spacer(Modifier.width(6.dp))
+                Text("网格节点", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold)
+                Spacer(Modifier.width(8.dp))
+                if (running) {
+                    Text("${peers.size} 在线", fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
+                    if (talking) {
+                        Spacer(Modifier.width(6.dp))
+                        Text("发送中", fontFamily = Sans, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Red)
+                    }
+                } else {
+                    Text("未运行", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                }
+                Spacer(Modifier.weight(1f))
+                if (running) {
+                    // 微型 PTT 圆钮 —— 与对讲机页相同的按住说话手势
+                    Box(
+                        Modifier
+                            .size(32.dp)
+                            .pointerInput(isLive) {
+                                detectTapGestures(
+                                    onPress = {
+                                        haptic.hud()
+                                        if (!isLive) vm.startTalk()
+                                        tryAwaitRelease()
+                                        if (!isLive) vm.stopTalk()
+                                    },
+                                )
+                            }
+                            .clip(CircleShape)
+                            .background(if (active) Red.copy(alpha = 0.85f) else Red.copy(alpha = 0.12f))
+                            .border(1.5.dp, if (active) Gold else Red.copy(alpha = 0.4f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "PTT",
+                            fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold,
+                            color = if (active) White else Red,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "■",
+                        fontFamily = Mono, fontSize = 12.sp, color = Gray,
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            vm.stop()
+                        },
+                    )
+                } else {
+                    Text(
+                        "点击启动 ▸",
+                        fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen,
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            vm.start()
+                        },
+                    )
+                }
+            }
+            // 节点芯片条:横向滚动,说话中的节点红底脉动标识
+            if (running && peers.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    peers.take(8).forEach { p ->
+                        Surface(
+                            shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
+                            color = if (p.isTalking) Red.copy(alpha = 0.12f) else Color.Transparent,
+                            border = BorderStroke(1.dp, if (p.isTalking) Red.copy(alpha = 0.6f) else BorderDim),
+                        ) {
+                            Row(Modifier.padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(if (p.isTalking) "●" else "○", fontFamily = Mono, fontSize = 7.sp, color = if (p.isTalking) Red else Gray)
+                                Spacer(Modifier.width(4.dp))
+                                Text(p.name.take(10), fontFamily = Mono, fontSize = 8.sp, color = if (p.isTalking) Red else White)
+                                Spacer(Modifier.width(4.dp))
+                                Text(p.ip, fontFamily = Mono, fontSize = 7.sp, color = Gray)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1876,15 +2551,18 @@ private fun RadarFilterBar(
 @Composable
 private fun RadarScope(
     vm: RadarViewModel,
+    walkieVm: WalkieTalkieViewModel,
     running: Boolean,
     typeFilter: String,
     query: String,
     focusedId: String?,
     modifier: Modifier = Modifier,
 ) {
-    // draw 阶段读取 targets/heading：更新只触发重绘，不触发重组
+    // draw 阶段读取 targets/heading/localizations：更新只触发重绘，不触发重组
     val targets by vm.targets.collectAsState()
     val heading by vm.heading.collectAsState()
+    val peers by walkieVm.peers.collectAsState()
+    val locState = vm.localizations.collectAsState()
     val textMeasurer = rememberTextMeasurer()
     val haptic = LocalHapticFeedback.current
 
@@ -1909,9 +2587,17 @@ private fun RadarScope(
     }
 
     // ── 目标磷光轨迹：最近 8 个历史位置（目标移动留下的余晖） ──
+    // 记录时就用「当前生效位置」:有方位推演结果用估计方位,否则哈希占位方位
     val trails = remember { mutableStateMapOf<String, List<TrailPoint>>() }
     LaunchedEffect(targets) {
-        val current = targets.associate { t -> t.id to TrailPoint(t.angleDeg, (t.distanceM / 100f).coerceIn(0.06f, 0.94f)) }
+        val locNow = vm.localizations.value
+        val current = targets.associate { t ->
+            val e = locNow[t.id]
+            val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
+            val angle = if (locked) e.bearingDeg else t.angleDeg
+            val dist = if (locked) (e.distanceM / 100f).coerceIn(0.06f, 0.94f) else (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
+            t.id to TrailPoint(angle, dist)
+        }
         val merged = HashMap<String, List<TrailPoint>>()
         trails.forEach { (id, hist) ->
             val cur = current[id]
@@ -1944,10 +2630,28 @@ private fun RadarScope(
             .border(1.dp, BorderDim, CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val r = minOf(cx, cy) * 0.88f
             val g = TacGreen
+            // ── 底部状态带:先测量两行文字,再反推盘面几何 —— 文字绝不裁切 ──
+            val loc = locState.value
+            val statusStyle = TextStyle(fontFamily = Mono, fontSize = 8.5.sp, color = g.copy(alpha = 0.86f))
+            val maxW = (size.width - 12.dp.toPx()).toInt().coerceAtLeast(1)
+            val l1 = textMeasurer.measure(
+                (if (running) "模式: 扫描" else "模式: 待机") + "   扫描: %03d°".format(sweepDeg.toInt() % 360) + "   航向: %03d°".format(heading.toInt() % 360),
+                statusStyle,
+                constraints = Constraints(maxWidth = maxW),
+            )
+            val estCount = loc.values.count { it.state == LocState.ESTIMATED }
+            val l2 = textMeasurer.measure(
+                "量程: 100m   目标: ${visibleTargets.size}/${targets.size}   定位: $estCount   节点: ${peers.size}",
+                statusStyle,
+                constraints = Constraints(maxWidth = maxW),
+            )
+            val bandPad = 3.dp.toPx()
+            val bandH = l1.size.height + l2.size.height + bandPad * 2
+            val fieldH = (size.height - bandH).coerceAtLeast(1f)
+            val cx = size.width / 2f
+            val cy = fieldH / 2f
+            val r = minOf(cx, cy) * 0.90f
 
             // ── 噪点闪烁 ──
             noise.forEachIndexed { i, (nx, ny) ->
@@ -1962,9 +2666,34 @@ private fun RadarScope(
             drawLine(g.copy(alpha = 0.15f), Offset(cx - r, cy), Offset(cx + r, cy), 0.7f)
             drawLine(g.copy(alpha = 0.15f), Offset(cx, cy - r), Offset(cx, cy + r), 0.7f)
 
+            // ── 垫子坐标网格:25m 方格,裁剪进圆内 —— 屏幕基准的协调垫,方便报位 ──
+            // 格距 = r/4(量程 100m → 每格 25m);网格固定于盘面,目标随罗盘在其上旋转
+            val gridStep = r / 4f
+            clipPath(Path().apply { addOval(Rect(Offset(cx - r, cy - r), Size(r * 2f, r * 2f))) }) {
+                var gx = cx
+                while (gx <= cx + r) {
+                    drawLine(g.copy(alpha = 0.10f), Offset(gx, cy - r), Offset(gx, cy + r), 0.6f)
+                    drawLine(g.copy(alpha = 0.10f), Offset(cx - (gx - cx), cy - r), Offset(cx - (gx - cx), cy + r), 0.6f)
+                    gx += gridStep
+                }
+                var gy = cy
+                while (gy <= cy + r) {
+                    drawLine(g.copy(alpha = 0.10f), Offset(cx - r, gy), Offset(cx + r, gy), 0.6f)
+                    drawLine(g.copy(alpha = 0.10f), Offset(cx - r, cy - (gy - cy)), Offset(cx + r, cy - (gy - cy)), 0.6f)
+                    gy += gridStep
+                }
+                // 环距标签(沿 +E 轴):25m/50m/75m
+                for (m in listOf(25f, 50f, 75f)) {
+                    val tr = r * m / 100f
+                    val tag = textMeasurer.measure("${m.toInt()}", TextStyle(fontFamily = Mono, fontSize = 7.sp, color = g.copy(alpha = 0.45f)))
+                    drawText(tag, topLeft = Offset(cx + tr - tag.size.width / 2f, cy + 2.dp.toPx()))
+                }
+            }
+
             // ── 方位刻度：随真实罗盘航向旋转，刻度永远指向真实方位 ──
+            // 屏幕角 = 世界角 - 航向 - 90°：世界 0°(北) 在机头(屏顶)方向时为 -90°(屏顶)
             for (deg in 0 until 360 step 10) {
-                val a = Math.toRadians((deg - heading).toDouble()).toFloat()
+                val a = Math.toRadians((deg - heading - 90.0).toDouble()).toFloat()
                 val major = deg % 30 == 0
                 val inner = r * (if (major) 0.93f else 0.965f)
                 drawLine(
@@ -1976,7 +2705,7 @@ private fun RadarScope(
             }
             // 罗盘方位字：北东南西固定在真实方位，随陀螺仪反向旋转
             listOf("北" to 0f, "东" to 90f, "南" to 180f, "西" to 270f).forEach { (ch, deg) ->
-                val a = Math.toRadians((deg - heading).toDouble()).toFloat()
+                val a = Math.toRadians((deg - heading - 90.0).toDouble()).toFloat()
                 val lr = r * 0.83f
                 val m = textMeasurer.measure(ch, TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = g.copy(alpha = 0.9f)))
                 drawText(m, topLeft = Offset(cx + lr * cos(a) - m.size.width / 2f, cy + lr * sin(a) - m.size.height / 2f))
@@ -1992,7 +2721,7 @@ private fun RadarScope(
             drawPath(bow, Gold.copy(alpha = 0.95f))
 
             // 磁北参考细线：从中心指向当前航向的反向（即北向方位）
-            val northRad = Math.toRadians((-heading).toDouble()).toFloat()
+            val northRad = Math.toRadians((-heading - 90.0).toDouble()).toFloat()
             drawLine(g.copy(alpha = 0.18f), Offset(cx, cy), Offset(cx + r * 0.35f * cos(northRad), cy + r * 0.35f * sin(northRad)), 0.9f)
 
             val sweepRad = Math.toRadians(sweepDeg.toDouble()).toFloat()
@@ -2030,9 +2759,12 @@ private fun RadarScope(
             // ── 目标-中心连线（数据链）：随罗盘航向同步旋转 ──
             if (running || targets.isNotEmpty()) {
                 visibleTargets.forEach { t ->
-                    val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
+                    val e = loc[t.id]
+                    val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
+                    val effAngle = if (locked) e.bearingDeg else t.angleDeg
+                    val dist = ((if (locked) e.distanceM else t.distanceM) / 100f).coerceIn(0.06f, 0.94f)
                     val tr = dist * r
-                    val ta = Math.toRadians((t.angleDeg - heading).toDouble()).toFloat()
+                    val ta = Math.toRadians((effAngle - heading - 90.0).toDouble()).toFloat()
                     val blip = if (t.type == "wifi") Danger else TacGreen
                     drawLine(blip.copy(alpha = 0.12f), Offset(cx, cy), Offset(cx + tr * cos(ta), cy + tr * sin(ta)), 0.8f)
                 }
@@ -2069,10 +2801,14 @@ private fun RadarScope(
             // 红点（WiFi）刻意放大加强：三层光晕 + 双脉动环 + 白芯十字，一眼锁定敌目标
             if (running || targets.isNotEmpty()) {
                 visibleTargets.forEachIndexed { i, t ->
-                    val dist = (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
+                    // 方位推演置信达标时用估计方位/距离替换哈希占位(位置仍为估计值)
+                    val e = loc[t.id]
+                    val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
+                    val effAngle = if (locked) e.bearingDeg else t.angleDeg
+                    val dist = ((if (locked) e.distanceM else t.distanceM) / 100f).coerceIn(0.06f, 0.94f)
                     val tr = dist * r
-                    // 目标方位为世界坐标，绘制时减去航向 —— 转动机身，盘面目标随之旋转
-                    val ta = Math.toRadians((t.angleDeg - heading).toDouble()).toFloat()
+                    // 目标方位为世界坐标，绘制时减去航向与 90° 屏幕偏置 —— 转动机身，盘面目标随之旋转
+                    val ta = Math.toRadians((effAngle - heading - 90.0).toDouble()).toFloat()
                     val x = cx + tr * cos(ta)
                     val y = cy + tr * sin(ta)
 
@@ -2087,7 +2823,7 @@ private fun RadarScope(
 
                     // 磷光轨迹：历史位置渐隐余晖（同样跟随航向旋转）
                     trails[t.id]?.dropLast(1)?.forEachIndexed { k, pt ->
-                        val pta = Math.toRadians((pt.angleDeg - heading).toDouble()).toFloat()
+                        val pta = Math.toRadians((pt.angleDeg - heading - 90.0).toDouble()).toFloat()
                         val pxa = cx + pt.dist01 * r * cos(pta)
                         val pya = cy + pt.dist01 * r * sin(pta)
                         drawCircle(blip.copy(alpha = (0.05f + k * 0.045f) * (if (isFocused || focusedId == null) 1f else 0.16f)), 1.6.dp.toPx(), Offset(pxa, pya))
@@ -2111,6 +2847,16 @@ private fun RadarScope(
                     val cross = 8.dp.toPx()
                     drawLine(blip.copy(alpha = bright * 0.85f), Offset(x - cross, y), Offset(x + cross, y), 1.2f)
                     drawLine(blip.copy(alpha = bright * 0.85f), Offset(x, y - cross), Offset(x, y + cross), 1.2f)
+
+                    // ── 高危接近警示:红色双环 + 「!」标签(与档案页同一套威胁分级) ──
+                    val tier = radarThreatTier(t)
+                    if (tier.label == "高危接近") {
+                        val warnR = 22.dp.toPx() + 3.dp.toPx() * sin(sweepDeg * 0.07f + i)
+                        drawCircle(Danger.copy(alpha = bright * 0.85f), warnR, Offset(x, y), style = Stroke(2.2f))
+                        drawCircle(Danger.copy(alpha = bright * 0.5f), warnR + 4.dp.toPx(), Offset(x, y), style = Stroke(1.2f))
+                        val bang = textMeasurer.measure("!", TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Danger))
+                        drawText(bang, topLeft = Offset(x + warnR, y - warnR))
+                    }
 
                     // 命中白闪：光束扫过瞬间的白色爆闪
                     if (bright > 0.85f) {
@@ -2159,19 +2905,141 @@ private fun RadarScope(
                 }
             }
 
+            // ── 聚焦目标方位推演叠加:扇形/方位线/位置标记/置信椭圆 ──
+            // 全部来自 RssiLocalizationEngine(旋转寻向估计),非 AoA 测量
+            val foc = focusedId?.let { id -> loc[id] }
+            if (focusedId != null && foc != null) {
+                if (foc.state == LocState.ESTIMATED && !foc.bearingDeg.isNaN()) {
+                    val bRad = Math.toRadians((foc.bearingDeg - heading - 90.0).toDouble()).toFloat()
+                    val color = if (foc.state == LocState.AMBIGUOUS) Warn else Gold
+                    val confA = 0.05f + 0.14f * foc.confidence.coerceIn(0f, 1f)
+                    // 方位扇形(±半宽)与 FWHM 边界虚线
+                    val halfDeg = foc.sectorHalfWidthDeg.coerceIn(8f, 80f)
+                    drawArc(
+                        color.copy(alpha = confA),
+                        startAngle = Math.toDegrees(bRad.toDouble()).toFloat() - halfDeg,
+                        sweepAngle = halfDeg * 2f,
+                        useCenter = true,
+                        topLeft = Offset(cx - r, cy - r),
+                        size = Size(r * 2f, r * 2f),
+                    )
+                    val fwhmRad = Math.toRadians((foc.fwhmDeg / 2f).toDouble()).toFloat()
+                    listOf(fwhmRad, -fwhmRad).forEach { off ->
+                        val a2 = bRad + off
+                        drawLine(
+                            color.copy(alpha = 0.45f),
+                            Offset(cx + r * 0.3f * cos(a2), cy + r * 0.3f * sin(a2)),
+                            Offset(cx + r * cos(a2), cy + r * sin(a2)),
+                            1f,
+                        )
+                    }
+                    // 方位线(中心 → 估计方位)
+                    drawLine(color.copy(alpha = 0.55f), Offset(cx, cy), Offset(cx + r * cos(bRad), cy + r * sin(bRad)), 1.2f)
+                    // 位置标记(多圈 GLS 融合点)与置信椭圆 —— 无融合时退化为方位线端点
+                    // ENU 世界坐标 → 屏幕:与方位标签同一映射(世界方位角 - 航向 - 90°)
+                    val hasFix = !foc.eastM.isNaN() && !foc.northM.isNaN()
+                    val mk: Offset
+                    if (hasFix) {
+                        val worldBearing = Math.toDegrees(atan2(foc.eastM.toDouble(), foc.northM.toDouble())).toFloat()
+                        val worldDist = sqrt(foc.eastM * foc.eastM + foc.northM * foc.northM)
+                        val ma = Math.toRadians((worldBearing - heading - 90.0).toDouble()).toFloat()
+                        mk = Offset(cx + (worldDist / 100f * r) * cos(ma), cy + (worldDist / 100f * r) * sin(ma))
+                    } else {
+                        mk = Offset(cx + r * cos(bRad), cy + r * sin(bRad))
+                    }
+                    val mkColor = color
+                    drawLine(mkColor.copy(alpha = 0.9f), Offset(mk.x - 6.dp.toPx(), mk.y), Offset(mk.x + 6.dp.toPx(), mk.y), 1.6f)
+                    drawLine(mkColor.copy(alpha = 0.9f), Offset(mk.x, mk.y - 6.dp.toPx()), Offset(mk.x, mk.y + 6.dp.toPx()), 1.6f)
+                    drawCircle(mkColor.copy(alpha = 0.6f), 3.5.dp.toPx(), mk)
+                    if (hasFix && foc.sweepCount > 0) {
+                        // 置信椭圆(90%,旋转至椭圆主轴;世界角 → 屏幕角同一映射)
+                        val aSemi = (foc.ellipseSemiMajorM / 100f * r).coerceAtLeast(3f)
+                        val bSemi = (foc.ellipseSemiMinorM / 100f * r).coerceAtLeast(3f)
+                        val phi = Math.toRadians((foc.ellipseAngleDeg - heading - 90.0).toDouble()).toFloat()
+                        withTransform({
+                            translate(mk.x, mk.y)
+                            rotate(phi, pivot = Offset.Zero)
+                        }) {
+                            drawOval(
+                                mkColor.copy(alpha = 0.5f),
+                                topLeft = Offset(-aSemi, -bSemi),
+                                size = Size(aSemi * 2f, bSemi * 2f),
+                                style = Stroke(1.2f),
+                            )
+                        }
+                    }
+                } else if (foc.state == LocState.COLLECTING) {
+                    // 采样中:圆盘底部提示旋转采集
+                    val hint = textMeasurer.measure(
+                        "方位推演采样中 · 覆盖 %d%% · 请缓慢旋转机身".format((foc.coverage * 100).toInt()),
+                        TextStyle(fontFamily = Sans, fontSize = 9.sp, color = Gold.copy(alpha = 0.9f)),
+                    )
+                    drawText(hint, topLeft = Offset(cx - hint.size.width / 2f, cy + r * 0.62f))
+                }
+            }
+
+            // ── 网格节点环:同 App 对讲机节点 ──
+            // UDP 发现不携带 RSSI,距离未知 —— 节点画在固定中环上按 IP 哈希伪角分布,
+            // 环本身即「距离未知」的语义;用方形涟漪 + 菱形标记,与圆形 blip 的目标
+            // (WiFi/BLE)一眼区分,不用红/蓝/主题色(金色=网络身份色)
+            if (peers.isNotEmpty()) {
+                val meshR = r * 0.68f
+                drawCircle(Gold.copy(alpha = 0.10f), meshR, Offset(cx, cy), style = Stroke(0.8f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 7f))))
+                peers.sortedBy { it.ip }.forEachIndexed { i, p ->
+                    val pa = (p.ip.hashCode() and 0x7FFFFFFF) % 360f
+                    val paRad = Math.toRadians((pa - heading - 90.0).toDouble()).toFloat()
+                    val x = cx + meshR * cos(paRad)
+                    val y = cy + meshR * sin(paRad)
+                    // 方形涟漪(双相扩散方框)
+                    val ph = ((sweepDeg / 360f) * 2f + i * 0.31f) % 1f
+                    listOf(0f, 0.5f).forEach { off ->
+                        val p2 = (ph + off) % 1f
+                        val half = 4.dp.toPx() + 13.dp.toPx() * p2
+                        drawRect(
+                            Gold.copy(alpha = (1f - p2) * 0.45f),
+                            topLeft = Offset(x - half, y - half),
+                            size = Size(half * 2f, half * 2f),
+                            style = Stroke(1.4f),
+                        )
+                    }
+                    // 菱形标记(45° 方框);说话中实心
+                    withTransform({
+                        translate(x, y)
+                        rotate(45f, pivot = Offset.Zero)
+                    }) {
+                        val s = if (p.isTalking) 5.dp.toPx() else 4.dp.toPx()
+                        drawRect(
+                            if (p.isTalking) Gold else Gold.copy(alpha = 0.85f),
+                            topLeft = Offset(-s, -s),
+                            size = Size(s * 2f, s * 2f),
+                            style = if (p.isTalking) androidx.compose.ui.graphics.drawscope.Fill else Stroke(1.6f),
+                        )
+                    }
+                    // 节点名标签(仅说话中常显,其余扫过时显示)
+                    val showTag = p.isTalking || abs(((sweepDeg - pa + 540f) % 360f) - 180f) < 40f
+                    if (showTag) {
+                        val tag = textMeasurer.measure(
+                            "◈ ${p.name.take(8)}",
+                            TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gold.copy(alpha = 0.95f)),
+                        )
+                        drawText(tag, topLeft = Offset(x - tag.size.width / 2f, y + 9.dp.toPx()))
+                    }
+                }
+                // 图例:左上角
+                val legend = textMeasurer.measure(
+                    "◈ 同网节点(距离未知)",
+                    TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = Gold.copy(alpha = 0.8f)),
+                )
+                drawText(legend, topLeft = Offset(8.dp.toPx(), 8.dp.toPx()))
+            }
+
             // ── 中心原点（呼吸） ──
             drawCircle(g.copy(alpha = 0.45f + 0.35f * sin(sweepDeg * 0.3f)), 2.dp.toPx(), Offset(cx, cy))
 
-            // ── 底部 CRT 状态行（画布内绘制，随扫描刷新且零重组） ──
-            val statusY = size.height - 8.dp.toPx()
-            val modeTxt = if (running) "模式: 扫描" else "模式: 待机"
-            val azTxt = "扫描: %03d°".format(sweepDeg.toInt() % 360)
-            val hdTxt = "航向: %03d°".format(heading.toInt() % 360)
-            val status = textMeasurer.measure(
-                "$modeTxt   $azTxt   $hdTxt   量程: 100m   目标: ${visibleTargets.size}/${targets.size}",
-                TextStyle(fontFamily = Mono, fontSize = 9.sp, color = g.copy(alpha = 0.85f)),
-            )
-            drawText(status, topLeft = Offset((size.width - status.size.width) / 2f, statusY))
+            // ── 底部 CRT 状态带(盘面下方实测预留区,两行,绝不裁切) ──
+            drawLine(BorderDim.copy(alpha = 0.9f), Offset(0f, fieldH), Offset(size.width, fieldH), 1f)
+            drawText(l1, topLeft = Offset((size.width - l1.size.width) / 2f, fieldH + bandPad))
+            drawText(l2, topLeft = Offset((size.width - l2.size.width) / 2f, fieldH + bandPad + l1.size.height))
         }
     }
 }
@@ -2179,10 +3047,11 @@ private fun RadarScope(
 /** 雷达目标磷光轨迹点（角度 + 归一化距离） */
 private data class TrailPoint(val angleDeg: Float, val dist01: Float)
 
-/** 雷达目标列表面板 —— 过滤 + 聚焦降噪 + 点选展开内联技术详情 */
+/** 雷达目标列表面板 —— 随整页滚动(非内嵌滚动),上限 30 行保护,聚焦目标强制包含 */
 @Composable
 private fun RadarTrackPanel(
     vm: RadarViewModel,
+    dbVm: DbViewModel,
     typeFilter: String,
     query: String,
     focusedId: String?,
@@ -2191,6 +3060,7 @@ private fun RadarTrackPanel(
     modifier: Modifier = Modifier,
 ) {
     val targets by vm.targets.collectAsState()
+    val locState = vm.localizations.collectAsState()
     val filtered = targets.filter { t ->
         t.id == focusedId ||
             ((typeFilter == "all" || t.type == typeFilter) &&
@@ -2200,84 +3070,103 @@ private fun RadarTrackPanel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Star(Gold, 8.dp)
             Spacer(Modifier.width(7.dp))
-            Text("目标列表 · ${filtered.size}/${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
-            Spacer(Modifier.weight(1f))
+            Text("目标列表 · ${filtered.size}/${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, maxLines = 1, modifier = Modifier.weight(1f))
             if (focusedId != null) {
-                Text("聚焦模式 · 降噪中", fontFamily = Mono, fontSize = 8.sp, color = Gold)
+                Spacer(Modifier.width(6.dp))
+                Text("聚焦 · 降噪", fontFamily = Mono, fontSize = 8.sp, color = Gold)
             }
+            Spacer(Modifier.width(6.dp))
+            SnapshotChip(vm, dbVm)
         }
         Spacer(Modifier.height(4.dp))
         if (filtered.isEmpty()) {
             EmptyHint(if (targets.isEmpty()) "启动雷达后，检测到的设备会亮在扫描盘上" else "过滤条件下没有匹配设备")
         } else {
-            LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-                items(
-                    // 类型前缀 + 去重:BLE 扫描与经典发现可能瞬时上报同一地址,
-                    // 重复 key 会让 Compose 抛 "Key was already used" 崩溃
-                    filtered.sortedByDescending { it.rssi }.distinctBy { "${it.type}_${it.id}" },
-                    key = { "${it.type}_${it.id}" },
-                ) { t ->
-                    val wifi = t.type == "wifi"
-                    val barColor = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else TacGreenDim
-                    val expanded = t.id == focusedId
-                    Surface(
-                        Modifier.fillMaxWidth().padding(vertical = 3.dp).clickable { onFocus(t.id) },
-                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                        color = if (expanded) TacGreen.copy(alpha = 0.06f) else SurfaceBg,
-                        border = BorderStroke(1.dp, if (expanded) Gold.copy(alpha = 0.7f) else BorderDim),
-                    ) {
-                        Column {
-                            Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(if (wifi) "WIFI" else "BLE", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (wifi) Danger else TacGreen, modifier = Modifier.width(34.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
-                                    Spacer(Modifier.height(3.dp))
-                                    // 信号强度条
-                                    Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
-                                        Box(
-                                            Modifier.fillMaxWidth(((t.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
-                                                .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text("${t.rssi}dBm", fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else Gray)
-                                    Text("%.1fm · %03d°".format(t.distanceM, t.angleDeg.toInt()), fontFamily = Mono, fontSize = 8.sp, color = Gray)
+            // 类型前缀 + 去重:BLE 扫描与经典发现可能瞬时上报同一地址
+            val rows = filtered.sortedByDescending { it.rssi }.distinctBy { "${it.type}_${it.id}" }
+            val shown = buildList {
+                focusedId?.let { id -> rows.firstOrNull { it.id == id }?.let(::add) }
+                addAll(rows.take(MAX_RADAR_TRACK_ROWS).filter { it.id != focusedId })
+            }
+            val locNow = locState.value
+            shown.forEach { t ->
+                val wifi = t.type == "wifi"
+                val barColor = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else TacGreenDim
+                val expanded = t.id == focusedId
+                Surface(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp).clickable { onFocus(t.id) },
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                    color = if (expanded) TacGreen.copy(alpha = 0.06f) else SurfaceBg,
+                    border = BorderStroke(1.dp, if (expanded) Gold.copy(alpha = 0.7f) else BorderDim),
+                ) {
+                    Column {
+                        Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(if (wifi) "WIFI" else if (t.observedVia == "ble") "BLE" else "BT", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (wifi) Danger else TacGreen, modifier = Modifier.width(34.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
+                                Spacer(Modifier.height(3.dp))
+                                // 信号强度条
+                                Box(Modifier.fillMaxWidth(0.72f).height(3.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
+                                    Box(
+                                        Modifier.fillMaxWidth(((t.rssi + 100f) / 80f).coerceIn(0.06f, 1f)).height(3.dp)
+                                            .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(barColor),
+                                    )
                                 }
                             }
-                            // ── 展开的内联技术详情：聚焦即降噪，详情就地展开 ──
-                            if (expanded) {
-                                Column(Modifier.padding(horizontal = 10.dp).padding(bottom = 8.dp)) {
-                                    InlineInfoRow("标识", if (wifi) t.id else t.address)
-                                    InlineInfoRow("厂商", "${t.vendor} · OUI ${t.vendorOui}")
-                                    InlineInfoRow("信号", "RSSI ${t.rssi}dBm · SNR ${t.snrDb}dB · 底噪 ${t.noiseDbm}dBm")
-                                    if (wifi) {
-                                        InlineInfoRow("射频", "${t.frequencyMhz}MHz · ${t.channel} · ${t.channelWidth}")
-                                        InlineInfoRow("安全", t.security.ifEmpty { "--" })
-                                    } else {
-                                        InlineInfoRow("类别", "${t.deviceClassMajor}${if (t.deviceClassDetail.isNotEmpty()) " · ${t.deviceClassDetail}" else ""}")
-                                        InlineInfoRow("链路", "${t.linkType} · 绑定: ${t.bondState}")
+                            Spacer(Modifier.width(8.dp))
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("${t.rssi}dBm", fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else Gray)
+                                // 方位行:有推演结果显示「估计」,占位方位标「占位」一眼可辨
+                                val e = locNow[t.id]
+                                val hasLoc = e != null && e.state == LocState.ESTIMATED && !e.bearingDeg.isNaN()
+                                Text(
+                                    if (hasLoc) "%.1fm · 估计 %03d°".format(e.distanceM, e.bearingDeg.toInt())
+                                    else "%.1fm · %03d° · 占位".format(t.distanceM, t.angleDeg.toInt()),
+                                    fontFamily = Mono, fontSize = 8.sp,
+                                    color = if (hasLoc) Gold else Gray,
+                                )
+                                // 威胁分级:与档案页战术评估共用同一套推演标准
+                                val tier = radarThreatTier(t)
+                                Text(tier.label, fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = tier.color)
+                            }
+                        }
+                        // ── 展开的内联技术详情：聚焦即降噪，详情就地展开 ──
+                        if (expanded) {
+                            Column(Modifier.padding(horizontal = 10.dp).padding(bottom = 8.dp)) {
+                                InlineInfoRow("标识", if (wifi) t.id else t.address)
+                                InlineInfoRow("厂商", "${t.vendor} · OUI ${t.vendorOui}")
+                                InlineInfoRow("信号", "RSSI ${t.rssi}dBm · SNR ${t.snrDb}dB · 底噪 ${t.noiseDbm}dBm")
+                                if (wifi) {
+                                    InlineInfoRow("射频", "${t.frequencyMhz}MHz · ${t.channel} · ${t.channelWidth}")
+                                    InlineInfoRow("安全", t.security.ifEmpty { "--" })
+                                } else {
+                                    InlineInfoRow("类别", "${t.deviceClassMajor}${if (t.deviceClassDetail.isNotEmpty()) " · ${t.deviceClassDetail}" else ""}")
+                                    InlineInfoRow("链路", "${t.linkType} · 绑定: ${t.bondState}")
+                                    if (t.bleAdv?.hasRecord == true) {
+                                        InlineInfoRow("广播", "TX ${if (t.txPowerDbm != null) "${t.txPowerDbm}dBm" else "—"} · UUID ${t.bleAdv.serviceUuids.size} 个 · 厂商ID ${if (t.bleAdv.manufacturerId >= 0) "0x%04X".format(t.bleAdv.manufacturerId) else "—"}")
                                     }
-                                    InlineInfoRow("跟踪", "命中 ${t.hitCount} 次 · 首见 ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))}")
-                                    Spacer(Modifier.height(5.dp))
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Surface(
-                                            modifier = Modifier.weight(1f).clickable { onSelect(t.id) },
-                                            shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
-                                            color = Red.copy(alpha = 0.14f),
-                                            border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
-                                        ) {
-                                            Text("打开完整档案 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
-                                        }
-                                        Surface(
-                                            modifier = Modifier.weight(1f).clickable { onFocus(t.id) },
-                                            shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
-                                            color = Color.Transparent,
-                                            border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
-                                        ) {
-                                            Text("取消聚焦", fontFamily = Sans, fontSize = 10.sp, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
-                                        }
+                                }
+                                // 方位推演状态行
+                                InlineInfoRow("方位推演", locLabel(locNow[t.id]))
+                                InlineInfoRow("距离模型", if (t.txPowerDbm != null) "广播 ${t.txPowerDbm}dBm · n=2.5" else "假定 PTX · n=2.5(非测量)")
+                                InlineInfoRow("跟踪", "命中 ${t.hitCount} 次 · 首见 ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))}")
+                                Spacer(Modifier.height(5.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Surface(
+                                        modifier = Modifier.weight(1f).clickable { onSelect(t.id) },
+                                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                                        color = Red.copy(alpha = 0.14f),
+                                        border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
+                                    ) {
+                                        Text("打开完整档案 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                                    }
+                                    Surface(
+                                        modifier = Modifier.weight(1f).clickable { onFocus(t.id) },
+                                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                                        color = Color.Transparent,
+                                        border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
+                                    ) {
+                                        Text("取消聚焦", fontFamily = Sans, fontSize = 10.sp, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
                                     }
                                 }
                             }
@@ -2285,8 +3174,26 @@ private fun RadarTrackPanel(
                     }
                 }
             }
+            if (rows.size > MAX_RADAR_TRACK_ROWS) {
+                Text(
+                    "仅显示信号最强的 $MAX_RADAR_TRACK_ROWS 个 · 另有 ${rows.size - MAX_RADAR_TRACK_ROWS} 个未列出,可用上方筛选缩小范围",
+                    fontFamily = Sans, fontSize = 8.sp, color = Gray,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
         }
     }
+}
+
+/** 方位推演状态文案 —— 列表展开行与档案页共用同一口径 */
+private fun locLabel(e: BearingEstimate?): String = when {
+    e == null -> "不可用（罗盘离线或样本不足）"
+    e.state == LocState.ESTIMATED -> "%03d° ± %d° · 置信 %d%% · %d 圈".format(e.bearingDeg.toInt(), e.sectorHalfWidthDeg.toInt(), (e.confidence * 100).toInt(), e.sweepCount)
+    e.state == LocState.COLLECTING -> "采样中 %d%% · 请缓慢旋转机身".format((e.coverage * 100).toInt())
+    e.state == LocState.AMBIGUOUS && e.fwhmDeg >= 350f -> "方向图平坦,调制不足,方位不可信"
+    e.state == LocState.AMBIGUOUS -> "多径多峰,方位不可靠"
+    e.state == LocState.STALE -> "过期,最后更新 %ds 前".format(e.ageMs / 1000)
+    else -> "不可用"
 }
 
 /** 内联详情行 —— 标签灰、数值白，等宽小字 */
@@ -2298,8 +3205,103 @@ private fun InlineInfoRow(label: String, value: String) {
     }
 }
 
+
+/**
+ * Probe 监视页 —— 被动 WiFi 帧字段监视 + 十六进制查看
+ *
+ * 复用雷达扫描数据(共享 RadarViewModel),按 Wireshark 式字段表展示:
+ * BSSID 十六进制、SSID、信道/频率/中心频率/带宽、capabilities 原始字符串、
+ * 安全解析、厂商 OUI。这是信标级被动观察 —— 无 root 的 Android 无法捕获
+ * 全帧/数据帧,页面如实标注观察范围。
+ */
+@Composable
+fun ProbeMonitorScreen(vm: RadarViewModel, back: () -> Unit) {
+    val targets by vm.targets.collectAsState()
+    val running by vm.isRunning.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    var selectedId by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(Unit) {
+        vm.acquireScan()
+        onDispose { vm.releaseScan() }
+    }
+
+    val wifiTargets = targets.filter { it.type == "wifi" }.sortedByDescending { it.rssi }
+
+    Column(Modifier.fillMaxSize().background(Dark)) {
+        TerminalHeader("Probe 监视 · FRAME MONITOR", back)
+        Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp)) {
+            Surface(
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                color = SurfaceBg,
+                border = BorderStroke(1.dp, BorderDim),
+            ) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (running) "● 被动监视中" else "○ 待机", fontFamily = Mono, fontSize = 10.sp, color = if (running) TacGreen else Gray, modifier = Modifier.weight(1f))
+                    Text("信标帧 ${wifiTargets.size} 个", fontFamily = Mono, fontSize = 10.sp, color = Gold)
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "观察范围: 信标/探测响应帧的管理字段(WifiManager 扫描结果)。无 root 的 Android 无法捕获数据帧与全帧字节;如需全量抓包需 root + 外接网卡。",
+                fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
+            )
+            Spacer(Modifier.height(8.dp))
+            if (wifiTargets.isEmpty()) {
+                EmptyHint("等待 WiFi 帧 —— 打开定位服务后信标自动进入")
+            } else {
+                wifiTargets.take(60).forEach { t ->
+                    val expanded = t.id == selectedId
+                    Surface(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp).clickable { haptic.hud(); selectedId = if (expanded) null else t.id },
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                        color = if (expanded) TacGreen.copy(alpha = 0.06f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (expanded) Gold.copy(alpha = 0.7f) else BorderDim),
+                    ) {
+                        Column(Modifier.padding(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(t.ssidHex().take(17), fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.weight(1f))
+                                Text("${t.rssi}dBm", fontFamily = Mono, fontSize = 10.sp, color = if (t.rssi > -50) Danger else if (t.rssi > -70) Warn else Gray)
+                            }
+                            Spacer(Modifier.height(3.dp))
+                            Text("SSID: ${t.name} · ${t.channel} · ${t.frequencyMhz}MHz · ${t.channelWidth} · ${t.security}", fontFamily = Mono, fontSize = 8.5.sp, color = White)
+                            if (expanded) {
+                                Spacer(Modifier.height(6.dp))
+                                // Wireshark 式字段表
+                                ProbeField("BSSID (hex)", t.id)
+                                ProbeField("Vendor OUI", "${t.vendor} · ${t.vendorOui}")
+                                ProbeField("Channel", "${t.channel} · ${t.frequencyMhz} MHz")
+                                ProbeField("Width", t.channelWidth.ifEmpty { "--" })
+                                ProbeField("CenterFreq", "0: ${if (t.centerFreq0Mhz > 0) "${t.centerFreq0Mhz}MHz" else "--"} · 1: ${if (t.centerFreq1Mhz > 0) "${t.centerFreq1Mhz}MHz" else "--"}")
+                                ProbeField("Capabilities", t.capabilitiesRaw.ifEmpty { "--" })
+                                ProbeField("Security", t.security)
+                                ProbeField("RSSI/SNR", "${t.rssi}dBm / ${t.snrDb}dB")
+                                ProbeField("Beacons", "${t.hitCount} 次 · 首见 ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))}")
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
+/** Probe 字段行 —— Wireshark 式键值 */
+@Composable
+private fun ProbeField(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(label, fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.width(96.dp))
+        Text(value, fontFamily = Mono, fontSize = 8.sp, color = White, modifier = Modifier.weight(1f))
+    }
+}
+
+/** BSSID 十六进制形式(帧字段视图) */
+private fun RadarTarget.ssidHex(): String = id.uppercase()
+
 // ══════════════════════════════════════════════════════════════════════════
 // 文件快传
+
 // ══════════════════════════════════════════════════════════════════════════
 
 /** 文件快传页 —— 局域网文件传输 */
@@ -2851,7 +3853,10 @@ private fun RadarPreview() {
     PreviewTheme {
         val app = LocalContext.current.applicationContext as? Application
         val vm = if (app != null) previewViewModel { RadarViewModel(app) } else null
-        if (vm == null) PreviewFallback("设备雷达") else RadarScreen(vm, back = {}, radarAlertOn = true, onSelectTarget = {})
+        val walkieVm = if (app != null) previewViewModel { WalkieTalkieViewModel(app) } else null
+        val dbVm = if (app != null) previewViewModel { DbViewModel(app) } else null
+        if (vm == null || walkieVm == null || dbVm == null) PreviewFallback("设备雷达")
+        else RadarScreen(vm, walkieVm, dbVm, back = {}, radarAlertOn = true, onSelectTarget = {}, onOpenNetmap = {}, onOpenDb = {})
     }
 }
 

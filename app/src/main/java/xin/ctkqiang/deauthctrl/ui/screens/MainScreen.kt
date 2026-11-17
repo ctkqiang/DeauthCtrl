@@ -209,6 +209,18 @@ fun MainScreen(
     /** 返回上一屏；栈空则回主页 */
     val goBack: () -> Unit = { screen = backStack.removeLastOrNull() ?: ROUTE_HOME }
 
+    /** 雷达页入口 —— 战术仪表盘:整页滚动/垫子网格/金属探测/方位推演/遥测条/网格节点 */
+    val openRadar: @Composable () -> Unit = {
+        RadarScreen(
+            radarVm, walkieVm, dbVm,
+            back = goBack,
+            radarAlertOn = hapticsOn && radarAlertOn,
+            onSelectTarget = { id -> selectedTargetId = id; navigate("target") },
+            onOpenNetmap = { navigate("netmap") },
+            onOpenDb = { navigate("dbview") },
+        )
+    }
+
     BackHandler(enabled = screen != ROUTE_HOME) { goBack() }
 
     Box(Modifier.fillMaxSize().background(Dark)) {
@@ -243,19 +255,25 @@ fun MainScreen(
                     "blescan" -> BleScannerScreen(blescanVm, back = goBack)
                     "portscan" -> PortScannerScreen(portscanVm, back = goBack)
                     "walkie" -> WalkieTalkieScreen(walkieVm, back = goBack)
-                    "radar" -> RadarScreen(radarVm, back = goBack, radarAlertOn = hapticsOn && radarAlertOn, onSelectTarget = { id -> selectedTargetId = id; navigate("target") })
-                    "target" -> selectedTargetId?.let { TargetDossierScreen(radarVm, it, back = goBack) } ?: RadarScreen(radarVm, back = goBack, radarAlertOn = hapticsOn && radarAlertOn, onSelectTarget = { id -> selectedTargetId = id; navigate("target") })
+                    "radar" -> openRadar()
+                    "target" -> selectedTargetId?.let { TargetDossierScreen(radarVm, it, back = goBack) } ?: openRadar()
                     "filetransfer" -> FileTransferScreen(ftVm, back = goBack)
                     "vault" -> SecureVaultScreen(vaultVm, back = goBack)
                     "revshell" -> RevShellScreen(revVm, back = goBack)
                     "payload" -> PayloadScreen(payloadVm, back = goBack)
                     "brute" -> DirBruteScreen(bruteVm, back = goBack)
                     "cve" -> CVEScreen(cveVm, back = goBack)
-                    "terminal" -> SshTerminalScreen(terminalVm, back = goBack)
+                    "terminal" -> SshTerminalScreen(terminalVm, back = goBack, onOpenLocal = { navigate("localterm") })
+                    "localterm" -> TerminalScreen(viewModel(), back = goBack)
+                    "probe" -> ProbeMonitorScreen(radarVm, back = goBack)
+                    "serialmon" -> SerialMonitorScreen(back = goBack)
+                    "otgprobe" -> OtgProbeScreen(onOpenArp = { navigate("arp") }, onOpenSerial = { navigate("serialmon") }, back = goBack)
+                    "morse" -> MorseScreen(back = goBack)
                     "dbview" -> DbViewScreen(dbVm, radarVm, blescanVm, wifiVm, back = goBack)
                     "taccam" -> TacticalCameraScreen(viewModel(), operatorName = username, back = goBack, openPhotoId = openPhotoId)
                     "sdr" -> VoiceSdrScreen(viewModel(), back = goBack)
                     "irremote" -> IrRemoteScreen(viewModel(), back = goBack)
+                    "gsm" -> GsmTowerScreen(back = goBack)
                     "nfc" -> NfcScreen(viewModel(), back = goBack)
                     "nightvision" -> NightVisionScreen(viewModel(), back = goBack)
                     "tacmap" -> TacticalMapScreen(viewModel(), back = goBack)
@@ -527,6 +545,8 @@ fun HomeScreen(
         HomeEntry("CVE 搜索", "查询公开漏洞数据库", "cve", cver, null, Icons.Outlined.Search),
         HomeEntry("语音频谱", "麦克风 FFT 实时频谱分析", "sdr", false, null, Icons.Outlined.Equalizer),
         HomeEntry("战术相机", "最大分辨率拍照 · Base64 局域网传输", "taccam", false, null, Icons.Outlined.CameraAlt),
+        HomeEntry("基站监视", "真实邻区小区信息 · 最近基站", "gsm", false, null, Icons.Outlined.Sensors),
+        HomeEntry("Probe 监视", "被动 WiFi 帧字段 · Hex 查看", "probe", false, null, Icons.Outlined.Router),
         HomeEntry("数字夜视", "高感光捕获 · 荧光绿增益成像", "nightvision", false, null, Icons.Outlined.Nightlight),
         HomeEntry("战术地图", "OpenStreetMap 夜战视图 · GPS 标记", "tacmap", false, null, Icons.Outlined.Map),
         HomeEntry("红外遥控", "小米/三星等机型红外发射器", "irremote", false, null, Icons.Outlined.Sensors),
@@ -537,10 +557,10 @@ fun HomeScreen(
         HomeEntry("目录爆破", "枚举网站目录结构", "brute", bruter, { if (bruter) bruteVm.stop() else bruteVm.start() }, Icons.Outlined.ManageSearch),
         HomeEntry("PING 泛洪", "持续探测目标主机", "ping", pingr, { if (pingr) pingVm.stop() else pingVm.start() }, Icons.Outlined.NetworkPing),
 
-        HomeEntry("BLE 泛洪", "发送伪造蓝牙广播包", "ble", br, { if (br) bleVm.stopSpam() else bleVm.startSpam() }, Icons.Outlined.Bluetooth),
-        HomeEntry("WIFI 干扰", "伪造 WiFi 信标帧干扰", "wifi", wr, { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() }, Icons.Outlined.Wifi),
-        HomeEntry("蓝牙压制", "全频段蓝牙压制", "btjam", btr, { if (btr) btVm.stop() else btVm.start() }, Icons.Outlined.BluetoothDisabled),
-        HomeEntry("WIFI 压制", "自动压制附近所有网络", "wifijam", wjr, { if (wjr) wjVm.stop() else wjVm.start() }, Icons.Outlined.WifiOff),
+        HomeEntry("BLE 广播", "广播伪造厂商广告 · 不会压制或断开设备", "ble", br, { if (br) bleVm.stopSpam() else bleVm.startSpam() }, Icons.Outlined.Bluetooth),
+        HomeEntry("本机热点", "创建本机 SoftAP · 非 802.11 帧注入", "wifi", wr, { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() }, Icons.Outlined.Wifi),
+        HomeEntry("蓝牙广播与发现", "BLE 广播 + 经典蓝牙本机扫描", "btjam", btr, { if (btr) btVm.stop() else btVm.start() }, Icons.Outlined.BluetoothDisabled),
+        HomeEntry("热点 SSID 轮换", "轮换本机热点 SSID · 不会断开他人", "wifijam", wjr, { if (wjr) wjVm.stop() else wjVm.start() }, Icons.Outlined.WifiOff),
 
         HomeEntry("对讲机", "局域网实时语音通话", "walkie", walkier, { if (walkier) walkieVm.stop() else walkieVm.start() }, Icons.Outlined.Mic),
         HomeEntry("文件快传", "局域网设备互传文件", "filetransfer", ftr, { if (ftr) ftVm.stop() else ftVm.start() }, Icons.Outlined.SwapHoriz),
@@ -549,15 +569,19 @@ fun HomeScreen(
         HomeEntry("Payload 生成", "生成反弹 Shell 载荷", "payload", false, null, Icons.Outlined.Terminal),
         HomeEntry("反弹 Shell", "监听反弹 Shell 连接", "revshell", revr, { if (revr) revVm.stop() else revVm.start() }, Icons.Outlined.Lan),
         HomeEntry("SSH 客户端", "远程服务器终端 · 密码认证", "terminal", sshOnline, null, Icons.Outlined.Terminal),
+        HomeEntry("本地终端", "本机 pty shell · Termux 引擎", "localterm", false, null, Icons.Outlined.Terminal),
+        HomeEntry("摩尔斯码", "蜂鸣/闪光灯发报 · 双向翻译", "morse", false, null, Icons.Outlined.Lan),
+        HomeEntry("串口监视", "USB OTG 串口 · Arduino IDE 风格", "serialmon", false, null, Icons.Outlined.Cast),
+        HomeEntry("有线探测", "OTG 网卡/串口识别 · 引导对应工具", "otgprobe", false, null, Icons.Outlined.SwapHoriz),
         HomeEntry("数据库", "SQLite 信号情报库 · 刷新注入", "dbview", false, null, Icons.Outlined.Storage),
         HomeEntry("局域网会议", "多方视频 · 屏幕/摄像头 · PTT 语音", "conference", false, null, Icons.Outlined.VideoCall),
     )
 
     val groups = listOf(
-        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "netmap", "cve", "sdr", "taccam")),
+        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "cve", "sdr", "taccam", "gsm")),
         HomeGroup("网络", listOf("webserver", "http", "brute", "ping")),
         HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc")),
-        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "dbview")),
+        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }

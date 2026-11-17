@@ -1,10 +1,13 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.SystemClock
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -12,6 +15,7 @@ import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.concurrent.thread
+import kotlin.math.abs
 
 /**
  * 对讲机已发现的设备数据类
@@ -19,12 +23,47 @@ import kotlin.concurrent.thread
  * @property ip IP 地址
  * @property name 设备名称
  * @property lastSeen 最后一次收到广播的时间戳
+ * @property rttEwmaMs/rttLastMs/jitterMs/lossPct 本机实测(UDP 回显 RTT)
+ * @property self* 对端自报的其自身↔AP 链路(非本机测量,UI 必须标「自报」)
  */
+enum class WalkieRttStatus { Unknown, Supported, NoEcho }
+
 data class WalkiePeer(
     val ip: String,
     val name: String,
     val lastSeen: Long = System.currentTimeMillis(),
     val isTalking: Boolean = false,
+    // ── 本机实测(PONG 到达时间差,单调时钟) ──
+    val rttEwmaMs: Float? = null,
+    val rttLastMs: Int? = null,
+    val jitterMs: Float? = null,
+    val lossPct: Int? = null,
+    val rttStatus: WalkieRttStatus = WalkieRttStatus.Unknown,
+    val rttHistory: List<Float> = emptyList(), // 最近 24 个 RTT 样本
+    // ── 对端自报的自身↔AP 链路(来自 v2 发现报文,不是本机测量) ──
+    val selfRssiDbm: Int? = null,
+    val selfFrequencyMhz: Int? = null,
+    val selfChannel: Int? = null,
+    val selfTxMbps: Int? = null,
+    val selfRxMbps: Int? = null,
+    val protocolVersion: Int = 1, // 1=旧版仅有发现包;2=支持自报
+)
+
+/** 本机 WiFi 链路遥测 —— 全部取自 WifiManager.connectionInfo 真实返回值,不可用一律 null */
+data class WalkieLinkInfo(
+    val connected: Boolean = false,
+    val ssid: String? = null,
+    val bssid: String? = null,
+    val localIp: String? = null,
+    val gatewayIp: String? = null,
+    val rssiDbm: Int? = null,
+    val frequencyMhz: Int? = null,
+    val channel: Int? = null,
+    val txLinkSpeedMbps: Int? = null,
+    val rxLinkSpeedMbps: Int? = null,
+    val linkSpeedMbps: Int? = null,
+    val wifiStandard: String? = null,
+    val signalLevel: Int? = null, // WifiManager.SIGNAL_LEVEL 0..4
 )
 
 /**
@@ -59,10 +98,12 @@ data class WalkiePeer(
  * - RECORD_AUDIO：音频录制
  * - INTERNET：UDP 网络通信（AndroidManifest 已声明）
  */
-class WalkieTalkieManager {
+class WalkieTalkieManager(private val context: Context) {
 
     /** 设备名称，默认为 Build.MODEL（如 "Pixel 8"） */
     var deviceName: String = Build.MODEL
+
+    private val wifiManager = runCatching { context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager }.getOrNull()
 
     /** 对讲机运行状态 */
     @Volatile var isRunning = false
@@ -81,6 +122,12 @@ class WalkieTalkieManager {
     private var audioRecord: AudioRecord? = null
     private var audioTrack: AudioTrack? = null
     private val jitterBuffer = ConcurrentLinkedQueue<ByteArray>()
+
+    // ── UDP 回显测 RTT ──
+    private val pingSeq = java.util.concurrent.atomic.AtomicLong(0)
+    private data class PendingPing(val peerIp: String, val sentElapsedMs: Long)
+    private val pendingPings = ConcurrentHashMap<Long, PendingPing>()
+    private val pingWindow = ConcurrentHashMap<String, ArrayDeque<Boolean>>()
 
     /** 音频格式：8000Hz, 16-bit, 单声道, PCM */
     private val sampleRate = 8000
@@ -109,11 +156,13 @@ class WalkieTalkieManager {
 
             initAudioPlayer()
             isRunning = true
+            pendingPings.clear(); pingWindow.clear()
 
             thread(name = "ptt-discover-send") { discoverLoop() }
             thread(name = "ptt-discover-listen") { discoverListen() }
             thread(name = "ptt-audio-recv") { audioReceiveLoop() }
             thread(name = "ptt-audio-play") { audioPlayLoop() }
+            thread(name = "ptt-rtt-ping") { pingLoop() }
         } catch (e: Exception) {
             stop()
             return false
@@ -171,17 +220,25 @@ class WalkieTalkieManager {
         audioRecord = null; audioTrack = null
         discoverSocket = null; audioSendSocket = null; audioRecvSocket = null
         jitterBuffer.clear(); peers.clear()
+        pendingPings.clear(); pingWindow.clear()
     }
 
     // ─── 设备发现 ────────────────────────────────────────
 
-    /** 每 2 秒广播设备名 + IP */
+    /** 每 2 秒广播设备名 + IP + v2 自报链路(向后兼容:旧版只读前 3 段) */
     private fun discoverLoop() {
-        val localIp = getLocalIp() ?: return
-        val talking = if (isTalking) "1" else "0"
-        val msg = "DEAUTHCTRL_PTT:$deviceName:$localIp:$talking".toByteArray()
         while (isRunning) {
             try {
+                // 每轮重读本地链路:WiFi 切换后能自愈(原实现只算一次 IP)
+                val link = readLocalLink()
+                val selfIp = link?.localIp ?: getLocalIp()
+                // 设备名先替换冒号,防止破坏既有位置解析
+                val safeName = deviceName.replace(':', '_')
+                val self = if (link != null && link.connected) {
+                    ":v2:${link.rssiDbm ?: "NA"}:${link.frequencyMhz ?: "NA"}:${link.channel ?: "NA"}:${link.txLinkSpeedMbps ?: link.linkSpeedMbps ?: "NA"}:${link.rxLinkSpeedMbps ?: link.linkSpeedMbps ?: "NA"}"
+                } else ""
+                val talking = if (isTalking) "1" else "0"
+                val msg = "DEAUTHCTRL_PTT:$safeName:$selfIp:$talking$self".toByteArray()
                 val packet = DatagramPacket(msg, msg.size, InetAddress.getByName("255.255.255.255"), 9999)
                 discoverSocket?.send(packet)
             } catch (_: Exception) {}
@@ -189,24 +246,175 @@ class WalkieTalkieManager {
         }
     }
 
-    /** 监听其他设备的发现广播 */
+    /** 监听发现广播 / PING 回显请求(共用 9999 端口,前缀分派) */
     private fun discoverListen() {
-        val buf = ByteArray(256)
+        val buf = ByteArray(512)
         while (isRunning) {
             try {
                 val packet = DatagramPacket(buf, buf.size)
                 discoverSocket?.receive(packet)
                 val data = String(packet.data, 0, packet.length)
-                if (data.startsWith("DEAUTHCTRL_PTT:")) {
-                    val parts = data.removePrefix("DEAUTHCTRL_PTT:").split(":")
-                    if (parts.size >= 2) {
-                        val name = parts[0]; val ip = parts[1]
-                        val talking = parts.getOrElse(2) { "0" } == "1"
-                        if (ip != getLocalIp()) peers[ip] = WalkiePeer(ip, name, isTalking = talking)
+                when {
+                    data.startsWith("DEAUTHCTRL_PTT:") -> {
+                        val parts = data.removePrefix("DEAUTHCTRL_PTT:").split(":")
+                        if (parts.size >= 2) {
+                            val name = parts[0]; val ip = parts[1]
+                            val talking = parts.getOrElse(2) { "0" } == "1"
+                            if (ip != getLocalIp()) {
+                                // v2 自报链路:parts[3]=="v2", parts[4..8] = rssi/freq/ch/rateTx/rateRx
+                                val isV2 = parts.getOrNull(3) == "v2"
+                                fun opt(i: Int): Int? = parts.getOrNull(i)?.toIntOrNull()
+                                val selfRssi = if (isV2) opt(4) else null
+                                val selfFreq = if (isV2) opt(5) else null
+                                val selfCh = if (isV2) opt(6) ?: selfFreq?.let(::channelFromFreq) else null
+                                val selfTx = if (isV2) opt(7) else null
+                                val selfRx = if (isV2) opt(8) else null
+                                upsertPeer(ip, name, talking, if (isV2) 2 else 1, selfRssi, selfFreq, selfCh, selfTx, selfRx)
+                            }
+                        }
+                    }
+                    data.startsWith("DEAUTHCTRL_PING:") -> {
+                        // 回显 PONG:原样回 seq 与时间戳(对端按单调时钟差算 RTT)
+                        val payload = data.removePrefix("DEAUTHCTRL_PING:")
+                        sendUdp("DEAUTHCTRL_PONG:$payload".toByteArray(), packet.address?.hostAddress)
+                    }
+                    data.startsWith("DEAUTHCTRL_PONG:") -> {
+                        val parts = data.removePrefix("DEAUTHCTRL_PONG:").split(":")
+                        val seq = parts.getOrNull(0)?.toLongOrNull() ?: continue
+                        handlePong(seq)
                     }
                 }
             } catch (_: Exception) {}
         }
+    }
+
+    /** 合并节点状态:保留 RTT 测量,新值覆盖旧值 */
+    private fun upsertPeer(
+        ip: String,
+        name: String,
+        talking: Boolean,
+        proto: Int,
+        selfRssi: Int?, selfFreq: Int?, selfCh: Int?, selfTx: Int?, selfRx: Int?,
+    ) {
+        val prev = peers[ip]
+        peers[ip] = WalkiePeer(
+            ip = ip,
+            name = name.ifBlank { prev?.name ?: name },
+            lastSeen = System.currentTimeMillis(),
+            isTalking = talking,
+            rttEwmaMs = prev?.rttEwmaMs,
+            rttLastMs = prev?.rttLastMs,
+            jitterMs = prev?.jitterMs,
+            lossPct = prev?.lossPct,
+            rttStatus = prev?.rttStatus ?: WalkieRttStatus.Unknown,
+            rttHistory = prev?.rttHistory ?: emptyList(),
+            selfRssiDbm = selfRssi ?: prev?.selfRssiDbm,
+            selfFrequencyMhz = selfFreq ?: prev?.selfFrequencyMhz,
+            selfChannel = selfCh ?: prev?.selfChannel,
+            selfTxMbps = selfTx ?: prev?.selfTxMbps,
+            selfRxMbps = selfRx ?: prev?.selfRxMbps,
+            protocolVersion = maxOf(proto, prev?.protocolVersion ?: 1),
+        )
+    }
+
+    // ─── UDP 回显测 RTT(本机实测链路质量) ─────────────────────────────
+
+    /** 每 3s 对每个 peer 发 PING;4s 无回显记为丢失 */
+    private fun pingLoop() {
+        while (isRunning) {
+            try {
+                val now = SystemClock.elapsedRealtime()
+                // 清算挂起项(迭代器删除,兼容 API 23)
+                val itr = pendingPings.entries.iterator()
+                while (itr.hasNext()) {
+                    val p = itr.next().value
+                    if (now - p.sentElapsedMs > 4000) {
+                        recordPingOutcome(p.peerIp, false)
+                        itr.remove()
+                    }
+                }
+                peers.keys.toList().forEach { ip ->
+                    val seq = pingSeq.incrementAndGet()
+                    pendingPings[seq] = PendingPing(ip, now)
+                    sendUdp("DEAUTHCTRL_PING:$seq:$now".toByteArray(), ip)
+                }
+            } catch (_: Exception) {}
+            Thread.sleep(3000)
+        }
+    }
+
+    private fun handlePong(seq: Long) {
+        val p = pendingPings.remove(seq) ?: return
+        val rtt = SystemClock.elapsedRealtime() - p.sentElapsedMs
+        recordPingOutcome(p.peerIp, true, rtt)
+    }
+
+    /** 记录回显结果:EWMA RTT + 抖动 + 最近 8 次丢包率 */
+    private fun recordPingOutcome(peerIp: String, delivered: Boolean, rttMs: Long = 0) {
+        val window = pingWindow.getOrPut(peerIp) { ArrayDeque() }
+        if (window.size >= 8) window.removeFirst()
+        window.addLast(delivered)
+        val loss = ((window.count { !it } * 100) / window.size)
+        val prev = peers[peerIp] ?: return
+        val newEwma = if (delivered) {
+            val r = rttMs.toFloat()
+            val old = prev.rttEwmaMs
+            val ewma = if (old == null) r else old * 0.7f + r * 0.3f
+            val jitter = if (old == null) 0f else prev.jitterMs?.let { it * 0.7f + abs(r - old) * 0.3f } ?: 0f
+            Triple(ewma, jitter, rttMs.toInt())
+        } else {
+            Triple(prev.rttEwmaMs, prev.jitterMs, prev.rttLastMs)
+        }
+        peers[peerIp] = prev.copy(
+            rttEwmaMs = newEwma.first,
+            jitterMs = newEwma.second,
+            rttLastMs = newEwma.third,
+            lossPct = loss,
+            rttStatus = if (delivered) WalkieRttStatus.Supported else if (window.size >= 4 && loss >= 75) WalkieRttStatus.NoEcho else WalkieRttStatus.Unknown,
+            rttHistory = (prev.rttHistory + (if (delivered) listOf(rttMs.toFloat()) else emptyList())).takeLast(24),
+        )
+    }
+
+    private fun sendUdp(data: ByteArray, ip: String?) {
+        if (ip == null) return
+        discoverSocket?.send(DatagramPacket(data, data.size, InetAddress.getByName(ip), 9999))
+    }
+
+    // ─── 本机 WiFi 链路遥测 ─────────────────────────────────────────────
+
+    /** 读取本机 WiFi 链路 —— 只取系统真实返回值,不可用一律 null,绝不填 -127/0 */
+    @Suppress("DEPRECATION")
+    fun readLocalLink(): WalkieLinkInfo? {
+        val info = runCatching { wifiManager?.connectionInfo }.getOrNull() ?: return null
+        val ssid = info.ssid?.removeSurrounding("\"")?.takeIf { it.isNotBlank() && it != "<unknown ssid>" && it != "0x" }
+        return WalkieLinkInfo(
+            connected = info.networkId != -1 && ssid != null,
+            ssid = ssid,
+            bssid = info.bssid?.takeIf { it.isNotBlank() && it != "02:00:00:00:00:00" },
+            localIp = getLocalIp(),
+            gatewayIp = runCatching { android.text.format.Formatter.formatIpAddress(wifiManager?.dhcpInfo?.gateway ?: 0) }
+                .getOrNull()?.takeIf { it != "0.0.0.0" },
+            rssiDbm = info.rssi.takeIf { it in -126..-1 },
+            frequencyMhz = info.frequency.takeIf { it > 0 },
+            channel = info.frequency.takeIf { it > 0 }?.let(::channelFromFreq),
+            txLinkSpeedMbps = if (Build.VERSION.SDK_INT >= 29) info.txLinkSpeedMbps.takeIf { it > 0 } else null,
+            rxLinkSpeedMbps = if (Build.VERSION.SDK_INT >= 29) info.rxLinkSpeedMbps.takeIf { it > 0 } else null,
+            linkSpeedMbps = info.linkSpeed.takeIf { it > 0 },
+            wifiStandard = if (Build.VERSION.SDK_INT >= 30) runCatching {
+                when (info.wifiStandard) {
+                    1 -> "802.11a"; 2 -> "802.11b"; 3 -> "802.11g"; 4 -> "802.11n"; 5 -> "802.11ac"; 6 -> "802.11ax"; 7 -> "802.11be"
+                    else -> null
+                }
+            }.getOrNull() else null,
+            signalLevel = if (info.rssi in -126..-1) WifiManager.calculateSignalLevel(info.rssi, 5).takeIf { it in 0..4 } else null,
+        )
+    }
+
+    /** 频率 → 信道(2.4/5GHz 主信道) */
+    private fun channelFromFreq(freq: Int): Int = when {
+        freq in 2412..2484 -> (freq - 2412) / 5 + 1
+        freq in 5180..5825 -> (freq - 5180) / 5 + 36
+        else -> 0
     }
 
     // ─── 音频发送（PTT 按下时） ──────────────────────────

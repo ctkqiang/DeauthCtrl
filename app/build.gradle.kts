@@ -14,6 +14,8 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
+        // 真机运行时验证测试(connectedDebugAndroidTest)
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -92,4 +94,13 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // 协议层单元测试 —— 会议视频修复的运行时证据(纯 JVM,无 Android 依赖)
+    testImplementation("junit:junit:4.13.2")
+
+    // 真机运行时验证(MediaCodec 编解码 / BLE 广播会话 / UI 导航截图)
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
 }

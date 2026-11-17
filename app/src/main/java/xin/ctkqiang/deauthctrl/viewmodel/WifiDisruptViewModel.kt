@@ -31,6 +31,9 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
     val isFlooding: StateFlow<Boolean> = manager.isFlooding
     val stats: StateFlow<WifiDisruptStats> = manager.stats
 
+    /** 真实注入引擎状态(root 门控) */
+    val deauthSession = manager.deauth.session
+
     private var targetSsid: String = ""
     private var durationSeconds: Int = 10
     private var toggleIntervalMs: Long = 80L
@@ -63,6 +66,16 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun stopFlood() = manager.stopFlood()
+
+    // ─── 真实注入(root 门控) ───
+
+    fun probeDeauth() = manager.deauth.probeTools()
+
+    /** @return null 表示会话已启动;非 null 为失败原因(缺 root/工具/芯片不支持等) */
+    fun startDeauth(bssid: String, channel: Int, clientMac: String?, count: Int, intervalMs: Long): String? =
+        manager.deauth.start(bssid, channel, clientMac, count, intervalMs)
+
+    fun stopDeauth() = manager.deauth.stop()
 
     override fun onCleared() {
         super.onCleared()

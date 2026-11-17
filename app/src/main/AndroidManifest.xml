@@ -12,6 +12,12 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!--
+      targetSdk 33+ 创建 LocalOnlyHotspot 必需。本项目有地图/测绘功能，
+      需要从 Wi-Fi 扫描结果推导位置，因此不添加 neverForLocation 标记，
+      并保留 ACCESS_FINE_LOCATION。
+    -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
 
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -26,6 +32,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- 基站定位(GSM 邻区信息)与照片通知 -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- 旧版存储兼容(Android 9- 保存照片到相册) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- USB OTG 串口/以太网探测 -->
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
@@ -34,6 +47,8 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:name="android.hardware.consumerir" android:required="false" />
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
     <application
         android:name=".DeauthApp"

@@ -8,8 +8,15 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import xin.ctkqiang.deauthctrl.WalkieTalkieService
+import xin.ctkqiang.deauthctrl.manager.WalkieLinkInfo
 import xin.ctkqiang.deauthctrl.manager.WalkiePeer
 import xin.ctkqiang.deauthctrl.manager.WalkieTalkieManager
+
+/** 本机链路遥测 —— 链路信息 + RSSI 历史(最近 60 次) */
+data class WalkieLinkTelemetry(
+    val info: WalkieLinkInfo? = null,
+    val rssiHistory: List<Int> = emptyList(),
+)
 
 /**
  * WiFi 对讲机 ViewModel
@@ -22,12 +29,13 @@ import xin.ctkqiang.deauthctrl.manager.WalkieTalkieManager
  * - isTalking: PTT 按钮是否被按住（正在录音+发送）
  * - isLive: 免提模式是否激活
  * - liveCountdown: 免提模式倒计时秒数
- * - peers: 已发现的局域网对讲设备列表
+ * - peers: 已发现的局域网对讲设备列表(含本机实测 UDP 回显 RTT/丢包、对端自报链路)
+ * - link: 本机 WiFi 链路遥测(SSID/频率/信道/速率/RSSI,1Hz 刷新)
  * - error: 错误信息
  */
 class WalkieTalkieViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val manager = WalkieTalkieManager()
+    private val manager = WalkieTalkieManager(application)
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning
     private val _isTalking = MutableStateFlow(false)
@@ -40,6 +48,8 @@ class WalkieTalkieViewModel(application: Application) : AndroidViewModel(applica
     val isLive: StateFlow<Boolean> = _isLive
     private val _liveCountdown = MutableStateFlow(10)
     val liveCountdown: StateFlow<Int> = _liveCountdown
+    private val _link = MutableStateFlow(WalkieLinkTelemetry())
+    val link: StateFlow<WalkieLinkTelemetry> = _link
 
     private var pollJob: Job? = null
     private var liveJob: Job? = null
@@ -53,6 +63,7 @@ class WalkieTalkieViewModel(application: Application) : AndroidViewModel(applica
         if (manager.start()) {
             _isRunning.value = true
             _error.value = null
+            refreshLocalLink()
             val ctx = getApplication<Application>()
             WalkieTalkieService.instance = manager
             val intent = Intent(ctx, WalkieTalkieService::class.java)
@@ -60,7 +71,9 @@ class WalkieTalkieViewModel(application: Application) : AndroidViewModel(applica
             pollJob = CoroutineScope(Dispatchers.IO).launch {
                 while (isActive) {
                     delay(500)
-                    _peers.value = manager.peers.values.toList()
+                    // 已离开节点(15s 无广播)不再显示,避免在线列表被幽灵占满
+                    val now = System.currentTimeMillis()
+                    _peers.value = manager.peers.values.filter { now - it.lastSeen <= 15_000L }.toList()
                     _isTalking.value = manager.isTalking
                     try {
                         val svcIntent = Intent(ctx, WalkieTalkieService::class.java).apply { action = WalkieTalkieService.ACTION_UPDATE }
@@ -71,6 +84,13 @@ class WalkieTalkieViewModel(application: Application) : AndroidViewModel(applica
         } else {
             _error.value = "对讲机服务启动失败"
         }
+    }
+
+    /** 刷新本机 WiFi 链路遥测(由页面可见期的 1Hz 循环调用) */
+    fun refreshLocalLink() {
+        val info = manager.readLocalLink()
+        val hist = if (info?.rssiDbm != null) (_link.value.rssiHistory + info.rssiDbm).takeLast(60) else _link.value.rssiHistory
+        _link.value = WalkieLinkTelemetry(info, hist)
     }
 
     /** PTT 按钮按下 — 开始说话 */
@@ -113,6 +133,7 @@ class WalkieTalkieViewModel(application: Application) : AndroidViewModel(applica
         manager.stop()
         pollJob?.cancel()
         _isRunning.value = false; _isTalking.value = false; _peers.value = emptyList()
+        _link.value = WalkieLinkTelemetry()
         WalkieTalkieService.instance = null
         try { getApplication<Application>().stopService(Intent(getApplication(), WalkieTalkieService::class.java)) } catch (_: Exception) {}
     }

@@ -18,13 +18,36 @@ import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
-/** 一次信号采样 —— 档案页趋势图的原始数据 */
-data class RssiSample(val timeMs: Long, val rssi: Int)
+/** 一次信号采样 —— 档案页趋势图的原始数据；timestampNanos 与传感器同源,供方位推演对齐 */
+data class RssiSample(
+    val timeMs: Long,
+    val rssi: Int,
+    val timestampNanos: Long = 0L,
+    val approxTime: Boolean = false,
+)
+
+/**
+ * BLE 广播包字段快照 —— 只拷贝值,绝不持有 ScanRecord/ScanResult 对象
+ *
+ * sentinel 约定: txPowerLevelDbm=Int.MIN_VALUE / advFlags=-1 / manufacturerId=-1
+ * 均表示广播中该字段缺失;hasRecord=false 表示从未收到过广播包(经典发现路径)。
+ */
+data class BleAdv(
+    val hasRecord: Boolean = false,
+    val txPowerLevelDbm: Int = Int.MIN_VALUE,
+    val advFlags: Int = -1,
+    val serviceUuids: List<String> = emptyList(),
+    val serviceData: Map<String, String> = emptyMap(),
+    val manufacturerData: Map<Int, String> = emptyMap(),
+    val manufacturerId: Int = -1,
+    val deviceNameAdv: String = "",
+    val updatedAtMs: Long = 0L,
+)
 
 /**
  * 雷达目标 —— 覆盖 WiFi / 蓝牙可见的全部技术字段
  *
- * 每一个字段都取自系统 API 真实返回值（ScanResult / BluetoothDevice），
+ * 每一个字段都取自系统 API 真实返回值（ScanResult / BluetoothDevice / ScanRecord），
  * 读不到的留空字符串或 0，绝不编造。档案页按 type 分支展示全部字段。
  */
 data class RadarTarget(
@@ -49,6 +72,13 @@ data class RadarTarget(
     val deviceClassDetail: String = "",// 大类内的具体小类（如 "Smartphone"）
     val bondState: String = "",       // 未绑定 / 绑定中 / 已绑定
     val linkType: String = "",        // BR/EDR / BLE / 双模
+    val alias: String = "",           // 配对别名（BluetoothDevice.getAlias 真实返回值,可为空）
+    // ── BLE 广播详情（仅 ble 扫描路径捕获,经典相位不擦除已捕获字段） ──
+    val bleAdv: BleAdv? = null,
+    val observedVia: String = "classic", // "ble" | "classic" —— 档案页据此区分 BLE/BT 徽章
+    // ── 距离模型元数据 ──
+    val txPowerDbm: Int? = null,      // 仅 BLE 广播真实存在时赋值;null=假定参考功率
+    val distanceAssumed: Boolean = true, // txPowerDbm==null 时为 true,界面标注「假定 PTX」
     // ── 通用 ──
     val vendor: String = "",          // OUI 厂商（内置常见厂商表，未命中为 未知厂商）
     val vendorOui: String = "",       // 地址前 3 字节
@@ -58,10 +88,24 @@ data class RadarTarget(
     val lastSeenMs: Long = 0,
     val hitCount: Int = 0,            // 累计扫描命中次数
     val history: List<RssiSample> = emptyList(), // 最近 N 次信号采样（档案页图表）
+    val hitBuckets: List<Int> = emptyList(),     // 最近 10 分钟每分钟命中数（档案页频率图）
+    val hitBucketStartMs: Long = 0L,
 )
 
 /** 信号历史保留长度 —— 约 2 分钟 @ 3s 扫描周期 */
 private const val HISTORY_MAX = 90
+
+/** 命中频率桶数(分钟粒度) —— 档案页命中频率图横轴 */
+private const val HIT_BUCKET_MAX = 10
+
+/**
+ * RSSI 路径损耗距离估计 —— 公共函数,档案页/雷达页共用同一公式,禁止各处复制。
+ *
+ * 模型: d = 10^((refDbm - rssi) / (10·n)),n 为路径损耗指数(默认 2.5 室内)。
+ * 输出钳制在 0.3..100m。这是模型估计,不是测量距离 —— 界面必须标注。
+ */
+fun rssiDistanceEstimateM(rssi: Int, refDbm: Float, pathLossExp: Float = 2.5f): Float =
+    Math.pow(10.0, ((refDbm - rssi) / (10f * pathLossExp)).toDouble()).toFloat().coerceIn(0.3f, 100f)
 
 class RadarManager(private val context: Context) {
 
@@ -107,7 +151,7 @@ class RadarManager(private val context: Context) {
                         val rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE).toInt()
                         if (rssi == Short.MIN_VALUE.toInt()) return
                         val addr = device?.address ?: return
-                        addBtTarget(device, addr, device?.name ?: "(BT设备)", rssi)
+                        addBtTarget(device, addr, device?.name ?: "(BT设备)", rssi, source = "classic")
                     }
                     BluetoothAdapter.ACTION_DISCOVERY_STARTED -> { btDiscoveryActive = true }
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> { btDiscoveryActive = false }
@@ -116,18 +160,34 @@ class RadarManager(private val context: Context) {
         }
     }
 
+    /** WiFi 扫描结果时间戳缓存 —— 广播与轮询协程会重复注入同一份 scanResults,按时间戳去重 */
+    private val wifiSeenTs = HashMap<String, Long>()
+
+    /** 读-改-写全程持锁:BLE 回调(binder 线程)/经典发现(主线程)/扫描协程(IO)并发写同一目标 */
+    @Synchronized
     private fun addWifiTarget(r: ScanResult) {
         val now = System.currentTimeMillis()
         val prev = targets[r.BSSID]
+        // 同一扫描结果(相同 BSSID + 相同系统时间戳)不重复计数 ——
+        // SCAN_RESULTS_AVAILABLE 广播与轮询缓存注入会把同一份缓存各播一遍
+        val ts = runCatching { r.timestamp }.getOrDefault(0L)
+        if (ts > 0 && wifiSeenTs[r.BSSID] == ts) return
+        if (ts > 0) wifiSeenTs[r.BSSID] = ts
         val isNew = prev == null
-        val history = (prev?.history.orEmpty() + RssiSample(now, r.level)).takeLast(HISTORY_MAX)
+        // ScanResult.timestamp 单位微秒(API 23+),与 SensorEvent.timestamp 同基准;
+        // 拿不到时回退单调时钟并标 approx,该样本只进距离统计不进方位直方图
+        val bootUs = runCatching { r.timestamp }.getOrDefault(0L)
+        val nanos = if (bootUs > 0) bootUs * 1000 else android.os.SystemClock.elapsedRealtimeNanos()
+        val approx = bootUs <= 0
+        val history = (prev?.history.orEmpty() + RssiSample(now, r.level, nanos, approx)).takeLast(HISTORY_MAX)
         val noise = -92
+        val buckets = advanceHitBuckets(prev, now)
         targets[r.BSSID] = RadarTarget(
             id = r.BSSID,
             name = r.SSID.ifBlank { "<隐藏SSID>" },
             type = "wifi",
             rssi = r.level,
-            distanceM = rssiToDistance(r.level, -40f),
+            distanceM = rssiDistanceEstimateM(r.level, -40f),
             angleDeg = pseudoAngle(r.BSSID),
             channel = "CH${channelFromFreq(r.frequency)}",
             frequencyMhz = r.frequency,
@@ -144,30 +204,58 @@ class RadarManager(private val context: Context) {
             lastSeenMs = now,
             hitCount = (prev?.hitCount ?: 0) + 1,
             history = history,
+            hitBuckets = buckets.first,
+            hitBucketStartMs = buckets.second,
         )
         if (isNew) newContacts.add(r.BSSID)
     }
 
-    private fun addBtTarget(device: BluetoothDevice, addr: String, name: String, rssi: Int) {
+    @Synchronized
+    private fun addBtTarget(
+        device: BluetoothDevice?,
+        addr: String,
+        name: String,
+        rssi: Int,
+        source: String,                 // "ble" | "classic"
+        freshAdv: BleAdv? = null,
+        timestampNanos: Long = 0L,
+    ) {
         val now = System.currentTimeMillis()
         val prev = targets[addr]
         val isNew = prev == null
-        val history = (prev?.history.orEmpty() + RssiSample(now, rssi)).takeLast(HISTORY_MAX)
+        // 经典发现相位不得擦掉 BLE 相位已捕获的广播字段:新值覆盖,缺失沿用旧值
+        val adv = (freshAdv ?: prev?.bleAdv)
+        val history = (prev?.history.orEmpty() + RssiSample(now, rssi, timestampNanos, approxTime = timestampNanos <= 0)).takeLast(HISTORY_MAX)
         val noise = -92
-        val cls = runCatching { device.bluetoothClass }.getOrNull()
+        val cls = runCatching { device?.bluetoothClass }.getOrNull()
+        // 距离模型:BLE 广播真实携带发射功率时用它;经典相位无新广播时继承旧 PTX(否则模型来回跳)
+        val ptxDbm = freshAdv?.txPowerLevelDbm?.takeIf { it in -40..10 } ?: prev?.txPowerDbm
+        val ptx = ptxDbm?.toFloat() ?: -59f
+        // 名称优先级:有效新名 > 广播名 > 旧名 > 占位名;经典发现的 "(BT设备)" 永不覆盖好名字
+        val effectiveName = when {
+            name.isNotBlank() && !name.startsWith("(") -> name
+            !adv?.deviceNameAdv.isNullOrBlank() -> adv!!.deviceNameAdv
+            !prev?.name.isNullOrBlank() && !prev!!.name.startsWith("(") -> prev.name
+            else -> name
+        }
         targets[addr] = RadarTarget(
             id = addr,
-            name = name,
+            name = effectiveName,
             type = "bt",
             rssi = rssi,
-            distanceM = rssiToDistance(rssi, -59f),
+            distanceM = rssiDistanceEstimateM(rssi, ptx),
             angleDeg = pseudoAngle(addr),
             channel = "2.4GHz",
             address = addr,
             deviceClassMajor = majorClassName(cls),
             deviceClassDetail = minorClassName(cls),
-            bondState = bondStateName(device.bondState),
-            linkType = linkTypeName(runCatching { device.type }.getOrNull()),
+            bondState = bondStateName(device?.bondState ?: BluetoothDevice.BOND_NONE),
+            linkType = linkTypeName(runCatching { device?.type }.getOrNull()),
+            alias = runCatching { device?.alias }.getOrNull()?.takeIf { it.isNotBlank() } ?: prev?.alias.orEmpty(),
+            bleAdv = adv,
+            observedVia = if (adv != null) "ble" else prev?.observedVia ?: "classic",
+            txPowerDbm = ptxDbm,
+            distanceAssumed = ptxDbm == null,
             vendor = ouiVendor(addr),
             vendorOui = addr.take(8),
             noiseDbm = noise,
@@ -176,8 +264,24 @@ class RadarManager(private val context: Context) {
             lastSeenMs = now,
             hitCount = (prev?.hitCount ?: 0) + 1,
             history = history,
+            hitBuckets = advanceHitBuckets(prev, now).first,
+            hitBucketStartMs = advanceHitBuckets(prev, now).second,
         )
         if (isNew) newContacts.add(addr)
+    }
+
+    /** 最近 10 分钟每分钟命中桶 —— 档案页命中频率图的数据源 */
+    private fun advanceHitBuckets(prev: RadarTarget?, now: Long): Pair<List<Int>, Long> {
+        val start = now / 60_000L * 60_000L
+        if (prev == null || prev.hitBucketStartMs <= 0) return listOf(1) to start
+        val delta = ((start - prev.hitBucketStartMs) / 60_000L).toInt()
+        if (delta <= 0) {
+            val cur = if (prev.hitBuckets.isEmpty()) listOf(0) else prev.hitBuckets
+            return (cur.dropLast(1) + (cur.last() + 1)).takeLast(HIT_BUCKET_MAX) to prev.hitBucketStartMs
+        }
+        val kept = prev.hitBuckets.takeLast((HIT_BUCKET_MAX - delta).coerceAtLeast(0))
+        val zeros = List((delta - 1).coerceAtMost(HIT_BUCKET_MAX - 1)) { 0 }
+        return (kept + zeros + 1).takeLast(HIT_BUCKET_MAX) to start
     }
 
     /** 取走本轮新出现的目标 id 列表（一次性消费） */
@@ -185,6 +289,22 @@ class RadarManager(private val context: Context) {
         val out = mutableListOf<String>()
         while (true) { out.add(newContacts.poll() ?: break) }
         return out
+    }
+
+    /**
+     * 清理过期目标 —— 由 ViewModel 每 500ms 调用。
+     *
+     * BLE 设备会轮换随机 MAC,不清理会让目标表与定位状态无界增长,
+     * 雷达/地图/档案页永久显示幽灵设备。只删超龄目标;调用方(ViewModel)
+     * 拿到表后同步裁剪定位引擎的 alive 集合。
+     */
+    fun pruneStale(maxAgeMs: Long = 60_000L) {
+        val cutoff = System.currentTimeMillis() - maxAgeMs
+        val itr = targets.entries.iterator()
+        while (itr.hasNext()) {
+            if (itr.next().value.lastSeenMs < cutoff) itr.remove()
+        }
+        wifiSeenTs.keys.retainAll { targets.containsKey(it) }
     }
 
     fun start() {
@@ -236,8 +356,11 @@ class RadarManager(private val context: Context) {
                 val device = result.device ?: return
                 val rssi = result.rssi
                 val addr = device.address ?: return
-                val name = device.name ?: result.scanRecord?.deviceName ?: "(BLE设备)"
-                addBtTarget(device, addr, name, rssi)
+                val rec = result.scanRecord
+                val name = device.name ?: rec?.deviceName ?: "(BLE设备)"
+                // result.timestampNanos 与 SensorEvent.timestamp 同一基准;<=0 时回退并标 approx
+                val nanos = result.timestampNanos.takeIf { it > 0 } ?: android.os.SystemClock.elapsedRealtimeNanos()
+                addBtTarget(device, addr, name, rssi, source = "ble", freshAdv = result.toBleAdv(), timestampNanos = nanos)
             } catch (_: Exception) {}
         }
 
@@ -245,6 +368,35 @@ class RadarManager(private val context: Context) {
             bleScanning = false
             bleRetryAt = System.currentTimeMillis() + BLE_FAIL_BACKOFF_MS
         }
+    }
+
+    /**
+     * ScanRecord → BleAdv 快照 —— 只拷贝值,绝不持有 ScanRecord 对象。
+     * 各字段缺失时用 sentinel 表示;API 29+ 才有的 solicitation 字段低版本不读。
+     */
+    private fun BleScanResult.toBleAdv(): BleAdv {
+        val rec = scanRecord ?: return BleAdv()
+        val mfr = mutableMapOf<Int, String>()
+        val mfrData = rec.manufacturerSpecificData
+        if (mfrData != null) {
+            for (i in 0 until mfrData.size()) {
+                if (mfr.size >= 8) break
+                mfr[mfrData.keyAt(i)] = bytesToHex(mfrData.valueAt(i), 64)
+            }
+        }
+        val svcData = mutableMapOf<String, String>()
+        rec.serviceData?.forEach { uuid, bytes -> if (svcData.size < 8) svcData[uuid.toString()] = bytesToHex(bytes, 32) }
+        return BleAdv(
+            hasRecord = true,
+            txPowerLevelDbm = rec.txPowerLevel,
+            advFlags = rec.advertiseFlags,
+            serviceUuids = rec.serviceUuids?.map { it.uuid.toString() }?.distinct()?.take(16).orEmpty(),
+            serviceData = svcData,
+            manufacturerData = mfr,
+            manufacturerId = mfr.keys.firstOrNull() ?: -1,
+            deviceNameAdv = rec.deviceName.orEmpty(),
+            updatedAtMs = System.currentTimeMillis(),
+        )
     }
 
     /**
@@ -343,16 +495,18 @@ class RadarManager(private val context: Context) {
 
     // ─── 解析工具 ─────────────────────────────────────────────────────────────
 
-    private fun rssiToDistance(rssi: Int, txPower: Float): Float {
-        val ratio = (txPower - rssi) / (10f * 2.5f)
-        return Math.pow(10.0, ratio.toDouble()).toFloat().coerceIn(0.3f, 100f)
-    }
-
-    /** 地址哈希派生假方位角 —— 手机硬件无 AoA 能力，方位为稳定估计值而非测量值 */
+    /**
+     * 地址哈希派生假方位角 —— 手机硬件无 AoA 能力，方位为稳定估计值而非测量值。
+     * 仅在没有方位推演结果(RssiLocalizationEngine)时作为占位,界面标注「占位」。
+     */
     private fun pseudoAngle(mac: String): Float {
         val clean = mac.replace(":", "").takeLast(6)
         return (clean.hashCode() and 0x7FFFFFFF) % 360f
     }
+
+    /** 字节数组转十六进制大写字符串,超长截断 —— 广播数据展示用 */
+    private fun bytesToHex(bytes: ByteArray, maxBytes: Int): String =
+        bytes.take(maxBytes).joinToString("") { "%02X".format(it) }
 
     private fun channelFromFreq(freq: Int): Int = when {
         freq in 2412..2484 -> (freq - 2412) / 5 + 1

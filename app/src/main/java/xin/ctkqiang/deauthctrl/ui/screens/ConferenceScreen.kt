@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import xin.ctkqiang.deauthctrl.manager.ConfMember
 import xin.ctkqiang.deauthctrl.manager.ConfStreamType
 import xin.ctkqiang.deauthctrl.manager.ConferenceHostService
+import xin.ctkqiang.deauthctrl.manager.MemberRxStats
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -93,6 +94,8 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
     val talking by manager.talking.collectAsState()
     val error by manager.error.collectAsState()
     val stats by manager.videoStats.collectAsState()
+    val rxStats by manager.memberRxStats.collectAsState()
+    val tx by manager.senderTxStats.collectAsState()
 
     // 屏幕共享授权：先起前台服务（Android 14 要求），再请求 MediaProjection
     val projectionLauncher = rememberLauncherForActivityResult(
@@ -108,7 +111,20 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
             )
             manager.setStream(ConfStreamType.SCREEN)
         } else {
-            manager.setStream(ConfStreamType.NONE)
+            // 用户拒绝录屏:摄像头流正在运行时不要 ACTION_STOP —— 服务停止会触发投影 onStop
+            // 链路把正在运行的摄像头编码器一并杀掉;没有视频流时才清理录屏前台服务
+            val camActive = manager.myStream.value == ConfStreamType.CAMERA_FRONT ||
+                manager.myStream.value == ConfStreamType.CAMERA_BACK
+            if (!camActive) {
+                context.startService(
+                    Intent(context, ConferenceHostService::class.java).apply {
+                        action = ConferenceHostService.ACTION_STOP
+                    },
+                )
+            }
+            if (manager.myStream.value == ConfStreamType.NONE) {
+                manager.setStream(ConfStreamType.NONE)
+            }
         }
     }
 
@@ -175,8 +191,18 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                                 modifier = Modifier.weight(1f).clickable {
                                     haptic.hud()
                                     if (type == ConfStreamType.SCREEN) {
-                                        if (myStream == ConfStreamType.SCREEN) manager.setStream(ConfStreamType.NONE)
-                                        else requestScreenShare()
+                                        if (myStream == ConfStreamType.SCREEN) {
+                                            manager.setStream(ConfStreamType.NONE)
+                                            // Android 14+ 一个 MediaProjection 会话只能 createVirtualDisplay 一次；
+                                            // 关屏共享必须同时结束前台服务与授权会话，下次共享重新弹系统授权
+                                            context.startService(
+                                                Intent(context, ConferenceHostService::class.java).apply {
+                                                    action = ConferenceHostService.ACTION_STOP
+                                                },
+                                            )
+                                        } else {
+                                            requestScreenShare()
+                                        }
                                     } else {
                                         manager.setStream(type)
                                     }
@@ -219,6 +245,12 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                             modifier = Modifier.padding(vertical = 13.dp),
                         )
                     }
+                    Spacer(Modifier.height(6.dp))
+                    // 发送端真实统计：编码器没出帧时这里保持 0，不再“看起来一切正常”
+                    Text(
+                        "TX ${tx.frames}帧/${tx.fragments}片 · 失败 ${tx.failures} · 关键帧 ${tx.keyFrames} · CSD ${tx.configBroadcasts} · 重请求 ${tx.requestedKeyFrames}",
+                        fontFamily = Mono, fontSize = 8.sp, color = Gray,
+                    )
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -239,6 +271,7 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                                 isMe = member.id == manager.deviceId,
                                 myStream = myStream,
                                 manager = manager,
+                                rx = rxStats[member.id],
                             )
                         }
                     }
@@ -248,9 +281,14 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                 TermPanelLocal("会议说明") {
                     Text("同一 WiFi 内，每台设备广播自己的画面（前置/后置摄像头或屏幕），并同时接收所有成员的视频 —— 无互联网、无中心服务器", fontFamily = Sans, fontSize = 10.sp, color = Gray, lineHeight = 15.sp)
                     Spacer(Modifier.height(5.dp))
-                    Text("· 视频: H.264 640×480@15fps UDP 组播 239.1.2.3:10091", fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text("· 视频: H.264 640×480@15fps UDP 239.1.2.3:10091（组播）", fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text("· 兜底: 每片同时逐成员单播；CSD 每 2s 重播，缺帧自动请求关键帧", fontFamily = Mono, fontSize = 9.sp, color = White)
                     Text("· 语音: PTT 半双工 8kHz PCM 单播", fontFamily = Mono, fontSize = 9.sp, color = White)
-                    Text("· 发现: UDP 9998 广播,6 秒超时", fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text("· 发现: UDP 9998 定向广播/组播，6 秒超时", fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Spacer(Modifier.height(5.dp))
+                    Text("· 限制: UDP 不保证送达，丢包会花屏/黑屏；关键帧重请求只能兜底，不能保证弱网流畅", fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
+                    Text("· 限制: AP 开启客户端隔离时广播/组播/单播都无法穿透，应用层没有绕过方法", fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
+                    Text("· 限制: 屏幕共享每次都需要系统授权；Android 14+ 一个授权会话只能创建一次虚拟显示，停止后需重新授权", fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
                 }
                 Spacer(Modifier.weight(1f))
             }
@@ -284,6 +322,7 @@ private fun MemberTile(
     isMe: Boolean,
     myStream: ConfStreamType,
     manager: xin.ctkqiang.deauthctrl.manager.ConferenceManager,
+    rx: MemberRxStats?,
 ) {
     val streamTypeLabel = when (member.streamType) {
         "front" -> "前置"
@@ -293,6 +332,18 @@ private fun MemberTile(
     }
     val talking = member.talking
     val showVideo = !isMe && member.streamType != "none"
+    // 黑屏自诊：区分「没收到包 / 缺参数集 / 解码器未就绪 / 无信号」，
+    // 不让一块永远黑的 Tile 看起来像正常播放。
+    val rxHint: String? = if (isMe || !showVideo) null else when {
+        rx == null -> "已连接 · 未收到视频数据"
+        !rx.surfaceAttached -> "等待画面绑定"
+        rx.decoderState.contains("失败") || rx.decoderState.contains("错误") -> rx.lastError ?: rx.decoderState
+        rx.decoderState.startsWith("等待") -> rx.decoderState
+        rx.lastFrameAgeMs > 3000 -> "无信号 ${rx.lastFrameAgeMs / 1000}s · 已请求关键帧"
+        rx.rxFrames == 0L -> "已连接 · 未出图（等待关键帧）"
+        rx.decodedFrames == 0L -> "解码器未就绪"
+        else -> null
+    }
 
     Surface(
         Modifier.fillMaxWidth().height(150.dp),
@@ -334,6 +385,34 @@ private fun MemberTile(
                         Text("● 广播中", fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
                     }
                 }
+            }
+
+            // 接收端诊断叠层：对方信标说有画面但本机没出图时，明确指出卡在哪一层
+            if (rxHint != null) {
+                Column(
+                    Modifier.fillMaxSize().background(Dark.copy(alpha = 0.55f)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        rxHint,
+                        fontFamily = Mono, fontSize = 9.sp, color = Warn,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
+                }
+            }
+
+            // 每成员接收统计：收包/解码/缺片，用于区分网络、重组、解码问题
+            if (!isMe && showVideo && rx != null) {
+                Text(
+                    "收${rx.rxFrames}/解${rx.decodedFrames} 缺片${rx.missingFragments}",
+                    fontFamily = Mono, fontSize = 7.sp,
+                    color = if (rx.lastFrameAgeMs in 0..2000) TacGreen else Gray,
+                    modifier = Modifier.align(Alignment.TopStart)
+                        .background(Dark.copy(alpha = 0.6f))
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                )
             }
 
             // 底部信息条

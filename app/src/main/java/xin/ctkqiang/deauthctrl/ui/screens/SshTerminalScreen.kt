@@ -84,7 +84,7 @@ private val SshBg = Color(0xFF04121C)
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit) {
+fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () -> Unit) {
     val status by vm.status.collectAsState()
     val host by vm.host.collectAsState()
     val port by vm.port.collectAsState()
@@ -143,6 +143,22 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit) {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(14.dp)) {
                 Text("远程连接", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Black, color = White)
                 Text("JSch · ChannelShell · xterm-256color", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                Spacer(Modifier.height(10.dp))
+                // 本地会话:Termux 引擎本机 shell,无需配置任何服务器
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        haptic.hud()
+                        onOpenLocal()
+                    },
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                    color = TacGreen.copy(alpha = 0.1f),
+                    border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
+                ) {
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("▸ 本地终端 · LOCALHOST", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.weight(1f))
+                        Text("本机 pty shell · 无需服务器", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
 
                 SshField("主机 HOST", host, "192.168.1.1", Modifier.fillMaxWidth()) { vm.manager.host.value = it }

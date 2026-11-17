@@ -1,11 +1,18 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import xin.ctkqiang.deauthctrl.model.JammerLogEntry
 import java.util.ArrayDeque
 import java.util.concurrent.atomic.AtomicInteger
@@ -65,11 +73,14 @@ data class WifiJammerStats(
  * 802.11 管理帧，因此**不能**向第三方 AP 或客户端发送 deauth / disassoc 帧，
  * 也**不能**干扰他人已建立的连接。
  *
- * 本模块唯一真实动作是反复创建并销毁**本机** LocalOnlyHotspot，并把 SSID
- * 依次设为扫描到的目标名称。宏观效果是：本机在无线环境里周期性出现同名
+ * 本模块唯一真实动作是反复创建并销毁**本机** LocalOnlyHotspot，并在 API 30+
+ * 把 SSID 依次设为扫描到的目标名称（API 26-29 公共 API 只能创建系统随机 SSID
+ * 热点，UI/日志会如实说明）。宏观效果是：本机在无线环境里周期性出现同名
  * 热点，手机自身射频被占用、功耗上升、WiFi 连接可能被短暂打断。
  *
  * 任何"干扰了 N 个网络"的说法都是不成立的。UI 与日志只陈述上述事实。
+ * 即使 SSID 与目标相同，也只是本机真实 SoftAP 的信标，不会改变目标 AP 的
+ * BSSID/信道/加密，也不会断开任何客户端。
  *
  * ## 线程与资源模型
  * - 所有计数器为原子类型，可被 binder 回调线程、Default 调度器与主线程并发访问
@@ -83,7 +94,13 @@ class WifiJammerManager(private val context: Context) {
     private val wifiManager: WifiManager =
         context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    /** 启动门闩:扫描阶段与热点循环全程占用,防止多路 runCycleLoop 并发抢同一个 LOHS 会话 */
+    private val startGate = java.util.concurrent.atomic.AtomicBoolean(false)
     private var jammerJob: Job? = null
+
+    /** 进程内共享能力快照：本模块只可能是"本机 SoftAP"，不是帧注入 */
+    private val capabilityProbe = CapabilityProbe.get(context)
+    val capabilities: StateFlow<DeviceCapabilities> = capabilityProbe.capabilities
 
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
@@ -104,6 +121,17 @@ class WifiJammerManager(private val context: Context) {
     private val sessionStartMs = AtomicLong(0L)
     private val reservation = AtomicReference<WifiManager.LocalOnlyHotspotReservation?>(null)
 
+    /** 等待 onStopped 的信号：每次 start 重建，停止后最多等 [STOP_TIMEOUT_MS] */
+    @Volatile
+    private var stopSignal: CompletableDeferred<Unit>? = null
+
+    /** 运行时是否真的能指定 SSID：API 30+ 且系统提供 SoftApConfiguration 接口 */
+    @Volatile
+    private var ssidConfigUnavailable = false
+
+    val ssidConfigurable: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !ssidConfigUnavailable
+
     private val logBuffer = ArrayDeque<JammerLogEntry>(LOG_LIMIT)
     private val logLock = Any()
 
@@ -114,32 +142,58 @@ class WifiJammerManager(private val context: Context) {
      * @param maxCycles 完成多少轮后自动停止；`0` 表示不限制
      */
     fun scanAndStart(toggleMs: Long = DEFAULT_TOGGLE_MS, maxCycles: Int = 0) {
-        if (_isRunning.value) return
+        // 扫描阶段 _isRunning 尚未置 true(要到热点循环才置),单独用原子门闩防重复启动
+        if (!startGate.compareAndSet(false, true)) {
+            _error.value = "热点轮换已在运行"
+            return
+        }
         if (!wifiManager.isWifiEnabled) {
+            startGate.set(false)
             _error.value = "WiFi is off, enable WLAN first"
             log("SCAN", "abort: WiFi is disabled")
             return
         }
+        if (!isLocationServiceEnabled()) {
+            startGate.set(false)
+            _error.value = "系统定位开关已关闭：Android 要求开启定位后才能扫描 Wi-Fi"
+            _scanState.value = JammerScanState.Error(
+                "系统定位开关已关闭：请打开系统定位后重试（即使已授予位置权限，关闭定位总开关也会导致扫描失败）"
+            )
+            log("SCAN", "abort: system location service is disabled")
+            return
+        }
         _scanState.value = JammerScanState.Scanning
         _error.value = null
+        capabilityProbe.refreshCheap()
         log("SCAN", "starting WiFi scan ...")
 
         scope.launch {
             val cached = readScanResults()
 
+            // startScan() 返回 false 表示系统节流，和 SecurityException 是两种不同原因
+            var scanThrew = false
             val scanAccepted = try {
                 wifiManager.startScan()
-                delay(SCAN_SETTLE_MS)
-                true
             } catch (_: SecurityException) {
+                scanThrew = true
                 false
             }
 
             if (!scanAccepted) {
-                _scanState.value = JammerScanState.Error("location permission is required for WiFi scanning")
-                log("SCAN", "abort: scan rejected (permission or platform throttle)")
+                _scanState.value = JammerScanState.Error(
+                    when {
+                        !isLocationServiceEnabled() ->
+                            "系统定位开关已关闭，请打开系统定位后重试"
+                        scanThrew ->
+                            "Wi-Fi 扫描被系统拒绝：${describeWifiSecurityFailure("Wi-Fi 扫描")}"
+                        else ->
+                            "系统扫描被节流（startScan 返回 false），请稍后重试"
+                    }
+                )
+                log("SCAN", "abort: scan rejected (permission/platform throttle)")
                 return@launch
             }
+            delay(SCAN_SETTLE_MS)
 
             val fresh = readScanResults()
             val all = (fresh.ifEmpty { cached }).distinctBy { it.bssid }
@@ -183,13 +237,23 @@ class WifiJammerManager(private val context: Context) {
 
         try {
             while (isActive && _isRunning.value) {
-                if (!startHotspotAndAwait()) {
+                if (total <= 0) {
+                    _error.value = "没有可轮换的 SSID"
+                    break
+                }
+                val ssid = ssids[index % total]
+                if (startHotspotAndAwait(ssid)) {
+                    hotspotStarts.incrementAndGet()
+                    if (!ssidConfigurable) {
+                        log("HOTSPOT", "started 系统随机 SSID（API<30 公共 API 无法指定）")
+                    } else {
+                        log("HOTSPOT", "started SSID=$ssid")
+                    }
+                    delay(toggleMs)
+                    stopHotspotAndAwait()
+                } else {
                     delay(FAILURE_BACKOFF_MS)
                 }
-
-                delay(toggleMs)
-                releaseHotspot()
-                hotspotStarts.incrementAndGet()
 
                 index++
                 if (total > 0 && index % total == 0) {
@@ -219,6 +283,7 @@ class WifiJammerManager(private val context: Context) {
         } finally {
             releaseHotspot()
             _isRunning.value = false
+            startGate.set(false) // 释放启动门闩,允许下一次完整会话
             publishStats()
         }
     }
@@ -226,51 +291,154 @@ class WifiJammerManager(private val context: Context) {
     /**
      * 调起本机热点并等待系统回调，返回是否成功。
      *
-     * 关键点：若协程已取消或会话已停止，晚到的 [WifiManager.LocalOnlyHotspotCallback.onStarted]
-     * 会**立即关闭**拿到的句柄，而不是把它丢进 [reservation] 造成永久泄漏。
+     * - API 30+ 用 [SoftApConfiguration] 真正应用目标 SSID；API 26-29 公共 API
+     *   只能创建系统随机 SSID 热点，日志会如实说明
+     * - 回调使用主 Looper / 主线程 Executor；不再传入 null（Default 线程没有 Looper）
+     * - 若协程已取消、超时或会话已停止，晚到的 onStarted 会**立即关闭**句柄
      */
-    private suspend fun startHotspotAndAwait(): Boolean {
+    private suspend fun startHotspotAndAwait(ssid: String): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             _error.value = "LocalOnlyHotspot requires Android 8.0 (API 26) or newer"
             return false
         }
 
-        return suspendCancellableCoroutine { cont ->
-            val callback = object : WifiManager.LocalOnlyHotspotCallback() {
-                override fun onStarted(r: WifiManager.LocalOnlyHotspotReservation?) {
-                    if (!cont.isActive || !_isRunning.value) {
-                        closeQuietly(r)
-                        return
+        val started = withTimeoutOrNull(START_TIMEOUT_MS) {
+            suspendCancellableCoroutine { cont ->
+                val stoppedSignal = CompletableDeferred<Unit>()
+                stopSignal = stoppedSignal
+
+                val callback = object : WifiManager.LocalOnlyHotspotCallback() {
+                    override fun onStarted(r: WifiManager.LocalOnlyHotspotReservation?) {
+                        if (!cont.isActive || !_isRunning.value) {
+                            closeQuietly(r)
+                            return
+                        }
+                        reservation.set(r)
+                        cont.resume(true)
                     }
-                    reservation.set(r)
-                    cont.resume(true)
+
+                    override fun onStopped() {
+                        // 不在这里清空 reservation:旧请求的 onStopped 可能在新请求 onStarted 之后到达,
+                        // 无条件 set(null) 会把新热点句柄丢掉,导致 stop() 之后热点仍在
+                        if (!stoppedSignal.isCompleted) stoppedSignal.complete(Unit)
+                    }
+
+                    override fun onFailed(reason: Int) {
+                        hotspotFailures.incrementAndGet()
+                        val message = hotspotFailureMessage(reason)
+                        _error.value = message
+                        log("HOTSPOT", "start failed: $message")
+                        if (cont.isActive) cont.resume(false)
+                    }
                 }
 
-                override fun onStopped() {
-                    reservation.set(null)
-                }
-
-                override fun onFailed(reason: Int) {
-                    hotspotFailures.incrementAndGet()
-                    val message = hotspotFailureMessage(reason)
+                try {
+                    val configured = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        startWithSoftApConfiguration(ssid, callback)
+                    } else {
+                        false
+                    }
+                    if (!configured) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            ssidConfigUnavailable = true
+                            log(
+                                "HOTSPOT",
+                                "SoftApConfiguration 不可用，退回系统随机 SSID（目标 '$ssid' 未应用）",
+                            )
+                        }
+                        @Suppress("DEPRECATION")
+                        wifiManager.startLocalOnlyHotspot(callback, Handler(Looper.getMainLooper()))
+                    }
+                } catch (_: SecurityException) {
+                    val message = describeWifiSecurityFailure("启动本机热点")
                     _error.value = message
-                    log("HOTSPOT", "start failed: $message")
+                    hotspotFailures.incrementAndGet()
+                    log("HOTSPOT", message)
+                    if (cont.isActive) cont.resume(false)
+                } catch (t: Throwable) {
+                    val message = "hotspot start error: ${t.javaClass.simpleName}: ${t.message}"
+                    _error.value = message
+                    hotspotFailures.incrementAndGet()
+                    log("HOTSPOT", message)
                     if (cont.isActive) cont.resume(false)
                 }
             }
+        }
 
-            try {
-                wifiManager.startLocalOnlyHotspot(callback, null)
-            } catch (_: SecurityException) {
-                _error.value = "permission denied for LocalOnlyHotspot"
-                log("HOTSPOT", "startLocalOnlyHotspot raised SecurityException")
-                if (cont.isActive) cont.resume(false)
-            } catch (t: Throwable) {
-                _error.value = "hotspot start error: ${t.javaClass.simpleName}"
-                log("HOTSPOT", "startLocalOnlyHotspot threw ${t.javaClass.simpleName}")
-                if (cont.isActive) cont.resume(false)
+        if (started == null) {
+            hotspotFailures.incrementAndGet()
+            _error.value = "启动本机热点超时（${START_TIMEOUT_MS}ms 未收到系统回调）"
+            log("HOTSPOT", _error.value.orEmpty())
+            return false
+        }
+        return started
+    }
+
+    /**
+     * 通过反射调用 API 30+ 的 `SoftApConfiguration` + `startLocalOnlyHotspotWithConfiguration`。
+     *
+     * 本仓库编译所用的 android-34 SDK stub 缺少 `SoftApConfiguration.Builder` /
+     * `BAND_2GHZ` / `startLocalOnlyHotspotWithConfiguration`（android-36 才补全），
+     * 直接引用无法编译；反射在 Android 11+ 真机上调用同一公共 API。
+     * `setBand` 是 API 31+，失败则交给系统选频段。
+     *
+     * @return true 表示请求已交给系统；false 表示接口不可用，调用方应退回
+     *         随机 SSID 的旧接口，并在日志中如实说明目标 SSID 未应用。
+     */
+    private fun startWithSoftApConfiguration(
+        ssid: String,
+        callback: WifiManager.LocalOnlyHotspotCallback,
+    ): Boolean {
+        // 只有"类/方法确实不存在"才返回 false（调用方退回随机 SSID）；
+        // 调用过程抛出的 SecurityException 等原样上抛，由调用方精确归因。
+        val builderClass = try {
+            Class.forName("android.net.wifi.SoftApConfiguration\$Builder")
+        } catch (_: ClassNotFoundException) {
+            return false
+        }
+        val builder = builderClass.getDeclaredConstructor().newInstance()
+        builderClass.getMethod("setSsid", String::class.java).invoke(builder, ssid)
+        // AOSP 中 SoftApConfiguration.BAND_2GHZ == 1；编译 stub 缺该常量
+        runCatching {
+            builderClass.getMethod("setBand", Integer.TYPE)
+                .invoke(builder, SOFT_AP_BAND_2GHZ)
+        }
+        val config = builderClass.getMethod("build").invoke(builder)
+        val configClass = Class.forName("android.net.wifi.SoftApConfiguration")
+        val method = try {
+            WifiManager::class.java.getMethod(
+                "startLocalOnlyHotspotWithConfiguration",
+                configClass,
+                java.util.concurrent.Executor::class.java,
+                WifiManager.LocalOnlyHotspotCallback::class.java,
+            )
+        } catch (_: NoSuchMethodException) {
+            return false
+        }
+        try {
+            method.invoke(wifiManager, config, ContextCompat.getMainExecutor(context), callback)
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            // 反射调用会把真实异常包一层，这里解包保证 SecurityException 归因准确
+            when (val cause = e.cause) {
+                is SecurityException -> throw cause
+                is RuntimeException -> throw cause
+                null -> throw IllegalStateException("startLocalOnlyHotspotWithConfiguration failed")
+                else -> throw IllegalStateException(cause)
             }
         }
+        return true
+    }
+
+    /**
+     * 关闭热点并等待 onStopped（最多 [STOP_TIMEOUT_MS]），确保下一次
+     * startLocalOnlyHotspot 不会撞上"上一请求未完成"。
+     */
+    private suspend fun stopHotspotAndAwait() {
+        val r = reservation.getAndSet(null) ?: return
+        val signal = stopSignal
+        closeQuietly(r)
+        withTimeoutOrNull(STOP_TIMEOUT_MS) { signal?.await() }
+        stopSignal = null
     }
 
     /**
@@ -279,6 +447,49 @@ class WifiJammerManager(private val context: Context) {
      */
     private fun releaseHotspot() {
         closeQuietly(reservation.getAndSet(null))
+    }
+
+    // ─── 权限 / 定位 ────────────────────────────────────────────────────────────
+
+    private fun isLocationServiceEnabled(): Boolean {
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+            ?: return false
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                lm.isLocationEnabled
+            } else {
+                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                    lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            }
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    /** SecurityException 精确归因，不再统一写成 "permission denied" 或误归 CHANGE_WIFI_STATE */
+    private fun describeWifiSecurityFailure(action: String): String {
+        val missing = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.NEARBY_WIFI_DEVICES,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add("NEARBY_WIFI_DEVICES")
+            }
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add("ACCESS_FINE_LOCATION")
+            }
+        }
+        return if (missing.isEmpty()) {
+            "$action 被系统拒绝：未定位到缺失权限（可能是厂商 ROM 的策略限制）"
+        } else {
+            "$action 被拒绝：缺少 ${missing.joinToString(" / ")}"
+        }
     }
 
     private fun closeQuietly(r: WifiManager.LocalOnlyHotspotReservation?) {
@@ -312,6 +523,7 @@ class WifiJammerManager(private val context: Context) {
 
     fun stop() {
         _isRunning.value = false
+        startGate.set(false)
         jammerJob?.cancel()
         jammerJob = null
         releaseHotspot()
@@ -397,21 +609,32 @@ class WifiJammerManager(private val context: Context) {
     }
 
     companion object {
-        /** 单次热点保持时长的下界（毫秒） */
-        const val TOGGLE_MIN_MS = 60L
+        /**
+         * 单次热点保持时长的下界（毫秒）。
+         *
+         * LOHS 是异步 Binder 调用：start→onStarted→close→onStopped 本身就需要
+         * 数百毫秒到数秒，旧的 60-300ms 节奏必然撞上"同一时刻只允许一个未完成
+         * 请求"并吞掉异常。现在最短保持 5 秒。
+         */
+        const val TOGGLE_MIN_MS = 5_000L
 
         /** 单次热点保持时长的上界（毫秒） */
-        const val TOGGLE_MAX_MS = 300L
+        const val TOGGLE_MAX_MS = 15_000L
 
         /** 默认单次热点保持时长（毫秒） */
-        const val DEFAULT_TOGGLE_MS = 80L
+        const val DEFAULT_TOGGLE_MS = 5_000L
 
         /** 允许 UI 设置的最大轮数上界 */
         const val MAX_CYCLES_LIMIT = 10_000
 
         private const val SCAN_SETTLE_MS = 1500L
         private const val FAILURE_BACKOFF_MS = 500L
+        private const val START_TIMEOUT_MS = 5_000L
+        private const val STOP_TIMEOUT_MS = 500L
         private const val STATS_PUBLISH_INTERVAL_MS = 500L
+
+        /** AOSP SoftApConfiguration.BAND_2GHZ 的数值；编译 stub 未提供该常量 */
+        private const val SOFT_AP_BAND_2GHZ = 1
         private const val LOG_LIMIT = 200
     }
 }

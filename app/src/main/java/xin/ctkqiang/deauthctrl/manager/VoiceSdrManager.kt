@@ -43,6 +43,20 @@ class VoiceSdrManager(private val context: Context) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    /** 频段模式:0=全频段(默认) 1=超声聚焦(15-22.05kHz) */
+    private val _band = MutableStateFlow(0)
+    val band: StateFlow<Int> = _band
+
+    /**
+     * 超声告警:18-22kHz 频段能量显著高于噪声底时置 true(带迟滞)。
+     * 该频段正是电子器件 coil whine / 超声源的特征区;消费级麦克风在 20kHz+
+     * 衰减严重,可用性取决于硬件 —— 告警为启发式,不是鉴定。
+     */
+    private val _ultrasonicAlarm = MutableStateFlow(false)
+    val ultrasonicAlarm: StateFlow<Boolean> = _ultrasonicAlarm
+
+    fun setBand(band: Int) { _band.value = if (band == 1) 1 else 0 }
+
     @Volatile private var stop = false
     @Volatile private var recordRef: AudioRecord? = null
     private var threadRef: Thread? = null
@@ -108,12 +122,21 @@ class VoiceSdrManager(private val context: Context) {
                     val rmsDb = (20f * log10((sqrt(sumSq / BINS) / FFT_SIZE / 32768f).coerceAtLeast(1e-9))).toFloat()
                     // 噪声底:bin 幅度的中位数(比平均值更抗峰值干扰)
                     val sorted = bins.copyOf().apply { sort() }
+                    val noiseFloor = sorted[BINS / 2].coerceIn(-120f, 0f)
+                    // 超声监测:18-22kHz 频段能量(18k/10.77≈1671 bin,22.05k=2048 全部)
+                    val usLo = (18_000f / BIN_HZ).toInt().coerceIn(0, BINS - 1)
+                    val usHi = BINS - 1
+                    var usSum = 0f
+                    for (i in usLo..usHi) usSum += bins[i]
+                    val usMean = usSum / (usHi - usLo + 1)
+                    val usAlarm = usMean > -78f && usMean > noiseFloor + 18f
+                    if (usAlarm != _ultrasonicAlarm.value) _ultrasonicAlarm.value = usAlarm
                     _frame.value = SpectrumFrame(
                         bins = bins,
                         peakHz = peakHz,
                         peakDb = peakDb,
                         rmsDb = rmsDb.coerceIn(-120f, 0f),
-                        noiseFloorDb = sorted[BINS / 2].coerceIn(-120f, 0f),
+                        noiseFloorDb = noiseFloor,
                         timeMs = System.currentTimeMillis(),
                     )
                 }

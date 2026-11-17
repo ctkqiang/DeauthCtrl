@@ -15,8 +15,10 @@ import android.app.Application
 class DeauthApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        // 战术照片中继常开:同网段设备随时可投递,收到即发系统通知
-        xin.ctkqiang.deauthctrl.manager.PhotoRelayHost(this).start()
+        // 战术照片中继常开:同网段设备随时可投递,收到即发系统通知。
+        // 必须走进程级单例 —— 相机页也订阅同一个实例,重复 new 会二次绑定 9997/10088
+        // 并抛 BindException,导致页面订阅的 peers 永远为空。
+        xin.ctkqiang.deauthctrl.manager.PhotoRelayHost.get(this)
 
         // 全局崩溃现场捕获:写入 filesDir/crash.log,便于定位雷达等模块的崩溃
         installCrashLogger()

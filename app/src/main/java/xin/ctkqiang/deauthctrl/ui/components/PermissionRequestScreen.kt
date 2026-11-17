@@ -62,23 +62,35 @@ data class PermissionCopy(val title: String, val reason: String)
  */
 object RequiredPermissions {
 
-    /** 运行所需权限。Android 12 起蓝牙改用「附近的设备」三件套；12 以下由定位权限代偿。 */
-    val runtime: Array<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        arrayOf(
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_ADVERTISE,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.CAMERA,
-        )
-    } else {
-        arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.CAMERA,
-        )
-    }
+    /**
+     * 运行所需权限。
+     *
+     * - Android 12 起蓝牙改用「附近的设备」三件套（SCAN/CONNECT/ADVERTISE）
+     * - Android 13 起创建本机热点（LocalOnlyHotspot）额外要求 NEARBY_WIFI_DEVICES，
+     *   缺失时 targetSdk 34 的 `startLocalOnlyHotspot` 会直接抛 SecurityException
+     * - Android 11 及以下的 Wi-Fi/BLE 扫描由定位权限代偿
+     */
+    val runtime: Array<String> = buildList {
+        add(Manifest.permission.ACCESS_FINE_LOCATION)
+        add(Manifest.permission.RECORD_AUDIO)
+        add(Manifest.permission.CAMERA)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            add(Manifest.permission.BLUETOOTH_SCAN)
+            add(Manifest.permission.BLUETOOTH_CONNECT)
+            add(Manifest.permission.BLUETOOTH_ADVERTISE)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.NEARBY_WIFI_DEVICES)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // 基站定位(GSM 邻区信息 CellInfo 需要)
+            add(Manifest.permission.READ_PHONE_STATE)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // 照片接收通知
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
 
     /**
      * 尚未授予的权限
@@ -97,9 +109,15 @@ object RequiredPermissions {
         Manifest.permission.BLUETOOTH_SCAN -> PermissionCopy("附近设备 · 扫描", "发现并列出附近的 BLE 设备")
         Manifest.permission.BLUETOOTH_CONNECT -> PermissionCopy("附近设备 · 连接", "读取设备名称与已配对信息")
         Manifest.permission.BLUETOOTH_ADVERTISE -> PermissionCopy("附近设备 · 广播", "BLE 广播相关功能")
-        Manifest.permission.ACCESS_FINE_LOCATION -> PermissionCopy("位置信息", "Android 11 及以下的 BLE 与 WiFi 扫描依赖此项")
-        Manifest.permission.RECORD_AUDIO -> PermissionCopy("麦克风", "对讲机语音功能")
-        Manifest.permission.CAMERA -> PermissionCopy("相机", "加密保险箱拍摄")
+        Manifest.permission.NEARBY_WIFI_DEVICES -> PermissionCopy(
+            "附近 Wi-Fi 设备",
+            "Android 13+ 创建本机热点（LocalOnlyHotspot）必需；不会注入 802.11 帧"
+        )
+        Manifest.permission.ACCESS_FINE_LOCATION -> PermissionCopy("位置信息", "WiFi/BLE 扫描与基站定位依赖此项")
+        Manifest.permission.RECORD_AUDIO -> PermissionCopy("麦克风", "对讲机语音 · 语音频谱 · 超声监测")
+        Manifest.permission.CAMERA -> PermissionCopy("相机", "战术相机 · 夜视 · 加密拍摄 · 闪光灯发报")
+        Manifest.permission.READ_PHONE_STATE -> PermissionCopy("电话状态", "读取附近基站 CellInfo 做 GSM 基站定位")
+        Manifest.permission.POST_NOTIFICATIONS -> PermissionCopy("通知", "照片接收与前台服务的系统通知")
         else -> PermissionCopy(permission.substringAfterLast('.'), "")
     }
 }

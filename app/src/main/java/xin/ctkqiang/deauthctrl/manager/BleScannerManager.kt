@@ -38,6 +38,10 @@ data class BleDevice(
     val txPower: Int = Int.MIN_VALUE,
     val deviceType: String = "",
     val lastSeen: Long = System.currentTimeMillis(),
+    /** 原始广播包字节(十六进制),Wireshark 式查看用;最长 256B */
+    val advBytesHex: String = "",
+    /** 无人机 Remote-ID(ASTM F3411 BLE Beacon,Service Data UUID 0xFFFA) */
+    val isDroneRemoteId: Boolean = false,
 )
 
 /**
@@ -129,6 +133,19 @@ class BleScannerManager(private val context: Context) {
                 else -> ""
             }
 
+            // 原始广播字节:Wireshark 式十六进制查看
+            val advHex = runCatching {
+                val bytes = record?.bytes ?: return@runCatching ""
+                if (bytes.size > 256) bytes.copyOf(256).joinToString(" ") { "%02X".format(it) } else bytes.joinToString(" ") { "%02X".format(it) }
+            }.getOrDefault("")
+            // 无人机 Remote-ID:ASTM F3411 BLE Beacon —— Service Data / 厂商数据携带 16-bit UUID 0xFFFA
+            val droneId = record?.serviceData?.keys?.any { it.toString().lowercase().contains("fffa") } == true ||
+                mfrData?.let { sparse ->
+                    var found = false
+                    for (i in 0 until sparse.size()) { if (sparse.keyAt(i) == 0xFFFA) { found = true; break } }
+                    found
+                } == true
+
             val existing = devices[addr]
             if (existing != null) {
                 existing.rssiHistory.add(rssi)
@@ -136,8 +153,10 @@ class BleScannerManager(private val context: Context) {
                 devices[addr] = existing.copy(
                     rssi = rssi, name = if (name != "(未知)") name else existing.name,
                     services = services, manufacturerData = mfr,
-                    txPower = txPower, deviceType = type,
+                    txPower = txPower, deviceType = if (droneId) "无人机 Remote-ID" else type,
                     lastSeen = System.currentTimeMillis(),
+                    advBytesHex = advHex.ifBlank { existing.advBytesHex },
+                    isDroneRemoteId = droneId || existing.isDroneRemoteId,
                 )
             } else {
                 val history = mutableListOf(rssi)
@@ -145,7 +164,9 @@ class BleScannerManager(private val context: Context) {
                     address = addr, name = name, rssi = rssi,
                     rssiHistory = history, services = services,
                     manufacturerData = mfr, txPower = txPower,
-                    deviceType = type,
+                    deviceType = if (droneId) "无人机 Remote-ID" else type,
+                    advBytesHex = advHex,
+                    isDroneRemoteId = droneId,
                 )
             }
         }

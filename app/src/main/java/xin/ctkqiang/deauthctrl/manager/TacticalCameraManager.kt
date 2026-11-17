@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.concurrent.thread
 import java.nio.ByteBuffer
+import java.util.concurrent.Semaphore
 
 /** 一次已捕获的战术照片 —— 拍摄与发送分离,用户确认后再投递 */
 data class CapturedShot(
@@ -72,6 +73,9 @@ class TacticalCameraManager(private val context: Context) {
     private var previewTexture: SurfaceTexture? = null
     private var previewSurface: Surface? = null
     private var imageReader: ImageReader? = null
+    /** 相机打开代际:close() 自增,迟到回调据此识别过期会话 */
+    @Volatile private var openGen = 0
+    @Volatile private var closed = false
 
     private val _opened = MutableStateFlow(false)
     val opened: StateFlow<Boolean> = _opened
@@ -91,6 +95,10 @@ class TacticalCameraManager(private val context: Context) {
     @Suppress("MissingPermission")
     fun open(cameraId: String, texture: SurfaceTexture) {
         close()
+        // 代际保护:close() 后迟到的 onOpened 会看到过期的 gen,直接关掉相机而不是
+        // 在已释放的 Surface 上建会话(崩溃/泄漏)
+        val gen = ++openGen
+        closed = false
         try {
             cameraThread = HandlerThread("tac-camera").also { it.start() }
             cameraHandler = Handler(cameraThread!!.looper)
@@ -108,14 +116,27 @@ class TacticalCameraManager(private val context: Context) {
 
             cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
                 override fun onOpened(cam: CameraDevice) {
+                    // 过期回调(期间 close/open 过):直接关闭新相机,不在旧 Surface 上建会话
+                    if (closed || gen != openGen) {
+                        runCatching { cam.close() }
+                        return
+                    }
                     device = cam
-                    startSession()
+                    startSession(gen)
                 }
 
-                override fun onDisconnected(cam: CameraDevice) { cam.close(); device = null; _opened.value = false }
+                override fun onDisconnected(cam: CameraDevice) {
+                    runCatching { cam.close() }
+                    if (gen == openGen) { device = null; _opened.value = false }
+                }
+
                 override fun onError(cam: CameraDevice, error: Int) {
-                    cam.close(); device = null; _opened.value = false
-                    _lastError.value = "相机错误 code=$error"
+                    runCatching { cam.close() }
+                    if (gen == openGen) {
+                        device = null
+                        _opened.value = false
+                        _lastError.value = "相机错误 code=$error"
+                    }
                 }
             }, cameraHandler)
             _opened.value = true
@@ -125,22 +146,37 @@ class TacticalCameraManager(private val context: Context) {
         }
     }
 
-    private fun startSession() {
+    private fun startSession(gen: Int) {
+        if (closed || gen != openGen) return
         val dev = device ?: return
         val surfaces = listOf(previewSurface, imageReader?.surface).filterNotNull()
-        dev.createCaptureSession(surfaces, object : CameraCaptureSession.StateCallback() {
-            override fun onConfigured(s: CameraCaptureSession) {
-                session = s
-                val req = dev.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                    addTarget(previewSurface!!)
+        try {
+            dev.createCaptureSession(surfaces, object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(s: CameraCaptureSession) {
+                    if (closed || gen != openGen) {
+                        runCatching { s.close() }
+                        return
+                    }
+                    session = s
+                    val req = dev.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                        addTarget(previewSurface!!)
+                    }
+                    s.setRepeatingRequest(req.build(), null, cameraHandler)
                 }
-                s.setRepeatingRequest(req.build(), null, cameraHandler)
-            }
 
-            override fun onConfigureFailed(s: CameraCaptureSession) {
-                _lastError.value = "预览会话配置失败"
+                override fun onConfigureFailed(s: CameraCaptureSession) {
+                    if (gen == openGen) _lastError.value = "预览会话配置失败"
+                }
+            }, cameraHandler)
+        } catch (t: Throwable) {
+            // 会话创建失败(设备断开/硬件错误):关相机只记错误,不让相机线程崩溃
+            runCatching { dev.close() }
+            if (gen == openGen) {
+                device = null
+                _opened.value = false
+                _lastError.value = "预览会话创建失败: ${t.message}"
             }
-        }, cameraHandler)
+        }
     }
 
     /** 供界面写入一次性提示 */
@@ -153,21 +189,60 @@ class TacticalCameraManager(private val context: Context) {
         captureInternal()
     }
 
-    /** 把待发送照片投递给一组目标 IP（Base64 编码在发送线程执行） */
-    fun sendPending(targetIps: List<String>, senderName: String) {
+    /**
+     * 把待发送照片投递给一组目标(自动发现 peer 或手动 IP)。
+     * 结果聚合为「送达 x/n」并列出失败目标 —— 不再出现全部失败仍显示「已发送」。
+     * 多目标并发发送,信号量限制 4 路;每个目标重试由 [PhotoRelayHost.sendTo] 负责。
+     */
+    fun sendPending(targets: List<PhotoTarget>, senderName: String) {
         val shot = _pendingShot.value ?: run {
             _lastError.value = "没有待发送的照片 —— 先拍摄"
             return
         }
-        thread {
-            val host = PhotoRelayHost(context.applicationContext)
-            val results = targetIps.map { ip ->
-                host.sendTo(ip, shot.jpeg, senderName, shot.width, shot.height)
+        val uniqueTargets = targets.distinctBy { it.ip to it.port }
+        if (uniqueTargets.isEmpty()) {
+            _lastError.value = "没有可发送的目标 —— 等待同网段设备上线"
+            return
+        }
+        thread(name = "photo-send") {
+            // 共享单例:不能在这里 new PhotoRelayHost,否则与 Application 实例争抢端口
+            val host = PhotoRelayHost.get(context.applicationContext)
+            val semaphore = Semaphore(4)
+            val results = arrayOfNulls<SendResult>(uniqueTargets.size)
+            val workers = uniqueTargets.mapIndexed { index, target ->
+                thread(name = "photo-send-${target.ip}") {
+                    semaphore.acquire()
+                    try {
+                        results[index] = host.sendTo(
+                            ip = target.ip,
+                            jpeg = shot.jpeg,
+                            senderName = senderName,
+                            width = shot.width,
+                            height = shot.height,
+                            port = target.port,
+                        )
+                    } finally {
+                        semaphore.release()
+                    }
+                }
             }
+            workers.forEach { worker ->
+                runCatching { worker.join(20_000) }
+            }
+            val finished = results.mapIndexed { index, r ->
+                r ?: SendResult(uniqueTargets[index].ip, false, "发送超时")
+            }
+            val ok = finished.count { it.ok }
+            val failed = finished.filter { !it.ok }
             _lastError.value = when {
-                results.isEmpty() -> "没有可发送的目标"
-                results.size == 1 -> results.first()
-                else -> "已发送 · ${shot.jpeg.size / 1024}KB JPEG → ${results.size} 台设备"
+                finished.size == 1 && ok == 1 -> finished.first().detail
+                else -> buildString {
+                    append("送达 $ok/${finished.size} · ${shot.jpeg.size / 1024}KB JPEG")
+                    if (failed.isNotEmpty()) {
+                        append(" · 失败: ")
+                        append(failed.joinToString(", ") { it.ip })
+                    }
+                }
             }
         }
     }
@@ -213,13 +288,20 @@ class TacticalCameraManager(private val context: Context) {
                 addTarget(reader.surface)
             }
             sessionNow.capture(req.build(), null, cameraHandler)
-            // 拍完恢复预览
-            cameraHandler?.postDelayed({ session?.let { s ->
-                val previewReq = dev.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                    addTarget(previewSurface!!)
+            // 拍完恢复预览 —— 1.2s 后设备可能已断开/相机已关,回调内全部兜底
+            cameraHandler?.postDelayed({
+                runCatching {
+                    if (closed) return@postDelayed
+                    val s = session ?: return@postDelayed
+                    val surface = previewSurface ?: return@postDelayed
+                    val previewReq = dev.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                        addTarget(surface)
+                    }
+                    s.setRepeatingRequest(previewReq.build(), null, cameraHandler)
+                }.onFailure { t ->
+                    if (!closed) _lastError.value = "预览恢复失败: ${t.message}"
                 }
-                s.setRepeatingRequest(previewReq.build(), null, cameraHandler)
-            } }, 1200)
+            }, 1200)
         } catch (t: Throwable) {
             _lastError.value = t.message
         }
@@ -227,6 +309,8 @@ class TacticalCameraManager(private val context: Context) {
 
 
     fun close() {
+        closed = true
+        openGen++
         runCatching { session?.close() }
         runCatching { device?.close() }
         runCatching { imageReader?.close() }

@@ -63,6 +63,37 @@ class IrRemoteManager(context: Context) {
         transmitRaw(carrier, pattern, repeat, "RC-5 0x%02X%02X".format(address, command))
     }
 
+    /** 发射 Sony SIRC 码(12bit 标准 / 15/20bit 扩展;按位数自动) */
+    fun transmitSony(command: Int, device: Int, bits: Int = 12, repeat: Int = 1) {
+        val carrier = 40_000
+        val pattern = buildSonyPattern(command, device, bits)
+        transmitRaw(carrier, pattern, repeat, "Sony SIRC $bits-bit 0x%02X%02X".format(device, command))
+    }
+
+    /**
+     * Sony SIRC:引导 2400µs 开 + 600µs 关;
+     * 逻辑 1 = 1200µs 开 + 600µs 关;逻辑 0 = 600µs 开 + 600µs 关。
+     * 12bit = 7 命令 + 5 设备(LSB 先发);15/20bit 为扩展设备码。
+     */
+    private fun buildSonyPattern(command: Int, device: Int, bits: Int): IntArray {
+        val n = bits.coerceIn(12, 20)
+        val values = mutableListOf<Int>()
+        values.add(2400); values.add(600) // 引导
+        for (i in 0 until n) {
+            val bit = (command shr i) and 1
+            if (bit == 1) { values.add(1200); values.add(600) } else { values.add(600); values.add(600) }
+        }
+        // 15/20bit 的设备扩展位(高位在命令之后,同样 LSB 先发)
+        if (n >= 15) {
+            val devBits = n - 12
+            for (i in 0 until devBits) {
+                val bit = (device shr i) and 1
+                if (bit == 1) { values.add(1200); values.add(600) } else { values.add(600); values.add(600) }
+            }
+        }
+        return values.toIntArray()
+    }
+
     /** 发射原始脉冲：pattern 以微秒为单位交替 开/关，首个值为开启时长 */
     fun transmitRaw(carrierHz: Int, pattern: IntArray, repeat: Int = 1, label: String) {
         val emitter = ir ?: run { _lastTransmit.value = "无红外发射器"; return }

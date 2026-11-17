@@ -117,18 +117,13 @@ fun NetMapScreen(
         }
     }
 
-    // 记录本页是否自行启动了雷达(实时值,避免闭包捕获过期状态)
-    var startedHere by remember { mutableStateOf(false) }
+    // 雷达是共享扫描器:页面级引用计数持有 —— 与雷达页/档案页过渡时扫描不断流
     DisposableEffect(Unit) {
         mapVm.manager.start()
-        if (!radarVm.isRunning.value) {
-            radarVm.start()
-            startedHere = true
-        }
+        radarVm.acquireScan()
         onDispose {
             mapVm.manager.stop()
-            // 雷达是共享扫描器:只关闭本页启动的那份,不影响雷达页自己的扫描
-            if (startedHere && radarVm.isRunning.value) radarVm.stop()
+            radarVm.releaseScan()
         }
     }
 
@@ -224,7 +219,8 @@ fun NetMapScreen(
                         MapView(ctx).apply {
                             setTileSource(TileSourceFactory.MAPNIK)
                             setMultiTouchControls(true)
-                            controller.setZoom(16.0)
+                            // 最大拉近起步:用户要能看到自己半径内的街道细节,而不是一个点
+                            controller.setZoom(19.0)
                             mapVm.manager.location.value?.let {
                                 controller.setCenter(GeoPoint(it.latitude, it.longitude))
                             }
@@ -235,7 +231,7 @@ fun NetMapScreen(
                         if (recenterRequested > 0) {
                             mapVm.manager.location.value?.let { loc ->
                                 map.controller.animateTo(GeoPoint(loc.latitude, loc.longitude))
-                                map.controller.setZoom(17.0)
+                                map.controller.setZoom(19.0)
                                 recenterRequested = 0
                             }
                         }
