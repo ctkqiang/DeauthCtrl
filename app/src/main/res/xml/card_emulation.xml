@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DeauthCtrl 战术卡模拟 —— HCE 注册:自定义 AID(研究用途,非支付类) -->
+<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/hce_service_desc"
+    android:requireDeviceUnlock="false">
+
+    <aid-group android:category="other"
+        android:description="@string/hce_group_desc">
+        <aid-filter android:name="F0010203040506" />
+    </aid-group>
+
+</host-apdu-service>

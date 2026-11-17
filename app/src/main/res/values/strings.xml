@@ -3,4 +3,6 @@
     <string name="app_name">哪吒网络安全终端</string>
     <string name="ble_tab">BLE 攻击</string>
     <string name="wifi_tab">Wi-Fi 攻击</string>
+    <string name="hce_service_desc">DeauthCtrl 战术卡模拟（授权安全研究）</string>
+    <string name="hce_group_desc">自定义 APDU 卡（ISO 14443-4）</string>
 </resources>
