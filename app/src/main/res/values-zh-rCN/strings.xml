@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  中文资源 —— 命中系统中文或 app 内选择"中文"时使用。
+  与 values/strings.xml 一一对应;未列出的 key 回退到英文 default。
+  技术缩写(BSSID/RSSI/SNR/TAC/LAC/PCI/PSC/协议名/单位)保持原文。
+-->
+<resources>
+    <string name="app_name">哪吒网络安全终端</string>
+    <string name="ble_tab">BLE 攻击</string>
+    <string name="wifi_tab">Wi-Fi 攻击</string>
+    <string name="hce_service_desc">DeauthCtrl 战术卡模拟（授权安全研究）</string>
+    <string name="hce_group_desc">自定义 APDU 卡（ISO 14443-4）</string>
+
+    <!-- ─── 设置 · 语言 ─── -->
+    <string name="settings_language_section">语言 · LANGUAGE</string>
+    <string name="settings_language_desc">选择界面语言 —— 立即生效</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_system_desc">使用设备系统语言</string>
+    <string name="language_zh">中文</string>
+    <string name="language_zh_desc">简体中文</string>
+    <string name="language_en">英文</string>
+    <string name="language_en_desc">English</string>
+
+    <!-- ─── 操作员设置页 ─── -->
+    <string name="settings_title">操作员设置</string>
+    <string name="settings_operator_section">操作员身份 · OPERATOR ID</string>
+    <string name="settings_callsign_label">呼号 / 用户名</string>
+    <string name="settings_callsign_placeholder">输入你的操作员呼号</string>
+    <string name="settings_callsign_preview">主界面头部将显示：操作员: %1$s</string>
+    <string name="settings_unnamed">未命名</string>
+    <string name="settings_team_section">队伍与主题 · SQUAD &amp; THEME (%1$d)</string>
+    <string name="settings_team_desc">选择队伍即切换全应用战术配色 —— 所有页面立即生效</string>
+    <string name="settings_haptic_section">战术反馈 · HAPTIC FEEDBACK</string>
+    <string name="settings_haptics_title">触觉反馈</string>
+    <string name="settings_haptics_desc">全应用按钮、执行、告警的震动反馈主开关</string>
+    <string name="settings_radar_alert_title">雷达红点警报</string>
+    <string name="settings_radar_alert_desc">雷达发现新目标时震动提醒（需开启触觉反馈）</string>
+    <string name="settings_sysinfo_section">系统信息</string>
+    <string name="settings_info_author">作者</string>
+    <string name="settings_info_codename">代号</string>
+    <string name="settings_info_codename_value">哪吒网络安全</string>
+    <string name="settings_info_email">邮箱</string>
+    <string name="settings_info_repo">仓库</string>
+    <string name="settings_info_arch">架构</string>
+    <string name="settings_info_license">许可</string>
+    <string name="settings_info_license_value">授权安全研究</string>
+    <string name="settings_banner">  DeauthCtrl v1.0  |  中国红客  |  国产自主  |  安全可控</string>
+    <string name="settings_whoami">  %1$s (ctkqiang)</string>
+    <string name="settings_disclaimer">本应用仅供授权安全研究与教育用途，请勿用于非法活动</string>
+
+    <!-- ─── 主页 · 通用 ─── -->
+    <string name="main_enter">进入</string>
+    <string name="main_abort">中止</string>
+    <string name="main_execute">执行</string>
+    <string name="main_tel_down">下行</string>
+    <string name="main_tel_up">上行</string>
+    <string name="main_tel_mem">内存</string>
+    <string name="main_tel_iface">网卡</string>
+    <string name="main_home_glitch">全息战术终端</string>
+    <string name="main_home_operator_line">操作员: %1$s · %2$s · 全息终端 · 加密信道: AES-256</string>
+    <string name="main_running_header">执行中 · %1$d 项任务</string>
+    <string name="main_footer_red_hacker">中国红客</string>
+    <string name="main_footer_homegrown">国产自主</string>
+    <string name="main_footer_secure">安全可控</string>
+    <string name="main_settings_about">设置 · 关于</string>
+
+    <!-- ─── 主页 · 分组名 ─── -->
+    <string name="home_group_recon">侦察</string>
+    <string name="home_group_wireless">无线</string>
+    <string name="home_group_tools">工具</string>
+    <string name="home_group_situational">态势</string>
+    <string name="home_group_lab">实验室</string>
+    <string name="home_group_network">网络</string>
+
+    <!-- ─── 主页 · 模块入口（52） ─── -->
+    <string name="home_arp_name">ARP 扫描</string>
+    <string name="home_arp_desc">扫描局域网在线设备</string>
+    <string name="home_blescan_name">BLE 扫描</string>
+    <string name="home_blescan_desc">嗅探附近低功耗蓝牙设备</string>
+    <string name="home_portscan_name">端口扫描</string>
+    <string name="home_portscan_desc">扫描目标主机开放端口</string>
+    <string name="home_radar_name">设备雷达</string>
+    <string name="home_radar_desc">雷达图定位附近设备</string>
+    <string name="home_netmap_name">网络测绘</string>
+    <string name="home_netmap_desc">OSM 地图实时绘制 WiFi/BLE 设备</string>
+    <string name="home_cve_name">CVE 搜索</string>
+    <string name="home_cve_desc">查询公开漏洞数据库</string>
+    <string name="home_sdr_name">语音频谱</string>
+    <string name="home_sdr_desc">麦克风 FFT 实时频谱分析</string>
+    <string name="home_taccam_name">战术相机</string>
+    <string name="home_taccam_desc">最大分辨率拍照 · Base64 局域网传输</string>
+    <string name="home_gsm_name">基站监视</string>
+    <string name="home_gsm_desc">真实邻区小区信息 · 最近基站</string>
+    <string name="home_probe_name">Probe 监视</string>
+    <string name="home_probe_desc">被动 WiFi 帧字段 · Hex 查看</string>
+    <string name="home_nightvision_name">数字夜视</string>
+    <string name="home_nightvision_desc">高感光捕获 · 荧光绿增益成像</string>
+    <string name="home_tacmap_name">战术地图</string>
+    <string name="home_tacmap_desc">OpenStreetMap 夜战视图 · GPS 标记</string>
+    <string name="home_irremote_name">红外遥控</string>
+    <string name="home_irremote_desc">小米/三星等机型红外发射器</string>
+    <string name="home_nfc_name">NFC 工作台</string>
+    <string name="home_nfc_desc">读卡 · NDEF 读写 · UID 采集</string>
+    <string name="home_webserver_name">WEB 服务</string>
+    <string name="home_webserver_desc">本机搭建网页服务器</string>
+    <string name="home_http_name">HTTP 请求</string>
+    <string name="home_http_desc">发送自定义 HTTP 请求</string>
+    <string name="home_brute_name">目录爆破</string>
+    <string name="home_brute_desc">枚举网站目录结构</string>
+    <string name="home_ping_name">PING 泛洪</string>
+    <string name="home_ping_desc">持续探测目标主机</string>
+    <string name="home_ble_name">BLE 广播</string>
+    <string name="home_ble_desc">广播伪造厂商广告 · 不会压制或断开设备</string>
+    <string name="home_wifi_name">本机热点</string>
+    <string name="home_wifi_desc">创建本机 SoftAP · 非 802.11 帧注入</string>
+    <string name="home_btjam_name">蓝牙广播与发现</string>
+    <string name="home_btjam_desc">BLE 广播 + 经典蓝牙本机扫描</string>
+    <string name="home_wifijam_name">热点 SSID 轮换</string>
+    <string name="home_wifijam_desc">轮换本机热点 SSID · 不会断开他人</string>
+    <string name="home_walkie_name">对讲机</string>
+    <string name="home_walkie_desc">局域网实时语音通话</string>
+    <string name="home_filetransfer_name">文件快传</string>
+    <string name="home_filetransfer_desc">局域网设备互传文件</string>
+    <string name="home_mirroring_name">屏幕镜像</string>
+    <string name="home_mirroring_desc">远程查看与控制屏幕</string>
+    <string name="home_vault_name">加密保险箱</string>
+    <string name="home_vault_desc">加密照片·视频·录音</string>
+    <string name="home_payload_name">Payload 生成</string>
+    <string name="home_payload_desc">生成反弹 Shell 载荷</string>
+    <string name="home_revshell_name">反弹 Shell</string>
+    <string name="home_revshell_desc">监听反弹 Shell 连接</string>
+    <string name="home_terminal_name">SSH 客户端</string>
+    <string name="home_terminal_desc">远程服务器终端 · 密码认证</string>
+    <string name="home_localterm_name">本地终端</string>
+    <string name="home_localterm_desc">本机 pty shell · Termux 引擎</string>
+    <string name="home_morse_name">摩尔斯码</string>
+    <string name="home_morse_desc">蜂鸣/闪光灯发报 · 双向翻译</string>
+    <string name="home_serialmon_name">串口监视</string>
+    <string name="home_serialmon_desc">USB OTG 串口 · Arduino IDE 风格</string>
+    <string name="home_otgprobe_name">有线探测</string>
+    <string name="home_otgprobe_desc">OTG 网卡/串口识别 · 引导对应工具</string>
+    <string name="home_gnss_name">卫星天图</string>
+    <string name="home_gnss_desc">GNSS 星座实时天顶图 · 真实解算</string>
+    <string name="home_pdr_name">步测归航</string>
+    <string name="home_pdr_desc">无 GPS 死推算 · 面包屑回航</string>
+    <string name="home_mains_name">电线探测</string>
+    <string name="home_mains_desc">工频电磁特征 · 墙内带电线路粗测</string>
+    <string name="home_selfcheck_name">硬件自检</string>
+    <string name="home_selfcheck_desc">电池/热区/负载/传感器体检</string>
+    <string name="home_sonic_name">声波传讯</string>
+    <string name="home_sonic_desc">DTMF 声波数据链 · 离线传字</string>
+    <string name="home_mesh_name">网格聊天</string>
+    <string name="home_mesh_desc">BLE 逐跳中继消息 · 无网无基站</string>
+    <string name="home_sonar_name">声呐测距</string>
+    <string name="home_sonar_desc">chirp 回波测距 · FFT 匹配滤波</string>
+    <string name="home_chansurvey_name">信道占用</string>
+    <string name="home_chansurvey_desc">被动扫描信道拥堵热力图</string>
+    <string name="home_seismo_name">震动监视</string>
+    <string name="home_seismo_desc">加速度计波形 · 事件记录</string>
+    <string name="home_packetmon_name">流量监视</string>
+    <string name="home_packetmon_desc">VpnService 本机抓包 · Wireshark 式解析</string>
+    <string name="home_logicscope_name">逻辑示波</string>
+    <string name="home_logicscope_desc">BLE/WiFi/蜂窝/音频多通道波形</string>
+    <string name="home_flippertv_name">万能遥控</string>
+    <string name="home_flippertv_desc">Flipper tv.ir 泛洪遥控 · 按键克隆库</string>
+    <string name="home_netbios_name">NetBIOS 扫描</string>
+    <string name="home_netbios_desc">Windows 主机名/用户/MAC 资产清点</string>
+    <string name="home_blegatt_name">BLE GATT</string>
+    <string name="home_blegatt_desc">服务枚举 · 特征读写 · 通知订阅</string>
+    <string name="home_snmp_name">SNMP 扫描</string>
+    <string name="home_snmp_desc">社区串探测 · 设备型号识别</string>
+    <string name="home_lantools_name">局域网工具</string>
+    <string name="home_lantools_desc">WOL 唤醒 · fling 裸流管道</string>
+    <string name="home_nordicbench_name">Nordic 工作台</string>
+    <string name="home_nordicbench_desc">AD 解码 · NUS 终端 · 绑定管理</string>
+    <string name="home_dbview_name">数据库</string>
+    <string name="home_dbview_desc">SQLite 信号情报库 · 刷新注入</string>
+    <string name="home_conference_name">局域网会议</string>
+    <string name="home_conference_desc">多方视频 · 屏幕/摄像头 · PTT 语音</string>
+</resources>

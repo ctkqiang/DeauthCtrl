@@ -33,11 +33,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import xin.ctkqiang.deauthctrl.LocaleManager
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.components.Dark
 import xin.ctkqiang.deauthctrl.ui.components.Gold
 import xin.ctkqiang.deauthctrl.ui.components.Gray
@@ -74,16 +78,23 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("操作员设置", back)
+        TerminalHeader(stringResource(R.string.settings_title), back)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(14.dp),
         ) {
             // ─── 操作员身份 ───
-            TermPanel("操作员身份 · OPERATOR ID") {
-                TermInput("呼号 / 用户名", username, placeholder = "输入你的操作员呼号") { vm.setUsername(it) }
+            TermPanel(stringResource(R.string.settings_operator_section)) {
+                TermInput(
+                    stringResource(R.string.settings_callsign_label),
+                    username,
+                    placeholder = stringResource(R.string.settings_callsign_placeholder),
+                ) { vm.setUsername(it) }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "主界面头部将显示：操作员: ${username.ifBlank { "未命名" }}",
+                    stringResource(
+                        R.string.settings_callsign_preview,
+                        username.ifBlank { stringResource(R.string.settings_unnamed) },
+                    ),
                     fontFamily = Mono, fontSize = 9.sp, color = Gray,
                 )
             }
@@ -91,8 +102,8 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
             Spacer(Modifier.height(10.dp))
 
             // ─── 队伍与主题 ───
-            TermPanel("队伍与主题 · SQUAD & THEME (${TEAM_THEMES.size})") {
-                Text("选择队伍即切换全应用战术配色 —— 所有页面立即生效", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            TermPanel(stringResource(R.string.settings_team_section, TEAM_THEMES.size)) {
+                Text(stringResource(R.string.settings_team_desc), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                 Spacer(Modifier.height(8.dp))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
@@ -116,20 +127,46 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
             Spacer(Modifier.height(10.dp))
 
             // ─── 战术反馈 ───
-            TermPanel("战术反馈 · HAPTIC FEEDBACK") {
+            TermPanel(stringResource(R.string.settings_haptic_section)) {
                 SettingSwitchRow(
-                    title = "触觉反馈",
-                    desc = "全应用按钮、执行、告警的震动反馈主开关",
+                    title = stringResource(R.string.settings_haptics_title),
+                    desc = stringResource(R.string.settings_haptics_desc),
                     checked = haptics,
                     onChecked = { vm.setHaptics(it) },
                 )
                 Spacer(Modifier.height(6.dp))
                 SettingSwitchRow(
-                    title = "雷达红点警报",
-                    desc = "雷达发现新目标时震动提醒（需开启触觉反馈）",
+                    title = stringResource(R.string.settings_radar_alert_title),
+                    desc = stringResource(R.string.settings_radar_alert_desc),
                     checked = radarAlert,
                     onChecked = { vm.setRadarAlert(it) },
                 )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // ─── 语言 / LANGUAGE ───
+            TermPanel(stringResource(R.string.settings_language_section)) {
+                Text(stringResource(R.string.settings_language_desc), fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                Spacer(Modifier.height(8.dp))
+                val activity = LocalContext.current.findActivity()
+                val currentLang = LocalContext.current.let { LocaleManager.current(it) }
+                listOf(
+                    LocaleManager.LANG_SYSTEM to (R.string.language_system to R.string.language_system_desc),
+                    LocaleManager.LANG_ZH to (R.string.language_zh to R.string.language_zh_desc),
+                    LocaleManager.LANG_EN to (R.string.language_en to R.string.language_en_desc),
+                ).forEach { (lang, texts) ->
+                    SettingChoiceRow(
+                        title = stringResource(texts.first),
+                        desc = stringResource(texts.second),
+                        selected = currentLang == lang,
+                        onClick = {
+                            haptic.hud()
+                            if (activity != null && currentLang != lang) LocaleManager.apply(activity, lang)
+                        },
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
             }
 
             Spacer(Modifier.height(10.dp))
@@ -138,7 +175,7 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
             StarBadge(56.dp, modifier = Modifier.align(Alignment.CenterHorizontally))
             Spacer(Modifier.height(8.dp))
             Text(
-                "哪吒网络安全终端",
+                stringResource(R.string.app_name),
                 fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 20.sp,
                 color = White, modifier = Modifier.align(Alignment.CenterHorizontally),
             )
@@ -148,23 +185,29 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
                 color = Gold, modifier = Modifier.align(Alignment.CenterHorizontally),
             )
             Spacer(Modifier.height(12.dp))
-            TermPanel("系统信息") {
-                InfoLine("作者", "钟智强 (ctkqiang)")
-                InfoLine("代号", "哪吒网络安全")
-                InfoLine("邮箱", "ctkqiang@dingtalk.com")
-                InfoLine("仓库", "gitcode.com/ctkqiang_sr/DeauthCtrl")
-                InfoLine("架构", "MVVM + StateFlow + Compose")
-                InfoLine("许可", "授权安全研究")
+            TermPanel(stringResource(R.string.settings_sysinfo_section)) {
+                InfoLine(stringResource(R.string.settings_info_author), "钟智强 (ctkqiang)")
+                InfoLine(stringResource(R.string.settings_info_codename), stringResource(R.string.settings_info_codename_value))
+                InfoLine(stringResource(R.string.settings_info_email), "ctkqiang@dingtalk.com")
+                InfoLine(stringResource(R.string.settings_info_repo), "gitcode.com/ctkqiang_sr/DeauthCtrl")
+                InfoLine(stringResource(R.string.settings_info_arch), "MVVM + StateFlow + Compose")
+                InfoLine(stringResource(R.string.settings_info_license), stringResource(R.string.settings_info_license_value))
             }
             Spacer(Modifier.height(12.dp))
             Text("$ uname -a", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-            Text("  DeauthCtrl v1.0  |  中国红客  |  国产自主  |  安全可控", fontFamily = Sans, fontSize = 11.sp, color = White)
+            Text(stringResource(R.string.settings_banner), fontFamily = Sans, fontSize = 11.sp, color = White)
             Spacer(Modifier.height(4.dp))
             Text("$ whoami", fontFamily = Mono, fontSize = 11.sp, color = Red, fontWeight = FontWeight.Bold)
-            Text("  ${username.ifBlank { "哪吒网络安全" }} (ctkqiang)", fontFamily = Sans, fontSize = 11.sp, color = White)
+            Text(
+                stringResource(
+                    R.string.settings_whoami,
+                    username.ifBlank { stringResource(R.string.settings_info_codename_value) },
+                ),
+                fontFamily = Sans, fontSize = 11.sp, color = White,
+            )
             Spacer(Modifier.height(12.dp))
             Text(
-                "本应用仅供授权安全研究与教育用途，请勿用于非法活动",
+                stringResource(R.string.settings_disclaimer),
                 fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -234,4 +277,33 @@ private fun InfoLine(label: String, value: String) {
         Text(label, fontFamily = Mono, fontSize = 10.sp, color = Gray, modifier = Modifier.width(72.dp))
         Text(value, fontFamily = Mono, fontSize = 10.sp, color = White, modifier = Modifier.weight(1f))
     }
+}
+
+/** 单选行 —— 标题 + 描述 + 选中指示(语言等单选项) */
+@Composable
+private fun SettingChoiceRow(title: String, desc: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+            .clickable { onClick() }
+            .padding(vertical = 6.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White)
+            Text(desc, fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp)
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            if (selected) "[*]" else "[ ]",
+            fontFamily = Mono, fontSize = 12.sp,
+            color = if (selected) Gold else Gray,
+        )
+    }
+}
+
+/** 从 ContextWrapper 链上解出宿主 Activity(Compose 的 LocalContext 可能被包装) */
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

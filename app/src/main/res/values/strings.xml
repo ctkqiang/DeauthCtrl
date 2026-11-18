@@ -1,8 +1,181 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default strings — English.
+  中文资源在 values-zh-rCN/strings.xml;未命中时回退到本文件(英文)。
+  Key 命名:<file-prefix>_<what>,如 main_* / det_* / tact_* / settings_*。
+  技术缩写(BSSID/RSSI/SNR/TAC/LAC/PCI/PSC/协议名/单位)不做翻译。
+-->
 <resources>
-    <string name="app_name">哪吒网络安全终端</string>
-    <string name="ble_tab">BLE 攻击</string>
-    <string name="wifi_tab">Wi-Fi 攻击</string>
-    <string name="hce_service_desc">DeauthCtrl 战术卡模拟（授权安全研究）</string>
-    <string name="hce_group_desc">自定义 APDU 卡（ISO 14443-4）</string>
+    <string name="app_name">Nezha CyberSecurity Terminal</string>
+    <string name="ble_tab">BLE Attack</string>
+    <string name="wifi_tab">Wi-Fi Attack</string>
+    <string name="hce_service_desc">DeauthCtrl tactical card emulation (authorized security research)</string>
+    <string name="hce_group_desc">Custom APDU card (ISO 14443-4)</string>
+
+    <!-- ─── 设置 · 语言 ─── -->
+    <string name="settings_language_section">Language · LANGUAGE</string>
+    <string name="settings_language_desc">Choose UI language — takes effect immediately</string>
+    <string name="language_system">System default</string>
+    <string name="language_system_desc">Follow the device language</string>
+    <string name="language_zh">中文</string>
+    <string name="language_zh_desc">Simplified Chinese</string>
+    <string name="language_en">English</string>
+    <string name="language_en_desc">English</string>
+
+    <!-- ─── 操作员设置页 ─── -->
+    <string name="settings_title">Operator Settings</string>
+    <string name="settings_operator_section">Operator ID · OPERATOR ID</string>
+    <string name="settings_callsign_label">Callsign / Username</string>
+    <string name="settings_callsign_placeholder">Enter your operator callsign</string>
+    <string name="settings_callsign_preview">Home header shows: OPERATOR: %1$s</string>
+    <string name="settings_unnamed">UNNAMED</string>
+    <string name="settings_team_section">Squad &amp; Theme · SQUAD &amp; THEME (%1$d)</string>
+    <string name="settings_team_desc">Select a squad to switch the tactical palette app-wide — instant effect</string>
+    <string name="settings_haptic_section">Tactical Feedback · HAPTIC FEEDBACK</string>
+    <string name="settings_haptics_title">Haptic Feedback</string>
+    <string name="settings_haptics_desc">Master switch for app-wide vibration on buttons, actions and alerts</string>
+    <string name="settings_radar_alert_title">Radar Blip Alert</string>
+    <string name="settings_radar_alert_desc">Vibrate when radar detects a new target (requires haptic feedback)</string>
+    <string name="settings_sysinfo_section">System Info</string>
+    <string name="settings_info_author">Author</string>
+    <string name="settings_info_codename">Codename</string>
+    <string name="settings_info_codename_value">Nezha CyberSecurity</string>
+    <string name="settings_info_email">Email</string>
+    <string name="settings_info_repo">Repository</string>
+    <string name="settings_info_arch">Architecture</string>
+    <string name="settings_info_license">License</string>
+    <string name="settings_info_license_value">Authorized security research</string>
+    <string name="settings_banner">  DeauthCtrl v1.0  |  China Red Hacker  |  Homegrown Tech  |  Secure &amp; Controlled</string>
+    <string name="settings_whoami">  %1$s (ctkqiang)</string>
+    <string name="settings_disclaimer">For authorized security research and education only. Do not use for illegal activities.</string>
+
+    <!-- ─── 主页 · 通用 ─── -->
+    <string name="main_enter">ENTER</string>
+    <string name="main_abort">ABORT</string>
+    <string name="main_execute">EXECUTE</string>
+    <string name="main_tel_down">DOWN</string>
+    <string name="main_tel_up">UP</string>
+    <string name="main_tel_mem">MEM</string>
+    <string name="main_tel_iface">IFACE</string>
+    <string name="main_home_glitch">HOLOGRAPHIC TACTICAL TERMINAL</string>
+    <string name="main_home_operator_line">OPERATOR: %1$s · %2$s · HOLO TERMINAL · ENCRYPTION: AES-256</string>
+    <string name="main_running_header">RUNNING · %1$d ACTIVE</string>
+    <string name="main_footer_red_hacker">China Red Hacker</string>
+    <string name="main_footer_homegrown">Homegrown Tech</string>
+    <string name="main_footer_secure">Secure &amp; Controlled</string>
+    <string name="main_settings_about">Settings · About</string>
+
+    <!-- ─── 主页 · 分组名 ─── -->
+    <string name="home_group_recon">Recon</string>
+    <string name="home_group_wireless">Wireless</string>
+    <string name="home_group_tools">Tools</string>
+    <string name="home_group_situational">Situational</string>
+    <string name="home_group_lab">Lab</string>
+    <string name="home_group_network">Network</string>
+
+    <!-- ─── 主页 · 模块入口(52) ─── -->
+    <string name="home_arp_name">ARP Scan</string>
+    <string name="home_arp_desc">Scan online devices on the LAN</string>
+    <string name="home_blescan_name">BLE Scan</string>
+    <string name="home_blescan_desc">Sniff nearby BLE devices</string>
+    <string name="home_portscan_name">Port Scan</string>
+    <string name="home_portscan_desc">Scan open ports on a target host</string>
+    <string name="home_radar_name">Device Radar</string>
+    <string name="home_radar_desc">Locate nearby devices on a radar plot</string>
+    <string name="home_netmap_name">Network Mapping</string>
+    <string name="home_netmap_desc">Plot WiFi/BLE devices live on OSM</string>
+    <string name="home_cve_name">CVE Search</string>
+    <string name="home_cve_desc">Query public vulnerability databases</string>
+    <string name="home_sdr_name">Voice Spectrum</string>
+    <string name="home_sdr_desc">Live mic FFT spectrum analysis</string>
+    <string name="home_taccam_name">Tactical Camera</string>
+    <string name="home_taccam_desc">Max-res capture · Base64 LAN transfer</string>
+    <string name="home_gsm_name">Cell Tower Watch</string>
+    <string name="home_gsm_desc">Real neighbor-cell info · nearest tower</string>
+    <string name="home_probe_name">Probe Monitor</string>
+    <string name="home_probe_desc">Passive WiFi frame fields · hex view</string>
+    <string name="home_nightvision_name">Digital Night Vision</string>
+    <string name="home_nightvision_desc">High-ISO capture · phosphor-green gain</string>
+    <string name="home_tacmap_name">Tactical Map</string>
+    <string name="home_tacmap_desc">OpenStreetMap night view · GPS markers</string>
+    <string name="home_irremote_name">IR Remote</string>
+    <string name="home_irremote_desc">IR blaster for Xiaomi / Samsung etc.</string>
+    <string name="home_nfc_name">NFC Workbench</string>
+    <string name="home_nfc_desc">Card read · NDEF R/W · UID collection</string>
+    <string name="home_webserver_name">WEB Server</string>
+    <string name="home_webserver_desc">Host a web server on this device</string>
+    <string name="home_http_name">HTTP Request</string>
+    <string name="home_http_desc">Send custom HTTP requests</string>
+    <string name="home_brute_name">Dir Brute</string>
+    <string name="home_brute_desc">Enumerate website directory structure</string>
+    <string name="home_ping_name">PING Flood</string>
+    <string name="home_ping_desc">Keep probing the target host</string>
+    <string name="home_ble_name">BLE Spam</string>
+    <string name="home_ble_desc">Spoofed vendor ads · non-disruptive</string>
+    <string name="home_wifi_name">Local Hotspot</string>
+    <string name="home_wifi_desc">Create a local SoftAP · no frame injection</string>
+    <string name="home_btjam_name">BT Broadcast &amp; Discover</string>
+    <string name="home_btjam_desc">BLE spam + classic BT scan</string>
+    <string name="home_wifijam_name">Hotspot SSID Rotator</string>
+    <string name="home_wifijam_desc">Rotate local hotspot SSID · non-disruptive</string>
+    <string name="home_walkie_name">Walkie-Talkie</string>
+    <string name="home_walkie_desc">Realtime voice over LAN</string>
+    <string name="home_filetransfer_name">File Transfer</string>
+    <string name="home_filetransfer_desc">Swap files between LAN devices</string>
+    <string name="home_mirroring_name">Screen Mirroring</string>
+    <string name="home_mirroring_desc">Remote view &amp; control the screen</string>
+    <string name="home_vault_name">Encrypted Vault</string>
+    <string name="home_vault_desc">Encrypted photos · video · audio</string>
+    <string name="home_payload_name">Payload Generator</string>
+    <string name="home_payload_desc">Generate reverse-shell payloads</string>
+    <string name="home_revshell_name">Reverse Shell</string>
+    <string name="home_revshell_desc">Listen for reverse-shell connections</string>
+    <string name="home_terminal_name">SSH Client</string>
+    <string name="home_terminal_desc">Remote server terminal · password auth</string>
+    <string name="home_localterm_name">Local Terminal</string>
+    <string name="home_localterm_desc">On-device pty shell · Termux engine</string>
+    <string name="home_morse_name">Morse Code</string>
+    <string name="home_morse_desc">Buzzer / flash TX · two-way translation</string>
+    <string name="home_serialmon_name">Serial Monitor</string>
+    <string name="home_serialmon_desc">USB OTG serial · Arduino-IDE style</string>
+    <string name="home_otgprobe_name">Wired Probe</string>
+    <string name="home_otgprobe_desc">OTG NIC / serial detect · route to tools</string>
+    <string name="home_gnss_name">Satellite Sky</string>
+    <string name="home_gnss_desc">Live GNSS constellation skyplot · real fix</string>
+    <string name="home_pdr_name">PDR Homing</string>
+    <string name="home_pdr_desc">GPS-free dead reckoning · breadcrumb return</string>
+    <string name="home_mains_name">Mains Wire Probe</string>
+    <string name="home_mains_desc">50Hz EM signature · rough wall-wire scan</string>
+    <string name="home_selfcheck_name">Hardware Self-Check</string>
+    <string name="home_selfcheck_desc">Battery / thermal / load / sensor health</string>
+    <string name="home_sonic_name">Sonic Link</string>
+    <string name="home_sonic_desc">DTMF acoustic data link · offline text</string>
+    <string name="home_mesh_name">Mesh Chat</string>
+    <string name="home_mesh_desc">BLE hop-by-hop relay · no net, no tower</string>
+    <string name="home_sonar_name">Sonar Ranger</string>
+    <string name="home_sonar_desc">Chirp echo ranging · FFT matched filter</string>
+    <string name="home_chansurvey_name">Channel Survey</string>
+    <string name="home_chansurvey_desc">Passive channel-congestion heatmap</string>
+    <string name="home_seismo_name">Seismograph</string>
+    <string name="home_seismo_desc">Accelerometer waveform · event log</string>
+    <string name="home_packetmon_name">Packet Monitor</string>
+    <string name="home_packetmon_desc">VpnService capture · Wireshark-style parse</string>
+    <string name="home_logicscope_name">Logic Scope</string>
+    <string name="home_logicscope_desc">BLE / WiFi / cellular / audio waveforms</string>
+    <string name="home_flippertv_name">Universal Remote</string>
+    <string name="home_flippertv_desc">Flipper tv.ir flood · key-clone library</string>
+    <string name="home_netbios_name">NetBIOS Scan</string>
+    <string name="home_netbios_desc">Windows host / user / MAC inventory</string>
+    <string name="home_blegatt_name">BLE GATT</string>
+    <string name="home_blegatt_desc">Service enum · char R/W · notify subscribe</string>
+    <string name="home_snmp_name">SNMP Scan</string>
+    <string name="home_snmp_desc">Community-string probe · model ID</string>
+    <string name="home_lantools_name">LAN Tools</string>
+    <string name="home_lantools_desc">WOL wake · raw stream pipes</string>
+    <string name="home_nordicbench_name">Nordic Workbench</string>
+    <string name="home_nordicbench_desc">AD decode · NUS terminal · bonding</string>
+    <string name="home_dbview_name">Database</string>
+    <string name="home_dbview_desc">SQLite sigint store · refresh &amp; inject</string>
+    <string name="home_conference_name">LAN Conference</string>
+    <string name="home_conference_desc">Multi-party video · screen / cam · PTT voice</string>
 </resources>

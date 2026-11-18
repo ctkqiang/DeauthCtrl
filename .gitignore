@@ -21,3 +21,4 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+pub_sec/

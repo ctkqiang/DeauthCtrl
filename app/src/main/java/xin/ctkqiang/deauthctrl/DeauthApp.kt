@@ -13,6 +13,16 @@ import android.app.Application
  * 4. 应用级 SharedPreferences/DataStore 预加载
  */
 class DeauthApp : Application() {
+
+    /**
+     * 语言注入最早的挂载点:所有组件(Activity / Service / 通知)的
+     * base context 都从这里派生,locale 一次注入全局生效。
+     * 在 onCreate 之前调用,此时 SharedPreferences 已可读。
+     */
+    override fun attachBaseContext(base: android.content.Context) {
+        super.attachBaseContext(LocaleManager.wrap(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
         // 战术照片中继常开:同网段设备随时可投递,收到即发系统通知。
