@@ -137,22 +137,28 @@ class TerminalManager(context: Context) {
 
         val spec = try {
             if (newMode == ShellMode.LOCAL) {
-                // 首次启动时准备全部候选,之后自动回退直接取下一个
-                if (shellCandidates.isEmpty()) {
-                    shellCandidates.addAll(TerminalSpecs.prepareShellCandidates(appContext))
-                    candidateIndex = 0
+                // ── Termux bootstrap 优先(与 Termux 官方一致:pkg/apt/python 全可用) ──
+                // 已安装 → 直接用 bootstrap 环境;未安装 → 同步安装(阻塞 IO 线程,
+                // 页面显示安装进度);安装失败回退系统 sh
+                val bootInstalled = TermuxBootstrap.ensure(appContext)
+                if (bootInstalled) {
+                    TermuxBootstrap.shellSpec(appContext)
+                } else {
+                    // 回退: 系统 sh + 私有 toybox 副本候选(旧方案,命令集有限)
+                    if (shellCandidates.isEmpty()) {
+                        shellCandidates.addAll(TerminalSpecs.prepareShellCandidates(appContext))
+                        candidateIndex = 0
+                    }
+                    val shellPath = shellCandidates.getOrElse(candidateIndex) { TerminalSpecs.DEFAULT_SHELL }
+                    val base = TerminalSpecs.build(appContext, newMode)
+                    val appletDir = TerminalSpecs.appletDirFor(shellPath, appContext)
+                    val resolvedPath = (appletDir?.let { "$it:" } ?: "") + TerminalSpecs.systemPath()
+                    base.copy(
+                        shellPath = shellPath,
+                        path = resolvedPath,
+                        env = base.env.map { e -> if (e.startsWith("PATH=")) "PATH=$resolvedPath" else e }.toTypedArray(),
+                    )
                 }
-                val shellPath = shellCandidates.getOrElse(candidateIndex) { TerminalSpecs.DEFAULT_SHELL }
-                val base = TerminalSpecs.build(appContext, newMode)
-                // PATH 与成功候选联动:私有副本可执行 → 对应 applet 目录优先;
-                // 系统 sh 成功 → 纯系统 PATH(避免 ls 解析到被禁的私有副本)
-                val appletDir = TerminalSpecs.appletDirFor(shellPath, appContext)
-                val resolvedPath = (appletDir?.let { "$it:" } ?: "") + TerminalSpecs.systemPath()
-                base.copy(
-                    shellPath = shellPath,
-                    path = resolvedPath,
-                    env = base.env.map { e -> if (e.startsWith("PATH=")) "PATH=$resolvedPath" else e }.toTypedArray(),
-                )
             } else {
                 candidateIndex = 0
                 TerminalSpecs.build(appContext, newMode)

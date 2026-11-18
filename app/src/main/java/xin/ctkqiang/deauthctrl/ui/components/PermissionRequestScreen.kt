@@ -90,6 +90,10 @@ object RequiredPermissions {
             // 照片接收通知
             add(Manifest.permission.POST_NOTIFICATIONS)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // 步测归航:计步传感器
+            add(Manifest.permission.ACTIVITY_RECOGNITION)
+        }
     }.toTypedArray()
 
     /**
@@ -118,6 +122,7 @@ object RequiredPermissions {
         Manifest.permission.CAMERA -> PermissionCopy("相机", "战术相机 · 夜视 · 加密拍摄 · 闪光灯发报")
         Manifest.permission.READ_PHONE_STATE -> PermissionCopy("电话状态", "读取附近基站 CellInfo 做 GSM 基站定位")
         Manifest.permission.POST_NOTIFICATIONS -> PermissionCopy("通知", "照片接收与前台服务的系统通知")
+        Manifest.permission.ACTIVITY_RECOGNITION -> PermissionCopy("身体活动", "步测归航:计步传感器读取步数")
         else -> PermissionCopy(permission.substringAfterLast('.'), "")
     }
 }

@@ -43,6 +43,10 @@ class IrRemoteManager(context: Context) {
     private val _lastTransmit = MutableStateFlow<String?>(null)
     val lastTransmit: StateFlow<String?> = _lastTransmit
 
+    /** 最近一次发射的脉冲序列(µs,交替开/关)—— 逻辑示波器红外通道的数据源 */
+    private val _lastPattern = MutableStateFlow<IntArray?>(null)
+    val lastPattern: StateFlow<IntArray?> = _lastPattern
+
     /**
      * 发射 NEC 码。
      *
@@ -94,6 +98,108 @@ class IrRemoteManager(context: Context) {
         return values.toIntArray()
     }
 
+    /** 发射 NECext(NEC 时序, 16bit 地址 LSB 先发 + 8bit 命令, 无逆码 —— Flipper 固件文档) */
+    fun transmitNecExtended(address: Int, command: Int, repeat: Int = 1) {
+        val pattern = buildNecExtendedPattern(address, command)
+        transmitRaw(38_000, pattern, repeat, "NECext 0x%04X:%02X".format(address and 0xFFFF, command and 0xFF))
+    }
+
+    /** 发射 Samsung32(38kHz, 4500/4500 引导, 32bit LSB 先发, 0=560/560 1=560/1690) */
+    fun transmitSamsung32(address: Int, command: Int, repeat: Int = 1) {
+        val pattern = buildSamsung32Pattern(address, command)
+        transmitRaw(38_000, pattern, repeat, "Samsung32 0x%04X:%04X".format(address and 0xFFFF, command and 0xFFFF))
+    }
+
+    /** 发射 RC-6 mode 0(36kHz, 2666/889 引导, 444µs 曼彻斯特, 8bit 地址 + 8bit 命令 MSB 先发) */
+    fun transmitRc6(address: Int, command: Int, repeat: Int = 1) {
+        val pattern = buildRc6Pattern(address, command)
+        transmitRaw(36_000, pattern, repeat, "RC-6 0x%02X:%02X".format(address and 0xFF, command and 0xFF))
+    }
+
+    /** 发射 RC5X(RC-5 14bit: 起始位+字段位扩展命令第 7 位) */
+    fun transmitRc5x(address: Int, command: Int, repeat: Int = 1) {
+        val pattern = buildRc5xPattern(address, command)
+        transmitRaw(36_000, pattern, repeat, "RC-5X 0x%02X:%02X".format(address and 0x1F, command and 0x7F))
+    }
+
+    /** 发射 SIRC20(Sony 20bit: 7 命令 + 5 设备 + 8 扩展设备, 40kHz, LSB 先发) */
+    fun transmitSirc20(address: Int, command: Int, repeat: Int = 1) {
+        val pattern = buildSony20Pattern(address, command)
+        transmitRaw(40_000, pattern, repeat, "SIRC20 0x%04X:%02X".format(address and 0x1FFF, command and 0x7F))
+    }
+
+    /** Sony SIRC20: 7bit 命令 + 13bit 设备(LSB 先发),时序同 SIRC(2400/600 引导) */
+    private fun buildSony20Pattern(address: Int, command: Int): IntArray {
+        val v = mutableListOf<Int>()
+        v.add(2400); v.add(600)
+        for (i in 0 until 7) { val b = (command shr i) and 1; v.add(if (b == 1) 1200 else 600); v.add(600) }
+        for (i in 0 until 13) { val b = (address shr i) and 1; v.add(if (b == 1) 1200 else 600); v.add(600) }
+        return v.toIntArray()
+    }
+
+    private fun buildNecExtendedPattern(address: Int, command: Int): IntArray {
+        val v = mutableListOf<Int>()
+        v.add(9000); v.add(4500) // 引导
+        for (i in 0 until 16) { val b = (address shr i) and 1; v.add(560); v.add(if (b == 1) 1690 else 560) }
+        for (i in 0 until 8) { val b = (command shr i) and 1; v.add(560); v.add(if (b == 1) 1690 else 560) }
+        v.add(560)
+        return v.toIntArray()
+    }
+
+    private fun buildSamsung32Pattern(address: Int, command: Int): IntArray {
+        val v = mutableListOf<Int>()
+        v.add(4500); v.add(4500) // 引导
+        for (i in 0 until 16) { val b = (address shr i) and 1; v.add(560); v.add(if (b == 1) 1690 else 560) }
+        for (i in 0 until 16) { val b = (command shr i) and 1; v.add(560); v.add(if (b == 1) 1690 else 560) }
+        v.add(560)
+        return v.toIntArray()
+    }
+
+    private fun buildRc6Pattern(address: Int, command: Int): IntArray {
+        // RC-6 mode 0: 位周期 444µs 半位曼彻斯特(1 = 关→开, 0 = 开→关)
+        // 数据: 起始位 1 + 模式 000 + 尾随位 0 + 地址 8bit MSB + 命令 8bit MSB
+        val halves = mutableListOf<Boolean>() // true=on, false=off, 每半位 444µs
+        fun manchester(b: Int) {
+            if (b == 1) { halves.add(false); halves.add(true) } else { halves.add(true); halves.add(false) }
+        }
+        repeat(6) { halves.add(true) }   // leader on 2666µs
+        repeat(2) { halves.add(false) }  // leader off 889µs
+        manchester(1)                    // 起始位
+        manchester(0); manchester(0); manchester(0) // 模式 000
+        manchester(0)                    // 尾随位
+        for (i in 7 downTo 0) manchester((address shr i) and 1)
+        for (i in 7 downTo 0) manchester((command shr i) and 1)
+        repeat(2) { halves.add(false) }  // 尾随 off 889µs
+        return compressStates(halves, 444)
+    }
+
+    private fun buildRc5xPattern(address: Int, command: Int): IntArray {
+        // RC5X: 起始位 + 字段位(命令第 7 位) + 切换位 + 5bit 地址 + 6bit 命令
+        val states = mutableListOf<Boolean>()
+        fun rc5bit(b: Int) {
+            if (b == 1) { states.add(false); states.add(true) } else { states.add(true); states.add(false) }
+        }
+        rc5bit(1)                              // 起始位
+        rc5bit((command shr 6) and 1)          // 字段位 = 扩展命令位
+        rc5bit(0)                              // 切换位
+        for (i in 4 downTo 0) rc5bit((address shr i) and 1)
+        for (i in 5 downTo 0) rc5bit((command shr i) and 1)
+        return compressStates(states, 889)
+    }
+
+    /** 相位布尔序列 → 交替 on/off 脉冲(首段必须为 on;首段为 off 时补 1µs) */
+    private fun compressStates(states: List<Boolean>, unitUs: Int): IntArray {
+        val out = mutableListOf<Int>()
+        var prev = true
+        var run = 0
+        for (s in states) {
+            if (s == prev) run++ else { out.add(run * unitUs); prev = s; run = 1 }
+        }
+        if (run > 0) out.add(run * unitUs)
+        if (out.first() == 0) out[0] = 1
+        return out.toIntArray()
+    }
+
     /** 发射原始脉冲：pattern 以微秒为单位交替 开/关，首个值为开启时长 */
     fun transmitRaw(carrierHz: Int, pattern: IntArray, repeat: Int = 1, label: String) {
         val emitter = ir ?: run { _lastTransmit.value = "无红外发射器"; return }
@@ -105,6 +211,7 @@ class IrRemoteManager(context: Context) {
             repeat(repeat.coerceIn(1, 8)) {
                 emitter.transmit(carrierHz, pattern)
             }
+            _lastPattern.value = pattern
             _lastTransmit.value = "已发射 · $label · ${carrierHz}Hz × $repeat"
         } catch (t: Throwable) {
             _lastTransmit.value = "发射失败: ${t.message}"

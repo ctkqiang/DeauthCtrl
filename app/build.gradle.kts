@@ -9,13 +9,20 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "xin.ctkqiang.deauthctrl"
+        // Termux 同款: 包名即 com.termux —— bootstrap 二进制硬编码的
+        // /data/data/com.termux/files/usr 路径天然匹配,apt/pkg 零 patch 可用。
+        // 与官方 Termux 互斥安装(同包名);用户不上架 Google Play,无冲突顾虑。
+        applicationId = "com.termux"
         minSdk = 23
-        targetSdk = 34
+        // Termux 同款方案: targetSdk 28 使 SELinux 域允许 exec 应用私有目录
+        // (bootstrap 二进制),这是「与 Termux 无差别」的硬前提 —— Termux 官方
+        // 即锁 28。用户明确不上架 Google Play,侧载不受影响。
+        targetSdk = 28
         versionCode = 1
         versionName = "1.0.0"
         // 真机运行时验证测试(connectedDebugAndroidTest)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testApplicationId = "com.termux.test"
 
         vectorDrawables {
             useSupportLibrary = true

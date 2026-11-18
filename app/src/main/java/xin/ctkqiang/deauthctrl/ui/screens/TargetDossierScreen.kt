@@ -44,6 +44,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import xin.ctkqiang.deauthctrl.manager.DeviceIntel
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -188,6 +189,24 @@ private fun IdentityBlock(t: RadarTarget) {
                 Text(
                     "厂商: ${t.vendor} · OUI ${t.vendorOui}",
                     fontFamily = Mono, fontSize = 10.sp, color = Gray,
+                )
+            }
+            // 设备情报指纹:黑客工具/开发板/物联网识别(启发式,可能误报)
+            DeviceIntel.classify(t.name, t.id, t.bleAdv?.serviceUuids.orEmpty(), t.bleAdv?.manufacturerId)?.let { hit ->
+                Spacer(Modifier.height(3.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Star(if (hit.category == "黑客工具") Danger else Gold, 6.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "设备情报: ${hit.label} · 置信 ${(hit.confidence * 100).toInt()}%",
+                        fontFamily = Mono, fontSize = 10.sp,
+                        color = if (hit.category == "黑客工具") Danger else Gold,
+                    )
+                }
+                Text(
+                    "依据: ${hit.basis}",
+                    fontFamily = Sans, fontSize = 8.sp, color = Gray,
+                    modifier = Modifier.padding(start = 12.dp, top = 1.dp),
                 )
             }
             if (t.type == "bt" && t.alias.isNotBlank()) {

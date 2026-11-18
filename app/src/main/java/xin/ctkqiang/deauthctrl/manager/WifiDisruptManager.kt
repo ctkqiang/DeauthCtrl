@@ -90,7 +90,7 @@ class WifiDisruptManager(private val context: Context) {
     val capabilities: StateFlow<DeviceCapabilities> = capabilityProbe.capabilities
 
     /** 真实注入引擎 —— root 门控的 aireplay-ng/nexutil 驱动;无 root 设备不可启动 */
-    val deauth = WifiDeauthEngine(context.applicationContext)
+    val deauth = WifiDeauthEngine.get(context)
 
     private val _scanState = MutableStateFlow<ScanState>(ScanState.Idle)
     val scanState: StateFlow<ScanState> = _scanState.asStateFlow()

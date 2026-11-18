@@ -94,7 +94,7 @@ private fun palette(id: String, teamName: String, themeName: String, base: Color
     )
 }
 
-/** 24 支可选队伍 —— 每支队伍即一套全应用主题 */
+/** 40 支可选队伍 —— 每支队伍即一套全应用主题 */
 val TEAM_THEMES: List<HudPalette> = listOf(
     palette("azure", "蓝队", "全息青", Color(0xFF35C9FF)),
     palette("delta", "蓝队", "三角洲蓝", Color(0xFF2979FF)),
@@ -120,6 +120,21 @@ val TEAM_THEMES: List<HudPalette> = listOf(
     palette("midnight", "蓝队", "午夜蓝", Color(0xFF3D5AFE)),
     palette("titanium", "灰队", "钛银", Color(0xFFB0BEC5)),
     palette("graphite", "灰队", "石墨", Color(0xFF607D8B)),
+    palette("magenta", "粉队", "品红", Color(0xFFE91E63)),
+    palette("orchid", "紫队", "兰花紫", Color(0xFFBA68C8)),
+    palette("indigo", "蓝队", "靛蓝", Color(0xFF3949AB)),
+    palette("cyan", "青队", "纯青", Color(0xFF00E5FF)),
+    palette("lime", "绿队", "酸橙", Color(0xFFC6FF00)),
+    palette("emerald", "绿队", "祖母绿", Color(0xFF00C853)),
+    palette("chartreuse", "黄队", "黄绿", Color(0xFFAEEA00)),
+    palette("tangerine", "橙队", "橘红", Color(0xFFFF7043)),
+    palette("sunset", "红队", "落日红", Color(0xFFFF5252)),
+    palette("rose", "粉队", "玫瑰金", Color(0xFFF48FB1)),
+    palette("violet", "紫队", "紫罗兰", Color(0xFF7C4DFF)),
+    palette("steel", "蓝队", "钢铁蓝", Color(0xFF546E7A)),
+    palette("plasma", "青队", "等离子", Color(0xFF00E676)),
+    palette("photon", "白队", "光子白", Color(0xFFF5F5F5)),
+    palette("hazard", "黄队", "危险黄", Color(0xFFFFEA00)),
 )
 
 /**

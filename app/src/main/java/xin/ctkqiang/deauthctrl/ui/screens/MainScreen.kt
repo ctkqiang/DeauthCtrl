@@ -69,6 +69,10 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.ManageSearch
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Navigation
+import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material.icons.outlined.NetworkPing
 import androidx.compose.material.icons.outlined.Radar
 import androidx.compose.material.icons.outlined.Router
@@ -122,6 +126,7 @@ import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringState
 import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
 import xin.ctkqiang.deauthctrl.mirroring.ui.RemoteViewerScreen
 import xin.ctkqiang.deauthctrl.ui.components.*
+import xin.ctkqiang.deauthctrl.ui.components.ErrorStickerOverlay
 import xin.ctkqiang.deauthctrl.ui.theme.TEAM_THEMES
 import xin.ctkqiang.deauthctrl.viewmodel.*
 import xin.ctkqiang.deauthctrl.viewmodel.DbViewModel
@@ -268,11 +273,28 @@ fun MainScreen(
                     "probe" -> ProbeMonitorScreen(radarVm, back = goBack)
                     "serialmon" -> SerialMonitorScreen(back = goBack)
                     "otgprobe" -> OtgProbeScreen(onOpenArp = { navigate("arp") }, onOpenSerial = { navigate("serialmon") }, back = goBack)
+                    "gnss" -> GnssSkyScreen(back = goBack)
+                    "pdr" -> PdrHomingScreen(back = goBack)
+                    "mains" -> MainsWireScreen(back = goBack)
+                    "selfcheck" -> SelfCheckScreen(back = goBack)
+                    "sonic" -> SonicLinkScreen(back = goBack)
+                    "mesh" -> BleMeshScreen(back = goBack)
+                    "sonar" -> SonarRangerScreen(back = goBack)
+                    "chansurvey" -> ChannelSurveyScreen(back = goBack)
+                    "seismo" -> SeismographScreen(back = goBack)
+                    "packetmon" -> PacketMonitorScreen(back = goBack)
+                    "logicscope" -> LogicScopeScreen(back = goBack)
+                    "flippertv" -> FlipperTvScreen(back = goBack)
+                    "netbios" -> NetBiosScreen(back = goBack)
+                    "blegatt" -> BleGattScreen(back = goBack)
+                    "snmp" -> SnmpScreen(back = goBack)
+                    "lantools" -> LanToolsScreen(back = goBack)
+                    "nordicbench" -> NordicBenchScreen(back = goBack)
                     "morse" -> MorseScreen(back = goBack)
                     "dbview" -> DbViewScreen(dbVm, radarVm, blescanVm, wifiVm, back = goBack)
                     "taccam" -> TacticalCameraScreen(viewModel(), operatorName = username, back = goBack, openPhotoId = openPhotoId)
                     "sdr" -> VoiceSdrScreen(viewModel(), back = goBack)
-                    "irremote" -> IrRemoteScreen(viewModel(), back = goBack)
+                    "irremote" -> IrRemoteScreen(viewModel(), back = goBack, onOpenUniversal = { navigate("flippertv") })
                     "gsm" -> GsmTowerScreen(back = goBack)
                     "nfc" -> NfcScreen(viewModel(), back = goBack)
                     "nightvision" -> NightVisionScreen(viewModel(), back = goBack)
@@ -292,6 +314,8 @@ fun MainScreen(
             TacticalGrid()
             ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.02f)
         }
+        // 全局错误贴纸:任何页面做蠢事时从底部弹入
+        ErrorStickerOverlay()
     }
 }
 
@@ -573,15 +597,34 @@ fun HomeScreen(
         HomeEntry("摩尔斯码", "蜂鸣/闪光灯发报 · 双向翻译", "morse", false, null, Icons.Outlined.Lan),
         HomeEntry("串口监视", "USB OTG 串口 · Arduino IDE 风格", "serialmon", false, null, Icons.Outlined.Cast),
         HomeEntry("有线探测", "OTG 网卡/串口识别 · 引导对应工具", "otgprobe", false, null, Icons.Outlined.SwapHoriz),
+        HomeEntry("卫星天图", "GNSS 星座实时天顶图 · 真实解算", "gnss", false, null, Icons.Outlined.TravelExplore),
+        HomeEntry("步测归航", "无 GPS 死推算 · 面包屑回航", "pdr", false, null, Icons.Outlined.Navigation),
+        HomeEntry("电线探测", "工频电磁特征 · 墙内带电线路粗测", "mains", false, null, Icons.Outlined.Sensors),
+        HomeEntry("硬件自检", "电池/热区/负载/传感器体检", "selfcheck", false, null, Icons.Outlined.Storage),
+        HomeEntry("声波传讯", "DTMF 声波数据链 · 离线传字", "sonic", false, null, Icons.Outlined.Equalizer),
+        HomeEntry("网格聊天", "BLE 逐跳中继消息 · 无网无基站", "mesh", false, null, Icons.Outlined.Hub),
+        HomeEntry("声呐测距", "chirp 回波测距 · FFT 匹配滤波", "sonar", false, null, Icons.Outlined.GraphicEq),
+        HomeEntry("信道占用", "被动扫描信道拥堵热力图", "chansurvey", false, null, Icons.Outlined.Wifi),
+        HomeEntry("震动监视", "加速度计波形 · 事件记录", "seismo", false, null, Icons.Outlined.ShowChart),
+        HomeEntry("流量监视", "VpnService 本机抓包 · Wireshark 式解析", "packetmon", false, null, Icons.Outlined.Router),
+        HomeEntry("逻辑示波", "BLE/WiFi/蜂窝/音频多通道波形", "logicscope", false, null, Icons.Outlined.GraphicEq),
+        HomeEntry("万能遥控", "Flipper tv.ir 泛洪遥控 · 按键克隆库", "flippertv", false, null, Icons.Outlined.Sensors),
+        HomeEntry("NetBIOS 扫描", "Windows 主机名/用户/MAC 资产清点", "netbios", false, null, Icons.Outlined.Router),
+        HomeEntry("BLE GATT", "服务枚举 · 特征读写 · 通知订阅", "blegatt", false, null, Icons.Outlined.Bluetooth),
+        HomeEntry("SNMP 扫描", "社区串探测 · 设备型号识别", "snmp", false, null, Icons.Outlined.Lan),
+        HomeEntry("局域网工具", "WOL 唤醒 · fling 裸流管道", "lantools", false, null, Icons.Outlined.SwapHoriz),
+        HomeEntry("Nordic 工作台", "AD 解码 · NUS 终端 · 绑定管理", "nordicbench", false, null, Icons.Outlined.Bluetooth),
         HomeEntry("数据库", "SQLite 信号情报库 · 刷新注入", "dbview", false, null, Icons.Outlined.Storage),
         HomeEntry("局域网会议", "多方视频 · 屏幕/摄像头 · PTT 语音", "conference", false, null, Icons.Outlined.VideoCall),
     )
 
     val groups = listOf(
-        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "cve", "sdr", "taccam", "gsm")),
-        HomeGroup("网络", listOf("webserver", "http", "brute", "ping")),
-        HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc")),
+        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "sdr", "taccam", "gsm")),
+        HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
         HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview")),
+        HomeGroup("态势", listOf("gnss", "pdr", "mains", "sonic", "selfcheck")),
+        HomeGroup("实验室", listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools")),
+        HomeGroup("网络", listOf("webserver", "http", "brute", "ping", "packetmon")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }

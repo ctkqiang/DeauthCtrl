@@ -85,6 +85,8 @@ import xin.ctkqiang.deauthctrl.ui.components.TacGreen
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.viewmodel.TerminalViewModel
+import xin.ctkqiang.deauthctrl.manager.TermuxBootstrap
+import xin.ctkqiang.deauthctrl.ui.components.Sans
 
 /** 终端输出区底色 —— 与 TerminalSpec.applyHudColorScheme 的终端背景一致。 */
 private val TerminalOutputBg = Color(0xFF04121C)
@@ -123,6 +125,9 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val inPreview = LocalInspectionMode.current
+    // Termux bootstrap 环境状态(解压进度/镜像说明)
+    val bootState by TermuxBootstrap.state.collectAsState()
+    LaunchedEffect(Unit) { TermuxBootstrap.refresh(context) }
 
     /** 视图引用：AndroidView 重建时更新，Extra keys 直接调用其方法。 */
     val viewRef = remember { ViewRef() }
@@ -251,6 +256,33 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
             .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars)),
     ) {
         TerminalHeader("本地终端", back)
+        // ── Termux bootstrap 状态条:安装进度 / 环境说明 ──
+        if (!bootState.installed) {
+            Surface(
+                Modifier.fillMaxWidth(),
+                shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                color = Gold.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, Gold.copy(alpha = 0.5f)),
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 7.dp)) {
+                    Text(
+                        if (bootState.installing) "正在安装 Termux 环境 · ${bootState.detail} · ${(bootState.progress * 100).toInt()}%"
+                        else "Termux 环境未安装 —— 启动会话时自动解压官方 bootstrap(约 33MB,一次性)",
+                        fontFamily = Mono, fontSize = 9.sp, color = Gold,
+                    )
+                    if (bootState.installing) {
+                        Spacer(Modifier.height(4.dp))
+                        Box(Modifier.fillMaxWidth().height(4.dp).clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(SurfaceAlt)) {
+                            Box(
+                                Modifier.fillMaxWidth(bootState.progress.coerceIn(0f, 1f)).height(4.dp)
+                                    .clip(CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)).background(Gold),
+                            )
+                        }
+                    }
+                    bootState.error?.let { Text("[!] $it", fontFamily = Sans, fontSize = 9.sp, color = Danger) }
+                }
+            }
+        }
 
         // ── 会话工具条 ─────────────────────────────────────────────────────
         Row(

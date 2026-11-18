@@ -39,6 +39,10 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <!-- USB OTG 串口/以太网探测 -->
     <uses-permission android:name="android.permission.USB_PERMISSION" />
+    <!-- 本机流量监视:VpnService 前台服务 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- 步测归航:步数传感器(Android 10+ 需要) -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
@@ -74,6 +78,18 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name=".manager.PacketCaptureService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE"
+            android:foregroundServiceType="specialUse">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="vpn: local packet capture and traffic monitoring" />
+        </service>
         <service
             android:name=".WalkieTalkieService"
             android:foregroundServiceType="microphone"

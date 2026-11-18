@@ -172,7 +172,14 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
 
                 Spacer(Modifier.height(12.dp))
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); vm.connect() },
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        haptic.hud()
+                        if (vm.host.value.isBlank()) {
+                            xin.ctkqiang.deauthctrl.ui.components.StickerBus.show("先填主机地址!")
+                        } else {
+                            vm.connect()
+                        }
+                    },
                     shape = CutCornerShape(topStart = 9.dp, bottomEnd = 9.dp),
                     color = Danger,
                     border = BorderStroke(1.dp, Danger.copy(alpha = 0.8f)),

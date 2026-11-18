@@ -218,7 +218,14 @@ class NightVisionManager(private val context: Context) {
                                 val evMax = charsNow.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE)?.upper ?: 0
                                 val fpsMin = charsNow.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
                                     ?.minByOrNull { it.upper }
-                                val req = cam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                                // 相机可能在 gen 检查后被 stopLocked 关闭 —— createCaptureRequest
+                                // 对已关闭设备抛 IllegalStateException(此前直接崩进程),全程兜底
+                                val req = runCatching { cam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW) }.getOrNull()
+                                if (req == null || gen != generation) {
+                                    s.close()
+                                    return
+                                }
+                                req.apply {
                                     addTarget(frameReader.surface)
                                     set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
                                     set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, evMax)
@@ -226,7 +233,7 @@ class NightVisionManager(private val context: Context) {
                                         set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsMin)
                                     }
                                 }
-                                s.setRepeatingRequest(req.build(), null, cameraHandler)
+                                runCatching { s.setRepeatingRequest(req.build(), null, cameraHandler) }
                                 _running.value = true
                             }
 

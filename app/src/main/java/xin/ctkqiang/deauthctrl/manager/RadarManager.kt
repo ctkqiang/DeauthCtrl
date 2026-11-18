@@ -1,5 +1,6 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.bluetooth.le.ScanCallback
@@ -305,6 +306,41 @@ class RadarManager(private val context: Context) {
             if (itr.next().value.lastSeenMs < cutoff) itr.remove()
         }
         wifiSeenTs.keys.retainAll { targets.containsKey(it) }
+    }
+
+    /**
+     * 配对弹窗消息 —— 让目标设备屏幕上弹出系统配对请求。
+     *
+     * 真实机制: 系统配对弹窗显示的是**发起方的蓝牙名称** —— 先把本机蓝牙名
+     * 临时改成自定义消息, 再对目标发起 createBond(), 目标(处于可配对状态时)
+     * 会看到 "「消息」想与你配对" 的系统弹窗; 60 秒后自动恢复本机原蓝牙名。
+     *
+     * 局限(UI 必须如实呈现): 仅对处于可发现/可配对状态的经典蓝牙设备有效;
+     * 这是系统标准配对弹窗, 不是自定义 UI; 目标拒绝配对则弹窗消失。
+     *
+     * @return null 表示已发起; 非 null 为失败原因
+     */
+    @SuppressLint("MissingPermission")
+    fun sendPairingPopup(addr: String, message: String): String? {
+        val adapter = btManager?.adapter ?: return "蓝牙不可用"
+        val device = runCatching { adapter.getRemoteDevice(addr) }.getOrNull()
+            ?: return "目标地址无效: $addr"
+        val msg = message.trim().take(60)
+        if (msg.isEmpty()) return "消息不能为空"
+        val originalName = runCatching { adapter.name }.getOrNull()
+        val renameOk = runCatching { adapter.setName(msg) }.isSuccess
+        if (!renameOk) return "修改本机蓝牙名失败(需要 BLUETOOTH_CONNECT 权限)"
+        val bonded = runCatching { device.createBond() }.getOrDefault(false)
+        if (!bonded) {
+            runCatching { originalName?.let { adapter.setName(it) } }
+            return "配对请求发起失败 —— 目标可能不在可配对状态"
+        }
+        // 60 秒后恢复本机蓝牙名(配对弹窗生命周期已过)
+        val restoreName = originalName
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            runCatching { restoreName?.let { adapter.setName(it) } }
+        }, 60_000L)
+        return null
     }
 
     fun start() {

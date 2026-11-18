@@ -1216,7 +1216,7 @@ fun MorseScreen(back: () -> Unit) {
 // ══════════════════════════════════════════════════════════════════════════
 
 @Composable
-fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit) {
+fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () -> Unit) {
     val manager = vm.manager
     val haptic = LocalHapticFeedback.current
     val last by manager.lastTransmit.collectAsState()
@@ -1282,6 +1282,22 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit) {
                 Text("数字键为 NEC 0x00 地址通用映射，各品牌可能存在偏差", fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
             }
 
+            Spacer(Modifier.height(8.dp))
+            // ── 万能遥控入口:Flipper tv.ir 泛洪库 ──
+            Surface(
+                modifier = Modifier.fillMaxWidth().clickable {
+                    haptic.hud()
+                    onOpenUniversal()
+                },
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                color = Gold.copy(alpha = 0.1f),
+                border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
+            ) {
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("▸ 万能遥控 · Flipper tv.ir 泛洪库 + 按键克隆", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.weight(1f))
+                    Text("456 候选码", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                }
+            }
             Spacer(Modifier.height(8.dp))
             // ── 协议选择 ──
             TermPanel("协议 · PROTOCOL") {
@@ -1363,6 +1379,9 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable {
                         haptic.hud()
+                        if (necAddr.toIntOrNull(16) == null || necCmd.toIntOrNull(16) == null) {
+                            xin.ctkqiang.deauthctrl.ui.components.StickerBus.show("HEX 地址/命令无效!")
+                        }
                         val a = necAddr.toIntOrNull(16) ?: 0
                         val c = necCmd.toIntOrNull(16) ?: 0
                         manager.transmitNec(a, c)
