@@ -77,6 +77,9 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
 
     fun stopDeauth() = manager.deauth.stop()
 
+    /** 被动嗅探模式(信标/探测/去认证帧流) */
+    fun startCapture(channel: Int): String? = manager.deauth.startCapture(channel)
+
     override fun onCleared() {
         super.onCleared()
         manager.destroy()

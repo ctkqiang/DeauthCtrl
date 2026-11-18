@@ -657,9 +657,11 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
                         if (delta < -180f) delta += 360f
                         smoothedHeading = (smoothedHeading + delta * 0.25f + 360f) % 360f
                     }
-                    _heading.value = (smoothedHeading - declinationDeg + 360f) % 360f
-                    _pitch.value = pitch
-                    _roll.value = roll
+                    // 发射节流: 传感器 50Hz, 微小变化不发射 —— 避免每 20ms 触发全盘重绘
+                    val newHeading = (smoothedHeading - declinationDeg + 360f) % 360f
+                    if (kotlin.math.abs(newHeading - _heading.value) > 0.15f) _heading.value = newHeading
+                    if (kotlin.math.abs(pitch - _pitch.value) > 0.3f) _pitch.value = pitch
+                    if (kotlin.math.abs(roll - _roll.value) > 0.3f) _roll.value = roll
                     // 方位推演用的原始真北航向轨迹(平滑前,时间戳同源)
                     headingTrace.record(event.timestamp, (rawHeading - declinationDeg + 360f) % 360f)
                 }
@@ -832,6 +834,9 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
         pollJob?.cancel()
         _isRunning.value = false
     }
+
+    /** 配对弹窗消息:让目标设备弹出系统配对请求(改本机蓝牙名 + createBond) */
+    fun sendPairingPopup(addr: String, message: String): String? = manager.sendPairingPopup(addr, message)
 
     /** 单目标实时流 —— 档案页订阅,目标更新即发射(内容去重) */
     fun targetFlow(id: String): Flow<RadarTarget?> =
