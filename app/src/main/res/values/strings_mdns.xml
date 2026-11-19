@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mdns_title">mDNS Discovery</string>
+    <string name="mdns_panel_control">Control</string>
+    <string name="mdns_label_status">Status</string>
+    <string name="mdns_status_scanning">Scanning</string>
+    <string name="mdns_status_idle">Idle</string>
+    <string name="mdns_label_found">Services Found</string>
+    <string name="mdns_run">Start Scan</string>
+    <string name="mdns_stop">Stop</string>
+    <string name="mdns_panel_results">Discovered Services</string>
+    <string name="mdns_empty">Tap start to browse Bonjour/Avahi services on this LAN</string>
+    <string name="mdns_scanning_note">Scanning — responses keep merging in until the pass ends</string>
+    <string name="mdns_label_type">TYPE</string>
+    <string name="mdns_panel_limits">Scope &amp; Limits</string>
+    <string name="mdns_limit_text">Sends mDNS queries to the multicast group 224.0.0.251:5353 and lists services that answer. Only devices on the same local network that actually announce themselves are visible; silent hosts cannot be discovered.</string>
+</resources>

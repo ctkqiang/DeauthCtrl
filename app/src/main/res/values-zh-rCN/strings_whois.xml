@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="whois_title">Whois 查询</string>
+    <string name="whois_panel_query">查询</string>
+    <string name="whois_label_domain">域名</string>
+    <string name="whois_ph_domain">例如 example.com</string>
+    <string name="whois_run">查询</string>
+    <string name="whois_panel_result">结果</string>
+    <string name="whois_label_server">Whois 服务器</string>
+    <string name="whois_label_elapsed">耗时</string>
+    <string name="whois_btn_raw">原始响应</string>
+    <string name="whois_btn_keys">关键字段</string>
+    <string name="whois_empty">响应中未识别出关键字段</string>
+    <string name="whois_panel_limits">范围与边界</string>
+    <string name="whois_limit_text">经 TCP 43 直连注册局/注册商数据库，输出即对方服务器返回内容；关键字段只是粗筛不是解析。未收录的 TLD 先经 IANA 定位权威服务器。</string>
+</resources>

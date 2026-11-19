@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tls_title">TLS Inspector</string>
+    <string name="tls_panel_target">Target</string>
+    <string name="tls_label_host">Host</string>
+    <string name="tls_ph_host">e.g. example.com</string>
+    <string name="tls_label_port">Port</string>
+    <string name="tls_run">Inspect</string>
+    <string name="tls_panel_meta">Session</string>
+    <string name="tls_label_protocol">Protocol</string>
+    <string name="tls_label_cipher">Cipher</string>
+    <string name="tls_label_elapsed">Elapsed</string>
+    <string name="tls_cert_index">Certificate %1$d</string>
+    <string name="tls_status_valid">VALID</string>
+    <string name="tls_status_notyet">NOT YET VALID</string>
+    <string name="tls_status_expired">EXPIRED</string>
+    <string name="tls_days_left">%1$d days left</string>
+    <string name="tls_label_subject">Subject</string>
+    <string name="tls_label_issuer">Issuer</string>
+    <string name="tls_label_validity">Validity</string>
+    <string name="tls_label_san">Subject Alt Names</string>
+    <string name="tls_label_serial">Serial</string>
+    <string name="tls_label_sigalg">Signature Alg</string>
+    <string name="tls_label_keyalg">Key Alg</string>
+    <string name="tls_label_hostmatch">Hostname Match</string>
+    <string name="tls_hostmatch_ok">MATCH</string>
+    <string name="tls_hostmatch_fail">MISMATCH</string>
+    <string name="tls_label_fingerprint">SHA-256 Fingerprint</string>
+    <string name="tls_panel_limits">Scope &amp; Limits</string>
+    <string name="tls_limit_text">Connects to the target over TLS and reads the certificate chain the server actually presents (SNI included). Validation is machine judgment of validity dates and hostname — it does not check revocation or trust chains.</string>
+</resources>

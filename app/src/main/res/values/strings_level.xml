@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="level_title">Holo Level</string>
+    <string name="level_panel_gauge">Bubble Gauge</string>
+    <string name="level_label_roll">Roll</string>
+    <string name="level_label_pitch">Pitch</string>
+    <string name="level_locked">Level Locked · 0.0°</string>
+    <string name="level_btn_calibrate">Calibrate Zero</string>
+    <string name="level_calibrated">Zero point calibrated on this surface</string>
+    <string name="level_panel_limits">Scope &amp; Limits</string>
+    <string name="level_limit_text">Uses the gravity vector (software-fused where available). Angles are the device\'s attitude vs. horizontal, limited by real sensor resolution — it is a field instrument, not a calibration reference.</string>
+</resources>

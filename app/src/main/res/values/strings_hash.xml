@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hash_title">Hash Lab</string>
+    <string name="hash_panel_text">Text Digest</string>
+    <string name="hash_label_algo">Algorithm</string>
+    <string name="hash_label_text">Input Text</string>
+    <string name="hash_ph_text">Type or paste text to hash</string>
+    <string name="hash_empty_digest">--</string>
+    <string name="hash_btn_copy">Copy</string>
+    <string name="hash_copied">Copied to clipboard</string>
+    <string name="hash_panel_file">File Digest</string>
+    <string name="hash_btn_pick">Pick File</string>
+    <string name="hash_label_file_progress">Bytes Read</string>
+    <string name="hash_panel_limits">Scope &amp; Limits</string>
+    <string name="hash_limit_text">Streamed digest over 64 KB blocks — large files do not load into memory. MD5/SHA-1 are for checksum compatibility only, not security assertions.</string>
+</resources>

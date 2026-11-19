@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dns_title">DNS 工坊</string>
+    <string name="dns_panel_query">查询</string>
+    <string name="dns_label_domain">域名</string>
+    <string name="dns_ph_domain">例如 example.com</string>
+    <string name="dns_label_type">记录类型</string>
+    <string name="dns_label_server">解析服务器</string>
+    <string name="dns_run">查询</string>
+    <string name="dns_panel_result">响应结果</string>
+    <string name="dns_empty_result">输入域名发起查询，答案实时列在这里</string>
+    <string name="dns_empty_answer">该查询没有返回任何答案</string>
+    <string name="dns_label_elapsed">耗时</string>
+    <string name="dns_answer_count">答案数</string>
+    <string name="dns_panel_limits">范围与边界</string>
+    <string name="dns_limit_text">查询报文按 RFC 1035 手工组装，经 UDP 53 发往所选解析器；结果来自所配置的服务器，应用不伪造记录。部分网络会劫持 DNS——结果异常时请换解析器交叉比对。</string>
+</resources>

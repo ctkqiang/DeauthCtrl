@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dns_title">DNS Lab</string>
+    <string name="dns_panel_query">Query</string>
+    <string name="dns_label_domain">Domain</string>
+    <string name="dns_ph_domain">e.g. example.com</string>
+    <string name="dns_label_type">Record Type</string>
+    <string name="dns_label_server">Resolver</string>
+    <string name="dns_run">Query</string>
+    <string name="dns_panel_result">Response</string>
+    <string name="dns_empty_result">Enter a domain and query — answers are listed here in real time</string>
+    <string name="dns_empty_answer">No answers returned for this query</string>
+    <string name="dns_label_elapsed">Elapsed</string>
+    <string name="dns_answer_count">Answers</string>
+    <string name="dns_panel_limits">Scope &amp; Limits</string>
+    <string name="dns_limit_text">Queries are hand-built DNS packets sent over UDP 53 to the selected resolver; responses come from the configured server and are not fabricated. Some networks hijack DNS — compare results across resolvers if something looks wrong.</string>
+</resources>

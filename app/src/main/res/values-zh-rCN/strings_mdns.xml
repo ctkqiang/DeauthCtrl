@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mdns_title">mDNS 发现</string>
+    <string name="mdns_panel_control">控制</string>
+    <string name="mdns_label_status">状态</string>
+    <string name="mdns_status_scanning">扫描中</string>
+    <string name="mdns_status_idle">空闲</string>
+    <string name="mdns_label_found">已发现服务</string>
+    <string name="mdns_run">开始扫描</string>
+    <string name="mdns_stop">停止</string>
+    <string name="mdns_panel_results">已发现服务</string>
+    <string name="mdns_empty">点击开始，浏览本局域网内的 Bonjour/Avahi 服务</string>
+    <string name="mdns_scanning_note">扫描中 —— 直到本轮结束前响应会持续归并进来</string>
+    <string name="mdns_label_type">类型</string>
+    <string name="mdns_panel_limits">范围与边界</string>
+    <string name="mdns_limit_text">向组播组 224.0.0.251:5353 发送 mDNS 查询并列出应答的服务。只有同一局域网内主动宣告自己的设备可见，静默主机无法被发现。</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keygen_title">密码生成器</string>
+    <string name="keygen_panel_gen">生成</string>
+    <string name="keygen_label_mode">字符集</string>
+    <string name="keygen_label_length">长度：%1$d</string>
+    <string name="keygen_label_entropy">熵值</string>
+    <string name="keygen_btn_regen">重新生成</string>
+    <string name="keygen_btn_copy">复制</string>
+    <string name="keygen_panel_limits">范围与边界</string>
+    <string name="keygen_limit_text">SecureRandom 生成；熵值是字符集的理论上限，不是可读性评分。密码能否抗住实际攻击取决于目标系统的口令策略与存储方式。</string>
+</resources>

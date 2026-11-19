@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keygen_title">Key Generator</string>
+    <string name="keygen_panel_gen">Generate</string>
+    <string name="keygen_label_mode">Charset</string>
+    <string name="keygen_label_length">Length: %1$d</string>
+    <string name="keygen_label_entropy">Entropy</string>
+    <string name="keygen_btn_regen">Regenerate</string>
+    <string name="keygen_btn_copy">Copy</string>
+    <string name="keygen_panel_limits">Scope &amp; Limits</string>
+    <string name="keygen_limit_text">SecureRandom-backed generation; the entropy figure is the theoretical ceiling of the charset, not a readability rating. Whether a password survives real-world cracking depends on the target\'s policy and storage.</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hash_title">哈希工坊</string>
+    <string name="hash_panel_text">文本摘要</string>
+    <string name="hash_label_algo">算法</string>
+    <string name="hash_label_text">输入文本</string>
+    <string name="hash_ph_text">输入或粘贴待哈希的文本</string>
+    <string name="hash_empty_digest">--</string>
+    <string name="hash_btn_copy">复制</string>
+    <string name="hash_copied">已复制到剪贴板</string>
+    <string name="hash_panel_file">文件摘要</string>
+    <string name="hash_btn_pick">选择文件</string>
+    <string name="hash_label_file_progress">已读取</string>
+    <string name="hash_panel_limits">范围与边界</string>
+    <string name="hash_limit_text">64 KB 分块流式消化，大文件不占内存。MD5/SHA-1 仅供校验兼容，不作为安全断言。</string>
+</resources>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_title">二维码工坊</string>
+    <string name="qr_panel_content">内容</string>
+    <string name="qr_mode_text">文本</string>
+    <string name="qr_mode_url">URL</string>
+    <string name="qr_mode_wifi">WiFi</string>
+    <string name="qr_mode_vcard">名片</string>
+    <string name="qr_label_text">文本</string>
+    <string name="qr_ph_text">任意想编码的内容</string>
+    <string name="qr_label_url">URL</string>
+    <string name="qr_ph_url">https://…</string>
+    <string name="qr_label_ssid">SSID</string>
+    <string name="qr_ph_ssid">WiFi 名称</string>
+    <string name="qr_label_pass">密码</string>
+    <string name="qr_ph_pass">WiFi 密码</string>
+    <string name="qr_label_security">加密方式</string>
+    <string name="qr_label_name">姓名</string>
+    <string name="qr_ph_name">姓名</string>
+    <string name="qr_label_phone">电话</string>
+    <string name="qr_ph_phone">电话号码</string>
+    <string name="qr_label_email">邮箱</string>
+    <string name="qr_ph_email">邮箱地址</string>
+    <string name="qr_panel_preview">预览</string>
+    <string name="qr_empty">填写内容，二维码实时渲染在这里</string>
+    <string name="qr_btn_copy">复制</string>
+    <string name="qr_btn_share">分享</string>
+    <string name="qr_btn_save">保存</string>
+    <string name="qr_saved">已保存：%1$s</string>
+    <string name="qr_save_failed">保存失败：%1$s</string>
+    <string name="qr_panel_limits">范围与边界</string>
+    <string name="qr_limit_text">zxing 本地渲染，内容不出设备。WiFi 码遵循社区通用 WIFI: 语法，扫码后是否自动连接由扫码设备决定。</string>
+</resources>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_title">QR Workshop</string>
+    <string name="qr_panel_content">Content</string>
+    <string name="qr_mode_text">Text</string>
+    <string name="qr_mode_url">URL</string>
+    <string name="qr_mode_wifi">WiFi</string>
+    <string name="qr_mode_vcard">vCard</string>
+    <string name="qr_label_text">Text</string>
+    <string name="qr_ph_text">Anything you want encoded</string>
+    <string name="qr_label_url">URL</string>
+    <string name="qr_ph_url">https://…</string>
+    <string name="qr_label_ssid">SSID</string>
+    <string name="qr_ph_ssid">WiFi name</string>
+    <string name="qr_label_pass">Password</string>
+    <string name="qr_ph_pass">WiFi password</string>
+    <string name="qr_label_security">Security</string>
+    <string name="qr_label_name">Name</string>
+    <string name="qr_ph_name">Full name</string>
+    <string name="qr_label_phone">Phone</string>
+    <string name="qr_ph_phone">Phone number</string>
+    <string name="qr_label_email">Email</string>
+    <string name="qr_ph_email">Email address</string>
+    <string name="qr_panel_preview">Preview</string>
+    <string name="qr_empty">Fill in the content — the code renders live here</string>
+    <string name="qr_btn_copy">Copy</string>
+    <string name="qr_btn_share">Share</string>
+    <string name="qr_btn_save">Save</string>
+    <string name="qr_saved">Saved: %1$s</string>
+    <string name="qr_save_failed">Save failed: %1$s</string>
+    <string name="qr_panel_limits">Scope &amp; Limits</string>
+    <string name="qr_limit_text">Rendered locally with zxing — nothing leaves the device. WiFi codes use the community WIFI: syntax; scanning devices decide whether to auto-connect.</string>
+</resources>

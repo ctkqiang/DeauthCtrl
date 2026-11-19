@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="whois_title">Whois Lookup</string>
+    <string name="whois_panel_query">Query</string>
+    <string name="whois_label_domain">Domain</string>
+    <string name="whois_ph_domain">e.g. example.com</string>
+    <string name="whois_run">Query</string>
+    <string name="whois_panel_result">Result</string>
+    <string name="whois_label_server">Whois Server</string>
+    <string name="whois_label_elapsed">Elapsed</string>
+    <string name="whois_btn_raw">Raw Response</string>
+    <string name="whois_btn_keys">Key Fields</string>
+    <string name="whois_empty">No key fields recognized in the response</string>
+    <string name="whois_panel_limits">Scope &amp; Limits</string>
+    <string name="whois_limit_text">Queries the registry/registrar database over TCP 43. Output is whatever that server returns; key-field extraction is a rough filter, not a parse. Unlisted TLDs go through IANA first.</string>
+</resources>

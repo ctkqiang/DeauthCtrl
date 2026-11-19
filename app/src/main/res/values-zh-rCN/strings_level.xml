@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="level_title">全息水平仪</string>
+    <string name="level_panel_gauge">气泡盘面</string>
+    <string name="level_label_roll">横滚</string>
+    <string name="level_label_pitch">俯仰</string>
+    <string name="level_locked">已锁定水平 · 0.0°</string>
+    <string name="level_btn_calibrate">校准零点</string>
+    <string name="level_calibrated">已在此表面校准零点</string>
+    <string name="level_panel_limits">范围与边界</string>
+    <string name="level_limit_text">使用重力矢量（优先软件融合后的重力数据）。角度为设备与水平面的姿态差，精度受真实传感器分辨率限制——它是现场工具，不是计量基准。</string>
+</resources>

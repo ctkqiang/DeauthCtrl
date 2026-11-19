@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tls_title">TLS 证书检查</string>
+    <string name="tls_panel_target">目标</string>
+    <string name="tls_label_host">主机</string>
+    <string name="tls_ph_host">例如 example.com</string>
+    <string name="tls_label_port">端口</string>
+    <string name="tls_run">检查</string>
+    <string name="tls_panel_meta">会话</string>
+    <string name="tls_label_protocol">协议</string>
+    <string name="tls_label_cipher">加密套件</string>
+    <string name="tls_label_elapsed">耗时</string>
+    <string name="tls_cert_index">证书 %1$d</string>
+    <string name="tls_status_valid">有效</string>
+    <string name="tls_status_notyet">尚未生效</string>
+    <string name="tls_status_expired">已过期</string>
+    <string name="tls_days_left">剩余 %1$d 天</string>
+    <string name="tls_label_subject">持有者</string>
+    <string name="tls_label_issuer">颁发者</string>
+    <string name="tls_label_validity">有效期</string>
+    <string name="tls_label_san">备用名称</string>
+    <string name="tls_label_serial">序列号</string>
+    <string name="tls_label_sigalg">签名算法</string>
+    <string name="tls_label_keyalg">密钥算法</string>
+    <string name="tls_label_hostmatch">主机名匹配</string>
+    <string name="tls_hostmatch_ok">匹配</string>
+    <string name="tls_hostmatch_fail">不匹配</string>
+    <string name="tls_label_fingerprint">SHA-256 指纹</string>
+    <string name="tls_panel_limits">范围与边界</string>
+    <string name="tls_limit_text">直连目标读取服务器实际返回的证书链（携带 SNI）。有效性是机器对时间与主机名的判读，不检查吊销状态与信任链。</string>
+</resources>
