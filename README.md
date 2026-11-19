@@ -58,10 +58,9 @@
 
 ## 下载
 
-| 平台 | 直链 |
-| ---- | ---- |
-| **GitHub** | [DeauthCTRL.apk](https://github.com/ctkqiang/DeauthCtrl/releases/download/v1.0.0/DeauthCTRL.apk) |
-| **GitCode** | [DeauthCTRL.apk](https://gitcode.com/ctkqiang_sr/DeauthCtrl/releases/download/v1.0.0/DeauthCTRL.apk) |
+[![最新版本下载](https://img.shields.io/github/v/release/ctkqiang/DeauthCtrl?style=for-the-badge&label=GitHub%20Releases&color=d41414&logo=github)](https://github.com/ctkqiang/DeauthCtrl/releases/latest)
+
+前往 [GitHub Releases](https://github.com/ctkqiang/DeauthCtrl/releases/latest) 获取最新自动构建发布的通用独立安装包（`DeauthCtrl-universal-sideload.apk`）。
 
 ---
 
