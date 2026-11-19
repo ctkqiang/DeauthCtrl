@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_title">离线 AI 终端</string>
+    <string name="ai_panel_model">模型</string>
+    <string name="ai_label_model">模型</string>
+    <string name="ai_label_storage">体积</string>
+    <string name="ai_label_status">状态</string>
+    <string name="ai_status_none">未下载</string>
+    <string name="ai_status_downloading">下载中</string>
+    <string name="ai_status_downloaded">已下载</string>
+    <string name="ai_status_loading">加载引擎中</string>
+    <string name="ai_status_ready">就绪</string>
+    <string name="ai_btn_download">下载模型</string>
+    <string name="ai_btn_cancel">取消</string>
+    <string name="ai_btn_delete_model">删除模型</string>
+    <string name="ai_panel_chat">对话</string>
+    <string name="ai_label_params">采样参数</string>
+    <string name="ai_empty_chat">下载模型后，对话完全在本机运行</string>
+    <string name="ai_ph_input">给本地模型发消息…</string>
+    <string name="ai_btn_send">发送</string>
+    <string name="ai_btn_stop">停止</string>
+    <string name="ai_btn_clear">清空</string>
+    <string name="ai_role_you">你</string>
+    <string name="ai_role_ai">AI</string>
+    <string name="ai_panel_limits">范围与边界</string>
+    <string name="ai_limit_download">首次使用需联网从 Hugging Face 一次性下载约 1.5GB 模型，无需注册账号。</string>
+    <string name="ai_limit_offline">下载完成后推理 100% 离线 —— 提示词与输出不出设备。</string>
+    <string name="ai_limit_device">运行时仅支持 arm64-v8a / x86_64，建议约 6GB 内存；低配设备加载慢或失败。</string>
+    <string name="ai_limit_quality">1.5B 参数量化模型：快、私密，但不是云端级助手，请审慎对待它的输出。</string>
+    <string name="ai_err_arch">本机 CPU 不受 LiteRT-LM 运行时支持（仅 arm64 / x86_64）。</string>
+    <string name="ai_warn_ram">设备内存低于模型建议的 6GB，加载可能失败。</string>
+    <string name="ai_model_qwen">Qwen2.5-1.5B</string>
+    <string name="ai_model_deepseek">DeepSeek-R1</string>
+    <string name="ai_temp_default">T 默认</string>
+    <string name="ai_limit_gated">收录的两款模型均无需 HF 账号即可下载；更小的 Gemma3-1B 仓库受限，故未收录。</string>
+</resources>

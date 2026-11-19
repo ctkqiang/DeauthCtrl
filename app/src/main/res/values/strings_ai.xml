@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_title">Offline AI Terminal</string>
+    <string name="ai_panel_model">Model</string>
+    <string name="ai_label_model">Model</string>
+    <string name="ai_label_storage">Size</string>
+    <string name="ai_label_status">Status</string>
+    <string name="ai_status_none">Not downloaded</string>
+    <string name="ai_status_downloading">Downloading</string>
+    <string name="ai_status_downloaded">Downloaded</string>
+    <string name="ai_status_loading">Loading engine</string>
+    <string name="ai_status_ready">Ready</string>
+    <string name="ai_btn_download">Download Model</string>
+    <string name="ai_btn_cancel">Cancel</string>
+    <string name="ai_btn_delete_model">Delete Model</string>
+    <string name="ai_panel_chat">Chat</string>
+    <string name="ai_label_params">Sampling</string>
+    <string name="ai_empty_chat">Download the model, then chat runs entirely on this device</string>
+    <string name="ai_ph_input">Message the local model…</string>
+    <string name="ai_btn_send">Send</string>
+    <string name="ai_btn_stop">Stop</string>
+    <string name="ai_btn_clear">Clear</string>
+    <string name="ai_role_you">YOU</string>
+    <string name="ai_role_ai">AI</string>
+    <string name="ai_panel_limits">Scope &amp; Limits</string>
+    <string name="ai_limit_download">First setup needs a one-time network download (~1.5 GB) from Hugging Face — no account required.</string>
+    <string name="ai_limit_offline">After download, inference is 100% offline — prompts and outputs never leave the device.</string>
+    <string name="ai_limit_device">Runtime supports arm64-v8a / x86_64 only; ~6 GB RAM recommended. On weaker devices the model loads slowly or fails.</string>
+    <string name="ai_limit_quality">1.5B-parameter quantized models: fast and private, but not cloud-scale assistants. Treat their output accordingly.</string>
+    <string name="ai_err_arch">This device\'s CPU is not supported by the LiteRT-LM runtime (arm64 / x86_64 only).</string>
+    <string name="ai_warn_ram">Device memory is below the model\'s 6 GB recommendation — loading may fail.</string>
+    <string name="ai_model_qwen">Qwen2.5-1.5B</string>
+    <string name="ai_model_deepseek">DeepSeek-R1</string>
+    <string name="ai_temp_default">T Default</string>
+    <string name="ai_limit_gated">Both listed models download without an HF account; smaller models (Gemma3-1B) are gated repos and therefore not included.</string>
+</resources>
