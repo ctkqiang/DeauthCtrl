@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.delay
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
 import xin.ctkqiang.deauthctrl.ui.components.Danger
 import xin.ctkqiang.deauthctrl.ui.components.Dark
@@ -148,10 +150,10 @@ fun RemoteViewerScreen(
                 )
             }
             state is MirroringState.Error -> {
-                Text("连接失败\n${(state as MirroringState.Error).message}", fontFamily = Mono, fontSize = 14.sp, color = Danger, modifier = Modifier.align(Alignment.Center))
+                Text(stringResource(R.string.mirror_viewer_conn_failed, (state as MirroringState.Error).message), fontFamily = Mono, fontSize = 14.sp, color = Danger, modifier = Modifier.align(Alignment.Center))
             }
             else -> {
-                Text("等待连接...", fontFamily = Mono, fontSize = 14.sp, color = Gray, modifier = Modifier.align(Alignment.Center))
+                Text(stringResource(R.string.mirror_viewer_waiting), fontFamily = Mono, fontSize = 14.sp, color = Gray, modifier = Modifier.align(Alignment.Center))
             }
         }
 
@@ -163,10 +165,15 @@ fun RemoteViewerScreen(
             Box(Modifier.fillMaxWidth().background(overlayBg).padding(horizontal = 18.dp, vertical = 12.dp).statusBarsPadding()) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
+                        val statusText = when {
+                            isLive -> stringResource(R.string.mirror_viewer_connected) + "  "
+                            state is MirroringState.ClientConnecting -> stringResource(R.string.mirror_viewer_connecting) + "  "
+                            else -> "—"
+                        }
                         Text(device?.name ?: "—", fontFamily = Mono, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = White)
                         Text(
                             buildString {
-                                if (isLive) append("● 已连接  ") else if (state is MirroringState.ClientConnecting) append("○ 连接中  ") else append("—")
+                                append(statusText)
                                 append("${viewW.toInt()}×${viewH.toInt()}")
                             },
                             fontFamily = Mono, fontSize = 9.sp, color = if (isLive) TacGreen else Gray,
@@ -186,11 +193,11 @@ fun RemoteViewerScreen(
                 Modifier.fillMaxWidth().background(overlayBg).padding(horizontal = 18.dp, vertical = 8.dp).navigationBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Text("单击 ↦ 界面", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text(stringResource(R.string.mirror_viewer_hint_tap), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 Text("|", fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                Text("拖动 ↦ 控制", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text(stringResource(R.string.mirror_viewer_hint_drag), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 Text("|", fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                Text("双击 ↦ 断开", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text(stringResource(R.string.mirror_viewer_hint_double), fontFamily = Mono, fontSize = 9.sp, color = Gray)
             }
         }
 
@@ -199,7 +206,7 @@ fun RemoteViewerScreen(
             val pulse = rememberInfiniteTransition()
             val alpha by pulse.animateFloat(0.3f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse))
             Text(
-                "正在连接 ${device?.name ?: ""}...",
+                stringResource(R.string.mirror_viewer_connecting_to, device?.name ?: ""),
                 fontFamily = Mono, fontSize = 13.sp, color = White.copy(alpha = alpha),
                 modifier = Modifier.align(Alignment.Center),
             )

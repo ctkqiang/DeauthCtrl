@@ -178,4 +178,105 @@
     <string name="home_dbview_desc">SQLite sigint store · refresh &amp; inject</string>
     <string name="home_conference_name">LAN Conference</string>
     <string name="home_conference_desc">Multi-party video · screen / cam · PTT voice</string>
+
+    <!-- ─── 法律免责声明 ─── -->
+    <string name="disc_title">LEGAL WARNING</string>
+    <string name="disc_body">This app is for authorized security research and education only.\n\nWhat the platform actually does (the UI never claims more):\n\n▸ Wi-Fi: creates a LOCAL SoftAP hotspot / rotates the local hotspot SSID only. No deauth or beacon frame injection, no disconnecting other people\'s devices; starting a hotspot may also interrupt this device\'s Wi-Fi.\n▸ BLE: only broadcasts spoofed vendor advertisements, which may cause pairing or continuity prompts on nearby devices. It cannot suppress or disconnect devices; the effect depends on the receiving OS and version.\n▸ Bluetooth discovery: only scans nearby classic Bluetooth devices locally. It never interferes with other devices.\n▸ 802.11 frame injection / deauthentication requires root + a specific chipset and firmware. The app probes capabilities at runtime and shows a clear \'unsupported on this system\' message instead of a fake executable option.\n\nBy using this app you confirm that:\n\n▸ Disrupting networks or devices that are not yours is illegal\n▸ You will only test in environments you own or have written authorization for\n▸ The developer assumes no liability for damages caused by misuse of this tool\n\nUse it responsibly.</string>
+    <string name="disc_confirm">I UNDERSTAND — PROCEED</string>
+    <string name="disc_restricted">AUTHORIZED USE ONLY</string>
+
+    <!-- ─── 操作员注册 ─── -->
+    <string name="op_register_title">OPERATOR REGISTRATION</string>
+    <string name="op_register_desc">FIRST BOOT · SET YOUR CALLSIGN\nUsed for camera watermark, walkie ID and terminal ID</string>
+    <string name="op_callsign_label">CALLSIGN</string>
+    <string name="op_callsign_placeholder">Enter callsign (e.g. 007)</string>
+    <string name="op_confirm">CONFIRM &amp; JOIN</string>
+    <string name="op_skip">Skip · use default callsign ▸</string>
+    <string name="op_footer">DeauthCtrl · Tactical Terminal</string>
+
+    <!-- ─── 启动自检 / BootSequence ─── -->
+    <string name="boot_check_authz">COMBAT AUTHORIZATION</string>
+    <string name="boot_check_all_granted">ALL GRANTED</string>
+    <string name="boot_check_missing">MISSING %1$d — related features unavailable</string>
+    <string name="boot_check_radio">RADIO LINK</string>
+    <string name="boot_check_no_bt">NO BLUETOOTH HARDWARE ON THIS DEVICE</string>
+    <string name="boot_check_ready">READY</string>
+    <string name="boot_check_bt_off">OFF — BLE features need it enabled</string>
+    <string name="boot_check_recon">SIGINT AUTHORIZATION</string>
+    <string name="boot_check_granted">GRANTED</string>
+    <string name="boot_check_no_scan">DENIED — BLE sniffing unavailable</string>
+    <string name="boot_check_link">FIELD LINK</string>
+    <string name="boot_check_no_net">NO ACTIVE NETWORK — LAN features limited</string>
+    <string name="boot_check_link_up">%1$s ONLINE</string>
+    <string name="boot_check_mem">TACTICAL MEMORY</string>
+    <string name="boot_check_low">%1$s (LOW)</string>
+    <string name="boot_check_storage">RESERVE STORAGE</string>
+    <string name="boot_check_free">%1$s FREE</string>
+    <string name="boot_preview_mode">PREVIEW MODE</string>
+    <string name="boot_title">Nezha CyberSecurity Terminal · Holo Tactical System</string>
+    <string name="boot_auth_line">TACTICAL BOOT SEQUENCE // AUTH: AUTHORIZED SECURITY RESEARCH</string>
+    <string name="boot_deploy_warn">&gt; DEPLOY WARNING — %1$d abnormal, %2$d warning</string>
+    <string name="boot_deploy_ready">&gt; DEPLOY READY — %1$d warning</string>
+    <string name="boot_sys_ready">&gt; SYSTEM READY — HOLO TERMINAL STANDBY</string>
+    <string name="boot_footer">China Red Hacker · Homegrown Tech · Secure &amp; Controlled</string>
+    <string name="boot_log_encryption">LINK ENCRYPTION ESTABLISHED · AES-256</string>
+    <string name="boot_log_selfcheck">TACTICAL TERMINAL SELF-CHECK</string>
+    <string name="boot_log_array">SIGNAL DETECTION ARRAY ONLINE</string>
+    <string name="boot_log_projection">HOLO PROJECTION CALIBRATED</string>
+    <string name="boot_log_network">TACTICAL NETWORK STANDBY</string>
+    <string name="boot_log_gyro">GYRO HEADING LOCKED</string>
+
+    <!-- ─── 错误贴纸 ─── -->
+    <string name="error_sticker_desc">Error sticker</string>
+
+    <!-- ─── 对讲机通知 ─── -->
+    <string name="notif_walkie_title">WiFi Walkie-Talkie</string>
+    <string name="notif_walkie_tx">TRANSMITTING…</string>
+    <string name="notif_walkie_rx">LISTENING</string>
+    <string name="notif_walkie_stop_talk">Stop talking</string>
+    <string name="notif_walkie_close">Close</string>
+    <string name="notif_walkie_channel_desc">Walkie-talkie foreground service</string>
+
+    <!-- ─── 权限请求页 ─── -->
+    <string name="perm_nearby_scan">Nearby Devices · Scan</string>
+    <string name="perm_nearby_scan_desc">Discover and list nearby BLE devices</string>
+    <string name="perm_nearby_connect">Nearby Devices · Connect</string>
+    <string name="perm_nearby_connect_desc">Read device names and paired info</string>
+    <string name="perm_nearby_advertise">Nearby Devices · Advertise</string>
+    <string name="perm_nearby_advertise_desc">BLE advertising features</string>
+    <string name="perm_nearby_wifi">Nearby Wi-Fi Devices</string>
+    <string name="perm_nearby_wifi_desc">Required for local hotspot (LocalOnlyHotspot) on Android 13+; no 802.11 frame injection</string>
+    <string name="perm_location">Location</string>
+    <string name="perm_location_desc">WiFi/BLE scanning and cell-tower positioning depend on it</string>
+    <string name="perm_mic">Microphone</string>
+    <string name="perm_mic_desc">Walkie-talkie voice · voice spectrum · ultrasonic monitor</string>
+    <string name="perm_camera">Camera</string>
+    <string name="perm_camera_desc">Tactical camera · night vision · encrypted capture · flash Morse TX</string>
+    <string name="perm_phone_state">Phone State</string>
+    <string name="perm_phone_state_desc">Read nearby tower CellInfo for GSM cell positioning</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_desc">System notifications for photo relay and foreground services</string>
+    <string name="perm_activity">Physical Activity</string>
+    <string name="perm_activity_desc">PDR homing: step-counter sensor readings</string>
+    <string name="perm_subtitle">&gt; PRE-FLIGHT AUTH · GRANT REQUIRED PERMISSIONS</string>
+    <string name="perm_status_ready">ALL PERMISSIONS READY</string>
+    <string name="perm_status_missing">%1$d PERMISSIONS STILL REQUIRED</string>
+    <string name="perm_item_all">ALL GRANTED</string>
+    <string name="perm_item_all_desc">You can enter the main screen</string>
+    <string name="perm_btn_enter">[ ENTER MAIN SCREEN ]</string>
+    <string name="perm_btn_grant">[ GRANT PERMISSIONS ]</string>
+    <string name="perm_btn_settings">[ OPEN SYSTEM SETTINGS ]</string>
+    <string name="perm_btn_skip">[ SKIP — BLUETOOTH &amp; WIFI FEATURES WILL BE UNAVAILABLE ]</string>
+    <string name="perm_footer">Nezha CyberSecurity Terminal · For authorized security research only</string>
+
+    <!-- ─── 共享组件 ─── -->
+    <string name="common_back">‹ Back</string>
+    <string name="common_enter_arrow">Enter ›</string>
+    <string name="common_log_title">Field Log</string>
+    <string name="common_clear">Clear</string>
+    <string name="warn_banner">For authorized lab testing only. Do not use devices you do not own.</string>
+
+    <!-- ─── 预览降级提示 ─── -->
+    <string name="preview_needs_services">%1$s needs system services</string>
+    <string name="preview_switch_to_device">Switch to device preview (Preview on device)\nto see the full UI</string>
 </resources>

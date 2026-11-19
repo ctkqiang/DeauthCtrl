@@ -16,6 +16,8 @@ import android.system.Os
 import android.system.OsConstants
 import android.system.StructPollfd
 import androidx.core.app.NotificationCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.FileDescriptor
@@ -218,7 +220,9 @@ class PacketCaptureService : VpnService() {
         // 新一轮启动:重置停机标志并创建自管道
         stopping = false
         stopPipe = runCatching { Os.pipe() }.getOrElse {
-            failAndStop("[!] 停机管道创建失败 —— ${it.javaClass.simpleName}")
+            failAndStop(
+                L10n.get(R.string.mgr_pktcap_stop_pipe_create_failed, it.javaClass.simpleName),
+            )
             return
         }
 
@@ -230,12 +234,18 @@ class PacketCaptureService : VpnService() {
 
         val pfd = runCatching { builder.establish() }.getOrElse {
             closeStopPipe()
-            failAndStop("[!] VPN 建立异常 —— ${it.javaClass.simpleName}: ${it.message ?: ""}")
+            failAndStop(
+                L10n.get(
+                    R.string.mgr_pktcap_vpn_establish_exception,
+                    it.javaClass.simpleName,
+                    it.message ?: "",
+                ),
+            )
             return
         }
         if (pfd == null) {
             closeStopPipe()
-            failAndStop("[!] VPN 建立失败 —— 未授权或已有其他 VPN 在运行")
+            failAndStop(L10n.get(R.string.mgr_pktcap_vpn_establish_failed))
             return
         }
 
@@ -283,7 +293,7 @@ class PacketCaptureService : VpnService() {
     private fun readLoop(pfd: ParcelFileDescriptor, pipe: Array<FileDescriptor>?) {
         val stopFd = pipe?.getOrNull(0)
         if (stopFd == null) {
-            if (running) failAndStop("[!] 停机管道缺失 —— 抓包已停止")
+            if (running) failAndStop(L10n.get(R.string.mgr_pktcap_stop_pipe_missing))
             return
         }
         val buffer = ByteArray(READ_BUFFER_SIZE)
@@ -306,7 +316,10 @@ class PacketCaptureService : VpnService() {
                 Os.poll(pollFds, POLL_TIMEOUT_MS)
             } catch (e: ErrnoException) {
                 if (e.errno == OsConstants.EINTR) continue
-                failure = "TUN 轮询失败 —— ${e.message}"
+                failure = L10n.get(
+                    R.string.mgr_pktcap_tun_poll_failed,
+                    e.message ?: e.javaClass.simpleName,
+                )
                 break
             }
             if (ready < 0) continue
@@ -314,7 +327,7 @@ class PacketCaptureService : VpnService() {
             if (pollFds[0].revents.toInt() and
                 (OsConstants.POLLERR or OsConstants.POLLHUP or OsConstants.POLLNVAL) != 0
             ) {
-                failure = "TUN 设备已关闭"
+                failure = L10n.get(R.string.mgr_pktcap_tun_closed)
                 break
             }
             if (pollFds[0].revents.toInt() and OsConstants.POLLIN == 0) continue
@@ -328,7 +341,10 @@ class PacketCaptureService : VpnService() {
                 ) {
                     continue
                 }
-                failure = "TUN 读取失败 —— ${e.message ?: e.javaClass.simpleName}"
+                failure = L10n.get(
+                    R.string.mgr_pktcap_tun_read_failed,
+                    e.message ?: e.javaClass.simpleName,
+                )
                 break
             }
             if (read <= 0) continue
@@ -337,7 +353,7 @@ class PacketCaptureService : VpnService() {
 
         if (failure != null && running) {
             // 非用户主动停止:必须把隧道一并拆掉,否则会留下「僵尸 VPN」
-            failAndStop("[!] $failure —— 抓包已停止")
+            failAndStop(L10n.get(R.string.mgr_pktcap_capture_stopped, failure))
         }
     }
 
@@ -1101,10 +1117,10 @@ class PacketCaptureService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "流量监视",
+                L10n.get(R.string.mgr_pktcap_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "VpnService 本机流量抓包与统计"
+                description = L10n.get(R.string.mgr_pktcap_channel_desc)
             }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
@@ -1125,8 +1141,10 @@ class PacketCaptureService : VpnService() {
         }
             .onFailure {
                 _state.value = _state.value.copy(
-                    error = "[!] 前台通知启动失败(检查 Manifest 前台服务类型/权限)—— " +
+                    error = L10n.get(
+                        R.string.mgr_pktcap_foreground_failed,
                         it.javaClass.simpleName,
+                    ),
                 )
             }
     }
@@ -1151,13 +1169,13 @@ class PacketCaptureService : VpnService() {
             )
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("流量监视运行中")
-            .setContentText("VpnService 本机抓包 · 点按查看")
+            .setContentTitle(L10n.get(R.string.mgr_pktcap_notification_title))
+            .setContentText(L10n.get(R.string.mgr_pktcap_notification_text))
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setContentIntent(piOpen)
-            .addAction(0, "停止", piStop)
+            .addAction(0, L10n.get(R.string.mgr_pktcap_notification_stop), piStop)
             .build()
     }
 

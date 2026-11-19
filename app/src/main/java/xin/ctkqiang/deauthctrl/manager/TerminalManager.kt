@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import android.util.Log
 import com.termux.terminal.TerminalSession
@@ -266,7 +269,7 @@ class TerminalManager(context: Context) {
             candidateIndex++
             val next = shellCandidates[candidateIndex]
             Log.w(TAG, "shell exec 被拒绝,切换候选 $candidateIndex/${shellCandidates.size}: $next")
-            _status.value = Status.Failed("shell 被设备策略拒绝,正在切换候选 ($candidateIndex/${shellCandidates.size})…")
+            _status.value = Status.Failed(L10n.get(R.string.mgr_lterm_shell_switch_candidate, candidateIndex, shellCandidates.size))
             // 稍等一帧让视图 detach 旧会话,再重启
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 start(mode)
@@ -276,8 +279,8 @@ class TerminalManager(context: Context) {
 
         if (execDenied && candidateIndex >= shellCandidates.size - 1) {
             _status.value = Status.Failed(
-                "本机策略禁止应用执行 shell(常见于部分厂商 ROM 的增强 SELinux)。" +
-                    (if (rootAvailable) "请切换 ROOT 模式重试。" else "本机无 su,可尝试 root 后使用 ROOT 模式。"),
+                L10n.get(R.string.mgr_lterm_shell_policy_denied) +
+                    (if (rootAvailable) L10n.get(R.string.mgr_lterm_shell_retry_root) else L10n.get(R.string.mgr_lterm_shell_no_su)),
             )
             return
         }

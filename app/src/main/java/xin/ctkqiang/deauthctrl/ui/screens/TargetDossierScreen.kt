@@ -1,5 +1,6 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -39,11 +40,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.DeviceIntel
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -107,9 +111,9 @@ fun TargetDossierScreen(vm: RadarViewModel, targetId: String, back: () -> Unit) 
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("目标档案 · TARGET DOSSIER", back)
+        TerminalHeader(stringResource(R.string.dossier_title), back)
         if (target == null) {
-            EmptyHint("目标已丢失 —— 设备离开探测范围或雷达已停止")
+            EmptyHint(stringResource(R.string.dossier_target_lost))
         } else {
             val t = target!!
             Column(
@@ -187,7 +191,7 @@ private fun IdentityBlock(t: RadarTarget) {
                 Star(Gold, 6.dp)
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "厂商: ${t.vendor} · OUI ${t.vendorOui}",
+                    stringResource(R.string.dossier_vendor_line, t.vendor, t.vendorOui),
                     fontFamily = Mono, fontSize = 10.sp, color = Gray,
                 )
             }
@@ -198,13 +202,13 @@ private fun IdentityBlock(t: RadarTarget) {
                     Star(if (hit.category == "黑客工具") Danger else Gold, 6.dp)
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "设备情报: ${hit.label} · 置信 ${(hit.confidence * 100).toInt()}%",
+                        stringResource(R.string.dossier_intel_line, hit.label, (hit.confidence * 100).toInt()),
                         fontFamily = Mono, fontSize = 10.sp,
                         color = if (hit.category == "黑客工具") Danger else Gold,
                     )
                 }
                 Text(
-                    "依据: ${hit.basis}",
+                    stringResource(R.string.dossier_intel_basis, hit.basis),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray,
                     modifier = Modifier.padding(start = 12.dp, top = 1.dp),
                 )
@@ -214,7 +218,7 @@ private fun IdentityBlock(t: RadarTarget) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Star(Gold, 6.dp)
                     Spacer(Modifier.width(6.dp))
-                    Text("别名: ${t.alias}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                    Text(stringResource(R.string.dossier_alias, t.alias), fontFamily = Mono, fontSize = 10.sp, color = Gray)
                 }
             }
         }
@@ -225,6 +229,7 @@ private fun IdentityBlock(t: RadarTarget) {
 @Composable
 private fun SnapshotBanner(t: RadarTarget, running: Boolean) {
     val fmt = SimpleDateFormat("HH:mm:ss", Locale.US)
+    val stamp = fmt.format(Date(t.lastSeenMs))
     Surface(
         Modifier.fillMaxWidth(),
         shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
@@ -232,8 +237,8 @@ private fun SnapshotBanner(t: RadarTarget, running: Boolean) {
         border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else Gold.copy(alpha = 0.5f)),
     ) {
         Text(
-            if (running) "● 实时 · 最后更新 ${fmt.format(Date(t.lastSeenMs))}"
-            else "◌ 雷达已停止 · 以下为 ${fmt.format(Date(t.lastSeenMs))} 快照;返回雷达页可继续采集",
+            if (running) stringResource(R.string.dossier_live_line, stamp)
+            else stringResource(R.string.dossier_stopped_line, stamp),
             fontFamily = Mono, fontSize = 9.sp,
             color = if (running) TacGreen else Gold,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -244,7 +249,7 @@ private fun SnapshotBanner(t: RadarTarget, running: Boolean) {
 /** 实时遥测块 —— RSSI 大读数 + 信号条 + 距离/方位/SNR + 趋势箭头 */
 @Composable
 private fun SignalTelemetry(t: RadarTarget) {
-    TermPanel("实时遥测 · LIVE TELEMETRY") {
+    TermPanel(stringResource(R.string.dossier_panel_telemetry)) {
         Row(verticalAlignment = Alignment.Bottom) {
             AnimatedContent(
                 targetState = t.rssi,
@@ -259,9 +264,9 @@ private fun SignalTelemetry(t: RadarTarget) {
                 // 趋势箭头:RSSI 最近 10 样本线性斜率
                 val slope = rssiSlope(t.history)
                 val (label, color) = when {
-                    slope > 0.5f -> "接近 ↑ %+.1f dB/s".format(slope) to TacGreen
-                    slope < -0.5f -> "远离 ↓ %+.1f dB/s".format(slope) to Warn
-                    else -> "稳定 → ±0.5 dB/s" to Gray
+                    slope > 0.5f -> stringResource(R.string.dossier_trend_near, slope) to TacGreen
+                    slope < -0.5f -> stringResource(R.string.dossier_trend_away, slope) to Warn
+                    else -> stringResource(R.string.dossier_trend_stable) to Gray
                 }
                 Text(label, fontFamily = Mono, fontSize = 8.sp, color = color)
             }
@@ -279,13 +284,14 @@ private fun SignalTelemetry(t: RadarTarget) {
         }
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TelemetryCell("距离(估)", "~%.1f m".format(t.distanceM))
-            TelemetryCell("方位(估)", "~%03d°".format(t.angleDeg.toInt()))
-            TelemetryCell("底噪(估)", "%ddBm".format(t.noiseDbm))
-            TelemetryCell("命中", "%d 次".format(t.hitCount))
+            TelemetryCell(stringResource(R.string.dossier_cell_distance), stringResource(R.string.dossier_value_distance, t.distanceM))
+            TelemetryCell(stringResource(R.string.dossier_cell_bearing), stringResource(R.string.dossier_value_bearing, t.angleDeg.toInt()))
+            TelemetryCell(stringResource(R.string.dossier_cell_noise), stringResource(R.string.dossier_value_noise, t.noiseDbm))
+            TelemetryCell(stringResource(R.string.dossier_cell_hits), stringResource(R.string.dossier_value_hits, t.hitCount))
         }
+        val ptx = t.txPowerDbm?.let { stringResource(R.string.dossier_ptx_broadcast, it) } ?: stringResource(R.string.dossier_ptx_assumed)
         Text(
-            "~ 为路径损耗估算(${if (t.txPowerDbm != null) "广播 PTX ${t.txPowerDbm}dBm" else "假定 PTX"})· 方位为 MAC 哈希估计 · 底噪为 -92dBm 常量假设",
+            stringResource(R.string.dossier_telemetry_note, ptx),
             fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f),
             modifier = Modifier.padding(top = 4.dp),
         )
@@ -323,7 +329,7 @@ private fun rssiSlope(history: List<xin.ctkqiang.deauthctrl.manager.RssiSample>)
 private fun DossierChartsPanel(t: RadarTarget) {
     val history = t.history
     TrendChart(
-        title = "信号历史 · RSSI TREND (${history.size} 样本)",
+        title = stringResource(R.string.dossier_chart_rssi_title, history.size),
         values = history.map { it.rssi.toFloat() },
         lo = -100f, hi = -30f, unit = "dBm",
         color = rssiColor(t.rssi),
@@ -331,7 +337,7 @@ private fun DossierChartsPanel(t: RadarTarget) {
     )
     Spacer(Modifier.height(8.dp))
     TrendChart(
-        title = "距离趋势 · DISTANCE TREND",
+        title = stringResource(R.string.dossier_chart_distance_title),
         values = history.map { rssiDistanceOf(it.rssi, t) },
         lo = 0f, hi = 100f, unit = "m",
         color = Gold,
@@ -360,7 +366,7 @@ private fun TrendChart(
 ) {
     TermPanel(title) {
         if (values.size < 2) {
-            Text("样本积累中 —— 每个扫描周期追加一个采样点", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(stringResource(R.string.dossier_chart_accumulating_rssi), fontFamily = Sans, fontSize = 10.sp, color = Gray)
         } else {
             val stats = remember(values) {
                 Triple(values.minOrNull() ?: 0f, values.average().toFloat(), values.maxOrNull() ?: 0f)
@@ -414,12 +420,13 @@ private fun TrendChart(
 /** 命中频率柱状图 —— 最近 10 分钟每分钟命中数 */
 @Composable
 private fun HitBucketsChart(t: RadarTarget) {
-    TermPanel("命中频率 · HITS PER MINUTE (最近 10 分钟)") {
+    TermPanel(stringResource(R.string.dossier_panel_hits_chart)) {
         val buckets = t.hitBuckets
         if (buckets.isEmpty()) {
-            Text("样本积累中 —— 每次扫描命中计入当前分钟桶", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(stringResource(R.string.dossier_chart_accumulating_hits), fontFamily = Sans, fontSize = 10.sp, color = Gray)
         } else {
             val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+            val currentHitsLabel = stringResource(R.string.dossier_hits_per_min, buckets.last())
             Canvas(Modifier.fillMaxWidth().height(90.dp)) {
                 val maxHits = (buckets.maxOrNull() ?: 1).coerceAtLeast(1)
                 val barW = size.width / buckets.size
@@ -440,7 +447,7 @@ private fun HitBucketsChart(t: RadarTarget) {
                 drawText(first, topLeft = Offset(0f, size.height - first.size.height))
                 drawText(lastL, topLeft = Offset(size.width - lastL.size.width, size.height - lastL.size.height))
                 // 当前分钟值
-                val cur = textMeasurer.measure("${buckets.last()} 次/分", TextStyle(fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TacGreen))
+                val cur = textMeasurer.measure(currentHitsLabel, TextStyle(fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TacGreen))
                 drawText(cur, topLeft = Offset(size.width - cur.size.width, 0f))
             }
         }
@@ -460,14 +467,14 @@ private fun LocalizationInferencePanel(vm: RadarViewModel, t: RadarTarget, back:
     val compassOn by vm.compassOnline.collectAsState()
     val e = loc[t.id]
 
-    TermPanel("定位推演 · BEARING INFERENCE") {
+    TermPanel(stringResource(R.string.dossier_panel_bearing)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val (chipLabel, chipColor) = when (e?.state) {
-                LocState.ESTIMATED -> "估计" to TacGreen
-                LocState.COLLECTING -> "采样中" to Gold
-                LocState.AMBIGUOUS -> "多径歧义" to Warn
-                LocState.STALE -> "过期" to Gray
-                else -> "不可用" to Gray
+                LocState.ESTIMATED -> stringResource(R.string.dossier_loc_estimated) to TacGreen
+                LocState.COLLECTING -> stringResource(R.string.dossier_loc_collecting) to Gold
+                LocState.AMBIGUOUS -> stringResource(R.string.dossier_loc_ambiguous) to Warn
+                LocState.STALE -> stringResource(R.string.dossier_loc_stale) to Gray
+                else -> stringResource(R.string.dossier_loc_unavailable) to Gray
             }
             Surface(
                 shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
@@ -478,7 +485,7 @@ private fun LocalizationInferencePanel(vm: RadarViewModel, t: RadarTarget, back:
             }
             Spacer(Modifier.width(8.dp))
             Text(
-                if (!compassOn) "罗盘离线" else "旋转寻向 · 非 AoA",
+                if (!compassOn) stringResource(R.string.dossier_compass_offline) else stringResource(R.string.dossier_rotational_only),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray,
                 modifier = Modifier.weight(1f),
             )
@@ -487,13 +494,13 @@ private fun LocalizationInferencePanel(vm: RadarViewModel, t: RadarTarget, back:
 
         if (e == null) {
             Text(
-                "尚未进行方位推演 —— 在雷达页聚焦该目标并缓慢旋转机身一整圈以上",
+                stringResource(R.string.dossier_bearing_empty),
                 fontFamily = Sans, fontSize = 10.sp, color = Gray, lineHeight = 15.sp,
             )
             if (t.type == "wifi") {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "WiFi 扫描受系统节流,样本率低,可能长期处于采样中;BLE 设备更适合推演",
+                    stringResource(R.string.dossier_wifi_throttle_note),
                     fontFamily = Sans, fontSize = 9.sp, color = Warn,
                 )
             }
@@ -509,26 +516,49 @@ private fun LocalizationInferencePanel(vm: RadarViewModel, t: RadarTarget, back:
             Spacer(Modifier.height(6.dp))
             if (e.state == LocState.COLLECTING) {
                 Text(
-                    "已覆盖 %d/36 方位格 · 已旋转 %.1f 圈 · 至少 0.75 圈且覆盖 45%%".format((e.coverage * 36).toInt(), e.rotations),
+                    stringResource(R.string.dossier_coverage_status, (e.coverage * 36).toInt(), e.rotations),
                     fontFamily = Sans, fontSize = 9.sp, color = Gold,
                 )
                 Spacer(Modifier.height(6.dp))
             }
-            InfoRow("样本", "%d · 覆盖 %d/36 · 圈 %.1f".format(e.sampleCount, (e.coverage * 36).toInt(), e.rotations))
-            InfoRow("峰形", "对比 %.1f dB · FWHM %d° · 双瓣比 %.2f · 置信 %.2f".format(e.contrastDb, e.fwhmDeg.toInt(), e.secondLobeRatio, e.confidence))
+            InfoRow(
+                stringResource(R.string.dossier_info_samples),
+                stringResource(R.string.dossier_info_samples_value, e.sampleCount, (e.coverage * 36).toInt(), e.rotations),
+            )
+            InfoRow(
+                stringResource(R.string.dossier_info_peak_shape),
+                stringResource(R.string.dossier_info_peak_value, e.contrastDb, e.fwhmDeg.toInt(), e.secondLobeRatio, e.confidence),
+            )
             if (!e.distanceM.isNaN()) {
-                InfoRow("距离估计", "%.1f m · 1σ ±%.1f m".format(e.distanceM, e.sigmaDistanceM))
-                InfoRow("距离模型", if (e.distanceModelAssumed) "假定 PTX · n=2.5(非测量)" else "广播 PTX · n=2.5")
+                InfoRow(
+                    stringResource(R.string.dossier_info_distance_est),
+                    stringResource(R.string.dossier_info_distance_value, e.distanceM, e.sigmaDistanceM),
+                )
+                InfoRow(
+                    stringResource(R.string.dossier_info_distance_model),
+                    if (e.distanceModelAssumed) stringResource(R.string.dossier_distance_model_assumed)
+                    else stringResource(R.string.dossier_distance_model_broadcast),
+                )
             }
             if (e.sweepCount > 0 && !e.eastM.isNaN()) {
-                InfoRow("位置融合", "东 %.1f m · 北 %.1f m · %d 圈样本".format(e.eastM, e.northM, e.sweepCount))
-                InfoRow("置信椭圆", "50%% %.1f×%.1f m · 90%% %.1f×%.1f m".format(
-                    e.ellipseSemiMajorM * 1.1774f / 2.1459f, e.ellipseSemiMinorM * 1.1774f / 2.1459f,
-                    e.ellipseSemiMajorM, e.ellipseSemiMinorM,
-                ))
+                InfoRow(
+                    stringResource(R.string.dossier_info_position_fusion),
+                    stringResource(R.string.dossier_info_position_value, e.eastM, e.northM, e.sweepCount),
+                )
+                InfoRow(
+                    stringResource(R.string.dossier_info_confidence_ellipse),
+                    stringResource(
+                        R.string.dossier_info_ellipse_value,
+                        e.ellipseSemiMajorM * 1.1774f / 2.1459f, e.ellipseSemiMinorM * 1.1774f / 2.1459f,
+                        e.ellipseSemiMajorM, e.ellipseSemiMinorM,
+                    ),
+                )
             }
             if (e.state == LocState.STALE) {
-                InfoRow("最后采样", "%ds 前".format(e.ageMs / 1000))
+                InfoRow(
+                    stringResource(R.string.dossier_info_last_sample),
+                    stringResource(R.string.dossier_info_last_sample_value, e.ageMs / 1000),
+                )
             }
             Spacer(Modifier.height(8.dp))
             BearingRoseChart(e, heading)
@@ -539,8 +569,7 @@ private fun LocalizationInferencePanel(vm: RadarViewModel, t: RadarTarget, back:
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "方法:旋转机身,记录航向×RSSI 方向图并取功率峰 —— 属天线方向性推演,不是 AoA/测向;" +
-                "距离由 RSSI 路径损耗模型给出;多径反射会造成双峰歧义。所有输出均为估计,误差随样本增多收敛。",
+            stringResource(R.string.dossier_method_note),
             fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 13.sp,
         )
     }
@@ -550,23 +579,29 @@ private fun LocalizationInferencePanel(vm: RadarViewModel, t: RadarTarget, back:
 @Composable
 private fun BearingRoseChart(e: BearingEstimate, heading: Float) {
     val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val north = stringResource(R.string.dossier_dir_north)
+    val east = stringResource(R.string.dossier_dir_east)
+    val south = stringResource(R.string.dossier_dir_south)
+    val west = stringResource(R.string.dossier_dir_west)
+    val bearingTag = stringResource(R.string.dossier_bearing_tag, e.bearingDeg.toInt(), e.sectorHalfWidthDeg.toInt())
+    val roseNote = stringResource(R.string.dossier_rose_note)
     Canvas(Modifier.fillMaxWidth().height(190.dp)) {
         val cx = size.width / 2f
         val cy = size.height / 2f
-        val R = minOf(cx, cy) - 20.dp.toPx()
+        val radius = minOf(cx, cy) - 20.dp.toPx()
         val lo = (e.profileDb.filterIndexed { i, _ -> e.profileValid[i] }.minOrNull() ?: -100f) - 5f
         val hi = (e.profileDb.filterIndexed { i, _ -> e.profileValid[i] }.maxOrNull() ?: -30f) + 3f
-        fun radOf(v: Float): Float = R * (0.15f + 0.85f * ((v - lo) / (hi - lo).coerceAtLeast(0.01f)))
+        fun radOf(v: Float): Float = radius * (0.15f + 0.85f * ((v - lo) / (hi - lo).coerceAtLeast(0.01f)))
 
         // 极网格 3 圈
         for (s in listOf(0.33f, 0.66f, 1f)) {
-            drawCircle(Gray.copy(alpha = 0.18f), R * s, Offset(cx, cy), style = Stroke(0.7f))
+            drawCircle(Gray.copy(alpha = 0.18f), radius * s, Offset(cx, cy), style = Stroke(0.7f))
         }
         // 方位字:北朝上,屏幕角 = compassDeg - 90
-        listOf("北" to 0f, "东" to 90f, "南" to 180f, "西" to 270f).forEach { (ch, deg) ->
+        listOf(north to 0f, east to 90f, south to 180f, west to 270f).forEach { (ch, deg) ->
             val a = Math.toRadians((deg - 90).toDouble()).toFloat()
             val m = textMeasurer.measure(ch, TextStyle(fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gray.copy(alpha = 0.8f)))
-            drawText(m, topLeft = Offset(cx + R * 1.06f * cos(a) - m.size.width / 2f, cy + R * 1.06f * sin(a) - m.size.height / 2f))
+            drawText(m, topLeft = Offset(cx + radius * 1.06f * cos(a) - m.size.width / 2f, cy + radius * 1.06f * sin(a) - m.size.height / 2f))
         }
         // 各有效分箱楔形
         for (b in 0 until e.profileDb.size) {
@@ -585,24 +620,24 @@ private fun BearingRoseChart(e: BearingEstimate, heading: Float) {
         // 估计方位射线
         if (!e.bearingDeg.isNaN()) {
             val a = Math.toRadians((e.bearingDeg - 90).toDouble()).toFloat()
-            drawLine(Gold.copy(alpha = 0.9f), Offset(cx, cy), Offset(cx + R * cos(a), cy + R * sin(a)), 1.6f)
+            drawLine(Gold.copy(alpha = 0.9f), Offset(cx, cy), Offset(cx + radius * cos(a), cy + radius * sin(a)), 1.6f)
             val tag = textMeasurer.measure(
-                "θ̂ %03d° ± %d°".format(e.bearingDeg.toInt(), e.sectorHalfWidthDeg.toInt()),
+                bearingTag,
                 TextStyle(fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold),
             )
-            drawText(tag, topLeft = Offset(cx - tag.size.width / 2f, cy - R - 12.dp.toPx()))
+            drawText(tag, topLeft = Offset(cx - tag.size.width / 2f, cy - radius - 12.dp.toPx()))
         }
         // 机头方向小三角
         val hA = Math.toRadians((heading - 90).toDouble()).toFloat()
         val tri = Path().apply {
-            moveTo(cx + R * 0.12f * cos(hA), cy + R * 0.12f * sin(hA))
+            moveTo(cx + radius * 0.12f * cos(hA), cy + radius * 0.12f * sin(hA))
             lineTo(cx + 5f * cos(hA + PI.toFloat() / 2), cy + 5f * sin(hA + PI.toFloat() / 2))
             lineTo(cx + 5f * cos(hA - PI.toFloat() / 2), cy + 5f * sin(hA - PI.toFloat() / 2))
             close()
         }
         drawPath(tri, White.copy(alpha = 0.9f))
         // 底注
-        val note = textMeasurer.measure("径向 = 平滑 RSSI(相对)· 世界方位,北朝上", TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray))
+        val note = textMeasurer.measure(roseNote, TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray))
         drawText(note, topLeft = Offset(cx - note.size.width / 2f, size.height - note.size.height))
     }
 }
@@ -611,6 +646,7 @@ private fun BearingRoseChart(e: BearingEstimate, heading: Float) {
 @Composable
 private fun HeadingRssiProfileChart(e: BearingEstimate) {
     val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val headingProfileNote = stringResource(R.string.dossier_heading_profile_note)
     Canvas(Modifier.fillMaxWidth().height(120.dp)) {
         fun xOf(deg: Float): Float = size.width * (deg / 360f)
         fun yOf(db: Float): Float = size.height * (1f - (db + 100f) / 70f)
@@ -640,7 +676,7 @@ private fun HeadingRssiProfileChart(e: BearingEstimate) {
             val tag = textMeasurer.measure("θ̂", TextStyle(fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold))
             drawText(tag, topLeft = Offset(xOf(e.bearingDeg) + 2f, 0f))
         }
-        val note = textMeasurer.measure("航向×RSSI 调制谱 · 平滑后", TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray))
+        val note = textMeasurer.measure(headingProfileNote, TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray))
         drawText(note, topLeft = Offset(0f, size.height - note.size.height))
     }
 }
@@ -649,28 +685,30 @@ private fun HeadingRssiProfileChart(e: BearingEstimate) {
 @Composable
 private fun PositionFixPlot(e: BearingEstimate) {
     val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val fusionNotReady = stringResource(R.string.dossier_fusion_not_ready)
+    val positionNote = stringResource(R.string.dossier_position_note)
     Canvas(Modifier.fillMaxWidth().height(200.dp)) {
         val cx = size.width / 2f
         val cy = size.height / 2f
-        val R = minOf(cx, cy) - 16.dp.toPx()
-        val step = R / 4f
+        val radius = minOf(cx, cy) - 16.dp.toPx()
+        val step = radius / 4f
         // 垫子格 25m
         for (i in -4..4) {
-            drawLine(Gray.copy(alpha = 0.10f), Offset(cx + i * step, cy - R), Offset(cx + i * step, cy + R), 0.6f)
-            drawLine(Gray.copy(alpha = 0.10f), Offset(cx - R, cy + i * step), Offset(cx + R, cy + i * step), 0.6f)
+            drawLine(Gray.copy(alpha = 0.10f), Offset(cx + i * step, cy - radius), Offset(cx + i * step, cy + radius), 0.6f)
+            drawLine(Gray.copy(alpha = 0.10f), Offset(cx - radius, cy + i * step), Offset(cx + radius, cy + i * step), 0.6f)
         }
         // 距离环 25/50/75/100
         for (s in listOf(0.25f, 0.5f, 0.75f, 1f)) {
-            drawCircle(Gray.copy(alpha = 0.2f), R * s, Offset(cx, cy), style = Stroke(0.7f))
+            drawCircle(Gray.copy(alpha = 0.2f), radius * s, Offset(cx, cy), style = Stroke(0.7f))
         }
         // 北向箭头
-        drawLine(White.copy(alpha = 0.6f), Offset(cx, cy - R * 0.12f), Offset(cx, cy - R * 0.98f), 1.4f)
-        val arrow = Path().apply { moveTo(cx, cy - R); lineTo(cx - 5f, cy - R + 8f); lineTo(cx + 5f, cy - R + 8f); close() }
+        drawLine(White.copy(alpha = 0.6f), Offset(cx, cy - radius * 0.12f), Offset(cx, cy - radius * 0.98f), 1.4f)
+        val arrow = Path().apply { moveTo(cx, cy - radius); lineTo(cx - 5f, cy - radius + 8f); lineTo(cx + 5f, cy - radius + 8f); close() }
         drawPath(arrow, White.copy(alpha = 0.6f))
 
         if (!e.eastM.isNaN() && !e.northM.isNaN()) {
-            val px = cx + (e.eastM / 100f * R)
-            val py = cy - (e.northM / 100f * R)
+            val px = cx + (e.eastM / 100f * radius)
+            val py = cy - (e.northM / 100f * radius)
             // 方位扇形(浅金)
             val aDeg = Math.toDegrees(atan2(e.eastM, e.northM).toDouble()).toFloat()
             drawArc(
@@ -678,8 +716,8 @@ private fun PositionFixPlot(e: BearingEstimate) {
                 startAngle = aDeg - 90f - e.sectorHalfWidthDeg,
                 sweepAngle = e.sectorHalfWidthDeg * 2f,
                 useCenter = true,
-                topLeft = Offset(cx - R, cy - R),
-                size = Size(R * 2f, R * 2f),
+                topLeft = Offset(cx - radius, cy - radius),
+                size = Size(radius * 2f, radius * 2f),
             )
             // 融合点金十字
             val cross = 7.dp.toPx()
@@ -687,8 +725,8 @@ private fun PositionFixPlot(e: BearingEstimate) {
             drawLine(Gold.copy(alpha = 0.95f), Offset(px, py - cross), Offset(px, py + cross), 1.8f)
             drawCircle(Gold.copy(alpha = 0.5f), 4.dp.toPx(), Offset(px, py))
             // 置信椭圆
-            val aSemi = (e.ellipseSemiMajorM / 100f * R).coerceAtLeast(3f)
-            val bSemi = (e.ellipseSemiMinorM / 100f * R).coerceAtLeast(3f)
+            val aSemi = (e.ellipseSemiMajorM / 100f * radius).coerceAtLeast(3f)
+            val bSemi = (e.ellipseSemiMinorM / 100f * radius).coerceAtLeast(3f)
             withTransform({
                 translate(px, py)
                 rotate(Math.toRadians(-e.ellipseAngleDeg.toDouble()).toFloat(), pivot = Offset.Zero)
@@ -697,17 +735,17 @@ private fun PositionFixPlot(e: BearingEstimate) {
             }
             // d±σ 虚线弧
             if (!e.distanceM.isNaN()) {
-                val dIn = ((e.distanceM - e.sigmaDistanceM) / 100f * R).coerceAtLeast(0f)
-                val dOut = ((e.distanceM + e.sigmaDistanceM) / 100f * R).coerceAtMost(R)
+                val dIn = ((e.distanceM - e.sigmaDistanceM) / 100f * radius).coerceAtLeast(0f)
+                val dOut = ((e.distanceM + e.sigmaDistanceM) / 100f * radius).coerceAtMost(radius)
                 listOf(dIn, dOut).forEach { rr ->
                     drawCircle(Gold.copy(alpha = 0.3f), rr, Offset(cx, cy), style = Stroke(1f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 6f))))
                 }
             }
         } else {
-            val note = textMeasurer.measure("多圈融合未就绪 —— 至少完整旋转一圈", TextStyle(fontFamily = Sans, fontSize = 9.sp, color = Gray))
+            val note = textMeasurer.measure(fusionNotReady, TextStyle(fontFamily = Sans, fontSize = 9.sp, color = Gray))
             drawText(note, topLeft = Offset(cx - note.size.width / 2f, cy))
         }
-        val note2 = textMeasurer.measure("格距 25m · 椭圆为估计误差,非测量精度", TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray))
+        val note2 = textMeasurer.measure(positionNote, TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray))
         drawText(note2, topLeft = Offset(cx - note2.size.width / 2f, size.height - note2.size.height))
     }
 }
@@ -716,29 +754,29 @@ private fun PositionFixPlot(e: BearingEstimate) {
 @Composable
 private fun BleAdvPanel(t: RadarTarget) {
     val adv = t.bleAdv
-    TermPanel("BLE 广播详情 · ADVERTISING DATA") {
+    TermPanel(stringResource(R.string.dossier_panel_ble_adv)) {
         if (adv == null || !adv.hasRecord) {
-            Text("未捕获到广播包 —— 目标可能由经典蓝牙发现上报", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(stringResource(R.string.dossier_ble_no_adv), fontFamily = Sans, fontSize = 10.sp, color = Gray)
         } else {
-            InfoRow("观测方式", if (t.observedVia == "ble") "BLE 扫描" else "经典发现(合并)")
-            InfoRow("发射功率 TX", if (adv.txPowerLevelDbm != Int.MIN_VALUE) "${adv.txPowerLevelDbm} dBm" else "未广播")
-            InfoRow("广播标志", if (adv.advFlags >= 0) "0x%02X".format(adv.advFlags) else "未广播")
-            InfoRow("厂商 ID", if (adv.manufacturerId >= 0) "0x%04X".format(adv.manufacturerId) else "—")
+            InfoRow(stringResource(R.string.dossier_info_observed_via), if (t.observedVia == "ble") stringResource(R.string.dossier_observed_ble_scan) else stringResource(R.string.dossier_observed_classic_merged))
+            InfoRow(stringResource(R.string.dossier_info_tx_power), if (adv.txPowerLevelDbm != Int.MIN_VALUE) "${adv.txPowerLevelDbm} dBm" else stringResource(R.string.dossier_value_not_broadcast))
+            InfoRow(stringResource(R.string.dossier_info_adv_flags), if (adv.advFlags >= 0) "0x%02X".format(adv.advFlags) else stringResource(R.string.dossier_value_not_broadcast))
+            InfoRow(stringResource(R.string.dossier_info_manufacturer_id), if (adv.manufacturerId >= 0) "0x%04X".format(adv.manufacturerId) else "—")
             if (adv.serviceUuids.isNotEmpty()) {
-                InfoRow("服务 UUID", "${adv.serviceUuids.size} 个")
+                InfoRow(stringResource(R.string.dossier_info_service_uuid), stringResource(R.string.dossier_value_uuid_count, adv.serviceUuids.size))
                 adv.serviceUuids.take(8).forEach { u ->
                     Text("   · $u", fontFamily = Mono, fontSize = 8.sp, color = White)
                 }
-                if (adv.serviceUuids.size > 8) Text("   · … 另有 ${adv.serviceUuids.size - 8} 个", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                if (adv.serviceUuids.size > 8) Text("   · " + stringResource(R.string.dossier_uuid_more, adv.serviceUuids.size - 8), fontFamily = Mono, fontSize = 8.sp, color = Gray)
             }
             adv.manufacturerData.entries.take(4).forEach { e ->
-                InfoRow("厂商数据", "0x%04X · ${e.value}".format(e.key))
+                InfoRow(stringResource(R.string.dossier_info_manufacturer_data), "0x%04X · ${e.value}".format(e.key))
             }
             adv.serviceData.entries.take(4).forEach { e ->
-                InfoRow("服务数据", "${e.key} · ${e.value}")
+                InfoRow(stringResource(R.string.dossier_info_service_data), "${e.key} · ${e.value}")
             }
             Text(
-                "广播字段为原始捕获值;字段缺失表示该广播包未携带",
+                stringResource(R.string.dossier_ble_adv_footnote),
                 fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 4.dp),
             )
@@ -749,17 +787,17 @@ private fun BleAdvPanel(t: RadarTarget) {
 /** WiFi 射频与安全块 */
 @Composable
 private fun WifiRfBlock(t: RadarTarget) {
-    TermPanel("射频参数 · RF PARAMETERS") {
+    TermPanel(stringResource(R.string.dossier_panel_rf)) {
         InfoRow("BSSID", t.id)
-        InfoRow("频率", if (t.frequencyMhz > 0) "${t.frequencyMhz} MHz" else "--")
-        InfoRow("信道", t.channel.ifEmpty { "--" })
-        InfoRow("带宽", t.channelWidth.ifEmpty { "--" })
-        InfoRow("中心频率0", if (t.centerFreq0Mhz > 0) "${t.centerFreq0Mhz} MHz" else "--")
-        InfoRow("中心频率1", if (t.centerFreq1Mhz > 0) "${t.centerFreq1Mhz} MHz" else "--")
+        InfoRow(stringResource(R.string.dossier_info_frequency), if (t.frequencyMhz > 0) "${t.frequencyMhz} MHz" else "--")
+        InfoRow(stringResource(R.string.dossier_info_channel), t.channel.ifEmpty { "--" })
+        InfoRow(stringResource(R.string.dossier_info_bandwidth), t.channelWidth.ifEmpty { "--" })
+        InfoRow(stringResource(R.string.dossier_info_center_freq0), if (t.centerFreq0Mhz > 0) "${t.centerFreq0Mhz} MHz" else "--")
+        InfoRow(stringResource(R.string.dossier_info_center_freq1), if (t.centerFreq1Mhz > 0) "${t.centerFreq1Mhz} MHz" else "--")
     }
     Spacer(Modifier.height(8.dp))
-    TermPanel("安全协议 · SECURITY") {
-        InfoRow("加密", t.security.ifEmpty { "--" })
+    TermPanel(stringResource(R.string.dossier_panel_security)) {
+        InfoRow(stringResource(R.string.dossier_info_encryption), securityDisplay(t.security))
         InfoRow("capabilities", t.capabilitiesRaw.ifEmpty { "--" })
     }
 }
@@ -767,13 +805,13 @@ private fun WifiRfBlock(t: RadarTarget) {
 /** 蓝牙参数块 */
 @Composable
 private fun BtBlock(t: RadarTarget) {
-    TermPanel("蓝牙参数 · BLUETOOTH PARAMETERS") {
-        InfoRow("MAC 地址", t.address)
-        InfoRow("设备大类", t.deviceClassMajor.ifEmpty { "--" })
-        InfoRow("设备小类", t.deviceClassDetail.ifEmpty { "--" })
-        InfoRow("链路类型", t.linkType.ifEmpty { "--" })
-        InfoRow("绑定状态", t.bondState.ifEmpty { "--" })
-        InfoRow("频段", t.channel)
+    TermPanel(stringResource(R.string.dossier_panel_bt)) {
+        InfoRow(stringResource(R.string.dossier_info_mac_address), t.address)
+        InfoRow(stringResource(R.string.dossier_info_device_class_major), t.deviceClassMajor.ifEmpty { "--" })
+        InfoRow(stringResource(R.string.dossier_info_device_class_detail), t.deviceClassDetail.ifEmpty { "--" })
+        InfoRow(stringResource(R.string.dossier_info_link_type), t.linkType.ifEmpty { "--" })
+        InfoRow(stringResource(R.string.dossier_info_bond_state), t.bondState.ifEmpty { "--" })
+        InfoRow(stringResource(R.string.dossier_info_band), t.channel)
     }
 }
 
@@ -781,10 +819,10 @@ private fun BtBlock(t: RadarTarget) {
 @Composable
 private fun TemporalBlock(t: RadarTarget) {
     val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-    TermPanel("时间轴 · TIMELINE") {
-        InfoRow("首次发现", fmt.format(Date(t.firstSeenMs)))
-        InfoRow("最后发现", fmt.format(Date(t.lastSeenMs)))
-        InfoRow("存活时长", formatDuration(t.lastSeenMs - t.firstSeenMs))
+    TermPanel(stringResource(R.string.dossier_panel_timeline)) {
+        InfoRow(stringResource(R.string.dossier_info_first_seen), fmt.format(Date(t.firstSeenMs)))
+        InfoRow(stringResource(R.string.dossier_info_last_seen), fmt.format(Date(t.lastSeenMs)))
+        InfoRow(stringResource(R.string.dossier_info_duration), formatDuration(LocalContext.current, t.lastSeenMs - t.firstSeenMs))
     }
 }
 
@@ -792,7 +830,7 @@ private fun TemporalBlock(t: RadarTarget) {
 @Composable
 private fun ThreatAssessment(t: RadarTarget) {
     val level = radarThreatTier(t)
-    TermPanel("战术评估 · THREAT ASSESSMENT") {
+    TermPanel(stringResource(R.string.dossier_panel_threat)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Star(level.color, 8.dp)
             Spacer(Modifier.width(8.dp))
@@ -803,7 +841,7 @@ private fun ThreatAssessment(t: RadarTarget) {
         if (t.type == "wifi" && (t.security.startsWith("开放") || t.security.startsWith("WEP"))) {
             Spacer(Modifier.height(6.dp))
             Text(
-                "[!] 该网络加密等级过低（${t.security}），流量可被明文嗅探",
+                stringResource(R.string.dossier_warn_weak_encryption, securityDisplay(t.security)),
                 fontFamily = Sans, fontSize = 10.sp, color = Warn, fontWeight = FontWeight.Bold,
             )
         }
@@ -820,19 +858,13 @@ private fun ProvenanceFooter(t: RadarTarget) {
         border = BorderStroke(1.dp, BorderDim),
     ) {
         Column(Modifier.padding(10.dp)) {
-            Text("数据来源 · PROVENANCE", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold)
+            Text(stringResource(R.string.dossier_panel_provenance), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold)
             Spacer(Modifier.height(4.dp))
             Text(
                 if (t.type == "wifi")
-                    "SSID/BSSID/频率/信道/带宽/安全: WifiManager ScanResult 原始返回值。" +
-                        "距离: RSSI 路径损耗模型估计(假定 PTX -40dBm, n=2.5),非测量。" +
-                        "方位: MAC 哈希占位估计,手机无 AoA 硬件;旋转寻向推演见定位面板。" +
-                        "底噪: -92dBm 常量假设。厂商: 内置 OUI 表,未命中显示未知。"
+                    stringResource(R.string.dossier_provenance_wifi)
                 else
-                    "MAC/名称/类别/绑定/链路: BluetoothDevice 原始返回值。" +
-                        "广播数据: ScanRecord 原始捕获(未携带字段显示「—」)。" +
-                        "距离: RSSI 路径损耗模型估计(广播 PTX 或假定 -59dBm, n=2.5),非测量。" +
-                        "方位: MAC 哈希占位估计;旋转寻向推演见定位面板。",
+                    stringResource(R.string.dossier_provenance_bt),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 13.sp,
             )
         }
@@ -848,14 +880,21 @@ private fun InfoRow(label: String, value: String) {
     }
 }
 
+/** 安全类型显示映射 —— 数据值("开放" / "WEP"...)按界面语言显示,逻辑比较仍用数据值 */
+@Composable
+private fun securityDisplay(security: String): String = when {
+    security.startsWith("开放") -> stringResource(R.string.dossier_sec_open)
+    else -> security.ifEmpty { "--" }
+}
+
 private fun rssiColor(rssi: Int): Color = when {
     rssi > -50 -> Danger
     rssi > -70 -> Warn
     else -> TacGreen
 }
 
-private fun formatDuration(ms: Long): String = when {
-    ms < 1000 -> "不足 1 秒"
-    ms < 60_000 -> "${ms / 1000} 秒"
-    else -> "${ms / 60_000} 分 ${ms % 60_000 / 1000} 秒"
+private fun formatDuration(context: Context, ms: Long): String = when {
+    ms < 1000 -> context.getString(R.string.dossier_duration_under_sec)
+    ms < 60_000 -> context.getString(R.string.dossier_duration_seconds, ms / 1000)
+    else -> context.getString(R.string.dossier_duration_minutes, ms / 60_000, ms % 60_000 / 1000)
 }

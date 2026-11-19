@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.mirroring.model.MirroringDevice
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -100,14 +102,14 @@ fun DashboardScreen(
     val isScanning = state is MirroringState.ClientScanning || state is MirroringState.ClientConnecting || state is MirroringState.ClientLive
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("屏幕镜像", back)
+        TerminalHeader(stringResource(R.string.mirror_dash_title), back)
 
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(14.dp)) {
             // ─── Host 共享主操作 ───
             ActionButton(
                 running = isHostActive,
-                runLabel = "共享屏幕 (Host)",
-                stopLabel = "停止共享",
+                runLabel = stringResource(R.string.mirror_dash_share_host),
+                stopLabel = stringResource(R.string.mirror_dash_stop_sharing),
             ) {
                 haptic.hud()
                 if (isHostActive) {
@@ -124,10 +126,11 @@ fun DashboardScreen(
                 Spacer(Modifier.height(6.dp))
                 val hostPulse = rememberInfiniteTransition()
                 val hostDotAlpha by hostPulse.animateFloat(0.3f, 1f, infiniteRepeatable(tween(1000), RepeatMode.Reverse))
+                val broadcasting = stringResource(R.string.mirror_dash_broadcasting, vm.hostVideoPort)
                 Text(
                     buildAnnotatedString {
                         withStyle(SpanStyle(color = TacGreen.copy(alpha = hostDotAlpha))) { append("● ") }
-                        withStyle(SpanStyle(color = Gray)) { append("正在广播 — ${vm.hostVideoPort}:10087 · 局域网内可被发现") }
+                        withStyle(SpanStyle(color = Gray)) { append(broadcasting) }
                     },
                     fontFamily = Mono, fontSize = 10.sp,
                 )
@@ -139,15 +142,15 @@ fun DashboardScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Star(Gold, 8.dp)
                 Spacer(Modifier.width(7.dp))
-                Text("已发现的设备 · ${devices.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text(stringResource(R.string.mirror_dash_devices_found, devices.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
             }
             Spacer(Modifier.height(6.dp))
 
             if (devices.isEmpty()) {
                 EmptyHint(
-                    if (state is MirroringState.ClientScanning) "正在扫描局域网..."
-                    else if (state is MirroringState.ClientConnecting) "正在连接..."
-                    else "未发现设备 —— 点击下方按钮扫描局域网",
+                    if (state is MirroringState.ClientScanning) stringResource(R.string.mirror_dash_scanning)
+                    else if (state is MirroringState.ClientConnecting) stringResource(R.string.mirror_dash_connecting)
+                    else stringResource(R.string.mirror_dash_empty),
                 )
                 Spacer(Modifier.height(8.dp))
                 Surface(
@@ -159,7 +162,7 @@ fun DashboardScreen(
                     border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
                 ) {
                     Text(
-                        if (isScanning) "停止扫描" else "扫描局域网",
+                        if (isScanning) stringResource(R.string.mirror_dash_stop_scan) else stringResource(R.string.mirror_dash_start_scan),
                         fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         color = Red, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
@@ -216,7 +219,7 @@ private fun DeviceRow(device: MirroringDevice, onClick: () -> Unit) {
             }
             Star(Gold, 6.dp)
             Spacer(Modifier.width(6.dp))
-            Text("连接 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red)
+            Text(stringResource(R.string.mirror_dash_connect), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red)
         }
     }
 }

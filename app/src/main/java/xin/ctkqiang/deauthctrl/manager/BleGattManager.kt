@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * GATT 连接阶段
@@ -33,13 +36,13 @@ import java.util.UUID
  * 与 nRF Connect 的顶部状态一致：断开 → 连接中 → 已连接 → 发现服务中 → 枚举完成。
  * [ERROR] 只用于连接 / 服务发现这一类致命失败；单次读写的失败不清空服务表。
  */
-enum class BleGattPhase(val label: String) {
-    DISCONNECTED("已断开"),
-    CONNECTING("连接中"),
-    CONNECTED("已连接"),
-    DISCOVERING("发现服务中"),
-    READY("枚举完成"),
-    ERROR("错误"),
+enum class BleGattPhase(@StringRes val labelRes: Int) {
+    DISCONNECTED(R.string.mgr_gatt_phase_disconnected),
+    CONNECTING(R.string.mgr_gatt_phase_connecting),
+    CONNECTED(R.string.mgr_gatt_phase_connected),
+    DISCOVERING(R.string.mgr_gatt_phase_discovering),
+    READY(R.string.mgr_gatt_phase_ready),
+    ERROR(R.string.mgr_gatt_phase_error),
 }
 
 /**
@@ -192,23 +195,28 @@ class BleGattManager(private val context: Context) {
     fun connect(mac: String): Boolean {
         val normalized = normalizeMac(mac)
         if (normalized == null) {
-            publishError("MAC 格式无效 —— 应为 AA:BB:CC:DD:EE:FF（12 位十六进制）")
+            publishError(L10n.get(R.string.mgr_gatt_err_mac_invalid))
             return false
         }
 
         val missing = missingPermissions()
         if (missing.isNotEmpty()) {
-            publishError("缺少蓝牙权限：${missing.joinToString("、") { permissionLabel(it) }} —— 请先在应用权限网关授予")
+            publishError(
+                L10n.get(
+                    R.string.mgr_gatt_err_missing_perm,
+                    missing.joinToString(L10n.get(R.string.mgr_gatt_perm_separator)) { permissionLabel(it) },
+                ),
+            )
             return false
         }
 
         val adapter = adapterOrNull()
         if (adapter == null) {
-            publishError("本机没有蓝牙适配器")
+            publishError(L10n.get(R.string.mgr_gatt_err_no_adapter))
             return false
         }
         if (!runCatching { adapter.isEnabled }.getOrDefault(false)) {
-            publishError("蓝牙未开启 —— 请先在系统设置中打开蓝牙")
+            publishError(L10n.get(R.string.mgr_gatt_err_bt_off))
             return false
         }
 
@@ -217,7 +225,7 @@ class BleGattManager(private val context: Context) {
 
         val device = runCatching { adapter.getRemoteDevice(normalized) }.getOrNull()
         if (device == null) {
-            publishError("系统无法解析该 MAC 地址")
+            publishError(L10n.get(R.string.mgr_gatt_err_mac_resolve))
             return false
         }
 
@@ -229,7 +237,7 @@ class BleGattManager(private val context: Context) {
             deviceAddress = normalized,
             log = keptLog,
         )
-        log("开始连接 $normalized（$name），LE 传输，10 秒超时")
+        log(L10n.get(R.string.mgr_gatt_log_connecting, normalized, name))
 
         // 连接超时：10 秒仍未进入已连接状态就断开，避免界面永远停在"连接中"
         connectTimeoutJob?.cancel()
@@ -241,7 +249,7 @@ class BleGattManager(private val context: Context) {
                 gattRef = null
                 runCatching { stale?.disconnect() }
                 runCatching { stale?.close() }
-                publishFatal("连接超时（10 秒）—— 目标可能不在范围内、未处于可连接状态，或已被其他主机连接")
+                publishFatal(L10n.get(R.string.mgr_gatt_err_connect_timeout))
             }
         }
 
@@ -256,7 +264,7 @@ class BleGattManager(private val context: Context) {
         if (connection == null) {
             connectTimeoutJob?.cancel()
             connectTimeoutJob = null
-            publishFatal("连接失败 —— 系统返回 null，请关闭蓝牙后重新打开再试")
+            publishFatal(L10n.get(R.string.mgr_gatt_err_connect_null))
             return false
         }
         gattRef = connection
@@ -270,7 +278,7 @@ class BleGattManager(private val context: Context) {
         _state.update {
             it.copy(phase = BleGattPhase.DISCONNECTED, services = emptyList(), error = null)
         }
-        if (hadSession) log("已主动断开连接")
+        if (hadSession) log(L10n.get(R.string.mgr_gatt_log_disconnected))
     }
 
     /** ViewModel 回收时调用：断开并取消所有后台协程 */
@@ -297,30 +305,32 @@ class BleGattManager(private val context: Context) {
     fun read(serviceUuid: String, characteristicUuid: String) {
         val gatt = gattRef
         if (gatt == null) {
-            publishError("未连接 —— 请先连接目标设备")
+            publishError(L10n.get(R.string.mgr_gatt_err_not_connected))
             return
         }
         if (_state.value.phase != BleGattPhase.READY) {
-            publishError("服务尚未枚举完成 —— 请等待「枚举完成」后再读取")
+            publishError(L10n.get(R.string.mgr_gatt_err_not_ready_read))
             return
         }
         val characteristic = findCharacteristic(gatt, serviceUuid, characteristicUuid)
         if (characteristic == null) {
-            publishError("找不到该特征 —— 服务表可能已失效，请重新连接")
+            publishError(L10n.get(R.string.mgr_gatt_err_char_missing))
             return
         }
         if (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ == 0) {
-            publishError("该特征不支持读取（属性：${propertyShort(characteristic.properties)}）")
+            publishError(
+                L10n.get(R.string.mgr_gatt_err_read_unsupported, propertyShort(characteristic.properties)),
+            )
             return
         }
-        if (!beginOperation("读取 ${shortUuid(characteristic.uuid)}")) return
+        if (!beginOperation(L10n.get(R.string.mgr_gatt_op_read, shortUuid(characteristic.uuid)))) return
 
         val accepted = runCatching { gatt.readCharacteristic(characteristic) }.getOrDefault(false)
         if (!accepted) {
             finishOperation()
-            publishError("读取请求被系统拒绝 —— 请稍后重试")
+            publishError(L10n.get(R.string.mgr_gatt_err_read_rejected))
         } else {
-            log("读取请求已发送：${shortUuid(characteristic.uuid)}")
+            log(L10n.get(R.string.mgr_gatt_log_read_sent, shortUuid(characteristic.uuid)))
         }
     }
 
@@ -333,31 +343,31 @@ class BleGattManager(private val context: Context) {
     fun write(serviceUuid: String, characteristicUuid: String, hexInput: String): Boolean {
         val gatt = gattRef
         if (gatt == null) {
-            publishError("未连接 —— 请先连接目标设备")
+            publishError(L10n.get(R.string.mgr_gatt_err_not_connected))
             return false
         }
         if (_state.value.phase != BleGattPhase.READY) {
-            publishError("服务尚未枚举完成 —— 请等待「枚举完成」后再写入")
+            publishError(L10n.get(R.string.mgr_gatt_err_not_ready_write))
             return false
         }
 
         val bytes = parseHex(hexInput)
         if (bytes == null) {
-            publishError("写入内容不是合法十六进制 —— 示例：01 A0 FF（字符数须为偶数）")
+            publishError(L10n.get(R.string.mgr_gatt_err_hex_invalid))
             return false
         }
         if (bytes.isEmpty()) {
-            publishError("写入内容为空 —— 请输入十六进制字节")
+            publishError(L10n.get(R.string.mgr_gatt_err_hex_empty))
             return false
         }
         if (bytes.size > MAX_WRITE_BYTES) {
-            publishError("写入长度 ${bytes.size}B 超过单次上限 ${MAX_WRITE_BYTES}B")
+            publishError(L10n.get(R.string.mgr_gatt_err_write_too_long, bytes.size, MAX_WRITE_BYTES))
             return false
         }
 
         val characteristic = findCharacteristic(gatt, serviceUuid, characteristicUuid)
         if (characteristic == null) {
-            publishError("找不到该特征 —— 服务表可能已失效，请重新连接")
+            publishError(L10n.get(R.string.mgr_gatt_err_char_missing))
             return false
         }
         val writeType = when {
@@ -366,12 +376,14 @@ class BleGattManager(private val context: Context) {
             characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0 ->
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
             else -> {
-                publishError("该特征不支持写入（属性：${propertyShort(characteristic.properties)}）")
+                publishError(
+                    L10n.get(R.string.mgr_gatt_err_write_unsupported, propertyShort(characteristic.properties)),
+                )
                 return false
             }
         }
 
-        if (!beginOperation("写入 ${shortUuid(characteristic.uuid)}")) return false
+        if (!beginOperation(L10n.get(R.string.mgr_gatt_op_write, shortUuid(characteristic.uuid)))) return false
 
         // API 33+ 使用带 value 的新重载（返回 BluetoothStatusCodes，0 = SUCCESS）；
         // 旧系统仍走 characteristic.value + 单参重载。
@@ -389,10 +401,10 @@ class BleGattManager(private val context: Context) {
 
         if (!accepted) {
             finishOperation()
-            publishError("写入请求被系统拒绝 —— 检查特征属性与写入长度后重试")
+            publishError(L10n.get(R.string.mgr_gatt_err_write_rejected))
             return false
         }
-        log("写入请求已发送：${shortUuid(characteristic.uuid)} ← ${bytes.toHex()}")
+        log(L10n.get(R.string.mgr_gatt_log_write_sent, shortUuid(characteristic.uuid), bytes.toHex()))
         return true
     }
 
@@ -405,23 +417,25 @@ class BleGattManager(private val context: Context) {
     fun setNotify(serviceUuid: String, characteristicUuid: String, enable: Boolean) {
         val gatt = gattRef
         if (gatt == null) {
-            publishError("未连接 —— 请先连接目标设备")
+            publishError(L10n.get(R.string.mgr_gatt_err_not_connected))
             return
         }
         if (_state.value.phase != BleGattPhase.READY) {
-            publishError("服务尚未枚举完成 —— 请等待「枚举完成」后再设置通知")
+            publishError(L10n.get(R.string.mgr_gatt_err_not_ready_notify))
             return
         }
         val characteristic = findCharacteristic(gatt, serviceUuid, characteristicUuid)
         if (characteristic == null) {
-            publishError("找不到该特征 —— 服务表可能已失效，请重新连接")
+            publishError(L10n.get(R.string.mgr_gatt_err_char_missing))
             return
         }
 
         val canNotify = characteristic.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
         val canIndicate = characteristic.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
         if (enable && !canNotify && !canIndicate) {
-            publishError("该特征不支持通知 / 指示（属性：${propertyShort(characteristic.properties)}）")
+            publishError(
+                L10n.get(R.string.mgr_gatt_err_notify_unsupported, propertyShort(characteristic.properties)),
+            )
             return
         }
 
@@ -430,22 +444,28 @@ class BleGattManager(private val context: Context) {
             // 没有 CCCD 时远端本就不会发通知，只关闭本地注册即可
             runCatching { gatt.setCharacteristicNotification(characteristic, false) }
             updateSubscribed(serviceUuid, characteristicUuid, false)
-            log("已在本机关闭通知（该特征无 CCCD）")
+            log(L10n.get(R.string.mgr_gatt_log_notify_local_off))
             return
         }
         if (enable && descriptor == null) {
-            publishError("该特征缺少 CCCD 描述符（0x2902）—— 无法开启远端通知")
+            publishError(L10n.get(R.string.mgr_gatt_err_no_cccd))
             return
         }
 
-        if (!beginOperation(if (enable) "开启通知 ${shortUuid(characteristic.uuid)}" else "关闭通知 ${shortUuid(characteristic.uuid)}")) return
+        val notifyUuid = shortUuid(characteristic.uuid)
+        val operationLabel = if (enable) {
+            L10n.get(R.string.mgr_gatt_op_notify_on, notifyUuid)
+        } else {
+            L10n.get(R.string.mgr_gatt_op_notify_off, notifyUuid)
+        }
+        if (!beginOperation(operationLabel)) return
 
         val localRegistered = runCatching {
             gatt.setCharacteristicNotification(characteristic, enable)
         }.getOrDefault(false)
         if (!localRegistered) {
             finishOperation()
-            publishError("本地通知注册失败 —— 系统拒绝了 setCharacteristicNotification")
+            publishError(L10n.get(R.string.mgr_gatt_err_local_notify))
             return
         }
 
@@ -478,13 +498,13 @@ class BleGattManager(private val context: Context) {
             // 回滚本地注册，避免本地开着但远端没订上的假象
             runCatching { gatt.setCharacteristicNotification(characteristic, !enable) }
             finishOperation()
-            publishError("通知订阅请求被系统拒绝 —— 请稍后重试")
+            publishError(L10n.get(R.string.mgr_gatt_err_notify_rejected))
         } else {
             log(
                 if (enable) {
-                    "通知订阅请求已发送：${shortUuid(characteristic.uuid)}（等待 CCCD 写入回调）"
+                    L10n.get(R.string.mgr_gatt_log_notify_requested, shortUuid(characteristic.uuid))
                 } else {
-                    "取消订阅请求已发送：${shortUuid(characteristic.uuid)}"
+                    L10n.get(R.string.mgr_gatt_log_unsubscribe_sent, shortUuid(characteristic.uuid))
                 },
             )
         }
@@ -506,18 +526,20 @@ class BleGattManager(private val context: Context) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     if (status != BluetoothGatt.GATT_SUCCESS) {
                         closeGattInternal()
-                        publishFatal("连接失败（status=$status）${gattStatusHint(status)}")
+                        publishFatal(
+                            L10n.get(R.string.mgr_gatt_err_connect_status, status, gattStatusHint(status)),
+                        )
                         return
                     }
                     connectTimeoutJob?.cancel()
                     connectTimeoutJob = null
-                    log("已连接 ${_state.value.deviceAddress}，开始发现 GATT 服务")
+                    log(L10n.get(R.string.mgr_gatt_log_connected, _state.value.deviceAddress))
                     _state.update { it.copy(phase = BleGattPhase.CONNECTED, error = null) }
 
                     val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                     if (!started) {
                         closeGattInternal()
-                        publishFatal("服务发现启动失败 —— discoverServices() 返回 false")
+                        publishFatal(L10n.get(R.string.mgr_gatt_err_discover_start))
                     } else {
                         _state.update { it.copy(phase = BleGattPhase.DISCOVERING) }
                         startDiscoverTimeout()
@@ -544,9 +566,11 @@ class BleGattManager(private val context: Context) {
                         )
                     }
                     if (status == BluetoothGatt.GATT_SUCCESS) {
-                        log("设备已断开连接")
+                        log(L10n.get(R.string.mgr_gatt_log_device_disconnected))
                     } else {
-                        publishError("连接已断开（status=$status）${gattStatusHint(status)}")
+                        publishError(
+                            L10n.get(R.string.mgr_gatt_err_disconnected_status, status, gattStatusHint(status)),
+                        )
                     }
                 }
 
@@ -561,7 +585,9 @@ class BleGattManager(private val context: Context) {
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 closeGattInternal()
-                publishFatal("服务发现失败（status=$status）${gattStatusHint(status)}")
+                publishFatal(
+                    L10n.get(R.string.mgr_gatt_err_discover_status, status, gattStatusHint(status)),
+                )
                 return
             }
 
@@ -570,9 +596,9 @@ class BleGattManager(private val context: Context) {
             _state.update {
                 it.copy(phase = BleGattPhase.READY, services = services, error = null)
             }
-            log("服务枚举完成：${services.size} 个服务 / $characteristicCount 个特征")
+            log(L10n.get(R.string.mgr_gatt_log_services_done, services.size, characteristicCount))
             if (services.isEmpty()) {
-                log("[!] 设备未暴露任何 GATT 服务 —— 部分设备需先在系统蓝牙中配对后才开放服务表", isError = true)
+                log(L10n.get(R.string.mgr_gatt_log_no_services), isError = true)
             }
         }
 
@@ -604,10 +630,10 @@ class BleGattManager(private val context: Context) {
             if (gatt !== gattRef) return
             finishOperation()
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                publishError("写入失败（status=$status）${gattStatusHint(status)}")
+                publishError(L10n.get(R.string.mgr_gatt_err_write_failed, status, gattStatusHint(status)))
             } else {
                 _state.update { it.copy(error = null) }
-                log("写入完成：${shortUuid(characteristic.uuid)}")
+                log(L10n.get(R.string.mgr_gatt_log_write_done, shortUuid(characteristic.uuid)))
             }
         }
 
@@ -639,23 +665,36 @@ class BleGattManager(private val context: Context) {
             finishOperation()
             if (pending == null) {
                 if (status != BluetoothGatt.GATT_SUCCESS) {
-                    publishError("描述符写入失败（status=$status）${gattStatusHint(status)}")
+                    publishError(L10n.get(R.string.mgr_gatt_err_desc_write, status, gattStatusHint(status)))
                 }
                 return
             }
             if (status != BluetoothGatt.GATT_SUCCESS) {
+                val operationLabel = L10n.get(
+                    if (pending.enable) R.string.mgr_gatt_notify_on_label else R.string.mgr_gatt_notify_off_label,
+                )
                 publishError(
-                    "${if (pending.enable) "开启通知" else "关闭通知"}失败" +
-                        "（status=$status）${gattStatusHint(status)}",
+                    L10n.get(
+                        R.string.mgr_gatt_err_notify_toggle_failed,
+                        operationLabel,
+                        status,
+                        gattStatusHint(status),
+                    ),
                 )
                 return
             }
             updateSubscribed(pending.serviceUuid, pending.characteristicUuid, pending.enable)
             log(
                 if (pending.enable) {
-                    "通知已开启：${shortUuid(UUID.fromString(pending.characteristicUuid))}"
+                    L10n.get(
+                        R.string.mgr_gatt_log_notify_enabled,
+                        shortUuid(UUID.fromString(pending.characteristicUuid)),
+                    )
                 } else {
-                    "通知已关闭：${shortUuid(UUID.fromString(pending.characteristicUuid))}"
+                    L10n.get(
+                        R.string.mgr_gatt_log_notify_disabled,
+                        shortUuid(UUID.fromString(pending.characteristicUuid)),
+                    )
                 },
             )
         }
@@ -669,7 +708,7 @@ class BleGattManager(private val context: Context) {
     private fun handleRead(characteristic: BluetoothGattCharacteristic, value: ByteArray?, status: Int) {
         finishOperation()
         if (status != BluetoothGatt.GATT_SUCCESS) {
-            publishError("读取失败（status=$status）${gattStatusHint(status)}")
+            publishError(L10n.get(R.string.mgr_gatt_err_read_failed, status, gattStatusHint(status)))
             return
         }
         val serviceUuid = runCatching { characteristic.service?.uuid?.toString() }.getOrNull() ?: return
@@ -677,9 +716,15 @@ class BleGattManager(private val context: Context) {
         val bytes = value ?: ByteArray(0)
         applyCharacteristicValue(serviceUuid, charUuid, bytes)
 
-        val hex = bytes.toHex().ifEmpty { "(空)" }
+        val hex = bytes.toHex().ifEmpty { L10n.get(R.string.mgr_gatt_empty_value) }
         val preview = textPreview(bytes)
-        log("读取 ${shortUuid(characteristic.uuid)} ← $hex" + if (preview.isNotEmpty()) "（文本 $preview）" else "")
+        log(
+            if (preview.isNotEmpty()) {
+                L10n.get(R.string.mgr_gatt_log_read_value_text, shortUuid(characteristic.uuid), hex, preview)
+            } else {
+                L10n.get(R.string.mgr_gatt_log_read_value, shortUuid(characteristic.uuid), hex)
+            },
+        )
     }
 
     /** 通知回调的公共处理 */
@@ -689,9 +734,15 @@ class BleGattManager(private val context: Context) {
         val bytes = value ?: ByteArray(0)
         applyCharacteristicValue(serviceUuid, charUuid, bytes)
 
-        val hex = bytes.toHex().ifEmpty { "(空)" }
+        val hex = bytes.toHex().ifEmpty { L10n.get(R.string.mgr_gatt_empty_value) }
         val preview = textPreview(bytes)
-        log("通知 ${shortUuid(characteristic.uuid)} ← $hex" + if (preview.isNotEmpty()) "（文本 $preview）" else "")
+        log(
+            if (preview.isNotEmpty()) {
+                L10n.get(R.string.mgr_gatt_log_notify_value_text, shortUuid(characteristic.uuid), hex, preview)
+            } else {
+                L10n.get(R.string.mgr_gatt_log_notify_value, shortUuid(characteristic.uuid), hex)
+            },
+        )
     }
 
     /** 把系统返回的字节写入对应特征的展示值 */
@@ -798,7 +849,7 @@ class BleGattManager(private val context: Context) {
                 gattRef = null
                 runCatching { stale?.disconnect() }
                 runCatching { stale?.close() }
-                publishFatal("服务枚举超时（10 秒）—— 设备未返回服务表；可重新连接，或先在系统蓝牙中配对")
+                publishFatal(L10n.get(R.string.mgr_gatt_err_discover_timeout))
             }
         }
     }
@@ -807,7 +858,7 @@ class BleGattManager(private val context: Context) {
     private fun beginOperation(label: String): Boolean {
         val current = operationInProgress
         if (current != null) {
-            publishError("上一操作尚未完成（$current）—— BLE 同一时刻只允许一个 GATT 请求")
+            publishError(L10n.get(R.string.mgr_gatt_err_op_busy, current))
             return false
         }
         operationInProgress = label
@@ -817,7 +868,7 @@ class BleGattManager(private val context: Context) {
             if (operationInProgress == label) {
                 operationInProgress = null
                 pendingNotify = null
-                publishError("操作超时（10 秒）：$label 未收到系统回调")
+                publishError(L10n.get(R.string.mgr_gatt_err_op_timeout, label))
             }
         }
         return true
@@ -971,31 +1022,37 @@ private fun textPreview(bytes: ByteArray): String {
     return text.take(64)
 }
 
-/** 权限名 → 中文标签 */
+/** 权限名 → 本地化标签 */
 private fun permissionLabel(permission: String): String = when (permission) {
-    Manifest.permission.BLUETOOTH_CONNECT -> "连接设备 / 读取蓝牙状态"
-    Manifest.permission.BLUETOOTH -> "蓝牙（旧版权限）"
-    Manifest.permission.BLUETOOTH_ADMIN -> "蓝牙管理（旧版权限）"
+    Manifest.permission.BLUETOOTH_CONNECT -> L10n.get(R.string.mgr_gatt_perm_connect)
+    Manifest.permission.BLUETOOTH -> L10n.get(R.string.mgr_gatt_perm_bluetooth)
+    Manifest.permission.BLUETOOTH_ADMIN -> L10n.get(R.string.mgr_gatt_perm_bluetooth_admin)
     else -> permission
 }
 
 /** GATT / ATT 状态码 → 可读原因 */
 private fun gattStatusHint(status: Int): String = when (status) {
-    133 -> " —— 设备不可达 / 已被其他主机连接 / 配对缓存异常；可在系统蓝牙中取消配对后重试"
-    8 -> " —— 连接超时"
-    19 -> " —— 远端主动断开"
-    22 -> " —— 本机主动断开"
-    5 -> " —— 认证不足，可能需要先在系统蓝牙中配对"
-    2 -> " —— 读取不被允许（需要加密或配对）"
-    3 -> " —— 写入不被允许"
-    6 -> " —— 请求不被支持"
-    15 -> " —— 加密密钥长度不足"
+    133 -> L10n.get(R.string.mgr_gatt_hint_unreachable)
+    8 -> L10n.get(R.string.mgr_gatt_hint_timeout)
+    19 -> L10n.get(R.string.mgr_gatt_hint_remote_disconnect)
+    22 -> L10n.get(R.string.mgr_gatt_hint_local_disconnect)
+    5 -> L10n.get(R.string.mgr_gatt_hint_auth)
+    2 -> L10n.get(R.string.mgr_gatt_hint_read_denied)
+    3 -> L10n.get(R.string.mgr_gatt_hint_write_denied)
+    6 -> L10n.get(R.string.mgr_gatt_hint_not_supported)
+    15 -> L10n.get(R.string.mgr_gatt_hint_key_size)
     else -> ""
 }
 
-/** connectGatt 抛出的异常 → 可读中文 */
+/** connectGatt 抛出的异常 → 本地化文本 */
 private fun connectFailureText(t: Throwable): String = when (t) {
-    is SecurityException -> "连接被系统拒绝：${t.message ?: "缺少 BLUETOOTH_CONNECT 权限"}"
-    is IllegalArgumentException -> "MAC 地址无效：${t.message ?: "系统无法解析"}"
-    else -> "连接失败：${t.message ?: t.javaClass.simpleName}"
+    is SecurityException -> L10n.get(
+        R.string.mgr_gatt_connect_denied,
+        t.message ?: L10n.get(R.string.mgr_gatt_connect_denied_no_perm),
+    )
+    is IllegalArgumentException -> L10n.get(
+        R.string.mgr_gatt_mac_invalid_ex,
+        t.message ?: L10n.get(R.string.mgr_gatt_mac_unresolved),
+    )
+    else -> L10n.get(R.string.mgr_gatt_connect_failed_ex, t.message ?: t.javaClass.simpleName)
 }

@@ -33,10 +33,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.SonarRangerManager
 import xin.ctkqiang.deauthctrl.manager.SonarState
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
@@ -81,7 +83,7 @@ fun SonarRangerScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("声呐测距 · SONAR", back)
+        TerminalHeader(stringResource(R.string.sonar_title), back)
         Column(
             Modifier.fillMaxSize()
                 .navigationBarsPadding()
@@ -125,7 +127,11 @@ private fun SonarReadoutPanel(state: SonarState, onToggle: () -> Unit) {
         !state.running -> {
             reading = "--"
             readingColor = Gray
-            statusText = if (error != null) "异常停止 —— 见上方告警" else "已停止 · 点击下方按钮启动"
+            statusText = if (error != null) {
+                stringResource(R.string.sonar_status_error_stop)
+            } else {
+                stringResource(R.string.sonar_status_stopped)
+            }
             statusColor = if (error != null) Danger else Gray
         }
 
@@ -139,36 +145,36 @@ private fun SonarReadoutPanel(state: SonarState, onToggle: () -> Unit) {
         state.outOfRange -> {
             reading = ">8.0"
             readingColor = Warn
-            statusText = ">8m(超量程) —— 回波超出手机扬声器可靠量程"
+            statusText = stringResource(R.string.sonar_status_out_of_range)
             statusColor = Warn
         }
 
         state.noEcho -> {
             reading = "--"
             readingColor = Warn
-            statusText = "无回波(吸音环境/角度不对)"
+            statusText = stringResource(R.string.sonar_status_no_echo)
             statusColor = Warn
         }
 
         distance != null -> {
             reading = "%.1f".format(distance)
             readingColor = TacGreen
-            statusText = "回波锁定 · 已累计 ${state.validCycles} 次有效测量"
+            statusText = stringResource(R.string.sonar_status_locked, state.validCycles)
             statusColor = TacGreen
         }
 
         else -> {
             reading = "--"
             readingColor = Gold
-            statusText = "测量中 —— 首轮回波约 1.5 秒"
+            statusText = stringResource(R.string.sonar_status_measuring)
             statusColor = Gold
         }
     }
 
-    TermPanel("距离读数 · RANGE") {
+    TermPanel(stringResource(R.string.sonar_panel_range)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("DISTANCE / m", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                Text(stringResource(R.string.sonar_distance_label), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 Spacer(Modifier.height(4.dp))
                 Surface(
                     shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp),
@@ -222,7 +228,7 @@ private fun SonarReadoutPanel(state: SonarState, onToggle: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("置信度 CONFIDENCE", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+            Text(stringResource(R.string.sonar_confidence_label), fontFamily = Sans, fontSize = 9.sp, color = Gray)
             Text(
                 if (state.confidence > 0f) "${(state.confidence * 100f).toInt()}%" else "--",
                 fontFamily = Mono,
@@ -237,13 +243,16 @@ private fun SonarReadoutPanel(state: SonarState, onToggle: () -> Unit) {
             active = state.running && state.error == null && !state.noEcho && !state.outOfRange,
         )
         Spacer(Modifier.height(10.dp))
-        ActionButton(running = state.running, runLabel = "启动测距", stopLabel = "停止测距") {
+        ActionButton(
+            running = state.running,
+            runLabel = stringResource(R.string.sonar_btn_start),
+            stopLabel = stringResource(R.string.sonar_btn_stop),
+        ) {
             onToggle()
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            "每 1.5 秒发一次 60ms 线性扫频 chirp(3-8kHz);" +
-                "距离 = 回波相对直达声的时延 × 343m/s ÷ 2。",
+            stringResource(R.string.sonar_intro),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -285,9 +294,9 @@ private fun sonarConfidenceColor(confidence: Float): Color = when {
 /** 最近 40 次有效距离的火花线;无回波 / 超量程周期不进入历史 */
 @Composable
 private fun SonarHistoryPanel(state: SonarState) {
-    TermPanel("回波历史 · HISTORY (最近 ${SonarRangerManager.HISTORY_SIZE} 次)") {
+    TermPanel(stringResource(R.string.sonar_panel_history, SonarRangerManager.HISTORY_SIZE)) {
         if (state.history.size < 2) {
-            EmptyHint("有效回波不足 —— 历史曲线会随每次有效测量滚动绘制")
+            EmptyHint(stringResource(R.string.sonar_history_empty))
         } else {
             val history = state.history
             Canvas(Modifier.fillMaxWidth().height(84.dp)) {
@@ -324,21 +333,21 @@ private fun SonarHistoryPanel(state: SonarState) {
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    "MIN ${"%.1f".format(history.minOrNull() ?: 0f)} m",
+                    stringResource(R.string.sonar_history_min, "%.1f".format(history.minOrNull() ?: 0f)),
                     fontFamily = Mono, fontSize = 8.sp, color = Gray,
                 )
                 Text(
-                    "CUR ${"%.1f".format(history.last())} m",
+                    stringResource(R.string.sonar_history_cur, "%.1f".format(history.last())),
                     fontFamily = Mono, fontSize = 8.sp, color = TacGreen,
                 )
                 Text(
-                    "MAX ${"%.1f".format(history.maxOrNull() ?: 0f)} m",
+                    stringResource(R.string.sonar_history_max, "%.1f".format(history.maxOrNull() ?: 0f)),
                     fontFamily = Mono, fontSize = 8.sp, color = Gray,
                 )
             }
             Spacer(Modifier.height(3.dp))
             Text(
-                "纵轴 0.2-8m,只绘制得到有效回波的测量;无回波 / 超量程周期不进入历史。",
+                stringResource(R.string.sonar_history_desc),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
             )
         }
@@ -351,53 +360,53 @@ private fun SonarHistoryPanel(state: SonarState) {
 @Composable
 private fun SonarTelemetryPanel(state: SonarState) {
     val volume = state.mediaVolumePercent
-    TermPanel("遥测 · TELEMETRY") {
+    TermPanel(stringResource(R.string.sonar_panel_telemetry)) {
         PanelStat(
-            "状态",
-            if (state.running) "连续测量中" else "已停止",
+            stringResource(R.string.sonar_telemetry_status),
+            if (state.running) stringResource(R.string.sonar_telemetry_running) else stringResource(R.string.sonar_telemetry_stopped),
             if (state.running) TacGreen else Gray,
         )
         PanelStat(
-            "测量周期",
+            stringResource(R.string.sonar_telemetry_interval),
             "${SonarRangerManager.MEASURE_INTERVAL_MS} ms",
             White,
         )
         PanelStat(
-            "扫频 chirp",
+            stringResource(R.string.sonar_telemetry_chirp),
             "${SonarRangerManager.CHIRP_START_HZ / 1000f} - " +
                 "${SonarRangerManager.CHIRP_END_HZ / 1000f} kHz · ${SonarRangerManager.CHIRP_MS} ms",
             Gold,
         )
         PanelStat(
-            "采样 / FFT",
-            "${SonarRangerManager.SAMPLE_RATE} Hz · ${SonarRangerManager.FFT_SIZE} 点",
+            stringResource(R.string.sonar_telemetry_sampling),
+            stringResource(R.string.sonar_telemetry_sampling_value, SonarRangerManager.SAMPLE_RATE, SonarRangerManager.FFT_SIZE),
             White,
         )
         PanelStat(
-            "直达声时延",
+            stringResource(R.string.sonar_telemetry_direct_lag),
             state.directLagMs?.let { "%.1f ms".format(it) } ?: "--",
             Gold,
         )
         PanelStat(
-            "峰值 / 均值",
+            stringResource(R.string.sonar_telemetry_peak_ratio),
             if (state.peakRatio > 0f) "%.1f×".format(state.peakRatio) else "--",
             if (state.peakRatio > 0f) TacGreen else Gray,
         )
         PanelStat(
-            "有效 / 总周期",
+            stringResource(R.string.sonar_telemetry_cycles),
             "${state.validCycles} / ${state.cycles}",
             White,
         )
         PanelStat(
-            "媒体音量",
+            stringResource(R.string.sonar_telemetry_volume),
             volume?.let { "$it%" } ?: "--",
             sonarVolumeColor(volume),
         )
-        PanelStat("声速折算", "343 m/s · 20°C", Gray)
+        PanelStat(stringResource(R.string.sonar_telemetry_sound_speed), "343 m/s · 20°C", Gray)
         if (volume != null && volume < 60) {
             Spacer(Modifier.height(4.dp))
             Text(
-                "[!] 媒体音量偏低 —— 扬声器功率不足会明显缩短量程,建议调到 80% 以上",
+                stringResource(R.string.sonar_low_volume),
                 fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp,
             )
         }
@@ -417,33 +426,29 @@ private fun sonarVolumeColor(percent: Int?): Color = when {
 /** 精度声明与物理边界,全部为可验证的工程事实 */
 @Composable
 private fun SonarHonestyPanel() {
-    TermPanel("诚实局限 · HONESTY") {
+    TermPanel(stringResource(R.string.sonar_panel_honesty)) {
         SonarBullet(
-            "声速按 343m/s(20°C 干燥空气)折算;温度每变化 10°C,声速约变 6m/s,距离约有 1.7% 误差。",
+            stringResource(R.string.sonar_honesty_speed),
             White,
         )
         SonarBullet(
-            "扬声器与麦克风距离极近 —— 直达声被当作 0m 时基,只测直达声之后的回波;" +
-                "系统回声消除(AEC)若把直达声抹掉,本页会报「未捕获直达声」,不会编造距离。",
+            stringResource(R.string.sonar_honesty_aec),
             Gray,
         )
         SonarBullet(
-            "多径反射、软表面(窗帘/沙发/吸音板)与斜角度会让回波变弱甚至消失;" +
-                "测墙、门、桌面等大平面效果最好。",
+            stringResource(R.string.sonar_honesty_multipath),
             Gray,
         )
         SonarBullet(
-            "受手机扬声器功率与 0.5s 录音窗限制,可靠量程约 0.2-8m;" +
-                "超过 8m 显示「>8m(超量程)」,强吸音环境显示「无回波(吸音环境/角度不对)」。",
+            stringResource(R.string.sonar_honesty_range),
             Gray,
         )
         SonarBullet(
-            "蓝牙耳机 / 外接音箱会引入数百毫秒延迟,且麦克风收不到直达声 —— 请使用本机扬声器。",
+            stringResource(R.string.sonar_honesty_speaker),
             Warn,
         )
         SonarBullet(
-            "读数是峰值时延的估计值,不是激光测距;适合判断「前方是否有障碍 / 大概多远」," +
-                "不适合精密测量。所有读数来自真实采样与本地 FFT 计算,读不到时显示「--」。",
+            stringResource(R.string.sonar_honesty_estimate),
             Warn,
         )
     }

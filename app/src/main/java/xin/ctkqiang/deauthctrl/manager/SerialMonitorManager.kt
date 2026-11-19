@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -86,7 +89,7 @@ class SerialMonitorManager(private val context: Context) {
                 deviceId = d.deviceId,
                 vendorId = d.vendorId,
                 productId = d.productId,
-                name = d.productName ?: "USB 设备",
+                name = d.productName ?: L10n.get(R.string.mgr_serial_usb_device),
                 chip = chipName(d.vendorId, d.productId),
             )
         }
@@ -97,7 +100,7 @@ class SerialMonitorManager(private val context: Context) {
     fun connect(device: UsbSerialDevice) {
         disconnect()
         val dev = usbManager?.deviceList?.values?.firstOrNull { it.deviceId == device.deviceId } ?: run {
-            _state.value = _state.value.copy(error = "设备已拔出")
+            _state.value = _state.value.copy(error = L10n.get(R.string.mgr_serial_device_removed))
             return
         }
         // 请求 USB 权限:系统会弹确认框
@@ -105,11 +108,11 @@ class SerialMonitorManager(private val context: Context) {
         if (!perm) {
             val pi = PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION).setPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE)
             usbManager?.requestPermission(dev, pi)
-            _state.value = _state.value.copy(error = "请在系统弹窗中允许 USB 访问,然后重新点连接")
+            _state.value = _state.value.copy(error = L10n.get(R.string.mgr_serial_permission_required))
             return
         }
         val conn = usbManager?.openDevice(dev) ?: run {
-            _state.value = _state.value.copy(error = "打开 USB 设备失败")
+            _state.value = _state.value.copy(error = L10n.get(R.string.mgr_serial_open_failed))
             return
         }
         // 找 bulk 端点(优先带数据接口的 bulk in/out)
@@ -122,7 +125,7 @@ class SerialMonitorManager(private val context: Context) {
         }
         if (foundIfc == null) {
             conn.close()
-            _state.value = _state.value.copy(error = "未找到 bulk 端点(该芯片需厂商驱动,系统未内置)")
+            _state.value = _state.value.copy(error = L10n.get(R.string.mgr_serial_no_bulk_endpoint))
             return
         }
         runCatching { conn.claimInterface(foundIfc, true) }
@@ -141,7 +144,7 @@ class SerialMonitorManager(private val context: Context) {
         deviceRef = dev
         stopRead = false
         _state.value = _state.value.copy(connected = true, connectedDevice = device, error = null)
-        appendLog('S', "已连接 ${device.name} (${device.chip}) @ ${s.baudRate}bps", "")
+        appendLog('S', L10n.get(R.string.mgr_serial_connected, device.name, device.chip, s.baudRate), "")
         // 读循环
         thread(name = "serial-read") {
             val buf = ByteArray(256)
@@ -203,7 +206,7 @@ class SerialMonitorManager(private val context: Context) {
         0x1A86 -> "WCH CH340/CH341"
         0x10C4 -> "Silabs CP210x"
         0x2341 -> "Arduino CDC"
-        else -> "USB 串口类设备(需驱动支持)"
+        else -> L10n.get(R.string.mgr_serial_chip_generic)
     }
 
     companion object {

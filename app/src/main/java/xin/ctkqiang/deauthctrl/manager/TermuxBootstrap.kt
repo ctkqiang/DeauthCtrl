@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,7 +91,7 @@ object TermuxBootstrap {
             ?: run {
                 _state.value = BootstrapState(
                     installed = false,
-                    error = "内置 bootstrap 缺失(${assetName()}) —— 请在联网状态下由终端页触发在线安装",
+                    error = L10n.get(R.string.mgr_termux_asset_missing, assetName()),
                 )
                 return false
             }
@@ -101,8 +104,8 @@ object TermuxBootstrap {
             _state.value = BootstrapState(installed = true)
             return true
         }
-        _state.value = BootstrapState(installed = false, installing = true, progress = 0f, detail = "读取内置 bootstrap 包")
-        onProgress?.invoke(0f, "读取内置 bootstrap 包")
+        _state.value = BootstrapState(installed = false, installing = true, progress = 0f, detail = L10n.get(R.string.mgr_termux_reading_asset))
+        onProgress?.invoke(0f, L10n.get(R.string.mgr_termux_reading_asset))
 
         // 损坏残留/旧版本残留清掉重来
         if (root.exists()) root.deleteRecursively()
@@ -113,7 +116,7 @@ object TermuxBootstrap {
                 ?: run {
                     _state.value = BootstrapState(
                         installed = false,
-                        error = "内置 bootstrap 缺失(${assetName()}) —— 请在联网状态下由终端页触发在线安装",
+                        error = L10n.get(R.string.mgr_termux_asset_missing, assetName()),
                     )
                     return false
                 }
@@ -126,7 +129,7 @@ object TermuxBootstrap {
                 onProgress?.invoke(p * 0.95f, d)
             }
             if (!ok || !File(root, "bin/sh").exists() || !File(root, "bin/bash").exists()) {
-                _state.value = BootstrapState(installed = false, error = "解压完成但缺少 bin/sh 或 bin/bash —— bootstrap 包损坏,请清除应用数据重试")
+                _state.value = BootstrapState(installed = false, error = L10n.get(R.string.mgr_termux_extract_incomplete))
                 return false
             }
             // 写入资产指纹:下次启动资产变更(如新增 bash)时自动触发重装
@@ -136,11 +139,11 @@ object TermuxBootstrap {
             // (31 字符,无法字符串 patch 到更长的本应用路径) —— ZeroTermux 同款方案:
             // 用 proot 把虚拟 com.termux 路径绑定到本应用目录
             val prootOk = ensureProot(context)
-            _state.value = BootstrapState(installed = true, progress = 1f, detail = if (prootOk) "环境就绪" else "环境就绪(proot/loader 缺失,基础命令可用,apt 需 proot)")
-            onProgress?.invoke(1f, "环境就绪")
+            _state.value = BootstrapState(installed = true, progress = 1f, detail = if (prootOk) L10n.get(R.string.mgr_termux_ready) else L10n.get(R.string.mgr_termux_ready_no_proot))
+            onProgress?.invoke(1f, L10n.get(R.string.mgr_termux_ready))
             return true
         } catch (t: Throwable) {
-            _state.value = BootstrapState(installed = false, error = "bootstrap 安装失败: ${t.message}")
+            _state.value = BootstrapState(installed = false, error = L10n.get(R.string.mgr_termux_install_failed, t.message.toString()))
             return false
         }
     }

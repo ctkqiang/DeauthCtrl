@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 /**
  * 单个 IPv4 数据包的解析结果 —— 纯 Kotlin 数据类,不依赖 Android,可直接 JVM 单测。
  *
@@ -156,7 +159,7 @@ fun parseIpv4Packet(buf: ByteArray, len: Int): ParsedPacket? {
                 payloadOffset = ihl + 2
             }
         }
-        else -> info = "IPv4 协议号 $protoNum"
+        else -> info = tr(R.string.mgr_pktpar_ipv4_protocol, protoNum)
     }
 
     return ParsedPacket(
@@ -213,10 +216,10 @@ private fun describeTcp(srcPort: Int, dstPort: Int, payload: ByteArray): Transpo
         return if (q != null) {
             TransportSummary("DNS ${q.type} ${q.name}", q.name, q.name, q.type, q.dnsClass)
         } else {
-            TransportSummary("DNS 查询")
+            TransportSummary(tr(R.string.mgr_pktpar_dns_query))
         }
     }
-    if (srcPort == 53) return TransportSummary("DNS 响应")
+    if (srcPort == 53) return TransportSummary(tr(R.string.mgr_pktpar_dns_response))
     if (dstPort == 80) {
         describeHttp(payload)?.let { return it }
     }
@@ -230,10 +233,10 @@ private fun describeUdp(srcPort: Int, dstPort: Int, payload: ByteArray): Transpo
         return if (q != null) {
             TransportSummary("DNS ${q.type} ${q.name}", q.name, q.name, q.type, q.dnsClass)
         } else {
-            TransportSummary("DNS 查询")
+            TransportSummary(tr(R.string.mgr_pktpar_dns_query))
         }
     }
-    if (srcPort == 53) return TransportSummary("DNS 响应")
+    if (srcPort == 53) return TransportSummary(tr(R.string.mgr_pktpar_dns_response))
     val label = when (dstPort) {
         67, 68 -> "DHCP"
         123 -> "NTP"
@@ -332,7 +335,7 @@ private fun describeTls(payload: ByteArray): TransportSummary? {
     val major = u8b(payload, 1)
     val minor = u8b(payload, 2)
     if (major != 0x03 || minor !in 0x01..0x04) return null
-    if (u8b(payload, 5) != 0x01) return TransportSummary("TLS 握手")
+    if (u8b(payload, 5) != 0x01) return TransportSummary(tr(R.string.mgr_pktpar_tls_handshake))
 
     var pos = 9 // 记录头 5 + 握手头 4
     if (pos + 2 + 32 > payload.size) return TransportSummary("TLS ClientHello")
@@ -439,3 +442,7 @@ private fun tcpFlagsText(flagByte: Int): String {
     if (flagByte and 0x08 != 0) parts.add("PSH")
     return parts.joinToString(",")
 }
+
+/** JVM 单测未初始化 L10n 时降级为空串 */
+private fun tr(resId: Int, vararg args: Any): String =
+    runCatching { L10n.get(resId, *args) }.getOrElse { "" }

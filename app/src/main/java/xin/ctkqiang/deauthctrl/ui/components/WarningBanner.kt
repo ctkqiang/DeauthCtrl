@@ -7,8 +7,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * 警告横幅组件
@@ -35,7 +37,7 @@ fun WarningBanner(
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             Text(
-                text = "仅供授权实验室测试使用。请勿用于非您拥有的设备。",
+                text = stringResource(R.string.warn_banner),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.error,

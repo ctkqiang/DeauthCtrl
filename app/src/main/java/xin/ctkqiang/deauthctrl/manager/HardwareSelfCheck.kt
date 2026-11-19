@@ -25,6 +25,8 @@ import java.io.File
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 // ─── 快照数据结构 ────────────────────────────────────────────────────────────
 //
@@ -180,13 +182,20 @@ class HardwareSelfCheck(private val context: Context) {
                 val alerts = buildList {
                     thermal.topZones.firstOrNull()?.takeIf { it.tempC > THERMAL_ALERT_C }?.let { hottest ->
                         add(
-                            "热区 ${hottest.name} 达 " +
-                                String.format(Locale.US, "%.1f", hottest.tempC) +
-                                " °C,超过 45 °C"
+                            L10n.get(
+                                R.string.mgr_selfchk_alert_thermal,
+                                hottest.name,
+                                String.format(Locale.US, "%.1f", hottest.tempC),
+                            ),
                         )
                     }
                     if (battery.healthAlert) {
-                        add("电池健康异常:${battery.health}")
+                        add(
+                            L10n.get(
+                                R.string.mgr_selfchk_alert_battery_health,
+                                batteryHealthText(battery.health),
+                            ),
+                        )
                     }
                 }
 
@@ -329,7 +338,7 @@ class HardwareSelfCheck(private val context: Context) {
         BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "故障(未指明)"
         BatteryManager.BATTERY_HEALTH_UNKNOWN -> "未知"
         Int.MIN_VALUE -> "不可用"
-        else -> "未知($code)"
+        else -> L10n.get(R.string.mgr_selfchk_unknown_code, code)
     }
 
     private fun batteryStatusName(code: Int): String = when (code) {
@@ -339,7 +348,20 @@ class HardwareSelfCheck(private val context: Context) {
         BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "未充电"
         BatteryManager.BATTERY_STATUS_UNKNOWN -> "未知"
         Int.MIN_VALUE -> "不可用"
-        else -> "未知($code)"
+        else -> L10n.get(R.string.mgr_selfchk_unknown_code, code)
+    }
+
+    /** 电池健康数据值（固定中文，供 UI 判定）→ 当前语言显示文本 */
+    private fun batteryHealthText(raw: String): String = when (raw) {
+        "良好" -> L10n.get(R.string.mgr_selfchk_health_good)
+        "过热" -> L10n.get(R.string.mgr_selfchk_health_overheat)
+        "失效" -> L10n.get(R.string.mgr_selfchk_health_dead)
+        "过压" -> L10n.get(R.string.mgr_selfchk_health_over_voltage)
+        "过冷" -> L10n.get(R.string.mgr_selfchk_health_cold)
+        "故障(未指明)" -> L10n.get(R.string.mgr_selfchk_health_unspecified_failure)
+        "未知" -> L10n.get(R.string.mgr_selfchk_unknown)
+        "不可用" -> L10n.get(R.string.mgr_selfchk_unavailable)
+        else -> raw
     }
 
     // ─── 热区 ────────────────────────────────────────────────────────────────
@@ -457,9 +479,9 @@ class HardwareSelfCheck(private val context: Context) {
         return list.map { sensor ->
             SensorEntry(
                 name = runCatching { sensor.name }.getOrNull()
-                    ?.takeIf { it.isNotBlank() } ?: "未命名传感器",
+                    ?.takeIf { it.isNotBlank() } ?: L10n.get(R.string.mgr_selfchk_sensor_unnamed),
                 vendor = runCatching { sensor.vendor }.getOrNull()
-                    ?.takeIf { it.isNotBlank() } ?: "未知厂商",
+                    ?.takeIf { it.isNotBlank() } ?: L10n.get(R.string.mgr_selfchk_vendor_unknown),
                 type = sensor.type,
                 typeName = sensorTypeName(sensor.type),
                 resolution = runCatching { sensor.resolution }.getOrDefault(0f),
@@ -472,34 +494,38 @@ class HardwareSelfCheck(private val context: Context) {
     }
 
     private fun sensorTypeName(type: Int): String = when (type) {
-        Sensor.TYPE_ACCELEROMETER -> "加速度计"
-        Sensor.TYPE_GYROSCOPE -> "陀螺仪"
-        Sensor.TYPE_MAGNETIC_FIELD -> "磁力计"
-        Sensor.TYPE_LIGHT -> "环境光"
-        Sensor.TYPE_PROXIMITY -> "距离感应"
-        Sensor.TYPE_PRESSURE -> "气压计"
-        Sensor.TYPE_AMBIENT_TEMPERATURE -> "环境温度"
-        Sensor.TYPE_RELATIVE_HUMIDITY -> "相对湿度"
-        Sensor.TYPE_GRAVITY -> "重力"
-        Sensor.TYPE_LINEAR_ACCELERATION -> "线性加速度"
-        Sensor.TYPE_ROTATION_VECTOR -> "旋转矢量"
-        Sensor.TYPE_GAME_ROTATION_VECTOR -> "游戏旋转矢量"
-        Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> "地磁旋转矢量"
-        Sensor.TYPE_SIGNIFICANT_MOTION -> "显著运动"
-        Sensor.TYPE_STEP_COUNTER -> "计步器"
-        Sensor.TYPE_STEP_DETECTOR -> "步伐检测"
-        Sensor.TYPE_HEART_RATE -> "心率"
-        Sensor.TYPE_HEART_BEAT -> "心跳检测"
-        Sensor.TYPE_POSE_6DOF -> "6DoF 姿态"
-        Sensor.TYPE_STATIONARY_DETECT -> "静止检测"
-        Sensor.TYPE_MOTION_DETECT -> "运动检测"
-        Sensor.TYPE_LOW_LATENCY_OFFBODY_DETECT -> "离体检测"
-        Sensor.TYPE_ACCELEROMETER_UNCALIBRATED -> "未校准加速度计"
-        Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> "未校准陀螺仪"
-        Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> "未校准磁力计"
-        Sensor.TYPE_HEADING -> "朝向"
-        Sensor.TYPE_HINGE_ANGLE -> "铰链角度"
-        else -> "类型 $type"
+        Sensor.TYPE_ACCELEROMETER -> L10n.get(R.string.mgr_selfchk_sensor_accelerometer)
+        Sensor.TYPE_GYROSCOPE -> L10n.get(R.string.mgr_selfchk_sensor_gyroscope)
+        Sensor.TYPE_MAGNETIC_FIELD -> L10n.get(R.string.mgr_selfchk_sensor_magnetic_field)
+        Sensor.TYPE_LIGHT -> L10n.get(R.string.mgr_selfchk_sensor_light)
+        Sensor.TYPE_PROXIMITY -> L10n.get(R.string.mgr_selfchk_sensor_proximity)
+        Sensor.TYPE_PRESSURE -> L10n.get(R.string.mgr_selfchk_sensor_pressure)
+        Sensor.TYPE_AMBIENT_TEMPERATURE -> L10n.get(R.string.mgr_selfchk_sensor_ambient_temperature)
+        Sensor.TYPE_RELATIVE_HUMIDITY -> L10n.get(R.string.mgr_selfchk_sensor_relative_humidity)
+        Sensor.TYPE_GRAVITY -> L10n.get(R.string.mgr_selfchk_sensor_gravity)
+        Sensor.TYPE_LINEAR_ACCELERATION -> L10n.get(R.string.mgr_selfchk_sensor_linear_acceleration)
+        Sensor.TYPE_ROTATION_VECTOR -> L10n.get(R.string.mgr_selfchk_sensor_rotation_vector)
+        Sensor.TYPE_GAME_ROTATION_VECTOR -> L10n.get(R.string.mgr_selfchk_sensor_game_rotation_vector)
+        Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR ->
+            L10n.get(R.string.mgr_selfchk_sensor_geomagnetic_rotation_vector)
+        Sensor.TYPE_SIGNIFICANT_MOTION -> L10n.get(R.string.mgr_selfchk_sensor_significant_motion)
+        Sensor.TYPE_STEP_COUNTER -> L10n.get(R.string.mgr_selfchk_sensor_step_counter)
+        Sensor.TYPE_STEP_DETECTOR -> L10n.get(R.string.mgr_selfchk_sensor_step_detector)
+        Sensor.TYPE_HEART_RATE -> L10n.get(R.string.mgr_selfchk_sensor_heart_rate)
+        Sensor.TYPE_HEART_BEAT -> L10n.get(R.string.mgr_selfchk_sensor_heart_beat)
+        Sensor.TYPE_POSE_6DOF -> L10n.get(R.string.mgr_selfchk_sensor_pose_6dof)
+        Sensor.TYPE_STATIONARY_DETECT -> L10n.get(R.string.mgr_selfchk_sensor_stationary_detect)
+        Sensor.TYPE_MOTION_DETECT -> L10n.get(R.string.mgr_selfchk_sensor_motion_detect)
+        Sensor.TYPE_LOW_LATENCY_OFFBODY_DETECT ->
+            L10n.get(R.string.mgr_selfchk_sensor_low_latency_offbody_detect)
+        Sensor.TYPE_ACCELEROMETER_UNCALIBRATED ->
+            L10n.get(R.string.mgr_selfchk_sensor_accelerometer_uncalibrated)
+        Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> L10n.get(R.string.mgr_selfchk_sensor_gyroscope_uncalibrated)
+        Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED ->
+            L10n.get(R.string.mgr_selfchk_sensor_magnetic_field_uncalibrated)
+        Sensor.TYPE_HEADING -> L10n.get(R.string.mgr_selfchk_sensor_heading)
+        Sensor.TYPE_HINGE_ANGLE -> L10n.get(R.string.mgr_selfchk_sensor_hinge_angle)
+        else -> L10n.get(R.string.mgr_selfchk_unknown_type, type)
     }
 
     // ─── 网络 ────────────────────────────────────────────────────────────────

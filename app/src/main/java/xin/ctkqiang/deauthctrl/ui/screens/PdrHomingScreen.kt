@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.PDR_MAX_STEP_LEN_M
 import xin.ctkqiang.deauthctrl.manager.PDR_MIN_STEP_LEN_M
 import xin.ctkqiang.deauthctrl.manager.PdrState
@@ -96,7 +99,7 @@ fun PdrHomingScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("步测归航 · PDR HOMING", back)
+        TerminalHeader(stringResource(R.string.pdr_title), back)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
@@ -105,7 +108,7 @@ fun PdrHomingScreen(back: () -> Unit) {
             PdrWarningStrip(state)
 
             // ── 航迹图 ────────────────────────────────────────────────────
-            TermPanel("航迹图 · DEAD RECKONING") {
+            TermPanel(stringResource(R.string.pdr_map_panel)) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(280.dp),
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -116,7 +119,7 @@ fun PdrHomingScreen(back: () -> Unit) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "轨迹 ${state.trail.size} / 2000 点 · 白线为死推算路径 · 金色十字为起点 · 三角为当前位置",
+                    stringResource(R.string.pdr_trail_info, state.trail.size),
                     fontFamily = Mono, fontSize = 8.sp, color = Gray,
                 )
             }
@@ -139,13 +142,17 @@ fun PdrHomingScreen(back: () -> Unit) {
             ) {
                 ActionButton(
                     running = state.running,
-                    runLabel = if (state.steps > 0L) "继续步测" else "启动步测",
-                    stopLabel = "暂停步测",
+                    runLabel = if (state.steps > 0L) {
+                        stringResource(R.string.pdr_resume_steps)
+                    } else {
+                        stringResource(R.string.pdr_start_steps)
+                    },
+                    stopLabel = stringResource(R.string.pdr_pause_steps),
                     modifier = Modifier.weight(1f),
                 ) {
                     if (state.running) vm.pause() else vm.start()
                 }
-                GhostButton("重置") { vm.reset() }
+                GhostButton(stringResource(R.string.pdr_reset)) { vm.reset() }
             }
 
             Spacer(Modifier.height(8.dp))
@@ -177,6 +184,7 @@ fun PdrHomingScreen(back: () -> Unit) {
 @Composable
 private fun PdrMapCanvas(state: PdrState, modifier: Modifier = Modifier) {
     val textMeasurer = rememberTextMeasurer()
+    val context = LocalContext.current
 
     Canvas(modifier) {
         val w = size.width
@@ -300,13 +308,17 @@ private fun PdrMapCanvas(state: PdrState, modifier: Modifier = Modifier) {
 
         // 左下:实际网格间距;右下:旋转模式
         val gridLabel = textMeasurer.measure(
-            "网格 ${gridM.toInt()}m",
+            context.getString(R.string.pdr_grid_label, gridM.toInt()),
             TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gray),
         )
         drawText(gridLabel, topLeft = Offset(6.dp.toPx(), h - gridLabel.size.height - 5.dp.toPx()))
 
         val modeLabel = textMeasurer.measure(
-            if (heading != null) "机头朝上" else "航向 -- · 北向朝上",
+            if (heading != null) {
+                context.getString(R.string.pdr_heading_up)
+            } else {
+                context.getString(R.string.pdr_north_up)
+            },
             TextStyle(
                 fontFamily = Sans,
                 fontSize = 8.sp,
@@ -360,7 +372,7 @@ private fun relativeHomeAngle(state: PdrState): Float? {
  */
 @Composable
 private fun HomingPanel(state: PdrState) {
-    TermPanel("归航指示 · HOMING") {
+    TermPanel(stringResource(R.string.pdr_homing_panel)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             HomingArrow(state)
             Spacer(Modifier.width(14.dp))
@@ -370,12 +382,12 @@ private fun HomingPanel(state: PdrState) {
                 val arrived = dist != null && dist < 2f
                 val bearingText = bearing?.let { "%03.0f°".format(it) } ?: "--"
                 val distanceText = when {
-                    dist == null -> "距起点 --"
-                    arrived -> "已回到起点附近"
-                    else -> "距起点 %.1f m".format(dist)
+                    dist == null -> stringResource(R.string.pdr_home_distance_none)
+                    arrived -> stringResource(R.string.pdr_home_arrived)
+                    else -> stringResource(R.string.pdr_home_distance, "%.1f".format(dist))
                 }
                 Text(
-                    "$distanceText · 方位 $bearingText",
+                    stringResource(R.string.pdr_distance_bearing, distanceText, bearingText),
                     fontFamily = Sans,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
@@ -388,22 +400,27 @@ private fun HomingPanel(state: PdrState) {
                 Spacer(Modifier.height(4.dp))
 
                 val rel = relativeHomeAngle(state)
-                val headingText = state.headingDeg?.let { "机头 %03.0f°".format(it) } ?: "机头 --"
+                val headingDeg = state.headingDeg
+                val headingText = if (headingDeg != null) {
+                    stringResource(R.string.pdr_nose_value, "%03.0f".format(headingDeg))
+                } else {
+                    stringResource(R.string.pdr_nose_none)
+                }
                 val relText = when {
-                    rel == null -> "相对机头 --"
-                    abs(rel) < 3f -> "相对机头 正前"
-                    rel > 0f -> "相对机头 右 %.0f°".format(abs(rel))
-                    else -> "相对机头 左 %.0f°".format(abs(rel))
+                    rel == null -> stringResource(R.string.pdr_rel_none)
+                    abs(rel) < 3f -> stringResource(R.string.pdr_rel_ahead)
+                    rel > 0f -> stringResource(R.string.pdr_rel_right, "%.0f".format(abs(rel)))
+                    else -> stringResource(R.string.pdr_rel_left, "%.0f".format(abs(rel)))
                 }
                 Text(
-                    "$headingText · $relText",
+                    stringResource(R.string.pdr_heading_rel, headingText, relText),
                     fontFamily = Mono,
                     fontSize = 10.sp,
                     color = White,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "箭头指向起点方向;方位以磁北为基准,机头方向以手机顶部朝向为基准",
+                    stringResource(R.string.pdr_arrow_note),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray.copy(alpha = 0.85f),
@@ -412,7 +429,7 @@ private fun HomingPanel(state: PdrState) {
                 if (state.running && state.steps == 0L) {
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        "等待第一步 —— 计步传感器只在真实行走时发数",
+                        stringResource(R.string.pdr_waiting_first_step),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
@@ -488,9 +505,9 @@ private fun HomingArrow(state: PdrState) {
 /** 步长滑条 —— 0.50-1.00m,0.05m 步进,直接影响之后的每一步 */
 @Composable
 private fun StepLengthPanel(state: PdrState, onStepLen: (Float) -> Unit) {
-    TermPanel("步长标定 · STEP LENGTH") {
+    TermPanel(stringResource(R.string.pdr_step_panel)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("单步步长(距离估算)", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+            Text(stringResource(R.string.pdr_step_length_label), fontFamily = Sans, fontSize = 11.sp, color = Gray)
             Text("%.2f m".format(state.stepLenM), fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold)
         }
         Slider(
@@ -507,13 +524,12 @@ private fun StepLengthPanel(state: PdrState, onStepLen: (Float) -> Unit) {
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("0.50 m", fontFamily = Mono, fontSize = 8.sp, color = Gray)
-            Text("0.05 m 步进", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+            Text(stringResource(R.string.pdr_step_increment), fontFamily = Mono, fontSize = 8.sp, color = Gray)
             Text("1.00 m", fontFamily = Mono, fontSize = 8.sp, color = Gray)
         }
         Spacer(Modifier.height(3.dp))
         Text(
-            "默认 0.75m 仅为成人均值。建议在已知 10m 直线上自然走 10 步,用 10 ÷ 步数 反推后再标定;" +
-                "调整只影响之后的步伐,不篡改已走轨迹。",
+            stringResource(R.string.pdr_step_hint),
             fontFamily = Sans, fontSize = 8.sp, color = Gray.copy(alpha = 0.85f), lineHeight = 11.sp,
         )
     }
@@ -522,32 +538,43 @@ private fun StepLengthPanel(state: PdrState, onStepLen: (Float) -> Unit) {
 /** 实时读数 —— 步数 / 距离 / 航向 / 距起点,全部来自状态流 */
 @Composable
 private fun TelemetryPanel(state: PdrState) {
-    TermPanel("本程读数 · TELEMETRY") {
+    TermPanel(stringResource(R.string.pdr_telemetry_panel)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            StatChip("步数", state.steps.toString(), active = state.steps > 0L)
-            StatChip("距离", "%.1f m".format(state.distanceM), active = state.distanceM > 0f)
+            StatChip(stringResource(R.string.pdr_stat_steps), state.steps.toString(), active = state.steps > 0L)
+            StatChip(stringResource(R.string.pdr_stat_distance), "%.1f m".format(state.distanceM), active = state.distanceM > 0f)
             StatChip(
-                "航向",
+                stringResource(R.string.pdr_stat_heading),
                 state.headingDeg?.let { "%.0f°".format(it) } ?: "--",
                 active = state.headingDeg != null,
             )
             StatChip(
-                "距起点",
+                stringResource(R.string.pdr_stat_home),
                 state.homeDistanceM?.let { "%.1f m".format(it) } ?: "--",
                 active = state.homeDistanceM != null,
             )
         }
         Spacer(Modifier.height(5.dp))
+        val stepSensorText = if (state.hasStepSensor) {
+            if (state.stepSensorName.isBlank()) {
+                stringResource(R.string.pdr_sensor_step_default)
+            } else {
+                state.stepSensorName
+            }
+        } else {
+            stringResource(R.string.pdr_sensor_step_unavailable)
+        }
+        val headingSensorText = if (state.hasHeadingSensor) {
+            stringResource(R.string.pdr_sensor_rotation)
+        } else {
+            stringResource(R.string.pdr_sensor_heading_unavailable)
+        }
         Text(
-            "传感器: " + when {
-                state.hasStepSensor -> state.stepSensorName.ifBlank { "计步传感器" }
-                else -> "计步不可用"
-            } + " · " + if (state.hasHeadingSensor) "旋转矢量(航向)" else "航向不可用",
+            stringResource(R.string.pdr_sensor_line, stepSensorText, headingSensorText),
             fontFamily = Mono, fontSize = 8.sp, color = Gray,
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            "距离 = 每步步数 × 当时步长的累加(估算);距起点 = 死推算位置到 (0,0) 的直线距离,非 GPS 测量",
+            stringResource(R.string.pdr_distance_note),
             fontFamily = Sans, fontSize = 8.sp, color = Gray.copy(alpha = 0.85f), lineHeight = 11.sp,
         )
     }
@@ -557,15 +584,19 @@ private fun TelemetryPanel(state: PdrState) {
 @Composable
 private fun PdrWarningStrip(state: PdrState) {
     val error = state.error?.removePrefix("[!] ")?.trim().orEmpty()
+    // manager 错误文本若已涵盖该项(精确相等,与语言无关),fallback 警告条不再重复
+    val noStepMsg = stringResource(R.string.mgr_pdr_no_step_sensor)
+    val permMsg = stringResource(R.string.mgr_pdr_activity_permission)
+    val noRotMsg = stringResource(R.string.mgr_pdr_no_rotation_sensor)
     val items = mutableListOf<Pair<Color, String>>()
 
-    if (!state.hasStepSensor && !error.contains("计步")) {
-        items += Danger to "本机未提供计步传感器(TYPE_STEP_COUNTER / TYPE_STEP_DETECTOR) —— 步测不可用"
-    } else if (!state.stepPermissionGranted && !error.contains("身体活动")) {
-        items += Warn to "Android 10+ 读取计步传感器需要「身体活动」权限,当前未授予 —— 授予后重新进入本页"
+    if (!state.hasStepSensor && error != noStepMsg) {
+        items += Danger to stringResource(R.string.pdr_warn_no_step_sensor)
+    } else if (!state.stepPermissionGranted && error != permMsg) {
+        items += Warn to stringResource(R.string.pdr_warn_activity_permission)
     }
-    if (!state.hasHeadingSensor && !error.contains("旋转矢量")) {
-        items += Danger to "本机无旋转矢量传感器 —— 航向不可用,轨迹无法推算"
+    if (!state.hasHeadingSensor && error != noRotMsg) {
+        items += Danger to stringResource(R.string.pdr_warn_no_heading_sensor)
     }
     if (error.isNotEmpty()) items += Danger to error
 
@@ -577,7 +608,7 @@ private fun PdrWarningStrip(state: PdrState) {
             border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
         ) {
             Text(
-                "[!] $text",
+                stringResource(R.string.pdr_warning_prefix, text),
                 fontFamily = Sans,
                 fontSize = 10.sp,
                 color = color,
@@ -591,21 +622,19 @@ private fun PdrWarningStrip(state: PdrState) {
 /** 诚实说明 —— 死推算的漂移边界与适用场景 */
 @Composable
 private fun HonestyPanel() {
-    TermPanel("精度声明 · HONESTY") {
+    TermPanel(stringResource(R.string.pdr_honesty_panel)) {
         Text(
-            "死推算(PDR)只依赖步数与航向,误差会随距离累积:百米级行程通常有 5-10% 漂移;" +
-                "转弯、手持晃动、口袋摆动都会显著放大误差。",
+            stringResource(R.string.pdr_honesty_p1),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "它只在室内、地下等无 GPS / 无稳定基站定位的场景才有价值;开阔地请以卫星定位为准。",
+            stringResource(R.string.pdr_honesty_p2),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "步长默认 0.75m 只是成人均值,身高与步态不同差异很大 —— 请在已知距离上自校准;" +
-                "本页所有读数来自硬件计步器与旋转矢量传感器,无传感器或未授权时显示「不可用」,绝不编造。",
+            stringResource(R.string.pdr_honesty_p3),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
     }

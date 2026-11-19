@@ -33,11 +33,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.SonicLinkManager
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -90,7 +92,7 @@ fun SonicLinkScreen(back: () -> Unit) {
     val skipped = remember(text) { SonicLinkManager.unsupportedCount(text) }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("声波传讯 · SONIC LINK", back)
+        TerminalHeader(stringResource(R.string.sonic_title), back)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding()
                 .verticalScroll(rememberScrollState()).padding(12.dp),
@@ -111,11 +113,11 @@ fun SonicLinkScreen(back: () -> Unit) {
             }
 
             // ── 发射 ──────────────────────────────────────────────────────
-            TermPanel("发射 · DTMF TX") {
+            TermPanel(stringResource(R.string.sonic_panel_tx)) {
                 TermInput(
-                    "报文内容",
+                    stringResource(R.string.sonic_message_label),
                     text,
-                    placeholder = "0-9 A-D * # 与空格（仅这些字符可发送）",
+                    placeholder = stringResource(R.string.sonic_message_placeholder),
                 ) { input ->
                     text = input.take(SONIC_TEXT_LIMIT)
                 }
@@ -125,18 +127,18 @@ fun SonicLinkScreen(back: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        "可发送 ${sendable.length} 个符号",
+                        stringResource(R.string.sonic_sendable_count, sendable.length),
                         fontFamily = Mono, fontSize = 9.sp,
                         color = if (sendable.isEmpty()) Gray else Gold,
                     )
                     Text(
-                        "跳过 $skipped 个字符",
+                        stringResource(R.string.sonic_skipped_count, skipped),
                         fontFamily = Mono, fontSize = 9.sp, color = Gray,
                     )
                 }
                 if (text.isNotEmpty() && sendable.isEmpty()) {
                     Text(
-                        "[!] 当前文本没有可发送的 DTMF 符号",
+                        stringResource(R.string.sonic_no_sendable),
                         fontFamily = Sans, fontSize = 9.sp, color = Warn,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -144,12 +146,12 @@ fun SonicLinkScreen(back: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("当前符号", fontFamily = Sans, fontSize = 10.sp, color = Red)
+                        Text(stringResource(R.string.sonic_current_symbol), fontFamily = Sans, fontSize = 10.sp, color = Red)
                         Text(
                             if (state.sending) {
-                                "发送中 ${(state.sendProgress * 100).toInt()}%"
+                                stringResource(R.string.sonic_sending, (state.sendProgress * 100).toInt())
                             } else {
-                                "待机"
+                                stringResource(R.string.sonic_standby)
                             },
                             fontFamily = Mono, fontSize = 9.sp,
                             color = if (state.sending) TacGreen else Gray,
@@ -182,12 +184,16 @@ fun SonicLinkScreen(back: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running = state.sending, runLabel = "开始发送", stopLabel = "停止发送") {
+                ActionButton(
+                    running = state.sending,
+                    runLabel = stringResource(R.string.sonic_btn_start_send),
+                    stopLabel = stringResource(R.string.sonic_btn_stop_send),
+                ) {
                     haptic.hud()
                     if (state.sending) vm.stopSending() else vm.send(text)
                 }
                 Text(
-                    "符号 120ms + 间隔 40ms，约 5-6 符号/秒；空格以 240ms 静音表示。",
+                    stringResource(R.string.sonic_tx_desc),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray.copy(alpha = 0.85f),
                     lineHeight = 12.sp, modifier = Modifier.padding(top = 6.dp),
                 )
@@ -196,15 +202,15 @@ fun SonicLinkScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
 
             // ── 接收 ──────────────────────────────────────────────────────
-            TermPanel("接收 · DTMF RX") {
+            TermPanel(stringResource(R.string.sonic_panel_rx)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("监听状态", fontFamily = Sans, fontSize = 10.sp, color = Red)
+                        Text(stringResource(R.string.sonic_listen_status), fontFamily = Sans, fontSize = 10.sp, color = Red)
                         Text(
                             if (state.running) {
-                                "监听中 · 末次符号 ${state.rxSymbol.ifBlank { "--" }}"
+                                stringResource(R.string.sonic_listening, state.rxSymbol.ifBlank { "--" })
                             } else {
-                                "未监听"
+                                stringResource(R.string.sonic_not_listening)
                             },
                             fontFamily = Mono, fontSize = 9.sp,
                             color = if (state.running) TacGreen else Gray,
@@ -238,12 +244,16 @@ fun SonicLinkScreen(back: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running = state.running, runLabel = "开始监听", stopLabel = "停止监听") {
+                ActionButton(
+                    running = state.running,
+                    runLabel = stringResource(R.string.sonic_btn_start_rx),
+                    stopLabel = stringResource(R.string.sonic_btn_stop_rx),
+                ) {
                     haptic.hud()
                     if (state.running) vm.stopReceiving() else vm.startReceiving()
                 }
                 Spacer(Modifier.height(8.dp))
-                LogHeader("解码文本", showClear = true) { vm.clearReceived() }
+                LogHeader(stringResource(R.string.sonic_log_header), showClear = true) { vm.clearReceived() }
                 Spacer(Modifier.height(4.dp))
                 Column(
                     Modifier.fillMaxWidth()
@@ -256,9 +266,9 @@ fun SonicLinkScreen(back: () -> Unit) {
                     if (lines.isEmpty() && state.currentLine.isEmpty()) {
                         Text(
                             if (state.running) {
-                                "等待 DTMF 信号 —— 将另一台设备外放对准本机麦克风"
+                                stringResource(R.string.sonic_rx_waiting)
                             } else {
-                                "开始监听后，解码出的字符会逐行显示在这里"
+                                stringResource(R.string.sonic_rx_idle)
                             },
                             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                         )
@@ -281,8 +291,7 @@ fun SonicLinkScreen(back: () -> Unit) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "3 帧（约 120ms）同符号才确认；持续 160ms 以上静音补空格，600ms 静音换行。" +
-                        "仅能解调本机麦克风实际听见的声音。",
+                    stringResource(R.string.sonic_rx_desc),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray.copy(alpha = 0.85f),
                     lineHeight = 12.sp,
                 )
@@ -291,13 +300,13 @@ fun SonicLinkScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
 
             // ── 字符表 ────────────────────────────────────────────────────
-            TermPanel("字符表 · ITU-T DTMF") {
+            TermPanel(stringResource(R.string.sonic_panel_chart)) {
                 Row(
                     Modifier.fillMaxWidth().padding(bottom = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "行频 \\ 列频",
+                        stringResource(R.string.sonic_chart_axis_corner),
                         fontFamily = Sans, fontSize = 8.sp, color = Gray,
                         modifier = Modifier.width(56.dp),
                     )
@@ -338,13 +347,12 @@ fun SonicLinkScreen(back: () -> Unit) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "列频 1209 / 1336 / 1477 / 1633 Hz，行频 697 / 770 / 852 / 941 Hz。" +
-                        "每个符号由一行频 + 一列频双音叠加而成。",
+                    stringResource(R.string.sonic_chart_legend),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "发送支持 0-9、A-D、*、# 与空格；小写自动转大写；其余字母与标点会被跳过。",
+                    stringResource(R.string.sonic_chart_charset),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
                 )
             }
@@ -363,25 +371,25 @@ fun SonicLinkScreen(back: () -> Unit) {
                         Star(Warn, 9.dp)
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "[!] 诚实局限",
+                            stringResource(R.string.sonic_honesty_title),
                             fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Warn,
                         )
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "本机外放对麦克风：安静环境 1-3 米内较稳定，更远或嘈杂会漏码。",
+                        stringResource(R.string.sonic_honesty_range),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                     )
                     Text(
-                        "速率约 5 符号/秒（120ms 符号 + 40ms 间隔），长报文需要耐心等待。",
+                        stringResource(R.string.sonic_honesty_rate),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                     )
                     Text(
-                        "声波没有加密：任何能听见的设备都可解码，不可用于机密或敏感信息。",
+                        stringResource(R.string.sonic_honesty_insecure),
                         fontFamily = Sans, fontSize = 9.sp, color = Danger, lineHeight = 13.sp,
                     )
                     Text(
-                        "识别依赖麦克风与扬声器硬件；电平条是相对 dBFS 映射，不是校准值。",
+                        stringResource(R.string.sonic_honesty_hardware),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                     )
                 }

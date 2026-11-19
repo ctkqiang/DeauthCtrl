@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.WebServerManager
 import xin.ctkqiang.deauthctrl.manager.WebServerStats
 import xin.ctkqiang.deauthctrl.model.JammerLogEntry
@@ -68,7 +70,7 @@ class WebServerViewModel(application: Application) : AndroidViewModel(applicatio
     private val _serverUrl = MutableStateFlow("")
     val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
 
-    private val _fileName = MutableStateFlow(DEFAULT_FILE_NAME)
+    private val _fileName = MutableStateFlow(defaultFileName())
     val fileName: StateFlow<String> = _fileName.asStateFlow()
 
     /** 当前待托管的 HTML。默认是内嵌页面，可被 [loadFile] 覆盖。 */
@@ -89,14 +91,14 @@ class WebServerViewModel(application: Application) : AndroidViewModel(applicatio
                 stream.bufferedReader(Charsets.UTF_8).readText()
             }
             if (text.isNullOrBlank()) {
-                _localError.value = "读取失败: 文件为空或无法打开"
+                _localError.value = L10n.get(R.string.vm_web_read_failed_empty)
                 return
             }
             htmlContent = text
-            _fileName.value = uri.lastPathSegment?.substringAfterLast('/') ?: DEFAULT_FILE_NAME
+            _fileName.value = uri.lastPathSegment?.substringAfterLast('/') ?: defaultFileName()
             _localError.value = null
         } catch (t: Throwable) {
-            _localError.value = "读取失败: ${t.javaClass.simpleName}"
+            _localError.value = L10n.get(R.string.vm_web_read_failed, t.javaClass.simpleName)
         }
     }
 
@@ -130,6 +132,9 @@ class WebServerViewModel(application: Application) : AndroidViewModel(applicatio
     /** 把毫秒时长格式化为 `hh:mm:ss`。 */
     fun formatUptime(ms: Long): String = manager.formatUptime(ms)
 
+    /** 默认托管文件名(按当前界面语言解析)。 */
+    private fun defaultFileName(): String = L10n.get(R.string.vm_web_default_file_name)
+
     /**
      * 探测本机局域网 IPv4。
      *
@@ -161,7 +166,6 @@ class WebServerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
-        private const val DEFAULT_FILE_NAME = "index.html (默认)"
         private const val HOTSPOT_FALLBACK_IP = "192.168.43.1"
         private const val LAN_PREFIX = "192.168."
 

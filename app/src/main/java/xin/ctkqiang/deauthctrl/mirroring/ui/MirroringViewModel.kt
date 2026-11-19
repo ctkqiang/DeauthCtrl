@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import xin.ctkqiang.deauthctrl.mirroring.client.MediaCodecDecoder
 import xin.ctkqiang.deauthctrl.mirroring.client.NsdDiscoveryManager
 import xin.ctkqiang.deauthctrl.mirroring.client.TouchInputSender
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.mirroring.client.VideoStreamClient
 import xin.ctkqiang.deauthctrl.mirroring.host.MirroringHostService
 import xin.ctkqiang.deauthctrl.mirroring.host.VideoStreamServer
@@ -100,14 +102,14 @@ class MirroringViewModel(application: Application) : AndroidViewModel(applicatio
             try {
                 val ok = videoClient.connect(device.hostAddress, device.videoPort)
                 if (!ok) {
-                    _state.value = MirroringState.Error("无法连接到 ${device.name}")
+                    _state.value = MirroringState.Error(L10n.get(R.string.mirror_vm_connect_failed, device.name))
                     return@launch
                 }
                 touchSender.connect(device.hostAddress, device.inputPort)
                 _connectedDevice.value = device
                 _state.value = MirroringState.ClientLive(device)
             } catch (e: Exception) {
-                _state.value = MirroringState.Error(e.message ?: "连接失败")
+                _state.value = MirroringState.Error(e.message ?: L10n.get(R.string.mirror_vm_connect_error))
             }
         }
     }

@@ -33,10 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.FlingLogLevel
 import xin.ctkqiang.deauthctrl.manager.FlingMode
 import xin.ctkqiang.deauthctrl.manager.FlingState
@@ -108,7 +110,7 @@ fun LanToolsScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("局域网工具 · LAN TOOLS", back)
+        TerminalHeader(stringResource(R.string.lantools_title), back)
 
         Column(
             Modifier
@@ -119,8 +121,8 @@ fun LanToolsScreen(back: () -> Unit) {
                 .padding(12.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                SelectChip(tab == 0, "WOL 唤醒") { tab = 0 }
-                SelectChip(tab == 1, "fling 管道") { tab = 1 }
+                SelectChip(tab == 0, stringResource(R.string.lantools_tab_wol)) { tab = 0 }
+                SelectChip(tab == 1, stringResource(R.string.lantools_tab_fling)) { tab = 1 }
             }
             Spacer(Modifier.height(10.dp))
 
@@ -161,37 +163,41 @@ private fun WolTab(vm: LanToolsViewModel, state: WolState) {
     var mac by remember { mutableStateOf("") }
     var alsoPort7 by remember { mutableStateOf(false) }
 
-    TermPanel("网络唤醒 · WAKE-ON-LAN") {
+    TermPanel(stringResource(R.string.lantools_wol_panel_title)) {
         TermInput(
-            "目标 MAC（留空使用广播 MAC）",
+            stringResource(R.string.lantools_target_mac_label),
             mac,
-            placeholder = "aa:bb:cc:dd:ee:ff",
+            placeholder = stringResource(R.string.lantools_mac_placeholder),
         ) { mac = it }
         Spacer(Modifier.height(6.dp))
 
         PanelStat(
-            "本机局域网 IP",
+            stringResource(R.string.lantools_local_ip_label),
             state.localIpv4 ?: "--",
             if (state.localIpv4 != null) Gold else Gray,
         )
         PanelStat(
-            "定向广播地址",
+            stringResource(R.string.lantools_broadcast_label),
             state.broadcastAddress ?: "--",
             if (state.broadcastAddress != null) Gold else Gray,
         )
-        PanelStat("魔术包", "102 B · 0xFF × 6 + MAC × 16", White)
+        PanelStat(
+            stringResource(R.string.lantools_magic_packet_label),
+            stringResource(R.string.lantools_magic_packet_value),
+            White,
+        )
 
         Spacer(Modifier.height(7.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            SelectChip(!alsoPort7, "端口 9") { alsoPort7 = false }
-            SelectChip(alsoPort7, "端口 9 + 7") { alsoPort7 = true }
+            SelectChip(!alsoPort7, stringResource(R.string.lantools_port_9)) { alsoPort7 = false }
+            SelectChip(alsoPort7, stringResource(R.string.lantools_port_9_7)) { alsoPort7 = true }
         }
         Spacer(Modifier.height(9.dp))
 
         ActionButton(
             running = state.sending,
-            runLabel = "发送魔术包",
-            stopLabel = "发送中…",
+            runLabel = stringResource(R.string.lantools_send_magic),
+            stopLabel = stringResource(R.string.lantools_sending_ellipsis),
         ) {
             if (!state.sending) vm.wake(mac, alsoPort7)
         }
@@ -199,7 +205,7 @@ private fun WolTab(vm: LanToolsViewModel, state: WolState) {
         Spacer(Modifier.height(7.dp))
         Text(
             state.lastResult
-                ?: "尚未发送。MAC 留空时使用 ff:ff:ff:ff:ff:ff，唤醒网段内所有支持 WOL 的设备。",
+                ?: stringResource(R.string.lantools_wol_idle_hint),
             fontFamily = Sans,
             fontSize = 9.sp,
             color = when {
@@ -212,9 +218,7 @@ private fun WolTab(vm: LanToolsViewModel, state: WolState) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "发送时同时面向 255.255.255.255 与当前 Wi-Fi 网段的定向广播；" +
-                "选择「端口 9 + 7」会再向两个地址的端口 7 各发一份。" +
-                "UDP 无回执，发送成功只代表数据包已交给内核，不代表目标已唤醒。",
+            stringResource(R.string.lantools_wol_explain),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -247,14 +251,14 @@ private fun FlingTab(
     val busy = state.running
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.US) }
 
-    TermPanel("工作模式 · FLING MODE") {
+    TermPanel(stringResource(R.string.lantools_fling_mode_title)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            SelectChip(mode == FlingMode.RX, "接收") { if (!busy) onMode(FlingMode.RX) }
-            SelectChip(mode == FlingMode.TX, "发送") { if (!busy) onMode(FlingMode.TX) }
+            SelectChip(mode == FlingMode.RX, stringResource(R.string.lantools_mode_rx)) { if (!busy) onMode(FlingMode.RX) }
+            SelectChip(mode == FlingMode.TX, stringResource(R.string.lantools_mode_tx)) { if (!busy) onMode(FlingMode.TX) }
         }
         if (busy) {
             Text(
-                "[!] 当前有传输任务运行，停止后才能切换模式。",
+                stringResource(R.string.lantools_busy_mode_warning),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Warn,
@@ -262,17 +266,17 @@ private fun FlingTab(
             )
         }
         PanelStat(
-            "运行状态",
+            stringResource(R.string.lantools_run_state_label),
             when {
-                state.mode == FlingMode.RX && state.running -> "监听中"
-                state.mode == FlingMode.TX && state.running -> "发送中"
-                else -> "空闲"
+                state.mode == FlingMode.RX && state.running -> stringResource(R.string.lantools_state_listening)
+                state.mode == FlingMode.TX && state.running -> stringResource(R.string.lantools_state_sending)
+                else -> stringResource(R.string.lantools_state_idle)
             },
             if (state.running) TacGreen else Gray,
         )
         PanelStat(
-            "本次字节",
-            if (state.running || state.bytes > 0L) "${state.bytes} B" else "--",
+            stringResource(R.string.lantools_session_bytes_label),
+            if (state.running || state.bytes > 0L) stringResource(R.string.lantools_bytes_value, state.bytes) else "--",
             Gold,
         )
     }
@@ -287,7 +291,7 @@ private fun FlingTab(
             border = BorderStroke(1.dp, Danger.copy(alpha = 0.5f)),
         ) {
             Text(
-                "[!] $message",
+                stringResource(R.string.lantools_error_line, message),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Danger,
@@ -299,16 +303,16 @@ private fun FlingTab(
 
     if (mode == FlingMode.RX) {
         Spacer(Modifier.height(8.dp))
-        TermPanel("接收端 · LISTEN") {
-            TermInput("监听端口（0 = 内核临时端口）", rxPort, "0") { value ->
+        TermPanel(stringResource(R.string.lantools_rx_panel_title)) {
+            TermInput(stringResource(R.string.lantools_listen_port_label), rxPort, "0") { value ->
                 onRxPort(value.filter { it.isDigit() }.take(5))
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                SelectChip(saveToFile, "写入文件") { if (!busy) onSaveToFile(!saveToFile) }
+                SelectChip(saveToFile, stringResource(R.string.lantools_save_to_file)) { if (!busy) onSaveToFile(!saveToFile) }
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "保存到应用私有目录 fling/",
+                    stringResource(R.string.lantools_private_dir_hint),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -318,8 +322,8 @@ private fun FlingTab(
 
             ActionButton(
                 running = state.mode == FlingMode.RX && state.running,
-                runLabel = "启动接收",
-                stopLabel = "停止接收",
+                runLabel = stringResource(R.string.lantools_start_receive),
+                stopLabel = stringResource(R.string.lantools_stop_receive),
             ) {
                 if (state.mode == FlingMode.RX && state.running) {
                     vm.stopReceive()
@@ -330,28 +334,28 @@ private fun FlingTab(
 
             Spacer(Modifier.height(7.dp))
             PanelStat(
-                "实际监听端口",
+                stringResource(R.string.lantools_actual_port_label),
                 state.localPort?.toString() ?: "--",
                 if (state.localPort != null) TacGreen else Gray,
             )
             PanelStat(
-                "端口来源",
+                stringResource(R.string.lantools_port_source_label),
                 when {
                     state.localPort == null -> "--"
-                    state.ephemeralPort != null -> "内核临时分配"
-                    else -> "手动指定"
+                    state.ephemeralPort != null -> stringResource(R.string.lantools_port_source_ephemeral)
+                    else -> stringResource(R.string.lantools_port_source_manual)
                 },
                 White,
             )
-            PanelStat("对端地址", state.peer ?: "--", White)
+            PanelStat(stringResource(R.string.lantools_peer_label), state.peer ?: "--", White)
             PanelStat(
-                "已接收",
-                if (state.localPort != null || state.bytes > 0L) "${state.bytes} B" else "--",
+                stringResource(R.string.lantools_received_label),
+                if (state.localPort != null || state.bytes > 0L) stringResource(R.string.lantools_bytes_value, state.bytes) else "--",
                 Gold,
             )
             state.savedFile?.let { path ->
                 Text(
-                    "落盘：$path",
+                    stringResource(R.string.lantools_saved_path, path),
                     fontFamily = Mono,
                     fontSize = 8.sp,
                     color = TacGreen,
@@ -362,7 +366,7 @@ private fun FlingTab(
 
             Spacer(Modifier.height(6.dp))
             Text(
-                "接收字节（前 4 KB）",
+                stringResource(R.string.lantools_rx_preview_title),
                 fontFamily = Sans,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
@@ -374,9 +378,9 @@ private fun FlingTab(
                 EmptyHint(
                     when {
                         state.running && state.mode == FlingMode.RX ->
-                            "监听中 —— 等待发送端连接；收到数据后在此显示前 4 KB。"
+                            stringResource(R.string.lantools_rx_waiting)
                         else ->
-                            "尚未接收数据 —— 启动接收后把「实际监听端口」告诉发送方。"
+                            stringResource(R.string.lantools_rx_idle)
                     },
                 )
             } else {
@@ -402,9 +406,9 @@ private fun FlingTab(
                 if (state.previewTruncated) {
                     Text(
                         if (state.savedFile != null) {
-                            "仅显示前 4 KB；完整字节已写入上面的落盘文件。"
+                            stringResource(R.string.lantools_preview_truncated_saved)
                         } else {
-                            "仅显示前 4 KB；未开启「写入文件」，其余字节已丢弃。"
+                            stringResource(R.string.lantools_preview_truncated_dropped)
                         },
                         fontFamily = Sans,
                         fontSize = 8.sp,
@@ -419,23 +423,23 @@ private fun FlingTab(
 
     if (mode == FlingMode.TX) {
         Spacer(Modifier.height(8.dp))
-        TermPanel("发送端 · SEND") {
-            TermInput("接收端 IP", txHost, "例如 192.168.1.100") { onTxHost(it) }
+        TermPanel(stringResource(R.string.lantools_tx_panel_title)) {
+            TermInput(stringResource(R.string.lantools_rx_host_label), txHost, stringResource(R.string.lantools_rx_host_placeholder)) { onTxHost(it) }
             Spacer(Modifier.height(6.dp))
-            TermInput("接收端端口", txPort, "9000") { value ->
+            TermInput(stringResource(R.string.lantools_rx_port_label), txPort, "9000") { value ->
                 onTxPort(value.filter { it.isDigit() }.take(5))
             }
             Spacer(Modifier.height(6.dp))
-            TermInput("文本内容", txText, "按 UTF-8 原样写入") { onTxText(it) }
+            TermInput(stringResource(R.string.lantools_text_label), txText, stringResource(R.string.lantools_text_placeholder)) { onTxText(it) }
             Spacer(Modifier.height(6.dp))
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                GhostButton(if (state.mode == FlingMode.TX && state.running) "发送中…" else "选择文件发送") {
+                GhostButton(if (state.mode == FlingMode.TX && state.running) stringResource(R.string.lantools_sending_ellipsis) else stringResource(R.string.lantools_choose_file_send)) {
                     if (!state.running) onPickFile()
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    "${txText.toByteArray(Charsets.UTF_8).size} B",
+                    stringResource(R.string.lantools_bytes_value, txText.toByteArray(Charsets.UTF_8).size),
                     fontFamily = Mono,
                     fontSize = 9.sp,
                     color = Gray,
@@ -445,8 +449,8 @@ private fun FlingTab(
             Spacer(Modifier.height(8.dp))
             ActionButton(
                 running = state.mode == FlingMode.TX && state.running,
-                runLabel = "发送文本",
-                stopLabel = "发送中…",
+                runLabel = stringResource(R.string.lantools_send_text),
+                stopLabel = stringResource(R.string.lantools_sending_ellipsis),
             ) {
                 if (!state.running) {
                     vm.sendText(txHost, txPort.toIntOrNull() ?: -1, txText)
@@ -477,8 +481,8 @@ private fun FlingTab(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     when {
-                        total > 0L -> "${state.bytes} / $total B"
-                        state.bytes > 0L -> "${state.bytes} B"
+                        total > 0L -> stringResource(R.string.lantools_progress_fraction, state.bytes, total)
+                        state.bytes > 0L -> stringResource(R.string.lantools_bytes_value, state.bytes)
                         else -> "--"
                     },
                     fontFamily = Mono,
@@ -488,8 +492,7 @@ private fun FlingTab(
             }
             Spacer(Modifier.height(3.dp))
             Text(
-                "发送端连接接收端 IP 与端口，把文本或文件字节原样写入后关闭连接；" +
-                    "没有长度前缀、没有校验、没有加密，EOF 即传输结束。",
+                stringResource(R.string.lantools_tx_explain),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Gray,
@@ -499,9 +502,9 @@ private fun FlingTab(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("fling 日志 · LOG") {
+    TermPanel(stringResource(R.string.lantools_log_title)) {
         if (state.log.isEmpty()) {
-            EmptyHint("连接、传输与错误日志会按时间显示在这里。")
+            EmptyHint(stringResource(R.string.lantools_log_empty))
         } else {
             state.log.takeLast(80).forEach { entry ->
                 LogLine(
@@ -534,7 +537,7 @@ private fun HonestyPanel() {
                 Star(Warn, 9.dp)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "协议边界 · 诚实说明",
+                    stringResource(R.string.lantools_honesty_title),
                     fontFamily = Sans,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -543,18 +546,18 @@ private fun HonestyPanel() {
             }
             Spacer(Modifier.height(6.dp))
             listOf(
-                "fling 兼容语义（fling 1.1-3）：裸 TCP 字节流，无长度前缀、无校验、无加密；连接关闭（EOF）即传输结束，一次一连接。",
-                "接收端端口填 0 时由内核分配临时端口，必须把「实际监听端口」告知发送方；离开本页会停止接收。",
-                "AP 客户端隔离（AP isolation）会阻断同一 Wi-Fi 内的设备互连；跨网段、热点客户端之间通常也不可达。",
-                "发送端填接收端的局域网 IP 与端口；公网 / NAT 后的地址无法直接建立连接。",
-                "WOL 魔术包为 102 字节 UDP 广播，无回执；目标设备需在 BIOS / 固件中开启网络唤醒并保持待机供电。",
-                "本页不伪造数据：读不到的地址、端口与字节显示 \"--\"，日志只记录真实发生的连接与传输。",
+                R.string.lantools_honesty_line_1,
+                R.string.lantools_honesty_line_2,
+                R.string.lantools_honesty_line_3,
+                R.string.lantools_honesty_line_4,
+                R.string.lantools_honesty_line_5,
+                R.string.lantools_honesty_line_6,
             ).forEach { line ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 1.5.dp)) {
                     Text("·", fontFamily = Mono, fontSize = 8.sp, color = Gray)
                     Spacer(Modifier.width(5.dp))
                     Text(
-                        line,
+                        stringResource(line),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,

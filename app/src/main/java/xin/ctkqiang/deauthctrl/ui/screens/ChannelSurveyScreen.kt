@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.ChanAp
 import xin.ctkqiang.deauthctrl.manager.ChannelSurvey
 import xin.ctkqiang.deauthctrl.manager.CongestionLevel
@@ -117,7 +119,7 @@ fun ChannelSurveyScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("信道占用 · CHANNEL SURVEY", back)
+        TerminalHeader(stringResource(R.string.chsurvey_title), back)
 
         Column(
             Modifier
@@ -138,7 +140,8 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        if (state.scanning) "扫描中" else "已停止",
+                        if (state.scanning) stringResource(R.string.chsurvey_status_scanning)
+                        else stringResource(R.string.chsurvey_status_stopped),
                         fontFamily = Mono,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -148,13 +151,18 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                     Box(Modifier.width(1.dp).height(11.dp).background(BorderDim))
                     Spacer(Modifier.width(9.dp))
                     Text(
-                        "可见 AP $totalAps",
+                        stringResource(R.string.chsurvey_visible_aps, totalAps),
                         fontFamily = Mono,
                         fontSize = 10.sp,
                         color = Gold,
                         modifier = Modifier.weight(1f),
                     )
-                    Text("更新 $updatedText", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    Text(
+                        stringResource(R.string.chsurvey_updated, updatedText),
+                        fontFamily = Mono,
+                        fontSize = 9.sp,
+                        color = Gray,
+                    )
                 }
             }
 
@@ -168,7 +176,7 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                     border = BorderStroke(1.dp, Warn.copy(alpha = 0.45f)),
                 ) {
                     Text(
-                        "[!] 系统未接受本轮扫描 —— 读取缓存快照,数据可能滞后数秒",
+                        stringResource(R.string.chsurvey_throttled),
                         fontFamily = Sans,
                         fontSize = 9.sp,
                         color = Warn,
@@ -198,26 +206,26 @@ fun ChannelSurveyScreen(back: () -> Unit) {
 
             // ── 扫描控制 ──
             Spacer(Modifier.height(8.dp))
-            TermPanel("扫描控制 · PASSIVE SURVEY") {
+            TermPanel(stringResource(R.string.chsurvey_panel_control)) {
                 PanelStat(
-                    "运行状态",
-                    if (state.scanning) "巡检中" else "已停止",
+                    stringResource(R.string.chsurvey_stat_state),
+                    if (state.scanning) stringResource(R.string.chsurvey_running)
+                    else stringResource(R.string.chsurvey_status_stopped),
                     if (state.scanning) TacGreen else Gray,
                 )
-                PanelStat("扫描节拍", "3000 ms", White)
-                PanelStat("最近更新", updatedText, Gold)
+                PanelStat(stringResource(R.string.chsurvey_stat_interval), "3000 ms", White)
+                PanelStat(stringResource(R.string.chsurvey_stat_last_update), updatedText, Gold)
                 Spacer(Modifier.height(7.dp))
                 ActionButton(
                     running = state.scanning,
-                    runLabel = "启动扫描",
-                    stopLabel = "停止扫描",
+                    runLabel = stringResource(R.string.chsurvey_btn_start),
+                    stopLabel = stringResource(R.string.chsurvey_btn_stop),
                 ) {
                     if (state.scanning) vm.stop() else vm.start()
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "被动聚合系统扫描结果(Beacon / Probe Response),不发送任何帧;" +
-                        "系统节流下约 3-5 秒才有一轮新数据。",
+                    stringResource(R.string.chsurvey_passive_note),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray.copy(alpha = 0.9f),
@@ -227,14 +235,14 @@ fun ChannelSurveyScreen(back: () -> Unit) {
 
             // ── 2.4 GHz 信道柱状图 ──
             Spacer(Modifier.height(8.dp))
-            TermPanel("2.4 GHz · 信道 1-14") {
+            TermPanel(stringResource(R.string.chsurvey_panel_24)) {
                 val channels24 = band24?.channels.orEmpty()
                 if (channels24.isEmpty()) {
                     EmptyHint(
                         when {
-                            state.error != null -> "无扫描数据 —— 处理上方告警后自动恢复"
-                            !state.scanning -> "扫描已停止 —— 点击上方「启动扫描」开始巡检"
-                            else -> "等待第一轮扫描结果…"
+                            state.error != null -> stringResource(R.string.chsurvey_empty_no_data)
+                            !state.scanning -> stringResource(R.string.chsurvey_empty_stopped)
+                            else -> stringResource(R.string.chsurvey_empty_waiting)
                         },
                     )
                 } else {
@@ -248,21 +256,20 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        LegendDot(TacGreen, "空闲 0-2")
-                        LegendDot(Warn, "拥挤 3-5")
-                        LegendDot(Danger, "严重 6+")
+                        LegendDot(TacGreen, stringResource(R.string.chsurvey_legend_idle))
+                        LegendDot(Warn, stringResource(R.string.chsurvey_legend_crowded))
+                        LegendDot(Danger, stringResource(R.string.chsurvey_legend_severe))
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "条高 = 可见 AP 数;柱顶数字为 AP 数,下方为最强 RSSI(dBm)。" +
-                            "金色信道号 1 / 6 / 11 为 20 MHz 下互不重叠信道。",
+                        stringResource(R.string.chsurvey_chart_note),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
                         lineHeight = 12.sp,
                     )
                     Text(
-                        "点击柱条展开该信道 AP 明细。",
+                        stringResource(R.string.chsurvey_click_hint),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
@@ -274,15 +281,15 @@ fun ChannelSurveyScreen(back: () -> Unit) {
 
             // ── 5 GHz 信道条 ──
             Spacer(Modifier.height(8.dp))
-            TermPanel("5 GHz · 信道 36-165") {
+            TermPanel(stringResource(R.string.chsurvey_panel_5)) {
                 val channels5 = band5?.channels.orEmpty()
                 if (channels5.isEmpty()) {
                     EmptyHint(
                         when {
                             band5 == null && !state.scanning ->
-                                "扫描已停止 —— 启动扫描后显示 5 GHz 信道"
-                            band5 == null -> "等待第一轮扫描结果…"
-                            else -> "本次扫描未发现 5 GHz AP —— 附近无 5G 网络或设备不支持 5 GHz"
+                                stringResource(R.string.chsurvey_5_empty_stopped)
+                            band5 == null -> stringResource(R.string.chsurvey_empty_waiting)
+                            else -> stringResource(R.string.chsurvey_5_empty_none)
                         },
                     )
                 } else {
@@ -293,8 +300,7 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                     )
                     Spacer(Modifier.height(5.dp))
                     Text(
-                        "只列出本次扫描出现过的 5 GHz 常用信道;信道号按 5000 + 5 × N MHz 换算。" +
-                            "点击行查看该信道 AP 明细。",
+                        stringResource(R.string.chsurvey_5_note),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
@@ -317,7 +323,7 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                         Star(Warn, 9.dp)
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "数据说明 · 诚实边界",
+                            stringResource(R.string.chsurvey_panel_data_notes),
                             fontFamily = Sans,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -326,13 +332,13 @@ fun ChannelSurveyScreen(back: () -> Unit) {
                     }
                     Spacer(Modifier.height(6.dp))
                     listOf(
-                        "所有数值来自 WifiManager.scanResults 的真实扫描快照,不做插值、模拟或美化;无数据处显示 \"--\"。",
-                        "只能看到主动广播 Beacon 的 AP:隐藏 SSID 的 AP 不出现在 scanResults 中,不计入统计。",
-                        "信道占用 = 可见 AP 数量,不是实时频谱或空口利用率;AP 很少但流量很大的信道也可能拥堵。",
-                        "扫描受系统节流,约 3-5 秒一轮;表中数值是最近一次扫描的快照,不是实时频谱。",
-                        "RSSI 为手机天线处的接收强度(dBm),受距离、墙体、朝向影响,不代表 AP 发射功率。",
-                        "Android 9+ 需要开启系统定位且授予精确定位权限,否则扫描结果为空。",
-                        "安全类型按 Beacon capabilities 分类:WPA2/WPA3 混合模式记为 WPA3;6 GHz 与非常用信道不统计。",
+                        stringResource(R.string.chsurvey_note1),
+                        stringResource(R.string.chsurvey_note2),
+                        stringResource(R.string.chsurvey_note3),
+                        stringResource(R.string.chsurvey_note4),
+                        stringResource(R.string.chsurvey_note5),
+                        stringResource(R.string.chsurvey_note6),
+                        stringResource(R.string.chsurvey_note7),
                     ).forEach { line ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 1.5.dp)) {
                             Text("·", fontFamily = Mono, fontSize = 8.sp, color = Gray)
@@ -580,7 +586,11 @@ private fun ChannelDetailPanel(channel: ChannelSurvey) {
                 Star(Gold, 8.dp)
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "信道 ${channel.channel} · ${channel.frequencyMhz} MHz",
+                    stringResource(
+                        R.string.chsurvey_channel_title,
+                        channel.channel,
+                        channel.frequencyMhz,
+                    ),
                     fontFamily = Sans,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -588,7 +598,7 @@ private fun ChannelDetailPanel(channel: ChannelSurvey) {
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    channel.congestion.label,
+                    stringResource(channel.congestion.labelRes),
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -596,19 +606,25 @@ private fun ChannelDetailPanel(channel: ChannelSurvey) {
                 )
             }
             Spacer(Modifier.height(5.dp))
-            PanelStat("可见 AP 数", "${channel.apCount}")
+            PanelStat(stringResource(R.string.chsurvey_stat_visible_aps), "${channel.apCount}")
             PanelStat(
-                "最强 RSSI",
+                stringResource(R.string.chsurvey_stat_strongest_rssi),
                 channel.strongestRssi?.let { "$it dBm" } ?: "--",
             )
             PanelStat(
-                "平均 RSSI",
+                stringResource(R.string.chsurvey_stat_avg_rssi),
                 channel.averageRssi?.let { "$it dBm" } ?: "--",
             )
             val sec = channel.securityCounts
             Text(
-                "安全分布 · 开放 ${sec.open} / WEP ${sec.wep} / WPA2 ${sec.wpa2} / " +
-                    "WPA3 ${sec.wpa3} / 其他 ${sec.other}",
+                stringResource(
+                    R.string.chsurvey_security_dist,
+                    sec.open,
+                    sec.wep,
+                    sec.wpa2,
+                    sec.wpa3,
+                    sec.other,
+                ),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Gray,
@@ -616,7 +632,7 @@ private fun ChannelDetailPanel(channel: ChannelSurvey) {
                 modifier = Modifier.padding(top = 3.dp),
             )
             Text(
-                "AP 明细(${channel.apCount})",
+                stringResource(R.string.chsurvey_ap_details, channel.apCount),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
@@ -625,7 +641,7 @@ private fun ChannelDetailPanel(channel: ChannelSurvey) {
             )
             if (channel.aps.isEmpty()) {
                 Text(
-                    "该信道当前没有可见 AP",
+                    stringResource(R.string.chsurvey_no_visible_ap),
                     fontFamily = Sans,
                     fontSize = 9.sp,
                     color = Gray,
@@ -666,7 +682,7 @@ private fun ApRow(ap: ChanAp) {
             )
         }
         Text(
-            "${ap.bssid} · ${ap.security.label}",
+            "${ap.bssid} · ${stringResource(ap.security.labelRes)}",
             fontFamily = Mono,
             fontSize = 8.sp,
             color = Gray,

@@ -11,6 +11,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -144,7 +146,7 @@ class WifiJammerManager(private val context: Context) {
     fun scanAndStart(toggleMs: Long = DEFAULT_TOGGLE_MS, maxCycles: Int = 0) {
         // 扫描阶段 _isRunning 尚未置 true(要到热点循环才置),单独用原子门闩防重复启动
         if (!startGate.compareAndSet(false, true)) {
-            _error.value = "热点轮换已在运行"
+            _error.value = L10n.get(R.string.mgr_wifij_busy)
             return
         }
         if (!wifiManager.isWifiEnabled) {
@@ -155,9 +157,9 @@ class WifiJammerManager(private val context: Context) {
         }
         if (!isLocationServiceEnabled()) {
             startGate.set(false)
-            _error.value = "系统定位开关已关闭：Android 要求开启定位后才能扫描 Wi-Fi"
+            _error.value = L10n.get(R.string.mgr_wifij_location_off)
             _scanState.value = JammerScanState.Error(
-                "系统定位开关已关闭：请打开系统定位后重试（即使已授予位置权限，关闭定位总开关也会导致扫描失败）"
+                L10n.get(R.string.mgr_wifij_location_off_detail),
             )
             log("SCAN", "abort: system location service is disabled")
             return
@@ -183,11 +185,16 @@ class WifiJammerManager(private val context: Context) {
                 _scanState.value = JammerScanState.Error(
                     when {
                         !isLocationServiceEnabled() ->
-                            "系统定位开关已关闭，请打开系统定位后重试"
+                            L10n.get(R.string.mgr_wifij_location_off_retry)
                         scanThrew ->
-                            "Wi-Fi 扫描被系统拒绝：${describeWifiSecurityFailure("Wi-Fi 扫描")}"
+                            L10n.get(
+                                R.string.mgr_wifij_scan_rejected_prefix,
+                                describeWifiSecurityFailure(
+                                    L10n.get(R.string.mgr_wifij_action_wifi_scan),
+                                ),
+                            )
                         else ->
-                            "系统扫描被节流（startScan 返回 false），请稍后重试"
+                            L10n.get(R.string.mgr_wifij_scan_throttled)
                     }
                 )
                 log("SCAN", "abort: scan rejected (permission/platform throttle)")
@@ -238,14 +245,14 @@ class WifiJammerManager(private val context: Context) {
         try {
             while (isActive && _isRunning.value) {
                 if (total <= 0) {
-                    _error.value = "没有可轮换的 SSID"
+                    _error.value = L10n.get(R.string.mgr_wifij_no_ssid)
                     break
                 }
                 val ssid = ssids[index % total]
                 if (startHotspotAndAwait(ssid)) {
                     hotspotStarts.incrementAndGet()
                     if (!ssidConfigurable) {
-                        log("HOTSPOT", "started 系统随机 SSID（API<30 公共 API 无法指定）")
+                        log("HOTSPOT", L10n.get(R.string.mgr_wifij_log_random_ssid))
                     } else {
                         log("HOTSPOT", "started SSID=$ssid")
                     }
@@ -343,14 +350,16 @@ class WifiJammerManager(private val context: Context) {
                             ssidConfigUnavailable = true
                             log(
                                 "HOTSPOT",
-                                "SoftApConfiguration 不可用，退回系统随机 SSID（目标 '$ssid' 未应用）",
+                                L10n.get(R.string.mgr_wifij_softap_fallback, ssid),
                             )
                         }
                         @Suppress("DEPRECATION")
                         wifiManager.startLocalOnlyHotspot(callback, Handler(Looper.getMainLooper()))
                     }
                 } catch (_: SecurityException) {
-                    val message = describeWifiSecurityFailure("启动本机热点")
+                    val message = describeWifiSecurityFailure(
+                        L10n.get(R.string.mgr_wifij_action_hotspot_start),
+                    )
                     _error.value = message
                     hotspotFailures.incrementAndGet()
                     log("HOTSPOT", message)
@@ -367,7 +376,7 @@ class WifiJammerManager(private val context: Context) {
 
         if (started == null) {
             hotspotFailures.incrementAndGet()
-            _error.value = "启动本机热点超时（${START_TIMEOUT_MS}ms 未收到系统回调）"
+            _error.value = L10n.get(R.string.mgr_wifij_start_timeout, START_TIMEOUT_MS)
             log("HOTSPOT", _error.value.orEmpty())
             return false
         }
@@ -486,9 +495,13 @@ class WifiJammerManager(private val context: Context) {
             }
         }
         return if (missing.isEmpty()) {
-            "$action 被系统拒绝：未定位到缺失权限（可能是厂商 ROM 的策略限制）"
+            L10n.get(R.string.mgr_wifij_rejected_unknown, action)
         } else {
-            "$action 被拒绝：缺少 ${missing.joinToString(" / ")}"
+            L10n.get(
+                R.string.mgr_wifij_rejected_missing,
+                action,
+                missing.joinToString(" / "),
+            )
         }
     }
 

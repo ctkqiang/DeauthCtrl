@@ -9,6 +9,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.ConcurrentHashMap
@@ -153,7 +155,12 @@ class BleScannerManager(private val context: Context) {
                 devices[addr] = existing.copy(
                     rssi = rssi, name = if (name != "(未知)") name else existing.name,
                     services = services, manufacturerData = mfr,
-                    txPower = txPower, deviceType = if (droneId) "无人机 Remote-ID" else type,
+                    txPower = txPower,
+                    deviceType = if (droneId) {
+                        L10n.get(R.string.mgr_blescan_drone_remote_id)
+                    } else {
+                        type
+                    },
                     lastSeen = System.currentTimeMillis(),
                     advBytesHex = advHex.ifBlank { existing.advBytesHex },
                     isDroneRemoteId = droneId || existing.isDroneRemoteId,
@@ -164,7 +171,11 @@ class BleScannerManager(private val context: Context) {
                     address = addr, name = name, rssi = rssi,
                     rssiHistory = history, services = services,
                     manufacturerData = mfr, txPower = txPower,
-                    deviceType = if (droneId) "无人机 Remote-ID" else type,
+                    deviceType = if (droneId) {
+                        L10n.get(R.string.mgr_blescan_drone_remote_id)
+                    } else {
+                        type
+                    },
                     advBytesHex = advHex,
                     isDroneRemoteId = droneId,
                 )
@@ -202,12 +213,16 @@ class BleScannerManager(private val context: Context) {
 
         // 走 BluetoothManager 取适配器；BluetoothAdapter.getDefaultAdapter() 已弃用
         val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter
-            ?: return fail("此设备没有蓝牙适配器")
-        if (!adapter.isEnabled) return fail("蓝牙未开启，请先在系统设置中打开蓝牙")
-        if (!hasScanPermission()) return fail("缺少蓝牙扫描权限，请在系统设置中授予「附近的设备」权限")
+            ?: return fail(L10n.get(R.string.mgr_blescan_error_no_adapter))
+        if (!adapter.isEnabled) {
+            return fail(L10n.get(R.string.mgr_blescan_error_bluetooth_off))
+        }
+        if (!hasScanPermission()) {
+            return fail(L10n.get(R.string.mgr_blescan_error_no_scan_permission))
+        }
 
         val leScanner = adapter.bluetoothLeScanner
-            ?: return fail("系统未提供 BLE 扫描器，请关闭蓝牙后重新打开再试")
+            ?: return fail(L10n.get(R.string.mgr_blescan_error_no_scanner))
 
         return try {
             leScanner.startScan(null, scanSettings, scanCallback)
@@ -215,7 +230,12 @@ class BleScannerManager(private val context: Context) {
             null
         } catch (e: SecurityException) {
             // SecurityException 的 message 经常是 null，直接透传会让界面显示一条空错误
-            fail("扫描权限被系统拒绝：${e.message ?: "请在系统设置中授予「附近的设备」权限"}")
+            fail(
+                L10n.get(
+                    R.string.mgr_blescan_error_permission_denied,
+                    e.message ?: L10n.get(R.string.mgr_blescan_permission_hint),
+                ),
+            )
         }
     }
 
@@ -265,13 +285,19 @@ class BleScannerManager(private val context: Context) {
      * 30 秒内反复启停扫描超过 5 次就会被系统拒绝。
      */
     private fun describeScanFailure(errorCode: Int): String = when (errorCode) {
-        ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "扫描已在进行中，请先停止再重试"
-        ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "扫描回调注册失败，请关闭蓝牙再重新打开"
-        ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "系统内部错误，请关闭蓝牙再重新打开"
-        ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "此设备不支持 BLE 扫描"
-        ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> "蓝牙硬件资源不足，请关闭其他扫描类应用后重试"
-        ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> "扫描过于频繁，请等待约 30 秒后重试"
-        else -> "扫描失败（系统错误码 $errorCode）"
+        ScanCallback.SCAN_FAILED_ALREADY_STARTED ->
+            L10n.get(R.string.mgr_blescan_scan_already_started)
+        ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED ->
+            L10n.get(R.string.mgr_blescan_scan_registration_failed)
+        ScanCallback.SCAN_FAILED_INTERNAL_ERROR ->
+            L10n.get(R.string.mgr_blescan_scan_internal_error)
+        ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED ->
+            L10n.get(R.string.mgr_blescan_scan_feature_unsupported)
+        ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES ->
+            L10n.get(R.string.mgr_blescan_scan_out_of_resources)
+        ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY ->
+            L10n.get(R.string.mgr_blescan_scan_too_frequently)
+        else -> L10n.get(R.string.mgr_blescan_scan_failed, errorCode)
     }
 
     /**

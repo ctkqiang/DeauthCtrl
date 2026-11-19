@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +78,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 // ─── 全息战术 HUD · 设计系统 ─────────────────────────────────────────────────
@@ -349,7 +351,7 @@ fun TerminalHeader(title: String, back: () -> Unit) {
             color = Red.copy(alpha = 0.10f),
             border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
         ) {
-            Text("‹ 返回", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp))
+            Text(stringResource(R.string.common_back), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp))
         }
         Spacer(Modifier.width(12.dp))
         Text(title, fontFamily = Sans, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
@@ -558,13 +560,13 @@ fun PanelStat(label: String, value: String, valueColor: Color = White) {
  * 菱形标记 + 「战地日志」标题 + 右侧可选「清空」按钮。
  */
 @Composable
-fun LogHeader(title: String = "战地日志", showClear: Boolean = false, onClear: () -> Unit = {}) {
+fun LogHeader(title: String? = null, showClear: Boolean = false, onClear: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Star(Gold, 8.dp)
         Spacer(Modifier.width(7.dp))
-        Text(title, fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.weight(1f))
+        Text(title ?: stringResource(R.string.common_log_title), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.weight(1f))
         if (showClear) {
-            GhostButton("清空") { onClear() }
+            GhostButton(stringResource(R.string.common_clear)) { onClear() }
         }
     }
 }
@@ -701,7 +703,7 @@ fun ModuleCard(
                         color = Color.Transparent,
                         border = BorderStroke(1.dp, BorderDim),
                     ) {
-                        Text("进入 ›", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gray, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+                        Text(stringResource(R.string.common_enter_arrow), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gray, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
                     }
                 } else {
                     Surface(
@@ -713,7 +715,7 @@ fun ModuleCard(
                         color = if (running) Color.Transparent else Red,
                         border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.6f) else Gold.copy(alpha = 0.9f)),
                     ) {
-                        Text(if (running) "中止" else "执行", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) TacGreen else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
+                        Text(if (running) stringResource(R.string.main_abort) else stringResource(R.string.main_execute), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) TacGreen else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
                     }
                 }
             }

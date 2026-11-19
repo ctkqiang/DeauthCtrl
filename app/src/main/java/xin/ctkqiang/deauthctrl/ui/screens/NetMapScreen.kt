@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,6 +52,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -128,9 +130,10 @@ fun NetMapScreen(
     }
 
     val selected = selectedId?.let { id -> targets.firstOrNull { it.id == id } }
+    val selfTitle = stringResource(R.string.netmap_marker_self)
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("网络测绘地图", back)
+        TerminalHeader(stringResource(R.string.netmap_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(10.dp)) {
             // ── 状态条 ──
             Surface(
@@ -139,17 +142,29 @@ fun NetMapScreen(
                 border = BorderStroke(1.dp, BorderDim),
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("目标 ${targets.size} · 扫描${if (radarRunning) "中" else "停"}", fontFamily = Mono, fontSize = 10.sp, color = TacGreen)
-                    Text(location?.let { "%.5f,%.5f".format(it.latitude, it.longitude) } ?: "定位中…", fontFamily = Mono, fontSize = 9.sp, color = if (location != null) TacGreen else Gray)
-                    Text(if (gpsOn) "GPS 在线" else "GPS 离线", fontFamily = Mono, fontSize = 10.sp, color = if (gpsOn) TacGreen else Warn)
+                    Text(
+                        stringResource(
+                            if (radarRunning) R.string.netmap_status_scanning else R.string.netmap_status_stopped,
+                            targets.size,
+                        ),
+                        fontFamily = Mono, fontSize = 10.sp, color = TacGreen,
+                    )
+                    Text(location?.let { "%.5f,%.5f".format(it.latitude, it.longitude) } ?: stringResource(R.string.netmap_locating), fontFamily = Mono, fontSize = 9.sp, color = if (location != null) TacGreen else Gray)
+                    Text(
+                        stringResource(if (gpsOn) R.string.netmap_gps_online else R.string.netmap_gps_offline),
+                        fontFamily = Mono, fontSize = 10.sp, color = if (gpsOn) TacGreen else Warn,
+                    )
                 }
             }
 
             // ── 错误横幅:定位 / WiFi / 蓝牙 ──
+            val locationIssue = stringResource(R.string.netmap_issue_location)
+            val wifiIssue = stringResource(R.string.netmap_issue_wifi)
+            val btIssue = stringResource(R.string.netmap_issue_bt)
             val issues = buildList {
-                if (!gpsOn) add("定位关闭 —— 无法估算设备位置" to Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                if (!radios.wifiOn) add("WiFi 关闭 —— 无法扫描无线网络" to Intent(Settings.ACTION_WIFI_SETTINGS))
-                if (!radios.btOn) add("蓝牙关闭 —— 无法扫描蓝牙设备" to Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+                if (!gpsOn) add(locationIssue to Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                if (!radios.wifiOn) add(wifiIssue to Intent(Settings.ACTION_WIFI_SETTINGS))
+                if (!radios.btOn) add(btIssue to Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
             }
             issues.forEach { (msg, settingsIntent) ->
                 Spacer(Modifier.height(5.dp))
@@ -161,7 +176,7 @@ fun NetMapScreen(
                     Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(msg, fontFamily = Sans, fontSize = 10.sp, color = Warn, modifier = Modifier.weight(1f))
                         Text(
-                            "打开设置 ▸",
+                            stringResource(R.string.netmap_open_settings),
                             fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold,
                             modifier = Modifier.clickable {
                                 haptic.hud()
@@ -185,9 +200,12 @@ fun NetMapScreen(
                     color = if (radarRunning) TacGreen.copy(alpha = 0.10f) else Red,
                     border = BorderStroke(1.dp, if (radarRunning) TacGreen.copy(alpha = 0.6f) else Gold.copy(alpha = 0.7f)),
                 ) {
-                    Text(if (radarRunning) "■ 停止扫描" else "▶ 启动扫描", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (radarRunning) TacGreen else White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                    Text(
+                        stringResource(if (radarRunning) R.string.netmap_btn_stop_scan else R.string.netmap_btn_start_scan),
+                        fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (radarRunning) TacGreen else White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    )
                 }
-                Text("OSM 公共瓦片 · 无需 API Key", fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.netmap_osm_note), fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.weight(1f))
                 Surface(
                     modifier = Modifier.clickable {
                         haptic.hud()
@@ -197,7 +215,7 @@ fun NetMapScreen(
                     color = TacGreen.copy(alpha = 0.12f),
                     border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
                 ) {
-                    Text("◎ 定位我", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
+                    Text(stringResource(R.string.netmap_btn_locate), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
                 }
             }
 
@@ -235,7 +253,7 @@ fun NetMapScreen(
                                 recenterRequested = 0
                             }
                         }
-                        syncDeviceMarkers(map, targets, location, selectedId) { id -> selectedId = id }
+                        syncDeviceMarkers(map, targets, location, selectedId, selfTitle) { id -> selectedId = id }
                         map.invalidate()
                     },
                     modifier = Modifier.fillMaxSize(),
@@ -263,7 +281,7 @@ fun NetMapScreen(
                             Text("≈${"%.1f".format(t.distanceM)}m · ${t.angleDeg.toInt()}°", fontFamily = Mono, fontSize = 9.sp, color = Gray)
                         }
                         Text(if (t.type == "wifi") "${t.id} · ${t.vendor} · ${t.channel} · ${t.security}" else "${t.address} · ${t.vendor} · ${t.deviceClassMajor}", fontFamily = Mono, fontSize = 8.sp, color = Gray)
-                        Text("位置为 GPS+RSSI 估算值(无 AoA 硬件),仅作态势参考", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                        Text(stringResource(R.string.netmap_estimate_note), fontFamily = Sans, fontSize = 8.sp, color = Gray)
                         Spacer(Modifier.height(5.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth().clickable {
@@ -274,7 +292,7 @@ fun NetMapScreen(
                             color = Red.copy(alpha = 0.14f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
                         ) {
-                            Text("打开完整档案 ▸", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                            Text(stringResource(R.string.netmap_open_dossier), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                         }
                     }
                 }
@@ -297,6 +315,7 @@ private fun syncDeviceMarkers(
     targets: List<RadarTarget>,
     selfLocation: android.location.Location?,
     selectedId: String?,
+    selfTitle: String,
     onSelect: (String) -> Unit,
 ) {
     map.overlays.removeAll { it is Marker && it.id != "self" && it.id != "selffallback" }
@@ -307,7 +326,7 @@ private fun syncDeviceMarkers(
             Marker(map).apply {
                 id = "self"
                 position = GeoPoint(self.latitude, self.longitude)
-                title = "本机"
+                title = selfTitle
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 icon = osmdroidDot(0xFF45E0FF.toInt(), 30)
             },

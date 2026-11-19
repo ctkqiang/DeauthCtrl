@@ -31,11 +31,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.roundToInt
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.MainsWireDetector
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -82,7 +84,7 @@ fun MainsWireScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("电线探测 · MAINS FINDER", back)
+        TerminalHeader(stringResource(R.string.mains_title), back)
         Column(
             Modifier.fillMaxSize()
                 .navigationBarsPadding()
@@ -90,21 +92,21 @@ fun MainsWireScreen(back: () -> Unit) {
                 .padding(12.dp),
         ) {
             // ── 控制 ──────────────────────────────────────────
-            TermPanel("探测控制 · DETECTOR") {
+            TermPanel(stringResource(R.string.mains_panel_control)) {
                 PanelStat(
-                    "状态",
-                    if (state.running) "探测中" else "已停止",
+                    stringResource(R.string.mains_label_status),
+                    if (state.running) stringResource(R.string.mains_status_running) else stringResource(R.string.mains_status_stopped),
                     if (state.running) TacGreen else Gray,
                 )
-                PanelStat("工频模式", "${state.freqMode} Hz · 谐波 ${state.freqMode * 2} Hz", Gold)
-                PanelStat("采集参数", "${state.sampleRateHz} Hz · ${state.frameSamples} 样本/帧", White)
+                PanelStat(stringResource(R.string.mains_label_mains_mode), stringResource(R.string.mains_mains_mode_value, state.freqMode, state.freqMode * 2), Gold)
+                PanelStat(stringResource(R.string.mains_label_capture_params), stringResource(R.string.mains_capture_params_value, state.sampleRateHz, state.frameSamples), White)
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SelectChip(state.freqMode == 50, "50 Hz 工频") { vm.setFreqMode(50) }
-                    SelectChip(state.freqMode == 60, "60 Hz 工频") { vm.setFreqMode(60) }
+                    SelectChip(state.freqMode == 50, stringResource(R.string.mains_chip_50hz)) { vm.setFreqMode(50) }
+                    SelectChip(state.freqMode == 60, stringResource(R.string.mains_chip_60hz)) { vm.setFreqMode(60) }
                 }
                 Text(
-                    "切换模式会清空基线并重新校准 2 秒。中国 / 欧洲为 50 Hz,北美 / 日本部分地区为 60 Hz。",
+                    stringResource(R.string.mains_mode_note),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -114,8 +116,8 @@ fun MainsWireScreen(back: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 ActionButton(
                     running = state.running,
-                    runLabel = "启动探测",
-                    stopLabel = "停止探测",
+                    runLabel = stringResource(R.string.mains_start),
+                    stopLabel = stringResource(R.string.mains_stop),
                 ) {
                     if (state.running) vm.stop() else vm.start()
                 }
@@ -131,7 +133,7 @@ fun MainsWireScreen(back: () -> Unit) {
                 }
                 if (state.running && state.calibrating) {
                     Text(
-                        "基线校准中 —— 保持手机静止 2 秒并远离墙面,先采集当前环境本底。",
+                        stringResource(R.string.mains_calibrating),
                         fontFamily = Sans,
                         fontSize = 9.sp,
                         color = Gold,
@@ -143,7 +145,7 @@ fun MainsWireScreen(back: () -> Unit) {
 
             // ── 实时电平 ──────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("实时电平 · LIVE LEVEL") {
+            TermPanel(stringResource(R.string.mains_panel_live_level)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "LEVEL",
@@ -185,29 +187,29 @@ fun MainsWireScreen(back: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 PanelStat(
-                    "工频特征强度",
+                    stringResource(R.string.mains_label_strength),
                     "%.3f".format(state.strength),
                     if (state.alert) Danger else Gold,
                 )
                 PanelStat(
-                    "环境基线",
-                    if (state.calibrating) "校准中" else "${state.baselineLevel} / 100",
+                    stringResource(R.string.mains_label_baseline),
+                    if (state.calibrating) stringResource(R.string.mains_baseline_calibrating) else "${state.baselineLevel} / 100",
                     Gray,
                 )
-                PanelStat("整帧 RMS", state.rmsDb?.let { "%.1f dBFS".format(it) } ?: "--", White)
+                PanelStat(stringResource(R.string.mains_label_frame_rms), state.rmsDb?.let { "%.1f dBFS".format(it) } ?: "--", White)
                 PanelStat(
-                    "${state.freqMode} Hz 基波",
+                    stringResource(R.string.mains_label_fundamental, state.freqMode),
                     state.fundDb?.let { "%.1f dBFS".format(it) } ?: "--",
                     White,
                 )
                 PanelStat(
-                    "${state.freqMode * 2} Hz 谐波",
+                    stringResource(R.string.mains_label_harmonic, state.freqMode * 2),
                     state.harmDb?.let { "%.1f dBFS".format(it) } ?: "--",
                     White,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "特征强度 = 基波与谐波合成幅度 / 整帧 RMS;电平条按 20·log10 压缩到 0-100,便于观察弱分量。",
+                    stringResource(R.string.mains_strength_note),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -225,7 +227,7 @@ fun MainsWireScreen(back: () -> Unit) {
                     border = BorderStroke(1.5.dp, Danger.copy(alpha = 0.75f)),
                 ) {
                     Text(
-                        "[!] 检测到强工频电磁场 —— 墙内可能有带电线路(仅探测有负载回路)",
+                        stringResource(R.string.mains_alert_live_wire),
                         fontFamily = Sans,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -238,9 +240,9 @@ fun MainsWireScreen(back: () -> Unit) {
 
             // ── 历史火花线 ────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("历史火花线 · HISTORY (最近 ${MainsWireDetector.HISTORY_SIZE} 帧)") {
+            TermPanel(stringResource(R.string.mains_panel_history, MainsWireDetector.HISTORY_SIZE)) {
                 if (state.history.size < 2) {
-                    EmptyHint("样本积累中 —— 启动后每帧电平会在此滚动绘制")
+                    EmptyHint(stringResource(R.string.mains_empty_history))
                 } else {
                     val history = state.history
                     Canvas(Modifier.fillMaxWidth().height(72.dp)) {
@@ -285,7 +287,7 @@ fun MainsWireScreen(back: () -> Unit) {
                             color = Gray,
                         )
                         Text(
-                            "当前 ${state.level}",
+                            stringResource(R.string.mains_current_level, state.level),
                             fontFamily = Mono,
                             fontSize = 8.sp,
                             color = levelColor,
@@ -302,20 +304,19 @@ fun MainsWireScreen(back: () -> Unit) {
 
             // ── 使用说明 ──────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("使用说明 · HOW TO") {
-                MainsBullet("启动后先远离墙面 2 秒,等基线校准完成;基线代表当前环境本底。")
-                MainsBullet("把手机背面 / 麦克风贴近墙面约 2-5 厘米,沿墙面缓慢移动,观察电平与火花线变化。")
-                MainsBullet("被测线路必须带负载:开灯、充电或接入用电器。空载线路没有电流,不产生可测工频特征。")
-                MainsBullet("发现峰值后在该点做十字交叉复测,峰值连线的走向才更接近线路路径。")
-                MainsBullet("手机壳、手部与金属物体会改变声场与电场分布;测量时尽量保持同一握持姿势。")
+            TermPanel(stringResource(R.string.mains_panel_how_to)) {
+                MainsBullet(stringResource(R.string.mains_bullet_baseline))
+                MainsBullet(stringResource(R.string.mains_bullet_move))
+                MainsBullet(stringResource(R.string.mains_bullet_load))
+                MainsBullet(stringResource(R.string.mains_bullet_crosscheck))
+                MainsBullet(stringResource(R.string.mains_bullet_grip))
             }
 
             // ── 原理与边界 ────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("原理与边界 · LIMITS") {
+            TermPanel(stringResource(R.string.mains_panel_limits)) {
                 Text(
-                    "探测的是麦克风捕捉到的 50/60 Hz 基波与谐波(声学嗡鸣 + 手机模拟前端的电磁拾取)," +
-                        "属于电磁 / 声学特征检测,不是透视,不能看见墙内线路。",
+                    stringResource(R.string.mains_limit_detects),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = White,
@@ -323,8 +324,7 @@ fun MainsWireScreen(back: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "手机麦克风对 50 Hz 的低频响应普遍较差,系统降噪 / 自动增益也可能削弱该分量," +
-                        "不同机型的灵敏度差异很大;读数只适合同一台设备上做相对比较。",
+                    stringResource(R.string.mains_limit_mic),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -332,7 +332,7 @@ fun MainsWireScreen(back: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "无负载(空载、开关断开、断电器)的线路几乎不产生可测工频场 —— 探测不到不代表墙内没有电线。",
+                    stringResource(R.string.mains_limit_no_load),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Warn,
@@ -340,7 +340,7 @@ fun MainsWireScreen(back: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "所有读数来自 AudioRecord 实时采样与本地 Goertzel 计算,未做任何模拟或补值;读不到时显示「--」。",
+                    stringResource(R.string.mains_limit_raw),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,

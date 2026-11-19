@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * 一台系统已配对设备
@@ -79,16 +81,21 @@ class BondManager(private val context: Context) {
     fun refresh() {
         val adapter = adapterOrNull()
         if (adapter == null) {
-            publishError("本机没有蓝牙适配器")
+            publishError(L10n.get(R.string.mgr_bond_err_no_adapter))
             return
         }
         if (!runCatching { adapter.isEnabled }.getOrDefault(false)) {
-            publishError("蓝牙未开启 —— 请先在系统设置中打开蓝牙")
+            publishError(L10n.get(R.string.mgr_bond_err_bt_off))
             return
         }
         val missing = missingPermissions()
         if (missing.isNotEmpty()) {
-            publishError("缺少蓝牙权限：${missing.joinToString("、") { permissionLabel(it) }} —— 请先在应用权限网关授予")
+            publishError(
+                L10n.get(
+                    R.string.mgr_bond_err_permissions,
+                    missing.joinToString(L10n.get(R.string.mgr_bond_perm_sep)) { permissionLabel(it) },
+                ),
+            )
             return
         }
 
@@ -118,7 +125,12 @@ class BondManager(private val context: Context) {
         read.onSuccess { devices ->
             _state.update { it.copy(devices = devices, loading = false, error = null) }
         }.onFailure { throwable ->
-            publishError("读取已配对设备失败：${throwable.message ?: throwable.javaClass.simpleName}")
+            publishError(
+                L10n.get(
+                    R.string.mgr_bond_err_read,
+                    throwable.message ?: throwable.javaClass.simpleName,
+                ),
+            )
         }
     }
 
@@ -131,32 +143,37 @@ class BondManager(private val context: Context) {
     fun removeBond(address: String): Boolean {
         val normalized = normalizeBondMac(address)
         if (normalized == null) {
-            publishError("MAC 格式无效 —— 应为 AA:BB:CC:DD:EE:FF（12 位十六进制）")
+            publishError(L10n.get(R.string.mgr_bond_err_mac_invalid))
             return false
         }
         val adapter = adapterOrNull()
         if (adapter == null) {
-            publishError("本机没有蓝牙适配器")
+            publishError(L10n.get(R.string.mgr_bond_err_no_adapter))
             return false
         }
         if (!runCatching { adapter.isEnabled }.getOrDefault(false)) {
-            publishError("蓝牙未开启 —— 请先在系统设置中打开蓝牙")
+            publishError(L10n.get(R.string.mgr_bond_err_bt_off))
             return false
         }
         val missing = missingPermissions()
         if (missing.isNotEmpty()) {
-            publishError("缺少蓝牙权限：${missing.joinToString("、") { permissionLabel(it) }} —— 请先在应用权限网关授予")
+            publishError(
+                L10n.get(
+                    R.string.mgr_bond_err_permissions,
+                    missing.joinToString(L10n.get(R.string.mgr_bond_perm_sep)) { permissionLabel(it) },
+                ),
+            )
             return false
         }
 
         val device = runCatching { adapter.getRemoteDevice(normalized) }.getOrNull()
         if (device == null) {
-            publishError("系统无法解析该 MAC 地址")
+            publishError(L10n.get(R.string.mgr_bond_err_unresolvable))
             return false
         }
         val currentBond = runCatching { device.bondState }.getOrDefault(BluetoothDevice.BOND_NONE)
         if (currentBond != BluetoothDevice.BOND_BONDED) {
-            publishError("该设备当前不在已配对状态 —— 请刷新列表后再操作")
+            publishError(L10n.get(R.string.mgr_bond_err_not_bonded))
             return false
         }
 
@@ -167,8 +184,7 @@ class BondManager(private val context: Context) {
             _state.update {
                 it.copy(
                     busyAddress = null,
-                    message = "[!] 当前系统不提供程序化解绑（BluetoothDevice.removeBond 不可用）—— " +
-                        "请到系统蓝牙设置中忽略该设备",
+                    message = L10n.get(R.string.mgr_bond_msg_no_api),
                 )
             }
             return false
@@ -180,7 +196,7 @@ class BondManager(private val context: Context) {
             onSuccess = { removed ->
                 if (removed) {
                     _state.update {
-                        it.copy(message = "解绑请求已发送 —— 正在等待系统刷新配对列表")
+                        it.copy(message = L10n.get(R.string.mgr_bond_msg_request_sent))
                     }
                     scheduleRecheck(normalized)
                     true
@@ -188,7 +204,7 @@ class BondManager(private val context: Context) {
                     _state.update {
                         it.copy(
                             busyAddress = null,
-                            message = "[!] 系统拒绝了解绑请求 —— 请到系统蓝牙设置中忽略该设备",
+                            message = L10n.get(R.string.mgr_bond_msg_refused),
                         )
                     }
                     false
@@ -198,8 +214,7 @@ class BondManager(private val context: Context) {
                 _state.update {
                     it.copy(
                         busyAddress = null,
-                        message = "[!] 解绑调用失败（${throwable.javaClass.simpleName}）—— " +
-                            "部分系统限制隐藏 API，请到系统蓝牙设置中忽略该设备",
+                        message = L10n.get(R.string.mgr_bond_msg_call_failed, throwable.javaClass.simpleName),
                     )
                 }
                 false
@@ -226,9 +241,9 @@ class BondManager(private val context: Context) {
                 it.copy(
                     busyAddress = null,
                     message = if (stillBonded) {
-                        "[!] 配对列表仍显示该设备 —— 系统可能拒绝程序化解绑，请到系统蓝牙设置中忽略此设备"
+                        L10n.get(R.string.mgr_bond_msg_still_bonded)
                     } else {
-                        "已解除绑定"
+                        L10n.get(R.string.mgr_bond_msg_unbonded)
                     },
                 )
             }
@@ -271,26 +286,26 @@ class BondManager(private val context: Context) {
 
 // ─── 文件级辅助 ─────────────────────────────────────────────────────────────
 
-/** 权限名 → 中文标签 */
+/** 权限名 → 本地化标签 */
 private fun permissionLabel(permission: String): String = when (permission) {
-    Manifest.permission.BLUETOOTH_CONNECT -> "连接设备 / 读取蓝牙状态"
-    Manifest.permission.BLUETOOTH -> "蓝牙（旧版权限）"
-    Manifest.permission.BLUETOOTH_ADMIN -> "蓝牙管理（旧版权限）"
+    Manifest.permission.BLUETOOTH_CONNECT -> L10n.get(R.string.mgr_bond_perm_connect)
+    Manifest.permission.BLUETOOTH -> L10n.get(R.string.mgr_bond_perm_bluetooth)
+    Manifest.permission.BLUETOOTH_ADMIN -> L10n.get(R.string.mgr_bond_perm_admin)
     else -> permission
 }
 
-/** BluetoothDevice.bondState → 中文 */
+/** BluetoothDevice.bondState → 本地化标签 */
 private fun bondStateLabel(state: Int): String = when (state) {
-    BluetoothDevice.BOND_NONE -> "未配对"
-    BluetoothDevice.BOND_BONDING -> "配对中"
-    BluetoothDevice.BOND_BONDED -> "已配对"
-    else -> "未知($state)"
+    BluetoothDevice.BOND_NONE -> L10n.get(R.string.mgr_bond_state_none)
+    BluetoothDevice.BOND_BONDING -> L10n.get(R.string.mgr_bond_state_bonding)
+    BluetoothDevice.BOND_BONDED -> L10n.get(R.string.mgr_bond_state_bonded)
+    else -> L10n.get(R.string.mgr_bond_state_unknown, state)
 }
 
-/** BluetoothDevice.type → 中文 */
+/** BluetoothDevice.type → 本地化标签 */
 private fun typeLabel(type: Int): String = when (type) {
-    BluetoothDevice.DEVICE_TYPE_CLASSIC -> "经典蓝牙"
-    BluetoothDevice.DEVICE_TYPE_LE -> "BLE"
-    BluetoothDevice.DEVICE_TYPE_DUAL -> "双模"
-    else -> "未知"
+    BluetoothDevice.DEVICE_TYPE_CLASSIC -> L10n.get(R.string.mgr_bond_type_classic)
+    BluetoothDevice.DEVICE_TYPE_LE -> L10n.get(R.string.mgr_bond_type_le)
+    BluetoothDevice.DEVICE_TYPE_DUAL -> L10n.get(R.string.mgr_bond_type_dual)
+    else -> L10n.get(R.string.mgr_bond_type_unknown)
 }

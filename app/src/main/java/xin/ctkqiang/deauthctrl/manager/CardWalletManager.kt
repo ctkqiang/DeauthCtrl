@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +45,7 @@ class CardWalletManager(private val context: Context) {
     fun addCard(name: String, dataHex: String): VirtualCard {
         val card = VirtualCard(
             id = java.util.UUID.randomUUID().toString().take(8),
-            name = name.ifBlank { "虚拟卡 ${_cards.value.size + 1}" },
+            name = name.ifBlank { L10n.get(R.string.mgr_card_default_name, _cards.value.size + 1) },
             dataHex = dataHex.ifBlank { "" },
             createdMs = System.currentTimeMillis(),
         )

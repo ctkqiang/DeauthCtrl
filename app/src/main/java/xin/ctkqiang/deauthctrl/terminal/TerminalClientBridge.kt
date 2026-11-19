@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.terminal
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -114,7 +117,7 @@ class TerminalClientBridge(
     override fun onCopyTextToClipboard(session: TerminalSession, text: String) {
         runCatching {
             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("DeauthCtrl 终端", text))
+            cm.setPrimaryClip(ClipData.newPlainText(L10n.get(R.string.term_bridge_clip_label), text))
         }
     }
 

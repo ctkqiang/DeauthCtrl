@@ -31,10 +31,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.SEISMO_DEFAULT_THRESHOLD
 import xin.ctkqiang.deauthctrl.manager.SEISMO_MAX_EVENTS
 import xin.ctkqiang.deauthctrl.manager.SEISMO_MAX_THRESHOLD
@@ -95,7 +97,7 @@ fun SeismographScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("震动监视 · SEISMOGRAPH", back)
+        TerminalHeader(stringResource(R.string.seismo_title), back)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
@@ -104,7 +106,7 @@ fun SeismographScreen(back: () -> Unit) {
             SeismoWarningStrip(state)
 
             // ── 滚动波形 ──────────────────────────────────────────────────
-            TermPanel("波形 · WAVEFORM") {
+            TermPanel(stringResource(R.string.seismo_waveform_title)) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(140.dp),
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -119,15 +121,15 @@ fun SeismographScreen(back: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        "满幅 ±%.1f m/s²".format(seismoFullScale(state)),
+                        stringResource(R.string.seismo_full_scale, seismoFullScale(state)),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                     Text(
-                        "阈值 %.1f m/s²".format(state.threshold),
+                        stringResource(R.string.seismo_threshold_value, state.threshold),
                         fontFamily = Mono, fontSize = 8.sp, color = Gold,
                     )
                     Text(
-                        "${state.waveform.size} / $SEISMO_WAVEFORM_CAPACITY 样本",
+                        stringResource(R.string.seismo_sample_count, state.waveform.size, SEISMO_WAVEFORM_CAPACITY),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                 }
@@ -135,9 +137,9 @@ fun SeismographScreen(back: () -> Unit) {
                     Spacer(Modifier.height(3.dp))
                     Text(
                         if (state.running) {
-                            "等待加速度计首个样本 ..."
+                            stringResource(R.string.seismo_waiting_sample)
                         } else {
-                            "监视未启动 —— 点击下方「启动监视」"
+                            stringResource(R.string.seismo_not_running)
                         },
                         fontFamily = Sans, fontSize = 8.sp, color = Gray,
                     )
@@ -153,8 +155,8 @@ fun SeismographScreen(back: () -> Unit) {
 
             ActionButton(
                 running = state.running,
-                runLabel = "启动监视",
-                stopLabel = "停止监视",
+                runLabel = stringResource(R.string.seismo_start_monitoring),
+                stopLabel = stringResource(R.string.seismo_stop_monitoring),
             ) {
                 if (state.running) vm.stop() else vm.start()
             }
@@ -281,12 +283,12 @@ private fun PeakPanel(state: SeismoState, onThreshold: (Float) -> Unit) {
     val latest = state.waveform.lastOrNull()?.net
     val hasSample = state.waveform.isNotEmpty()
 
-    TermPanel("当前读数 · PEAK") {
+    TermPanel(stringResource(R.string.seismo_peak_panel_title)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("最近 50 样本峰值", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                Text(stringResource(R.string.seismo_recent_peak_label), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                 Text(
-                    if (state.running && hasSample) "%.2f m/s²".format(state.peakCurrent) else "--",
+                    if (state.running && hasSample) stringResource(R.string.seismo_peak_display, state.peakCurrent) else "--",
                     fontFamily = Mono,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -299,19 +301,19 @@ private fun PeakPanel(state: SeismoState, onThreshold: (Float) -> Unit) {
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (state.running && latest != null) "瞬时 %+.2f m/s²".format(latest) else "瞬时 --",
+                    if (state.running && latest != null) stringResource(R.string.seismo_instant_value, latest) else stringResource(R.string.seismo_instant_none),
                     fontFamily = Mono, fontSize = 10.sp, color = Gold,
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("告警阈值", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                Text(stringResource(R.string.seismo_alarm_threshold_label), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                 Text(
-                    "%.1f m/s²".format(state.threshold),
+                    stringResource(R.string.seismo_threshold_display, state.threshold),
                     fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Gold,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    if (state.eventActive) "事件中 · 峰值 %.2f".format(state.eventPeak) else "无进行中事件",
+                    if (state.eventActive) stringResource(R.string.seismo_event_active_peak, state.eventPeak) else stringResource(R.string.seismo_no_active_event),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = if (state.eventActive) Danger else Gray,
@@ -334,26 +336,28 @@ private fun PeakPanel(state: SeismoState, onThreshold: (Float) -> Unit) {
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("0.2", fontFamily = Mono, fontSize = 8.sp, color = Gray)
-            Text("0.1 m/s² 步进", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+            Text(stringResource(R.string.seismo_step_label), fontFamily = Mono, fontSize = 8.sp, color = Gray)
             Text("3.0", fontFamily = Mono, fontSize = 8.sp, color = Gray)
         }
 
         Spacer(Modifier.height(3.dp))
         Text(
-            "阈值 %.1f m/s² 为默认值,可按环境噪声调整;阈值以内视为环境噪声,不产生事件。".format(
-                SEISMO_DEFAULT_THRESHOLD,
-            ),
+            stringResource(R.string.seismo_threshold_help, SEISMO_DEFAULT_THRESHOLD),
             fontFamily = Sans, fontSize = 8.sp, color = Gray.copy(alpha = 0.85f), lineHeight = 11.sp,
         )
         Spacer(Modifier.height(2.dp))
         Text(
             if (state.running && state.gravityBaseline > 0f) {
-                "重力基准 %.2f m/s²(EMA 估计) · 传感器 %s".format(
+                stringResource(
+                    R.string.seismo_gravity_sensor,
                     state.gravityBaseline,
                     state.sensorName.ifBlank { "--" },
                 )
             } else {
-                "重力基准 -- · 传感器 " + state.sensorName.ifBlank { "--" }
+                stringResource(
+                    R.string.seismo_gravity_sensor_none,
+                    state.sensorName.ifBlank { "--" },
+                )
             },
             fontFamily = Mono, fontSize = 8.sp, color = Gray,
         )
@@ -369,14 +373,14 @@ private fun PeakPanel(state: SeismoState, onThreshold: (Float) -> Unit) {
 private fun EventLogPanel(state: SeismoState, onClear: () -> Unit) {
     val clock = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
 
-    TermPanel("事件日志 · EVENTS") {
+    TermPanel(stringResource(R.string.seismo_events_title)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "已记录 ${state.events.size} / $SEISMO_MAX_EVENTS · 最新在上",
+                stringResource(R.string.seismo_events_recorded, state.events.size, SEISMO_MAX_EVENTS),
                 fontFamily = Sans, fontSize = 9.sp, color = Gray,
                 modifier = Modifier.weight(1f),
             )
-            GhostButton("清空") { onClear() }
+            GhostButton(stringResource(R.string.seismo_clear)) { onClear() }
         }
 
         if (state.eventActive) {
@@ -388,7 +392,7 @@ private fun EventLogPanel(state: SeismoState, onClear: () -> Unit) {
                 border = BorderStroke(1.dp, Warn.copy(alpha = 0.40f)),
             ) {
                 Text(
-                    "[!] 事件进行中 · 当前峰值 %.2f m/s²".format(state.eventPeak),
+                    stringResource(R.string.seismo_event_banner, state.eventPeak),
                     fontFamily = Mono, fontSize = 9.sp, color = Warn,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                 )
@@ -397,7 +401,7 @@ private fun EventLogPanel(state: SeismoState, onClear: () -> Unit) {
 
         Spacer(Modifier.height(5.dp))
         if (state.events.isEmpty()) {
-            EmptyHint("暂无震动事件 —— 峰值超过阈值的震动会在这里留下时间、峰值与持续时长")
+            EmptyHint(stringResource(R.string.seismo_events_empty))
         } else {
             state.events.forEach { event ->
                 SeismoEventRow(event, clock.format(Date(event.wallTimeMs)))
@@ -426,12 +430,12 @@ private fun SeismoEventRow(event: SeismoEvent, clockText: String) {
             modifier = Modifier.width(58.dp),
         )
         Text(
-            "峰值 %.2f m/s²".format(event.peak),
+            stringResource(R.string.seismo_event_peak, event.peak),
             fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accent,
             modifier = Modifier.weight(1f),
         )
         Text(
-            "持续 ${formatSeismoDuration(event.durationMs)}",
+            stringResource(R.string.seismo_event_duration, formatSeismoDuration(event.durationMs)),
             fontFamily = Mono, fontSize = 9.sp, color = White,
         )
     }
@@ -454,8 +458,8 @@ private fun SeismoWarningStrip(state: SeismoState) {
     val error = state.error?.removePrefix("[!] ")?.trim().orEmpty()
     val items = mutableListOf<Pair<Color, String>>()
 
-    if (!state.hasAccelerometer && !error.contains("加速度计")) {
-        items += Danger to "本机未提供加速度计(TYPE_ACCELEROMETER) —— 震动监视不可用"
+    if (!state.hasAccelerometer && error != stringResource(R.string.mgr_seismo_no_accelerometer)) {
+        items += Danger to stringResource(R.string.seismo_no_accelerometer)
     }
     if (error.isNotEmpty()) items += Danger to error
 
@@ -467,7 +471,7 @@ private fun SeismoWarningStrip(state: SeismoState) {
             border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
         ) {
             Text(
-                "[!] $text",
+                stringResource(R.string.seismo_error_line, text),
                 fontFamily = Sans,
                 fontSize = 10.sp,
                 color = color,
@@ -481,29 +485,24 @@ private fun SeismoWarningStrip(state: SeismoState) {
 /** 诚实说明 —— 传感器精度、去重力盲区与事件判定边界 */
 @Composable
 private fun SeismoHonestyPanel() {
-    TermPanel("精度声明 · HONESTY") {
+    TermPanel(stringResource(R.string.seismo_honesty_title)) {
         Text(
-            "手机加速度计是消费级 16 位 MEMS 传感器,采样请求为 SENSOR_DELAY_GAME(系统通常约 50Hz),"
-                + "噪声本底、带宽与动态范围都远不如专业地震仪。本页只能可靠捕捉明显震动 —— "
-                + "敲门、脚步、桌面被碰、机械振动;对远距离地震不敏感。",
+            stringResource(R.string.seismo_honesty_p1),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "净加速度 = 三轴合加速度 - 重力基准。重力基准用 alpha 0.01 的指数滑动平均跟踪,"
-                + "缓慢倾斜会被当作零震动,这是去重力算法的固有盲区;合加速度与手机朝向无关。",
+            stringResource(R.string.seismo_honesty_p2),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "事件峰值、发生时间与持续时长全部来自传感器真实样本;持续时长为首次与末次越阈样本之差,"
-                + "单样本事件显示「< 50 ms」。事件需连续 400ms 低于阈值才判定结束,避免一次震动被切碎。",
+            stringResource(R.string.seismo_honesty_p3),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "把手机刚性固定在硬桌面或地面灵敏度最高;放在软垫、衣物上会吸收高频振动。"
-                + "读数不足时页面显示「--」,绝不编造;阈值 0.5 m/s² 只是默认值,嘈杂环境应上调。",
+            stringResource(R.string.seismo_honesty_p4),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
     }

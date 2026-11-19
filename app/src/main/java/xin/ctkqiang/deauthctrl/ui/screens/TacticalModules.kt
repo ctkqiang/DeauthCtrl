@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -93,6 +94,7 @@ import org.osmdroid.views.overlay.gridlines.LatLonGridlineOverlay2
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.DetectionStats
 import xin.ctkqiang.deauthctrl.manager.DetectorStatus
 import xin.ctkqiang.deauthctrl.manager.DiscoveryState
@@ -203,16 +205,16 @@ fun TacticalCameraScreen(
         else -> peerTargets
     }
     val targetLabel = when {
-        manualTargets.isNotEmpty() -> "手动 ${manualTargets.joinToString(",") { it.ip }}"
-        selectedPeerId != null -> peerTargets.firstOrNull { it.id == selectedPeerId }?.let { "${it.name} ${it.ip}" } ?: "目标已离线"
-        peers.isEmpty() -> "等待发现接收台…"
-        else -> "全部在线 (${peers.size})"
+        manualTargets.isNotEmpty() -> stringResource(R.string.tact_manual_prefix, manualTargets.joinToString(",") { it.ip })
+        selectedPeerId != null -> peerTargets.firstOrNull { it.id == selectedPeerId }?.let { "${it.name} ${it.ip}" } ?: stringResource(R.string.tact_target_offline)
+        peers.isEmpty() -> stringResource(R.string.tact_waiting_receiver)
+        else -> stringResource(R.string.tact_all_online, peers.size)
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("战术相机", back)
+        TerminalHeader(stringResource(R.string.tact_camera_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-            TermPanel("镜头选择 · 最大分辨率直出") {
+            TermPanel(stringResource(R.string.tact_lens_select)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     cameras.forEach { c ->
                         val selected = c.id == selectedId
@@ -271,7 +273,7 @@ fun TacticalCameraScreen(
                         )
                     }
                 } else {
-                    EmptyHint("未检测到相机")
+                    EmptyHint(stringResource(R.string.tact_no_camera))
                 }
             }
 
@@ -281,14 +283,15 @@ fun TacticalCameraScreen(
             Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
 
             // ── 第一步:拍摄 ──
-            ActionButton(running = false, runLabel = "拍摄照片", stopLabel = "") {
+            ActionButton(running = false, runLabel = stringResource(R.string.tact_capture_photo), stopLabel = "") {
                 haptic.hud()
                 manager.capture()
             }
             lastError?.let {
                 Text(
                     it, fontFamily = Mono, fontSize = 9.sp,
-                    color = if (it.startsWith("已捕获") || it.startsWith("已送达") || it.startsWith("送达")) TacGreen else Danger,
+                    // 错误/警告文本统一以 [!] 前缀开头;成功状态不带前缀
+                    color = if (!it.startsWith("[!]")) TacGreen else Danger,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
@@ -296,10 +299,10 @@ fun TacticalCameraScreen(
             // ── 第二步:确认 + 选择目标 + 发送 ──
             pending?.let { shot ->
                 Spacer(Modifier.height(8.dp))
-                TermPanel("已捕获 · 待发送") {
+                TermPanel(stringResource(R.string.tact_captured_pending)) {
                     val bmp = remember(shot.timeMs) { BitmapFactory.decodeByteArray(shot.jpeg, 0, shot.jpeg.size) }
                     bmp?.let {
-                        Image(it.asImageBitmap(), contentDescription = "已捕获照片", modifier = Modifier.fillMaxWidth().aspectRatio(it.width.toFloat() / it.height.toFloat()))
+                        Image(it.asImageBitmap(), contentDescription = stringResource(R.string.tact_cd_captured_photo), modifier = Modifier.fillMaxWidth().aspectRatio(it.width.toFloat() / it.height.toFloat()))
                     }
                     Spacer(Modifier.height(4.dp))
                     Text("${shot.width}×${shot.height} · ${shot.jpeg.size / 1024}KB · ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(shot.timeMs))}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
@@ -307,7 +310,7 @@ fun TacticalCameraScreen(
                     Spacer(Modifier.height(8.dp))
 
                     // 目标全部来自自动发现;手动 IP 只作为本页临时目标
-                    Text("发送目标 · 自动发现", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red)
+                    Text(stringResource(R.string.tact_send_target_auto), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red)
                     Spacer(Modifier.height(4.dp))
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -320,7 +323,7 @@ fun TacticalCameraScreen(
                             color = if (allSelected) Red.copy(alpha = 0.16f) else SurfaceBg,
                             border = BorderStroke(1.dp, if (allSelected) Red.copy(alpha = 0.7f) else BorderDim),
                         ) {
-                            Text("全部 (${peers.size})", fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (allSelected) Red else White, modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp))
+                            Text(stringResource(R.string.tact_all_count, peers.size), fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (allSelected) Red else White, modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp))
                         }
                         peers.forEach { peer ->
                             val selected = peer.id == selectedPeerId
@@ -348,13 +351,13 @@ fun TacticalCameraScreen(
                                 border = BorderStroke(1.dp, Gold.copy(alpha = 0.7f)),
                             ) {
                                 Column(Modifier.padding(horizontal = 9.dp, vertical = 5.dp)) {
-                                    Text("手动 · ${manual.joinToString(",") { it.ip }}", fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold)
-                                    Text("临时目标 · 点击取消", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                                    Text(stringResource(R.string.tact_manual_dot, manual.joinToString(",") { it.ip }), fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold)
+                                    Text(stringResource(R.string.tact_temp_target_cancel), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                                 }
                             }
                         }
                         if (peers.isEmpty() && manualTargets.isEmpty()) {
-                            Text("尚无自动发现目标", fontFamily = Mono, fontSize = 9.sp, color = Warn, modifier = Modifier.padding(vertical = 6.dp))
+                            Text(stringResource(R.string.tact_no_auto_targets), fontFamily = Mono, fontSize = 9.sp, color = Warn, modifier = Modifier.padding(vertical = 6.dp))
                         }
                     }
 
@@ -367,15 +370,15 @@ fun TacticalCameraScreen(
                             color = SurfaceBg,
                             border = BorderStroke(1.dp, BorderDim),
                         ) {
-                            Text("等待发现接收台…", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
+                            Text(stringResource(R.string.tact_waiting_receiver), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
                         }
-                        Text("对方需保持应用进程存活,并与本机处于同一 Wi-Fi。", fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp, modifier = Modifier.padding(top = 3.dp))
+                        Text(stringResource(R.string.tact_peer_hint), fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp, modifier = Modifier.padding(top = 3.dp))
                     } else {
-                        ActionButton(running = false, runLabel = "发送照片 → $targetLabel", stopLabel = "") {
+                        ActionButton(running = false, runLabel = stringResource(R.string.tact_send_photo_to, targetLabel), stopLabel = "") {
                             haptic.hud()
                             manager.sendPending(targets, operatorName.ifBlank { "operator" })
                         }
-                        Text("按目标回执统计送达;没有 OK 回执不会显示成功。", fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                        Text(stringResource(R.string.tact_delivery_ack_hint), fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp, modifier = Modifier.padding(top = 2.dp))
                     }
                     Spacer(Modifier.height(4.dp))
                     Surface(
@@ -384,7 +387,7 @@ fun TacticalCameraScreen(
                         color = Color.Transparent,
                         border = BorderStroke(1.dp, BorderDim),
                     ) {
-                        Text("丢弃照片", fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+                        Text(stringResource(R.string.tact_discard_photo), fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
                     }
                 }
             }
@@ -392,18 +395,18 @@ fun TacticalCameraScreen(
             Spacer(Modifier.height(8.dp))
 
             // ── 在线接收台状态(进程级,非前台服务) ──
-            TermPanel("在线接收台 · 自动发现 · mDNS + 广播 + 端口探测") {
+            TermPanel(stringResource(R.string.tact_receiver_panel)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (online) "● 接收端口 $serverPort 已监听" else "接收台未就绪(端口监听失败,自动重试中)",
+                        if (online) stringResource(R.string.tact_port_listening, serverPort) else stringResource(R.string.tact_receiver_not_ready),
                         fontFamily = Mono, fontSize = 9.sp,
                         color = if (online) TacGreen else Danger,
                         modifier = Modifier.weight(1f),
                     )
-                    Text("在线 ${peers.size} 台", fontFamily = Mono, fontSize = 9.sp, color = Gold)
+                    Text(stringResource(R.string.tact_online_count, peers.size), fontFamily = Mono, fontSize = 9.sp, color = Gold)
                 }
                 Text(
-                    "应用进程存活期间可用(进程被杀后停止,未启动前台服务)",
+                    stringResource(R.string.tact_process_alive_hint),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -414,23 +417,23 @@ fun TacticalCameraScreen(
                     color = if (peers.isNotEmpty()) TacGreen else Warn,
                 )
                 Text(
-                    "mDNS ${layers.mdns} · UDP ${layers.udp} · 缓存 ${layers.cacheProbe} · 扫描 ${layers.scanned}/${layers.scanTotal}",
+                    stringResource(R.string.tact_layers_line, layers.mdns, layers.udp, layers.cacheProbe, layers.scanned, layers.scanTotal),
                     fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     lineHeight = 11.sp, modifier = Modifier.padding(top = 2.dp),
                 )
                 if (peers.isEmpty()) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "排查: ① 两台设备同一 Wi-Fi  ② 对方应用进程存活  ③ 关闭 AP 隔离 / VPN  ④ 公共 Wi-Fi 常禁止客户端互访",
+                        stringResource(R.string.tact_troubleshoot),
                         fontFamily = Sans, fontSize = 8.sp, color = Warn, lineHeight = 11.sp,
                     )
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    HudChip("重新搜索", TacGreen) { haptic.hud(); host.rescan() }
+                    HudChip(stringResource(R.string.tact_rescan), TacGreen) { haptic.hud(); host.rescan() }
                     // 高级手动 IP 只在自动发现为空时出现,且不会持久保存
                     if (peers.isEmpty()) {
-                        HudChip("手动 IP", Gold) { haptic.hud(); manualDialog = true }
+                        HudChip(stringResource(R.string.tact_manual_ip), Gold) { haptic.hud(); manualDialog = true }
                     }
                 }
             }
@@ -438,9 +441,9 @@ fun TacticalCameraScreen(
             Spacer(Modifier.height(10.dp))
 
             // ── 接收照片列表 ──
-            TermPanel("接收照片 · 常开中继 (${received.size})") {
+            TermPanel(stringResource(R.string.tact_received_photos_panel, received.size)) {
                 if (received.isEmpty()) {
-                    EmptyHint("对方拍摄发送后,照片自动到达并推送系统通知")
+                    EmptyHint(stringResource(R.string.tact_received_empty))
                 } else {
                     LazyColumn(Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
                         items(received, key = { it.id }) { photo ->
@@ -457,7 +460,7 @@ fun TacticalCameraScreen(
                                     bmp?.let {
                                         Image(
                                             it.asImageBitmap(),
-                                            contentDescription = "收到的照片",
+                                            contentDescription = stringResource(R.string.tact_cd_received_photo),
                                             modifier = Modifier.fillMaxWidth().aspectRatio(it.width.toFloat() / it.height.toFloat()),
                                         )
                                     }
@@ -475,9 +478,9 @@ fun TacticalCameraScreen(
                                         ) {
                                             Text(
                                                 when {
-                                                    photo.savedToGallery -> "已保存到相册 ✓"
-                                                    savedPhotoId == -photo.id -> "保存失败,请重试"
-                                                    else -> "下载保存 ▾"
+                                                    photo.savedToGallery -> stringResource(R.string.tact_saved_to_gallery)
+                                                    savedPhotoId == -photo.id -> stringResource(R.string.tact_save_failed)
+                                                    else -> stringResource(R.string.tact_download_save)
                                                 },
                                                 fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                                                 color = if (photo.savedToGallery) TacGreen else Red,
@@ -487,7 +490,7 @@ fun TacticalCameraScreen(
                                         }
                                     }
                                     Text(
-                                        if (photo.savedToGallery) "已下载 · 永久保留" else "内存暂存 · ${(10 - (System.currentTimeMillis() - photo.receivedMs) / 60_000).coerceAtLeast(0)} 分钟后自动删除",
+                                        if (photo.savedToGallery) stringResource(R.string.tact_downloaded_kept) else stringResource(R.string.tact_memory_ttl, (10 - (System.currentTimeMillis() - photo.receivedMs) / 60_000).coerceAtLeast(0)),
                                         fontFamily = Sans, fontSize = 7.sp, color = Gray.copy(alpha = 0.7f),
                                         modifier = Modifier.padding(top = 3.dp),
                                     )
@@ -511,11 +514,11 @@ fun TacticalCameraScreen(
             ) {
                 val bmp = remember(photo.id) { BitmapFactory.decodeByteArray(photo.jpeg, 0, photo.jpeg.size) }
                 bmp?.let {
-                    Image(it.asImageBitmap(), contentDescription = "全屏照片", modifier = Modifier.fillMaxWidth())
+                    Image(it.asImageBitmap(), contentDescription = stringResource(R.string.tact_cd_fullscreen_photo), modifier = Modifier.fillMaxWidth())
                 }
                 Column(Modifier.align(Alignment.TopCenter).padding(top = 14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("来自 ${photo.from}", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
-                    Text("${photo.width}×${photo.height} · ${photo.jpeg.size / 1024}KB · 点击任意处关闭", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    Text(stringResource(R.string.tact_from_sender, photo.from), fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
+                    Text(stringResource(R.string.tact_viewer_meta, photo.width, photo.height, photo.jpeg.size / 1024), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 }
             }
         }
@@ -532,27 +535,27 @@ fun TacticalCameraScreen(
                 border = BorderStroke(1.dp, BorderDim),
             ) {
                 Column(Modifier.padding(14.dp)) {
-                    Text("手动目标 IP · 高级", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold)
+                    Text(stringResource(R.string.tact_manual_ip_advanced), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "自动发现被 AP 隔离 / VPN 阻断时使用。IP 必须是接收台当前的局域网地址;此目标只在本次页面有效。",
+                        stringResource(R.string.tact_manual_ip_desc),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 12.sp,
                     )
                     Spacer(Modifier.height(8.dp))
-                    TermInput("IPv4 地址", ipInput, placeholder = "192.168.1.23") { ipInput = it; ipError = null }
+                    TermInput(stringResource(R.string.tact_ipv4_address), ipInput, placeholder = "192.168.1.23") { ipInput = it; ipError = null }
                     ipError?.let {
                         Text(it, fontFamily = Mono, fontSize = 9.sp, color = Danger, modifier = Modifier.padding(top = 4.dp))
                     }
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        HudChip("取消", Gray) { manualDialog = false }
-                        HudChip("使用该 IP", Gold) {
+                        HudChip(stringResource(R.string.tact_cancel), Gray) { manualDialog = false }
+                        HudChip(stringResource(R.string.tact_use_ip), Gold) {
                             val ip = normalizeIpv4(ipInput)
                             if (ip == null) {
-                                ipError = "IPv4 无效:需 4 段 0-255,例如 192.168.1.23"
+                                ipError = context.getString(R.string.tact_invalid_ipv4)
                             } else {
                                 manualTargets = listOf(
-                                    PhotoTarget(ip = ip, id = "manual:$ip", name = "手动 $ip"),
+                                    PhotoTarget(ip = ip, id = "manual:$ip", name = context.getString(R.string.tact_manual_name, ip)),
                                 )
                                 selectedPeerId = null
                                 manualDialog = false
@@ -567,11 +570,14 @@ fun TacticalCameraScreen(
 }
 
 /** 发现状态的人话描述 —— 阶段、耗时、层状态都来自 PhotoRelayHost 的 StateFlow */
+@Composable
 private fun discoveryLabel(state: DiscoveryState): String = when (state) {
-    is DiscoveryState.Idle -> "发现未启动"
-    is DiscoveryState.Searching -> "${state.stage} · ${state.elapsedMs / 1000}s · 已发现 ${state.found}"
-    is DiscoveryState.Found -> "已发现 ${state.count} 台接收台"
-    is DiscoveryState.Exhausted -> "未发现接收台 · ${state.reason}"
+    is DiscoveryState.Idle -> stringResource(R.string.tact_discovery_idle)
+    is DiscoveryState.Searching -> stringResource(
+        R.string.tact_discovery_searching, state.stage, state.elapsedMs / 1000, state.found,
+    )
+    is DiscoveryState.Found -> stringResource(R.string.tact_discovery_found, state.count)
+    is DiscoveryState.Exhausted -> stringResource(R.string.tact_discovery_exhausted, state.reason)
 }
 
 /** 严格 IPv4 校验:4 段十进制,每段 0-255;返回规范化字符串,失败返回 null */
@@ -706,11 +712,11 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("语音频谱 · SDR", back)
+        TerminalHeader(stringResource(R.string.tact_voice_sdr_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             // 频段模式:全频段 / 超声聚焦(15-22.05kHz)
             Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(0 to "全频段 0-22k", 1 to "超声聚焦 15-22k").forEach { (b, label) ->
+                listOf(0 to stringResource(R.string.tact_band_full), 1 to stringResource(R.string.tact_band_ultrasonic)).forEach { (b, label) ->
                     val on = band == b
                     Surface(
                         modifier = Modifier.clickable { haptic.hud(); manager.setBand(b) },
@@ -730,13 +736,13 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
                     border = BorderStroke(1.dp, Danger.copy(alpha = 0.6f)),
                 ) {
                     Text(
-                        "[!] 超声告警:18-22kHz 频段能量显著 —— 附近可能有电子设备线圈啸叫/超声源(启发式,消费级麦克风 20kHz+ 衰减严重,不代表鉴定结论)",
+                        stringResource(R.string.tact_ultrasonic_alarm),
                         fontFamily = Sans, fontSize = 9.sp, color = Danger, fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                     )
                 }
             }
-            ActionButton(running, "开启频谱侦测", "停止侦测") {
+            ActionButton(running, stringResource(R.string.tact_start_spectrum), stringResource(R.string.tact_stop_detection)) {
                 haptic.hud()
                 if (running) manager.stop() else manager.start()
             }
@@ -752,12 +758,12 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     val f = frame
-                    SdrReadout("CENTER", "11.025 kHz")
-                    SdrReadout("SPAN", "22.05 kHz")
-                    SdrReadout("RBW", "10.77 Hz")
-                    SdrReadout("PWR", if (f != null) "%.0f dB".format(f.rmsDb) else "--")
-                    SdrReadout("噪声底", if (f != null) "%.0f dB".format(f.noiseFloorDb) else "--")
-                    SdrReadout("峰值", if (f != null) "%.1f kHz".format(f.peakHz / 1000f) else "--")
+                    SdrReadout(stringResource(R.string.tact_sdr_center), "11.025 kHz")
+                    SdrReadout(stringResource(R.string.tact_sdr_span), "22.05 kHz")
+                    SdrReadout(stringResource(R.string.tact_sdr_rbw), "10.77 Hz")
+                    SdrReadout(stringResource(R.string.tact_sdr_pwr), if (f != null) "%.0f dB".format(f.rmsDb) else "--")
+                    SdrReadout(stringResource(R.string.tact_noise_floor), if (f != null) "%.0f dB".format(f.noiseFloorDb) else "--")
+                    SdrReadout(stringResource(R.string.tact_peak), if (f != null) "%.1f kHz".format(f.peakHz / 1000f) else "--")
                 }
             }
 
@@ -765,8 +771,8 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
 
             // 频谱面板标题条(真实 SDR 的通道标识)
             Row(Modifier.fillMaxWidth().padding(bottom = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("SPECTRUM · dBFS", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TacGreen)
-                Text(if (running) "● REC" else "○ STBY", fontFamily = Mono, fontSize = 8.sp, color = if (running) Red else Gray)
+                Text(stringResource(R.string.tact_sdr_spectrum_header), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TacGreen)
+                Text(if (running) stringResource(R.string.tact_sdr_rec) else stringResource(R.string.tact_sdr_stby), fontFamily = Mono, fontSize = 8.sp, color = if (running) Red else Gray)
             }
 
             // ── 实时频谱 + max-hold ──
@@ -867,8 +873,8 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
 
             // 瀑布面板标题条
             Row(Modifier.fillMaxWidth().padding(bottom = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("WATERFALL · HEAT", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold)
-                Text("${waterfall.size} 帧历史", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                Text(stringResource(R.string.tact_sdr_waterfall_header), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold)
+                Text(stringResource(R.string.tact_frames_history, waterfall.size), fontFamily = Mono, fontSize = 8.sp, color = Gray)
             }
 
             // ── 热力瀑布(新帧顶部进入) ──
@@ -958,7 +964,7 @@ fun GsmTowerScreen(back: () -> Unit) {
     LaunchedEffect(Unit) { vm.refresh() }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("基站监视 · CELL TOWER", back)
+        TerminalHeader(stringResource(R.string.tact_cell_tower_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp)) {
             Surface(
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -967,9 +973,9 @@ fun GsmTowerScreen(back: () -> Unit) {
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
-                        Text(state.operator.ifBlank { "读取运营商…" }, fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
+                        Text(state.operator.ifBlank { stringResource(R.string.tact_reading_operator) }, fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
                         Text(
-                            "${state.networkType.ifBlank { "" }} · 小区 ${state.towers.size} 座" +
+                            stringResource(R.string.tact_cell_count, state.networkType.ifBlank { "" }, state.towers.size) +
                                 if (state.updatedAtMs > 0) " · ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(state.updatedAtMs))}" else "",
                             fontFamily = Mono, fontSize = 9.sp, color = Gray,
                         )
@@ -980,7 +986,7 @@ fun GsmTowerScreen(back: () -> Unit) {
                         color = TacGreen.copy(alpha = 0.12f),
                         border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
                     ) {
-                        Text("刷新 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                        Text(stringResource(R.string.tact_refresh), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
                     }
                 }
             }
@@ -988,7 +994,7 @@ fun GsmTowerScreen(back: () -> Unit) {
             state.error?.let { Text("[!] $it", fontFamily = Sans, fontSize = 10.sp, color = Danger, modifier = Modifier.padding(vertical = 4.dp)) }
 
             if (state.towers.isEmpty() && state.error == null) {
-                EmptyHint("等待小区数据 —— 点击刷新读取真实基站信息")
+                EmptyHint(stringResource(R.string.tact_cell_waiting))
             } else {
                 state.towers.forEachIndexed { i, t ->
                     val typeColor = when (t.type) {
@@ -1013,15 +1019,15 @@ fun GsmTowerScreen(back: () -> Unit) {
                                     Text(t.type, fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = typeColor, modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp))
                                 }
                                 Spacer(Modifier.width(8.dp))
-                                Text(if (t.isRegistered) "● 注册小区" else "○ 邻区", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.isRegistered) typeColor else Gray, modifier = Modifier.weight(1f))
+                                Text(if (t.isRegistered) stringResource(R.string.tact_registered_cell) else stringResource(R.string.tact_neighbor_cell), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (t.isRegistered) typeColor else Gray, modifier = Modifier.weight(1f))
                                 Text("#${i + 1}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
                             }
                             Spacer(Modifier.height(6.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                GsmCellStat("小区 ID", t.cid.toString())
+                                GsmCellStat(stringResource(R.string.tact_cell_id), t.cid.toString())
                                 GsmCellStat("TAC/LAC", t.tacLac.toString())
                                 GsmCellStat("PCI/PSC", t.pci?.toString() ?: "—")
-                                GsmCellStat("运营商", t.mccMnc.ifBlank { "—" })
+                                GsmCellStat(stringResource(R.string.tact_operator), t.mccMnc.ifBlank { "—" })
                             }
                             Spacer(Modifier.height(6.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1032,11 +1038,14 @@ fun GsmTowerScreen(back: () -> Unit) {
                             }
                             if (t.bands.isNotEmpty() || t.timingAdvance != null || t.distanceEstimateM != null) {
                                 Spacer(Modifier.height(6.dp))
+                                val bandText = if (t.bands.isNotEmpty()) stringResource(R.string.tact_gsm_band, t.bands.joinToString("/")) else ""
+                                val distanceM = t.distanceEstimateM
+                                val distText = if (distanceM != null) stringResource(R.string.tact_distance_est, distanceM) else ""
                                 Text(
                                     buildString {
-                                        if (t.bands.isNotEmpty()) append("频段: Band ${t.bands.joinToString("/")}")
+                                        append(bandText)
                                         if (t.timingAdvance != null) append(" · TA ${t.timingAdvance}µs")
-                                        if (t.distanceEstimateM != null) append(" · 距离粗估 %.0fm".format(t.distanceEstimateM))
+                                        append(distText)
                                     },
                                     fontFamily = Mono, fontSize = 8.sp, color = Gold,
                                 )
@@ -1046,8 +1055,7 @@ fun GsmTowerScreen(back: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "数据来源: 系统 CellInfo 真实返回值。距离为 RSRP 路径损耗粗估(±数百米),非测量;" +
-                        "基站方位角手机无硬件可测,不提供。飞行模式/无信号时为空。",
+                    stringResource(R.string.tact_gsm_source),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
                 )
             }
@@ -1080,13 +1088,13 @@ fun MorseScreen(back: () -> Unit) {
     var mode by remember { mutableStateOf(MorseManager.MorseSendMode.SOUND) }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("摩尔斯码 · MORSE", back)
+        TerminalHeader(stringResource(R.string.tact_morse_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp)) {
-            TermPanel("发送 · TRANSMIT") {
-                TermInput("报文内容", text, placeholder = "SOS / 任意文本") { text = it }
+            TermPanel(stringResource(R.string.tact_morse_transmit)) {
+                TermInput(stringResource(R.string.tact_message_content), text, placeholder = stringResource(R.string.tact_message_placeholder)) { text = it }
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("速度", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    Text(stringResource(R.string.tact_speed), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                     Text("$wpm WPM", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold)
                 }
                 Slider(wpm.toFloat(), { wpm = it.toInt().coerceIn(1, 40) }, valueRange = 1f..40f, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = SurfaceAlt))
@@ -1094,9 +1102,9 @@ fun MorseScreen(back: () -> Unit) {
                 // 模式选择
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(
-                        MorseManager.MorseSendMode.SOUND to "声音",
-                        MorseManager.MorseSendMode.TORCH to "静默闪光",
-                        MorseManager.MorseSendMode.BOTH to "双模式",
+                        MorseManager.MorseSendMode.SOUND to stringResource(R.string.tact_mode_sound),
+                        MorseManager.MorseSendMode.TORCH to stringResource(R.string.tact_mode_silent),
+                        MorseManager.MorseSendMode.BOTH to stringResource(R.string.tact_mode_both),
                     ).forEach { (m, label) ->
                         val on = mode == m
                         Surface(
@@ -1111,7 +1119,7 @@ fun MorseScreen(back: () -> Unit) {
                 }
                 if (mode != MorseManager.MorseSendMode.SOUND && !state.torchAvailable) {
                     Spacer(Modifier.height(4.dp))
-                    Text("[!] 此设备无闪光灯或相机不可用 —— 静默模式不可用", fontFamily = Sans, fontSize = 9.sp, color = Warn)
+                    Text(stringResource(R.string.tact_no_torch), fontFamily = Sans, fontSize = 9.sp, color = Warn)
                 }
                 Spacer(Modifier.height(8.dp))
                 if (state.sending) {
@@ -1124,20 +1132,24 @@ fun MorseScreen(back: () -> Unit) {
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "发送中 · 当前字符 ${state.currentChar.ifBlank { "…" }} · ${(state.progress * 100).toInt()}%",
+                        stringResource(
+                            R.string.tact_sending_progress,
+                            state.currentChar.ifBlank { "…" },
+                            (state.progress * 100).toInt(),
+                        ),
                         fontFamily = Mono, fontSize = 9.sp, color = Gold,
                     )
                     Spacer(Modifier.height(6.dp))
                 }
-                ActionButton(running = state.sending, runLabel = "开始发送", stopLabel = "停止发送") {
+                ActionButton(running = state.sending, runLabel = stringResource(R.string.tact_start_send), stopLabel = stringResource(R.string.tact_stop_send)) {
                     haptic.hud()
                     if (state.sending) vm.stop() else vm.send(text, wpm, mode)
                 }
                 state.error?.let { Text("[!] $it", fontFamily = Sans, fontSize = 9.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
             }
             Spacer(Modifier.height(8.dp))
-            TermPanel("手动打键 · KEYING") {
-                Text("按「·」「—」输入摩尔斯码,实时解码", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+            TermPanel(stringResource(R.string.tact_morse_keying)) {
+                Text(stringResource(R.string.tact_keying_hint), fontFamily = Sans, fontSize = 9.sp, color = Gray)
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
@@ -1146,7 +1158,7 @@ fun MorseScreen(back: () -> Unit) {
                         color = Red.copy(alpha = 0.12f),
                         border = BorderStroke(1.5.dp, Red.copy(alpha = 0.6f)),
                     ) {
-                        Text("· DOT", fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 18.dp))
+                        Text(stringResource(R.string.tact_key_dot), fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 18.dp))
                     }
                     Surface(
                         modifier = Modifier.weight(1f).clickable { haptic.hud(); vm.key('-') },
@@ -1154,7 +1166,7 @@ fun MorseScreen(back: () -> Unit) {
                         color = Gold.copy(alpha = 0.12f),
                         border = BorderStroke(1.5.dp, Gold.copy(alpha = 0.6f)),
                     ) {
-                        Text("— DASH", fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 18.dp))
+                        Text(stringResource(R.string.tact_key_dash), fontFamily = Mono, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 18.dp))
                     }
                 }
                 Spacer(Modifier.height(6.dp))
@@ -1165,7 +1177,7 @@ fun MorseScreen(back: () -> Unit) {
                         color = TacGreen.copy(alpha = 0.1f),
                         border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.5f)),
                     ) {
-                        Text("字符结束 ▸", fontFamily = Sans, fontSize = 10.sp, color = TacGreen, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(R.string.tact_char_end), fontFamily = Sans, fontSize = 10.sp, color = TacGreen, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                     }
                     Surface(
                         modifier = Modifier.weight(1f).clickable { haptic.hud(); vm.keyWordEnd() },
@@ -1173,7 +1185,7 @@ fun MorseScreen(back: () -> Unit) {
                         color = Color.Transparent,
                         border = BorderStroke(1.dp, BorderDim),
                     ) {
-                        Text("词空格", fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(R.string.tact_word_space), fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                     }
                     Surface(
                         modifier = Modifier.weight(1f).clickable { haptic.hud(); vm.keyClear() },
@@ -1181,27 +1193,26 @@ fun MorseScreen(back: () -> Unit) {
                         color = Color.Transparent,
                         border = BorderStroke(1.dp, BorderDim),
                     ) {
-                        Text("清除", fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(R.string.tact_clear), fontFamily = Sans, fontSize = 10.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                Text("当前打键: ${vm.pendingCode()}", fontFamily = Mono, fontSize = 11.sp, color = Gold)
+                Text(stringResource(R.string.tact_current_keying, vm.pendingCode()), fontFamily = Mono, fontSize = 11.sp, color = Gold)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    state.decoded.ifBlank { "解码结果将显示在这里" },
+                    state.decoded.ifBlank { stringResource(R.string.tact_decoded_placeholder) },
                     fontFamily = Sans, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = White,
                 )
             }
             Spacer(Modifier.height(8.dp))
-            TermPanel("对照表 · REFERENCE") {
+            TermPanel(stringResource(R.string.tact_morse_reference)) {
                 Text(
                     MorseManager.MORSE.entries.joinToString("  ") { "${it.key}=${it.value}" },
                     fontFamily = Mono, fontSize = 9.sp, color = Gray, lineHeight = 15.sp,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "国际摩尔斯标准:点=1 单位 · 划=3 单位 · 字符间 3 · 词间 7(Paris WPM)。" +
-                        "静默模式用相机闪光灯打码,夜间可用。",
+                    stringResource(R.string.tact_morse_standard),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray.copy(alpha = 0.8f),
                 )
             }
@@ -1218,6 +1229,7 @@ fun MorseScreen(back: () -> Unit) {
 @Composable
 fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () -> Unit) {
     val manager = vm.manager
+    val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val last by manager.lastTransmit.collectAsState()
     var necCmd by remember { mutableStateOf("45") }
@@ -1226,23 +1238,23 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
     var rawPattern by remember { mutableStateOf("") }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("红外遥控", back)
+        TerminalHeader(stringResource(R.string.tact_ir_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp)) {
-            TermPanel("发射器状态 · IR EMITTER") {
+            TermPanel(stringResource(R.string.tact_ir_emitter_panel)) {
                 if (manager.hasEmitter) {
-                    Text("● 检测到红外发射器", fontFamily = Mono, fontSize = 11.sp, color = TacGreen)
-                    Text("载波范围: ${manager.info.carrierFreqs.joinToString(" - ")} Hz", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    Text(stringResource(R.string.tact_ir_emitter_found), fontFamily = Mono, fontSize = 11.sp, color = TacGreen)
+                    Text(stringResource(R.string.tact_ir_carrier_range, manager.info.carrierFreqs.joinToString(" - ")), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 } else {
-                    Text("✕ 本机无红外发射器（小米/Mi Remote 系列等机型支持）", fontFamily = Sans, fontSize = 11.sp, color = Danger)
+                    Text(stringResource(R.string.tact_ir_no_emitter), fontFamily = Sans, fontSize = 11.sp, color = Danger)
                 }
             }
 
             Spacer(Modifier.height(8.dp))
-            TermPanel("电视常用键 · NEC 38kHz") {
+            TermPanel(stringResource(R.string.tact_ir_tv_keys)) {
                 val keys = listOf(
-                    "电源" to 0x45, "静音" to 0x11, "输入源" to 0x49,
-                    "音量+" to 0x15, "音量-" to 0x09,
-                    "频道+" to 0x46, "频道-" to 0x47,
+                    stringResource(R.string.tact_ir_power) to 0x45, stringResource(R.string.tact_ir_mute) to 0x11, stringResource(R.string.tact_ir_source) to 0x49,
+                    stringResource(R.string.tact_ir_vol_up) to 0x15, stringResource(R.string.tact_ir_vol_down) to 0x09,
+                    stringResource(R.string.tact_ir_ch_up) to 0x46, stringResource(R.string.tact_ir_ch_down) to 0x47,
                 )
                 keys.chunked(3).forEach { rowKeys ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1279,7 +1291,7 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
                         }
                     }
                 }
-                Text("数字键为 NEC 0x00 地址通用映射，各品牌可能存在偏差", fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
+                Text(stringResource(R.string.tact_ir_numeric_note), fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
             }
 
             Spacer(Modifier.height(8.dp))
@@ -1294,14 +1306,14 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
                 border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
             ) {
                 Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("▸ 万能遥控 · Flipper tv.ir 泛洪库 + 按键克隆", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.weight(1f))
-                    Text("456 候选码", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                    Text(stringResource(R.string.tact_ir_universal), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.tact_ir_candidates), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                 }
             }
             Spacer(Modifier.height(8.dp))
             // ── 协议选择 ──
-            TermPanel("协议 · PROTOCOL") {
-                Text("选择红外协议与参数;载波频率与脉冲时序按协议标准生成", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+            TermPanel(stringResource(R.string.tact_ir_protocol_panel)) {
+                Text(stringResource(R.string.tact_ir_protocol_hint), fontFamily = Sans, fontSize = 9.sp, color = Gray)
                 Spacer(Modifier.height(6.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     listOf("NEC 38kHz" to "nec", "Sony SIRC 40kHz" to "sony", "RC-5 36kHz" to "rc5").forEach { (label, key) ->
@@ -1320,10 +1332,10 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
                 when (irProtocol) {
                     "sony" -> {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            TermInput("命令(hex)", necCmd, modifier = Modifier.weight(1f)) { necCmd = it }
-                            TermInput("设备(hex)", necAddr, modifier = Modifier.weight(1f)) { necAddr = it }
+                            TermInput(stringResource(R.string.tact_ir_cmd_hex), necCmd, modifier = Modifier.weight(1f)) { necCmd = it }
+                            TermInput(stringResource(R.string.tact_ir_device_hex), necAddr, modifier = Modifier.weight(1f)) { necAddr = it }
                         }
-                        Text("Sony SIRC:引导 2400µs,逻辑 1=1200µs 开+600µs 关,0=600µs+600µs,LSB 先发 · 12bit 标准", fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f), modifier = Modifier.padding(top = 3.dp))
+                        Text(stringResource(R.string.tact_ir_sony_desc), fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f), modifier = Modifier.padding(top = 3.dp))
                         Spacer(Modifier.height(6.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth().clickable {
@@ -1336,15 +1348,15 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
                             color = Red.copy(alpha = 0.12f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
                         ) {
-                            Text("发射 SIRC ▸", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                            Text(stringResource(R.string.tact_ir_send_sirc), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                         }
                     }
                     "rc5" -> {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            TermInput("地址(hex)", necAddr, modifier = Modifier.weight(1f)) { necAddr = it }
-                            TermInput("命令(hex)", necCmd, modifier = Modifier.weight(1f)) { necCmd = it }
+                            TermInput(stringResource(R.string.tact_ir_addr_hex), necAddr, modifier = Modifier.weight(1f)) { necAddr = it }
+                            TermInput(stringResource(R.string.tact_ir_cmd_hex), necCmd, modifier = Modifier.weight(1f)) { necCmd = it }
                         }
-                        Text("RC-5:889µs 曼彻斯特编码,36kHz 载波 · 飞利浦系设备", fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f), modifier = Modifier.padding(top = 3.dp))
+                        Text(stringResource(R.string.tact_ir_rc5_desc), fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f), modifier = Modifier.padding(top = 3.dp))
                         Spacer(Modifier.height(6.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth().clickable {
@@ -1357,30 +1369,30 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
                             color = Red.copy(alpha = 0.12f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
                         ) {
-                            Text("发射 RC-5 ▸", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                            Text(stringResource(R.string.tact_ir_send_rc5), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                         }
                     }
                     else -> {
-                        Text("NEC:引导 9000µs 开+4500µs 关,1=560+1690µs,0=560+560µs,MSB 先发 · 最通用协议", fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f))
+                        Text(stringResource(R.string.tact_ir_nec_desc), fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f))
                     }
                 }
             }
             // ── 波形示意:按所选协议标准时序绘制,非实测波形 ──
-            TermPanel("波形示意 · WAVEFORM (协议标准时序)") {
+            TermPanel(stringResource(R.string.tact_ir_waveform_panel)) {
                 IrWaveformPreview(irProtocol, necAddr, necCmd)
             }
             Spacer(Modifier.height(8.dp))
-            TermPanel("自定义码发射") {
+            TermPanel(stringResource(R.string.tact_ir_custom_panel)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TermInput("地址(hex)", necAddr, modifier = Modifier.weight(1f)) { necAddr = it }
-                    TermInput("命令(hex)", necCmd, modifier = Modifier.weight(1f)) { necCmd = it }
+                    TermInput(stringResource(R.string.tact_ir_addr_hex), necAddr, modifier = Modifier.weight(1f)) { necAddr = it }
+                    TermInput(stringResource(R.string.tact_ir_cmd_hex), necCmd, modifier = Modifier.weight(1f)) { necCmd = it }
                 }
                 Spacer(Modifier.height(6.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable {
                         haptic.hud()
                         if (necAddr.toIntOrNull(16) == null || necCmd.toIntOrNull(16) == null) {
-                            xin.ctkqiang.deauthctrl.ui.components.StickerBus.show("HEX 地址/命令无效!")
+                            xin.ctkqiang.deauthctrl.ui.components.StickerBus.show(context.getString(R.string.tact_ir_hex_invalid))
                         }
                         val a = necAddr.toIntOrNull(16) ?: 0
                         val c = necCmd.toIntOrNull(16) ?: 0
@@ -1390,27 +1402,27 @@ fun IrRemoteScreen(vm: IrRemoteViewModel, back: () -> Unit, onOpenUniversal: () 
                     color = Red.copy(alpha = 0.12f),
                     border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
                 ) {
-                    Text("发射 NEC", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                    Text(stringResource(R.string.tact_ir_send_nec), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                 }
                 Spacer(Modifier.height(8.dp))
-                TermInput("原始脉冲 (µs, 逗号分隔)", rawPattern, placeholder = "9000,4500,560,1690,...") { rawPattern = it }
+                TermInput(stringResource(R.string.tact_ir_raw_label), rawPattern, placeholder = "9000,4500,560,1690,...") { rawPattern = it }
                 Spacer(Modifier.height(6.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable {
                         haptic.hud()
                         val pattern = rawPattern.split(",").mapNotNull { it.trim().toIntOrNull() }.toIntArray()
-                        if (pattern.isNotEmpty()) manager.transmitRaw(38_000, pattern, label = "RAW ${pattern.size} 段")
+                        if (pattern.isNotEmpty()) manager.transmitRaw(38_000, pattern, label = context.getString(R.string.tact_raw_segments, pattern.size))
                     },
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
                     color = SurfaceBg,
                     border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
                 ) {
-                    Text("发射原始码", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                    Text(stringResource(R.string.tact_ir_send_raw), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                 }
             }
             last?.let {
                 Spacer(Modifier.height(6.dp))
-                Text(it, fontFamily = Mono, fontSize = 9.sp, color = if (it.startsWith("已发射")) TacGreen else Danger)
+                Text(it, fontFamily = Mono, fontSize = 9.sp, color = if (!it.startsWith("[!]")) TacGreen else Danger)
             }
             Spacer(Modifier.height(10.dp))
         }
@@ -1449,13 +1461,13 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("NFC · RFID 工作台", back)
+        TerminalHeader(stringResource(R.string.tact_nfc_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-            TermPanel("适配器状态") {
+            TermPanel(stringResource(R.string.tact_nfc_adapter_panel)) {
                 when {
-                    !manager.supported -> Text("✕ 本机无 NFC 硬件", fontFamily = Sans, fontSize = 11.sp, color = Danger)
+                    !manager.supported -> Text(stringResource(R.string.tact_nfc_no_hardware), fontFamily = Sans, fontSize = 11.sp, color = Danger)
                     !manager.enabled -> {
-                        Text("NFC 已关闭", fontFamily = Sans, fontSize = 11.sp, color = Warn)
+                        Text(stringResource(R.string.tact_nfc_disabled), fontFamily = Sans, fontSize = 11.sp, color = Warn)
                         Spacer(Modifier.height(6.dp))
                         Surface(
                             modifier = Modifier.clickable { manager.openNfcSettings() },
@@ -1463,16 +1475,16 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                             color = Red.copy(alpha = 0.12f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
                         ) {
-                            Text("打开系统 NFC 设置", fontFamily = Sans, fontSize = 11.sp, color = Red, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                            Text(stringResource(R.string.tact_nfc_open_settings), fontFamily = Sans, fontSize = 11.sp, color = Red, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                         }
                     }
-                    else -> Text("● 读卡器就绪 —— 将标签贴近手机背部", fontFamily = Mono, fontSize = 11.sp, color = TacGreen)
+                    else -> Text(stringResource(R.string.tact_nfc_reader_ready), fontFamily = Mono, fontSize = 11.sp, color = TacGreen)
                 }
             }
             Spacer(Modifier.height(8.dp))
             // ── 四工作区切换 ──
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                listOf("读卡 READER" to 0, "模拟 EMULATOR" to 1, "写入 WRITER" to 2, "识别 IDENTIFIER" to 3).forEach { (label, i) ->
+                listOf(stringResource(R.string.tact_nfc_tab_reader) to 0, stringResource(R.string.tact_nfc_tab_emulator) to 1, stringResource(R.string.tact_nfc_tab_writer) to 2, stringResource(R.string.tact_nfc_tab_identifier) to 3).forEach { (label, i) ->
                     val on = tab == i
                     Surface(
                         modifier = Modifier.weight(1f).clickable { haptic.hud(); tab = i },
@@ -1489,17 +1501,17 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
             when (tab) {
                 0 -> Column {
                     // ── 读卡:当前标签完整信息 ──
-                    TermPanel("读卡结果 · CURRENT TAG") {
+                    TermPanel(stringResource(R.string.tact_nfc_current_tag)) {
                         val t = lastTag
                         if (t == null) {
-                            EmptyHint("等待标签接近…")
+                            EmptyHint(stringResource(R.string.tact_nfc_waiting_tag))
                         } else {
                             Column {
                                 InfoLine("UID", t.uid)
-                                InfoLine("技术", t.techs.joinToString(" / "))
-                                InfoLine("NDEF", if (t.ndefRecords.isEmpty()) "无 NDEF 记录" else t.ndefRecords.joinToString("\n"))
-                                InfoLine("扇区", if (t.sectorCount > 0) "${t.sectorCount} (Mifare Classic)" else "--")
-                                InfoLine("可写", if (t.writable) "是" else "否")
+                                InfoLine(stringResource(R.string.tact_nfc_tech), t.techs.joinToString(" / "))
+                                InfoLine("NDEF", if (t.ndefRecords.isEmpty()) stringResource(R.string.tact_nfc_no_ndef) else t.ndefRecords.joinToString("\n"))
+                                InfoLine(stringResource(R.string.tact_nfc_sectors), if (t.sectorCount > 0) "${t.sectorCount} (Mifare Classic)" else "--")
+                                InfoLine(stringResource(R.string.tact_nfc_writable), if (t.writable) stringResource(R.string.tact_yes) else stringResource(R.string.tact_no))
                             }
                         }
                     }
@@ -1507,16 +1519,16 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                 }
                 1 -> Column {
                     // ── 模拟:手机作为 NFC 卡 ──
-                    Text("手机模拟为 NFC 卡,被读卡器读取 —— 卡内容在下方管理", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+                    Text(stringResource(R.string.tact_nfc_emulator_desc), fontFamily = Sans, fontSize = 9.sp, color = Gray)
                     Spacer(Modifier.height(6.dp))
                     CardWalletPanel()
                 }
                 2 -> Column {
                     // ── 写入:NDEF 文本 ──
-                    TermPanel("写入 NDEF 文本") {
-                        Text("支持 NTAG / Ultralight 等可自由读写标签；加密卡（Mifare Classic 带密钥）无法克隆 —— 密钥由厂商烧写，未授权穷举既不合法也不可行", fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp)
+                    TermPanel(stringResource(R.string.tact_nfc_write_panel)) {
+                        Text(stringResource(R.string.tact_nfc_write_desc), fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp)
                         Spacer(Modifier.height(6.dp))
-                        TermInput("写入内容", writeText, placeholder = "贴卡后写入这段文本") { writeText = it }
+                        TermInput(stringResource(R.string.tact_nfc_write_content), writeText, placeholder = stringResource(R.string.tact_nfc_write_placeholder)) { writeText = it }
                         Spacer(Modifier.height(6.dp))
                         Surface(
                             modifier = Modifier.fillMaxWidth().clickable {
@@ -1527,16 +1539,16 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                             color = Red.copy(alpha = 0.12f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
                         ) {
-                            Text("准备写入", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                            Text(stringResource(R.string.tact_nfc_prepare_write), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                         }
                     }
                     message?.let { Text(it, fontFamily = Mono, fontSize = 9.sp, color = TacGreen, modifier = Modifier.padding(top = 4.dp)) }
                 }
                 else -> Column {
                     // ── 识别:UID 历史 + 技术指纹 ──
-                    TermPanel("UID 采集历史 (${tagHistory.size})") {
+                    TermPanel(stringResource(R.string.tact_nfc_uid_history, tagHistory.size)) {
                         if (tagHistory.isEmpty()) {
-                            EmptyHint("刷过的标签会按 UID 去重记录在这里")
+                            EmptyHint(stringResource(R.string.tact_nfc_uid_history_empty))
                         } else {
                             tagHistory.forEach { t ->
                                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1547,16 +1559,16 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    TermPanel("技术指纹 · FINGERPRINT") {
-                        Text("按 UID 长度与技术支持区分卡型:", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+                    TermPanel(stringResource(R.string.tact_nfc_fingerprint)) {
+                        Text(stringResource(R.string.tact_nfc_fingerprint_desc), fontFamily = Sans, fontSize = 9.sp, color = Gray)
                         Spacer(Modifier.height(4.dp))
-                        Text("· 4 字节 UID = Mifare Classic / Ultralight", fontFamily = Mono, fontSize = 8.5.sp, color = White)
-                        Text("· 7 字节 UID = NTAG21x / DESFire", fontFamily = Mono, fontSize = 8.5.sp, color = White)
-                        Text("· 8/10 字节 UID = Type 4B / ISO15693 类", fontFamily = Mono, fontSize = 8.5.sp, color = White)
-                        Text("· 支持 NDEF = NFC Forum 标签", fontFamily = Mono, fontSize = 8.5.sp, color = White)
-                        Text("· 扇区数 > 0 = Mifare Classic(加密区密钥由厂商烧写)", fontFamily = Mono, fontSize = 8.5.sp, color = White)
+                        Text(stringResource(R.string.tact_nfc_fp_4byte), fontFamily = Mono, fontSize = 8.5.sp, color = White)
+                        Text(stringResource(R.string.tact_nfc_fp_7byte), fontFamily = Mono, fontSize = 8.5.sp, color = White)
+                        Text(stringResource(R.string.tact_nfc_fp_8_10byte), fontFamily = Mono, fontSize = 8.5.sp, color = White)
+                        Text(stringResource(R.string.tact_nfc_fp_ndef), fontFamily = Mono, fontSize = 8.5.sp, color = White)
+                        Text(stringResource(R.string.tact_nfc_fp_sectors), fontFamily = Mono, fontSize = 8.5.sp, color = White)
                         Spacer(Modifier.height(4.dp))
-                        Text("识别为启发式分型,以真实读到的技术支持为准", fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f))
+                        Text(stringResource(R.string.tact_nfc_fp_note), fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f))
                     }
                 }
             }
@@ -1572,6 +1584,11 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
  */
 @Composable
 private fun IrWaveformPreview(protocol: String, addrHex: String, cmdHex: String) {
+    val waveformLabel = when (protocol) {
+        "sony" -> stringResource(R.string.tact_wave_sirc)
+        "rc5" -> stringResource(R.string.tact_wave_rc5)
+        else -> stringResource(R.string.tact_wave_nec)
+    }
     val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
     Canvas(Modifier.fillMaxWidth().height(70.dp)) {
         val a = addrHex.toIntOrNull(16) ?: 0
@@ -1618,11 +1635,7 @@ private fun IrWaveformPreview(protocol: String, addrHex: String, cmdHex: String)
             x += w
         }
         val label = textMeasurer.measure(
-            when (protocol) {
-                "sony" -> "SIRC: 2400µs 引导 · 12bit LSB"
-                "rc5" -> "RC-5: 曼彻斯特 · 889µs 位宽"
-                else -> "NEC: 9000+4500µs 引导 · 8+8bit MSB"
-            },
+            waveformLabel,
             androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = Gray),
         )
         drawText(label, topLeft = Offset(0f, size.height - label.size.height))
@@ -1640,14 +1653,14 @@ private fun CardWalletPanel() {
     var newName by remember { mutableStateOf("") }
     var newData by remember { mutableStateOf("") }
 
-    TermPanel("卡模拟钱包 · HCE EMULATION") {
+    TermPanel(stringResource(R.string.tact_wallet_panel)) {
         Text(
-            "手机化身 NFC 卡:钱包存多张虚拟卡,选择一张设为活跃,读卡器贴近手机时由系统 HCE 服务应答(ISO 14443-4 APDU)",
+            stringResource(R.string.tact_wallet_desc),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(6.dp))
         if (cards.isEmpty()) {
-            EmptyHint("还没有虚拟卡 —— 在下方添加")
+            EmptyHint(stringResource(R.string.tact_wallet_empty))
         } else {
             cards.forEach { card ->
                 val active = card.id == activeId
@@ -1658,13 +1671,14 @@ private fun CardWalletPanel() {
                     border = BorderStroke(1.dp, if (active) Gold.copy(alpha = 0.8f) else BorderDim),
                 ) {
                     Column(Modifier.padding(9.dp)) {
+                        val emptyDataLabel = stringResource(R.string.tact_empty)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(card.name, fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
                             if (active) {
-                                Text("● 活跃", fontFamily = Mono, fontSize = 8.sp, color = TacGreen)
+                                Text(stringResource(R.string.tact_wallet_active), fontFamily = Mono, fontSize = 8.sp, color = TacGreen)
                             }
                         }
-                        Text("AID F0010203040506 · 数据 ${card.dataHex.ifBlank { "空" }.take(24)}", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                        Text(stringResource(R.string.tact_wallet_aid_data, card.dataHex.ifBlank { emptyDataLabel }.take(24)), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                         Spacer(Modifier.height(5.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             if (!active) {
@@ -1674,7 +1688,7 @@ private fun CardWalletPanel() {
                                     color = Red.copy(alpha = 0.14f),
                                     border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
                                 ) {
-                                    Text("设为活跃", fontFamily = Sans, fontSize = 9.sp, color = Red, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                                    Text(stringResource(R.string.tact_wallet_set_active), fontFamily = Sans, fontSize = 9.sp, color = Red, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
                                 }
                             }
                             Surface(
@@ -1683,7 +1697,7 @@ private fun CardWalletPanel() {
                                 color = Color.Transparent,
                                 border = BorderStroke(1.dp, BorderDim),
                             ) {
-                                Text("删除", fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                                Text(stringResource(R.string.tact_delete), fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
                             }
                         }
                     }
@@ -1691,9 +1705,9 @@ private fun CardWalletPanel() {
             }
         }
         Spacer(Modifier.height(6.dp))
-        TermInput("卡名", newName, placeholder = "如:研究卡 A") { newName = it }
+        TermInput(stringResource(R.string.tact_wallet_card_name), newName, placeholder = stringResource(R.string.tact_wallet_card_name_ph)) { newName = it }
         Spacer(Modifier.height(4.dp))
-        TermInput("卡数据 (hex,可选)", newData, placeholder = "如: DEADBEEF") { newData = it }
+        TermInput(stringResource(R.string.tact_wallet_card_data), newData, placeholder = stringResource(R.string.tact_wallet_card_data_ph)) { newData = it }
         Spacer(Modifier.height(5.dp))
         Surface(
             modifier = Modifier.fillMaxWidth().clickable {
@@ -1705,11 +1719,11 @@ private fun CardWalletPanel() {
             color = Red.copy(alpha = 0.12f),
             border = BorderStroke(1.dp, Red.copy(alpha = 0.45f)),
         ) {
-            Text("添加虚拟卡", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+            Text(stringResource(R.string.tact_wallet_add), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            "能力边界: HCE 仅模拟 ISO-DEP APDU 卡(自定义读卡器/研究场景); MIFARE Classic 门禁卡与支付卡需安全元件与发卡密钥,普通手机无法模拟",
+            stringResource(R.string.tact_wallet_limitations),
             fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
         )
     }
@@ -1745,12 +1759,12 @@ fun SerialMonitorScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("串口监视 · SERIAL MONITOR", back)
+        TerminalHeader(stringResource(R.string.tact_serial_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             // ── 设备枚举 ──
-            TermPanel("USB 串口设备 (${state.devices.size})") {
+            TermPanel(stringResource(R.string.tact_serial_devices_panel, state.devices.size)) {
                 if (state.devices.isEmpty()) {
-                    EmptyHint("未检测到串口设备 —— 通过 OTG 接入 FTDI/CH340/CP210x 或 Arduino")
+                    EmptyHint(stringResource(R.string.tact_serial_no_devices))
                 } else {
                     state.devices.forEach { d ->
                         val on = state.connectedDevice?.deviceId == d.deviceId
@@ -1770,33 +1784,33 @@ fun SerialMonitorScreen(back: () -> Unit) {
                                     Text(d.name, fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) TacGreen else White)
                                     Text("VID %04X · PID %04X · %s".format(d.vendorId, d.productId, d.chip), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                                 }
-                                Text(if (on) "已连接" else "连接 ▸", fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (on) TacGreen else Gold)
+                                Text(if (on) stringResource(R.string.tact_connected) else stringResource(R.string.tact_connect), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (on) TacGreen else Gold)
                             }
                         }
                     }
                 }
                 Text(
-                    "FTDI/CH340 芯片需厂商驱动;系统未内置时仅能枚举无法通讯。CDC-ACM(Arduino 原生)兼容性最好。",
+                    stringResource(R.string.tact_serial_driver_note),
                     fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f), lineHeight = 11.sp,
                 )
             }
             Spacer(Modifier.height(8.dp))
             // ── 线路参数(Arduino IDE 同款) ──
-            TermPanel("线路参数 · LINE CODING") {
+            TermPanel(stringResource(R.string.tact_serial_line_coding)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TermInput("波特率", state.baudRate.toString(), modifier = Modifier.weight(1f)) { v ->
+                    TermInput(stringResource(R.string.tact_serial_baud), state.baudRate.toString(), modifier = Modifier.weight(1f)) { v ->
                         v.toIntOrNull()?.let { vm.setParams(it, state.dataBits, state.stopBits, state.parity) }
                     }
-                    TermInput("数据位", state.dataBits.toString(), modifier = Modifier.weight(1f)) { v ->
+                    TermInput(stringResource(R.string.tact_serial_data_bits), state.dataBits.toString(), modifier = Modifier.weight(1f)) { v ->
                         v.toIntOrNull()?.let { vm.setParams(state.baudRate, it, state.stopBits, state.parity) }
                     }
-                    TermInput("停止位", state.stopBits.toString(), modifier = Modifier.weight(1f)) { v ->
+                    TermInput(stringResource(R.string.tact_serial_stop_bits), state.stopBits.toString(), modifier = Modifier.weight(1f)) { v ->
                         v.toIntOrNull()?.let { vm.setParams(state.baudRate, state.dataBits, it, state.parity) }
                     }
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(0 to "无校验", 1 to "奇校验", 2 to "偶校验").forEach { (p, label) ->
+                    listOf(0 to stringResource(R.string.tact_parity_none), 1 to stringResource(R.string.tact_parity_odd), 2 to stringResource(R.string.tact_parity_even)).forEach { (p, label) ->
                         val on = state.parity == p
                         Surface(
                             modifier = Modifier.weight(1f).clickable { haptic.hud(); vm.setParams(state.baudRate, state.dataBits, state.stopBits, p) },
@@ -1828,8 +1842,8 @@ fun SerialMonitorScreen(back: () -> Unit) {
             ) {
                 Column(Modifier.padding(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("监视输出 (${state.log.size})", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.weight(1f))
-                        Text("清除", fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.clickable { haptic.hud(); vm.clearLog() })
+                        Text(stringResource(R.string.tact_serial_output, state.log.size), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.tact_clear), fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.clickable { haptic.hud(); vm.clearLog() })
                     }
                     Spacer(Modifier.height(4.dp))
                     LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
@@ -1853,7 +1867,7 @@ fun SerialMonitorScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             // ── 发送行 ──
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                TermInput("发送", sendText, placeholder = "输入指令,自动补 CR+LF", modifier = Modifier.weight(1f)) { sendText = it }
+                TermInput(stringResource(R.string.tact_serial_send), sendText, placeholder = stringResource(R.string.tact_serial_send_ph), modifier = Modifier.weight(1f)) { sendText = it }
                 Surface(
                     modifier = Modifier.clickable {
                         haptic.hud()
@@ -1866,11 +1880,11 @@ fun SerialMonitorScreen(back: () -> Unit) {
                     color = Red.copy(alpha = 0.14f),
                     border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
                 ) {
-                    Text("发送 ▸", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp))
+                    Text(stringResource(R.string.tact_send_arrow), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp))
                 }
             }
             if (!state.connected) {
-                Text("未连接设备 —— 发送不可用;先连接上方枚举到的串口设备", fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
+                Text(stringResource(R.string.tact_serial_not_connected), fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
             }
             Spacer(Modifier.height(10.dp))
         }
@@ -1897,7 +1911,7 @@ fun OtgProbeScreen(onOpenArp: () -> Unit, onOpenSerial: () -> Unit, back: () -> 
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("有线探测 · OTG RECON", back)
+        TerminalHeader(stringResource(R.string.tact_otg_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp)) {
             Surface(
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -1905,13 +1919,13 @@ fun OtgProbeScreen(onOpenArp: () -> Unit, onOpenSerial: () -> Unit, back: () -> 
                 border = BorderStroke(1.dp, BorderDim),
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (devices.isEmpty()) "○ 无 OTG 设备" else "● 检测到 ${devices.size} 个 USB 设备", fontFamily = Mono, fontSize = 10.sp, color = if (devices.isEmpty()) Gray else TacGreen, modifier = Modifier.weight(1f))
-                    Text("自动刷新", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                    Text(if (devices.isEmpty()) stringResource(R.string.tact_otg_none) else stringResource(R.string.tact_otg_found, devices.size), fontFamily = Mono, fontSize = 10.sp, color = if (devices.isEmpty()) Gray else TacGreen, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.tact_auto_refresh), fontFamily = Sans, fontSize = 8.sp, color = Gray)
                 }
             }
             Spacer(Modifier.height(8.dp))
             if (devices.isEmpty()) {
-                EmptyHint("接入 USB 以太网适配器或 USB 串口(FTDI/CH340/CP210x/Arduino)后自动出现")
+                EmptyHint(stringResource(R.string.tact_otg_empty))
             } else {
                 devices.forEach { d ->
                     val isSerial = d.deviceClass == 2 || d.vendorId in setOf(0x0403, 0x1A86, 0x10C4, 0x2341)
@@ -1924,7 +1938,7 @@ fun OtgProbeScreen(onOpenArp: () -> Unit, onOpenSerial: () -> Unit, back: () -> 
                     ) {
                         Column(Modifier.padding(10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(d.productName ?: "USB 设备", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
+                                Text(d.productName ?: stringResource(R.string.tact_usb_device), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
                                 Text("VID %04X · PID %04X".format(d.vendorId, d.productId), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                             }
                             Spacer(Modifier.height(6.dp))
@@ -1936,7 +1950,7 @@ fun OtgProbeScreen(onOpenArp: () -> Unit, onOpenSerial: () -> Unit, back: () -> 
                                         color = TacGreen.copy(alpha = 0.1f),
                                         border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.5f)),
                                     ) {
-                                        Text("疑似网卡 → ARP 扫描 ▸", fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TacGreen, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+                                        Text(stringResource(R.string.tact_otg_net), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TacGreen, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
                                     }
                                 }
                                 if (isSerial) {
@@ -1946,11 +1960,11 @@ fun OtgProbeScreen(onOpenArp: () -> Unit, onOpenSerial: () -> Unit, back: () -> 
                                         color = Gold.copy(alpha = 0.1f),
                                         border = BorderStroke(1.dp, Gold.copy(alpha = 0.5f)),
                                     ) {
-                                        Text("疑似串口 → 串口监视 ▸", fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+                                        Text(stringResource(R.string.tact_otg_serial), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
                                     }
                                 }
                                 if (!isNet && !isSerial) {
-                                    Text("未识别设备类 —— 无法确定其用途", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+                                    Text(stringResource(R.string.tact_otg_unknown), fontFamily = Sans, fontSize = 9.sp, color = Gray)
                                 }
                             }
                         }
@@ -1959,8 +1973,7 @@ fun OtgProbeScreen(onOpenArp: () -> Unit, onOpenSerial: () -> Unit, back: () -> 
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                "识别为 VID/PID 与设备类的启发式推断;实际链路探测(ARP/串口收发)由对应工具执行。" +
-                    "FTDI/CH340 串口芯片在无厂商驱动的 Android 上仅能枚举、无法通讯。",
+                stringResource(R.string.tact_otg_note),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
             )
             Spacer(Modifier.height(10.dp))
@@ -2030,7 +2043,7 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("数字夜视", back)
+        TerminalHeader(stringResource(R.string.tact_night_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             // 镜头选择 —— 点击只更新 selectedId,由上面的 effect 决定是否重启
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -2047,7 +2060,7 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(6.dp))
-            ActionButton(running, "开启夜视", "关闭夜视") {
+            ActionButton(running, stringResource(R.string.tact_night_start), stringResource(R.string.tact_night_stop)) {
                 haptic.hud()
                 if (running) manager.stop()
                 else if (selectedId.isNotEmpty()) manager.start(selectedId)
@@ -2064,8 +2077,8 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
                     .border(1.dp, if (anyThreat) Danger.copy(alpha = 0.8f) else if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)),
             ) {
                 frame?.let { bmp ->
-                    Image(bmp.asImageBitmap(), contentDescription = "夜视画面", modifier = Modifier.fillMaxSize())
-                } ?: EmptyHint(if (running) "增强画面生成中…" else "开启夜视后显示绿色增强画面")
+                    Image(bmp.asImageBitmap(), contentDescription = stringResource(R.string.tact_cd_night_frame), modifier = Modifier.fillMaxSize())
+                } ?: EmptyHint(if (running) stringResource(R.string.tact_night_enhancing) else stringResource(R.string.tact_night_hint))
 
                 // 已确认跟踪目标:框 + 分数标签 + 涟漪,lastSeenAgoMs 驱动 700ms 淡出
                 if (anyThreat) {
@@ -2122,7 +2135,7 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
                         color = Danger.copy(alpha = 0.85f),
                     ) {
                         Text(
-                            "[!] 确认目标 — 人脸 $faceCount · 人体 $humanCount",
+                            stringResource(R.string.tact_night_confirmed, faceCount, humanCount),
                             fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                             color = Color.White,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -2139,10 +2152,10 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
                     ) {
                         Text(
                             when {
-                                detectorStatus is DetectorStatus.Unavailable -> "OpenCV 不可用 · 仅画面增强"
-                                detectorStatus is DetectorStatus.Loading -> "检测器加载中…"
-                                anyThreat -> "TARGET LOCKED · 人脸 $faceCount · 人体 $humanCount"
-                                else -> "SCANNING · 无确认目标"
+                                detectorStatus is DetectorStatus.Unavailable -> stringResource(R.string.tact_detector_unavailable)
+                                detectorStatus is DetectorStatus.Loading -> stringResource(R.string.tact_detector_loading)
+                                anyThreat -> stringResource(R.string.tact_target_locked, faceCount, humanCount)
+                                else -> stringResource(R.string.tact_scanning)
                             },
                             fontFamily = Mono, fontSize = 9.sp,
                             color = if (anyThreat) Danger else TacGreen,
@@ -2176,17 +2189,17 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
                 Column(Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
                     Text(statsLine, fontFamily = Mono, fontSize = 9.sp, color = statsAccent)
                     when (val s = detectorStatus) {
-                        is DetectorStatus.Unavailable -> Text("检测不可用: ${s.reason}", fontFamily = Mono, fontSize = 8.sp, color = Danger, lineHeight = 11.sp)
-                        is DetectorStatus.Loading -> Text("OpenCV 检测器加载中(首次约 1-2 秒)", fontFamily = Mono, fontSize = 8.sp, color = Warn)
+                        is DetectorStatus.Unavailable -> Text(stringResource(R.string.tact_detector_unavailable_reason, s.reason), fontFamily = Mono, fontSize = 8.sp, color = Danger, lineHeight = 11.sp)
+                        is DetectorStatus.Loading -> Text(stringResource(R.string.tact_detector_loading_detail), fontFamily = Mono, fontSize = 8.sp, color = Warn)
                         is DetectorStatus.Ready -> {}
                     }
-                    stats.error?.let { Text("检测错误: $it", fontFamily = Mono, fontSize = 8.sp, color = Danger, lineHeight = 11.sp) }
+                    stats.error?.let { Text(stringResource(R.string.tact_detector_error, it), fontFamily = Mono, fontSize = 8.sp, color = Danger, lineHeight = 11.sp) }
                 }
             }
 
             Spacer(Modifier.height(8.dp))
-            TermPanel("增益控制 · GAIN") {
-                Text("增益 ${gain.toInt()}x —— 数字放大,仅用于显示;检测使用未增益灰度", fontFamily = Mono, fontSize = 10.sp, color = Gold)
+            TermPanel(stringResource(R.string.tact_gain_panel)) {
+                Text(stringResource(R.string.tact_gain_line, gain.toInt()), fontFamily = Mono, fontSize = 10.sp, color = Gold)
                 Slider(
                     value = gain,
                     onValueChange = { gain = it; manager.gain = it },
@@ -2199,7 +2212,7 @@ fun NightVisionScreen(vm: NightVisionViewModel, back: () -> Unit) {
                     ),
                 )
                 Text(
-                    "原理: 高 ISO 捕获 → 亮度通道数字增益 → 荧光绿映射。消费级手机无红外补光/热成像,这是数字增强而非真实夜视;检测分数是模型权重,不是概率;HOG 为白天全身模型,低光召回有限。",
+                    stringResource(R.string.tact_night_principle),
                     fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                 )
             }
@@ -2288,30 +2301,35 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
     val statusAccent: Color
     when {
         !status.permissionGranted -> {
-            statusLine = "未授权定位 —— 无法显示本机位置"
+            statusLine = stringResource(R.string.tact_loc_denied)
             statusAccent = Danger
         }
         !status.gpsEnabled && !status.networkEnabled -> {
-            statusLine = "系统定位已关闭 —— 请在设置中开启"
+            statusLine = stringResource(R.string.tact_loc_services_off)
             statusAccent = Warn
         }
         !status.hasFix -> {
-            statusLine = "等待首定位 —— 室内可能需 10-60 秒,请靠近窗边/室外"
+            statusLine = stringResource(R.string.tact_loc_waiting_fix)
             statusAccent = Warn
         }
         else -> {
+            val accuracyText = if (status.accuracyM > 0f) "±${status.accuracyM.toInt()}m" else stringResource(R.string.tact_accuracy_unknown)
+            val fixAgeText = stringResource(R.string.tact_fix_age, status.fixAgeMs / 1000)
+            val gpsState = stringResource(if (status.gpsEnabled) R.string.tact_on else R.string.tact_off)
+            val netState = stringResource(if (status.networkEnabled) R.string.tact_on else R.string.tact_off)
+            val networkLabel = stringResource(R.string.tact_network_label)
             statusLine = buildString {
-                append(if (status.accuracyM > 0f) "±${status.accuracyM.toInt()}m" else "精度未知")
-                append(" · ${status.fixAgeMs / 1000}s 前")
-                append(" · GPS ").append(if (status.gpsEnabled) "开" else "关")
-                append(" · 网络 ").append(if (status.networkEnabled) "开" else "关")
+                append(accuracyText)
+                append(fixAgeText)
+                append(" · GPS ").append(gpsState)
+                append(networkLabel).append(netState)
             }
             statusAccent = if (status.fixAgeMs > 120_000L) Warn else TacGreen
         }
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("战术地图", back)
+        TerminalHeader(stringResource(R.string.tact_map_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             Surface(
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -2321,11 +2339,11 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(
-                            location?.let { "%.6f, %.6f".format(it.latitude, it.longitude) } ?: "无定位 fix",
+                            location?.let { "%.6f, %.6f".format(it.latitude, it.longitude) } ?: stringResource(R.string.tact_no_fix),
                             fontFamily = Mono, fontSize = 10.sp,
                             color = if (location != null) TacGreen else Gray,
                         )
-                        Text("标记 ${markers.size}", fontFamily = Mono, fontSize = 10.sp, color = Gold)
+                        Text(stringResource(R.string.tact_marker_count, markers.size), fontFamily = Mono, fontSize = 10.sp, color = Gold)
                     }
                     Spacer(Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2336,7 +2354,7 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
                         )
                         when {
                             !status.permissionGranted -> {
-                                HudChip("授予定位", TacGreen) {
+                                HudChip(stringResource(R.string.tact_grant_location), TacGreen) {
                                     permissionLauncher.launch(
                                         arrayOf(
                                             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -2345,7 +2363,7 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
                                     )
                                 }
                                 Spacer(Modifier.width(4.dp))
-                                HudChip("应用设置", Gray) {
+                                HudChip(stringResource(R.string.tact_app_settings), Gray) {
                                     context.startActivity(
                                         Intent(
                                             Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -2355,7 +2373,7 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
                                 }
                             }
                             !status.gpsEnabled && !status.networkEnabled -> {
-                                HudChip("定位设置", Warn) {
+                                HudChip(stringResource(R.string.tact_location_settings), Warn) {
                                     context.startActivity(
                                         Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
@@ -2372,10 +2390,9 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
 
             Spacer(Modifier.height(6.dp))
 
+            val tileMode = stringResource(if (networkOnline && !cacheOnly) R.string.tact_tile_online else R.string.tact_tile_cache_only)
             Text(
-                "瓦片: 在线 OSM MAPNIK · " +
-                    (if (networkOnline && !cacheOnly) "在线" else "仅缓存") +
-                    " · 无网络时仅显示已缓存区域 · 未缓存区域为空白",
+                stringResource(R.string.tact_map_tiles_line, tileMode),
                 fontFamily = Mono, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
             )
             Spacer(Modifier.height(5.dp))
@@ -2384,19 +2401,19 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                HudToggle("◎ 跟随", follow) {
+                HudToggle(stringResource(R.string.tact_follow), follow) {
                     haptic.hud()
                     follow = !follow
                     if (follow) recenterRequested++
                 }
-                HudToggle("夜战滤镜", night) { haptic.hud(); night = !night }
-                HudToggle("仅缓存", cacheOnly) { haptic.hud(); cacheOnly = !cacheOnly }
-                HudChip("◎ 定位我", TacGreen) {
+                HudToggle(stringResource(R.string.tact_night_filter), night) { haptic.hud(); night = !night }
+                HudToggle(stringResource(R.string.tact_cache_only_toggle), cacheOnly) { haptic.hud(); cacheOnly = !cacheOnly }
+                HudChip(stringResource(R.string.tact_locate_me), TacGreen) {
                     haptic.hud()
                     follow = true
                     recenterRequested++
                 }
-                Text("经纬度网格 ON", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                Text(stringResource(R.string.tact_grid_on), fontFamily = Mono, fontSize = 8.sp, color = Gray)
             }
 
             Spacer(Modifier.height(6.dp))
@@ -2600,9 +2617,9 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
             }
 
             Spacer(Modifier.height(8.dp))
-            TermPanel("战术标记 · MARKERS") {
+            TermPanel(stringResource(R.string.tact_markers_panel)) {
                 if (markers.isEmpty()) {
-                    EmptyHint("长按地图投放标记点；标记只存于本机")
+                    EmptyHint(stringResource(R.string.tact_markers_empty))
                 } else {
                     LazyColumn(Modifier.fillMaxWidth().heightIn(max = 120.dp)) {
                         items(markers, key = { it.id }) { m ->
@@ -2610,13 +2627,13 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
                                 Text("◆ ${m.label}", fontFamily = Sans, fontSize = 10.sp, color = White, modifier = Modifier.weight(1f))
                                 Text("%.5f, %.5f".format(m.lat, m.lon), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                                 Spacer(Modifier.width(8.dp))
-                                Text("删除", fontFamily = Sans, fontSize = 9.sp, color = Danger, modifier = Modifier.clickable { haptic.hud(); manager.removeMarker(m) })
+                                Text(stringResource(R.string.tact_delete), fontFamily = Sans, fontSize = 9.sp, color = Danger, modifier = Modifier.clickable { haptic.hud(); manager.removeMarker(m) })
                             }
                         }
                     }
                 }
                 Text(
-                    "瓦片 © OpenStreetMap contributors · 在线 MAPNIK,无离线包;已浏览区域自动缓存,未缓存区域在离线时为空白",
+                    stringResource(R.string.tact_map_attribution),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
                 )

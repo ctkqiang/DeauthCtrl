@@ -1,5 +1,7 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -84,14 +86,6 @@ data class NetBiosState(
     val error: String? = null,
 )
 
-/** 目标格式无效时的统一错误文案 */
-private const val INVALID_TARGET =
-    "目标格式无效 —— 请输入单个 IPv4(如 192.168.1.10)或 CIDR 网段(如 192.168.1.0/24)"
-
-/** 设备没有可用的局域网 IPv4 地址 */
-private const val NO_LAN_ADDRESS =
-    "未检测到局域网 IPv4 地址 —— 请先连接 Wi-Fi 或热点后重试"
-
 /**
  * NetBIOS 名称扫描 —— nbtscan 的 Kotlin 等价实现
  *
@@ -153,11 +147,11 @@ class NbtScanManager {
 
         val plan = buildPlan(target)
         if (plan == null) {
-            _state.value = NetBiosState(error = INVALID_TARGET)
+            _state.value = NetBiosState(error = L10n.get(R.string.mgr_nbt_error_invalid_target))
             return false
         }
         if (!hasLanIpv4()) {
-            _state.value = NetBiosState(error = NO_LAN_ADDRESS)
+            _state.value = NetBiosState(error = L10n.get(R.string.mgr_nbt_error_no_lan_address))
             return false
         }
 
@@ -245,7 +239,10 @@ class NbtScanManager {
                 _state.update {
                     it.copy(
                         scanning = false,
-                        error = "扫描失败: ${t.message ?: t.javaClass.simpleName}",
+                        error = L10n.get(
+                            R.string.mgr_nbt_error_scan_failed,
+                            t.message ?: t.javaClass.simpleName,
+                        ),
                     )
                 }
             }
@@ -388,10 +385,10 @@ class NbtScanManager {
 
     /** 名称类型字节 → 筛选用的类型语义;不在四类之内返回 null */
     private fun nameSemantics(typeByte: Int): String? = when (typeByte) {
-        0x00 -> "<00> 工作站"
-        0x03 -> "<03> 信使/用户"
-        0x20 -> "<20> 文件服务"
-        0x1D -> "<1D> 主浏览器"
+        0x00 -> L10n.get(R.string.mgr_nbt_name_workstation)
+        0x03 -> L10n.get(R.string.mgr_nbt_name_messenger)
+        0x20 -> L10n.get(R.string.mgr_nbt_name_file_service)
+        0x1D -> L10n.get(R.string.mgr_nbt_name_master_browser)
         else -> null
     }
 
@@ -459,7 +456,7 @@ class NbtScanManager {
                 ips = (1..254).map { "$base.$it" },
                 label = "$base.0/24",
                 note = if (prefix < 24) {
-                    "输入前缀为 /$prefix,已按 /24 收敛,只扫描 $base.1-254"
+                    L10n.get(R.string.mgr_nbt_note_converged, prefix, base)
                 } else {
                     null
                 },
@@ -586,7 +583,7 @@ class NbtScanManager {
         private const val INCOMPLETE_MAC = "00:00:00:00:00:00"
         private val WHITESPACE = Regex("\\s+")
 
-        const val UNKNOWN_VENDOR = "未知厂商"
+        val UNKNOWN_VENDOR: String get() = L10n.get(R.string.mgr_nbt_unknown_vendor)
 
         /**
          * MAC 前 3 字节(OUI)→ 厂商。

@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -122,11 +125,11 @@ class MainsWireDetector(private val context: Context) {
     fun start() {
         if (_state.value.running) return
         if (!hasPermission) {
-            _state.update { it.copy(error = "缺少麦克风权限(RECORD_AUDIO)") }
+            _state.update { it.copy(error = L10n.get(R.string.mgr_mains_missing_permission)) }
             return
         }
         if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)) {
-            _state.update { it.copy(error = "此设备没有麦克风,无法进行工频探测") }
+            _state.update { it.copy(error = L10n.get(R.string.mgr_mains_no_microphone)) }
             return
         }
         stopFlag = false
@@ -204,7 +207,7 @@ class MainsWireDetector(private val context: Context) {
                     _state.update {
                         it.copy(
                             running = false,
-                            error = "麦克风初始化失败(设备不支持 44100Hz 采集,或被其他应用占用)",
+                            error = L10n.get(R.string.mgr_mains_init_failed),
                         )
                     }
                 }
@@ -237,7 +240,7 @@ class MainsWireDetector(private val context: Context) {
                 if (read < FRAME_SAMPLES) {
                     if (stopFlag) break
                     consecutiveErrors++
-                    if (consecutiveErrors >= 50) throw IllegalStateException("麦克风读取持续失败")
+                    if (consecutiveErrors >= 50) throw IllegalStateException(L10n.get(R.string.mgr_mains_mic_read_failed))
                     Thread.sleep(10)
                     continue
                 }
@@ -319,7 +322,7 @@ class MainsWireDetector(private val context: Context) {
                     it.copy(
                         running = false,
                         alert = false,
-                        error = "采集失败: ${t.message ?: t.javaClass.simpleName}",
+                        error = L10n.get(R.string.mgr_mains_capture_failed, t.message ?: t.javaClass.simpleName),
                     )
                 }
             }

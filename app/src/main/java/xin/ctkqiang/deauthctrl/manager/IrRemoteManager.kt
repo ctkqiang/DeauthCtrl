@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import android.hardware.ConsumerIrManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -202,9 +205,9 @@ class IrRemoteManager(context: Context) {
 
     /** 发射原始脉冲：pattern 以微秒为单位交替 开/关，首个值为开启时长 */
     fun transmitRaw(carrierHz: Int, pattern: IntArray, repeat: Int = 1, label: String) {
-        val emitter = ir ?: run { _lastTransmit.value = "无红外发射器"; return }
+        val emitter = ir ?: run { _lastTransmit.value = L10n.get(R.string.mgr_ir_no_emitter); return }
         if (!emitter.hasIrEmitter()) {
-            _lastTransmit.value = "无红外发射器"
+            _lastTransmit.value = L10n.get(R.string.mgr_ir_no_emitter)
             return
         }
         try {
@@ -212,9 +215,9 @@ class IrRemoteManager(context: Context) {
                 emitter.transmit(carrierHz, pattern)
             }
             _lastPattern.value = pattern
-            _lastTransmit.value = "已发射 · $label · ${carrierHz}Hz × $repeat"
+            _lastTransmit.value = L10n.get(R.string.mgr_ir_transmitted, label, carrierHz, repeat)
         } catch (t: Throwable) {
-            _lastTransmit.value = "发射失败: ${t.message}"
+            _lastTransmit.value = L10n.get(R.string.mgr_ir_transmit_failed, t.message.toString())
         }
     }
 

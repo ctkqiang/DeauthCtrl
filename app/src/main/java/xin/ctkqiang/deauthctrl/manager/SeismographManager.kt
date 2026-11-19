@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -192,7 +195,7 @@ class SeismographManager(context: Context) {
                 running = false,
                 hasAccelerometer = false,
                 sensorName = "",
-                error = "[!] 本机未提供加速度计(TYPE_ACCELEROMETER) —— 震动监视不可用",
+                error = L10n.get(R.string.mgr_seismo_no_accelerometer),
             )
             return
         }
@@ -216,7 +219,7 @@ class SeismographManager(context: Context) {
                 running = false,
                 hasAccelerometer = true,
                 sensorName = sensor.name,
-                error = "[!] 加速度计注册失败 —— 系统可能限制了传感器访问",
+                error = L10n.get(R.string.mgr_seismo_register_failed),
             )
             return
         }

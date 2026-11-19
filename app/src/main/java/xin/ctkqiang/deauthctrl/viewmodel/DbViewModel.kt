@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.BleDevice
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.manager.SignalDb
@@ -59,7 +61,7 @@ class DbViewModel(application: Application) : AndroidViewModel(application) {
                 name = d.name,
                 mac = d.address,
                 rssi = d.rssi,
-                detail = d.deviceType.ifBlank { "未知类型" },
+                detail = d.deviceType.ifBlank { L10n.get(R.string.vm_db_unknown_type) },
                 capturedAt = now,
             )
         }

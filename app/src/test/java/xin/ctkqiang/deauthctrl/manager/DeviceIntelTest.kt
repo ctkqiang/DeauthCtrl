@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * DeviceIntel 指纹分类器单元测试 —— 纯 JVM,不依赖 Android。
+ * DeviceIntel 指纹分类器单元测试
  *
  * 覆盖:黑客工具 / 开发板 / 物联网 / 可穿戴 / 音频 / 手机 / 未知,
  * 以及大小写不敏感、厂商 ID 路径与分类优先级。
@@ -143,7 +143,7 @@ class DeviceIntelTest {
     fun `仅凭 Apple 厂商 ID 命中手机类`() {
         val h = requireHit("Unknown-Device", manufacturerId = 0x004C)
         assertEquals(DeviceIntel.CATEGORY_PHONE, h.category)
-        assertEquals("苹果设备", h.label)
+        assertEquals("Apple device", h.label)
         assertEquals(0.7f, h.confidence, 1e-4f)
     }
 

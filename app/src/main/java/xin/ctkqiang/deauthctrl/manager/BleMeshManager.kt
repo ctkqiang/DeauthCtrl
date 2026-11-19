@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.security.SecureRandom
 import java.util.LinkedHashMap
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * 网格节点 —— 一次广播包即节点存在的证明
@@ -215,26 +217,29 @@ class BleMeshManager(private val context: Context) {
         val missing = missingPermissions()
         if (missing.isNotEmpty()) {
             publishError(
-                "缺少蓝牙权限：${missing.joinToString("、") { permissionLabel(it) }} —— 请先在应用权限网关授予",
+                L10n.get(
+                    R.string.mgr_mesh_err_permissions,
+                    missing.joinToString(L10n.get(R.string.mgr_mesh_perm_sep)) { permissionLabel(it) },
+                ),
             )
             return false
         }
 
         val adapter = adapterOrNull()
         if (adapter == null) {
-            publishError("本机没有蓝牙适配器")
+            publishError(L10n.get(R.string.mgr_mesh_err_no_adapter))
             return false
         }
         if (!runCatching { adapter.isEnabled }.getOrDefault(false)) {
-            publishError("蓝牙未开启 —— 请先在系统设置中打开蓝牙")
+            publishError(L10n.get(R.string.mgr_mesh_err_bt_off))
             return false
         }
         if (runCatching { adapter.bluetoothLeAdvertiser }.getOrNull() == null) {
-            publishError("本机控制器不提供 BLE 广播（BluetoothLeAdvertiser=null）")
+            publishError(L10n.get(R.string.mgr_mesh_err_no_advertiser))
             return false
         }
         if (runCatching { adapter.bluetoothLeScanner }.getOrNull() == null) {
-            publishError("系统未提供 BLE 扫描器 —— 请关闭蓝牙后重新打开再试")
+            publishError(L10n.get(R.string.mgr_mesh_err_no_scanner))
             return false
         }
 
@@ -298,18 +303,18 @@ class BleMeshManager(private val context: Context) {
      */
     fun send(raw: String): Boolean {
         if (!_state.value.running) {
-            publishError("网格未启动 —— 请先启动广播与扫描")
+            publishError(L10n.get(R.string.mgr_mesh_err_not_running))
             return false
         }
         val channel = txChannel
         if (channel == null) {
-            publishError("广播队列未就绪 —— 请重新启动网格")
+            publishError(L10n.get(R.string.mgr_mesh_err_queue_not_ready))
             return false
         }
 
         val cleaned = sanitize(raw)
         if (cleaned.isEmpty()) {
-            publishError("没有可发送的内容（控制符与「|」会被过滤）")
+            publishError(L10n.get(R.string.mgr_mesh_err_empty))
             return false
         }
         val clipped = if (cleaned.length > MAX_MESSAGE_CHARS) cleaned.take(MAX_MESSAGE_CHARS) else cleaned
@@ -319,7 +324,7 @@ class BleMeshManager(private val context: Context) {
         val budget = _state.value.payloadBudget
         val built = buildPayload(myId, seq, INITIAL_TTL, clipped, budget)
         if (built == null) {
-            publishError("广播载荷不足：协议头已超出本机载荷预算 ${budget}B")
+            publishError(L10n.get(R.string.mgr_mesh_err_header_budget, budget))
             return false
         }
 
@@ -332,14 +337,14 @@ class BleMeshManager(private val context: Context) {
             isRelay = false,
         )
         if (!channel.trySend(request).isSuccess) {
-            publishError("广播队列已关闭 —— 请重新启动网格")
+            publishError(L10n.get(R.string.mgr_mesh_err_queue_closed))
             return false
         }
 
         val notes = ArrayList<String>(2)
-        if (truncatedByChars) notes += "输入超过 $MAX_MESSAGE_CHARS 字，已截断"
-        if (built.truncated) notes += "广播载荷仅容纳 ${built.text.length} 字，已按字节截断"
-        val note = if (notes.isEmpty()) null else notes.joinToString("；")
+        if (truncatedByChars) notes += L10n.get(R.string.mgr_mesh_notice_truncated_chars, MAX_MESSAGE_CHARS)
+        if (built.truncated) notes += L10n.get(R.string.mgr_mesh_notice_truncated_bytes, built.text.length)
+        val note = if (notes.isEmpty()) null else notes.joinToString(L10n.get(R.string.mgr_mesh_notice_sep))
 
         // 本机回声：广播没有回执，这条只代表「已排队 / 已广播」，不代表送达
         synchronized(seenLock) { seen["$myId#$seq"] = true }
@@ -515,16 +520,21 @@ class BleMeshManager(private val context: Context) {
         }
         val scanner = runCatching { adapter.bluetoothLeScanner }.getOrNull()
         if (scanner == null) {
-            publishError("系统未提供 BLE 扫描器")
+            publishError(L10n.get(R.string.mgr_mesh_err_no_scanner_generic))
             scheduleScanRestart()
             return
         }
         try {
             scanner.startScan(null, scanSettings, scanCallback)
         } catch (e: SecurityException) {
-            publishError("扫描权限被系统拒绝：${e.message ?: "请授予「附近的设备」权限"}")
+            publishError(
+                L10n.get(
+                    R.string.mgr_mesh_err_scan_permission,
+                    e.message ?: L10n.get(R.string.mgr_mesh_err_scan_permission_hint),
+                ),
+            )
         } catch (t: Throwable) {
-            publishError("启动 BLE 扫描失败：${t.message ?: t.javaClass.simpleName}")
+            publishError(L10n.get(R.string.mgr_mesh_err_scan_start, t.message ?: t.javaClass.simpleName))
             scheduleScanRestart()
         }
     }
@@ -571,7 +581,7 @@ class BleMeshManager(private val context: Context) {
             } catch (ce: CancellationException) {
                 throw ce
             } catch (t: Throwable) {
-                publishError("广播任务异常：${t.message ?: t.javaClass.simpleName}")
+                publishError(L10n.get(R.string.mgr_mesh_err_broadcast_task, t.message ?: t.javaClass.simpleName))
             } finally {
                 stopActiveAdvertising()
             }
@@ -610,18 +620,18 @@ class BleMeshManager(private val context: Context) {
             val budget = _state.value.payloadBudget
             val built = buildPayload(request.sender, request.seq, request.ttl, request.text, budget)
             if (built == null) {
-                publishError("广播载荷不足：协议头放不进本机载荷预算 ${budget}B")
+                publishError(L10n.get(R.string.mgr_mesh_err_header_fit, budget))
                 return false
             }
             if (built.text.isEmpty() && request.text.isNotEmpty()) {
-                publishError("广播载荷不足：连 1 个字符都放不下（协议头已占满 ${budget}B）")
+                publishError(L10n.get(R.string.mgr_mesh_err_no_char, budget))
                 return false
             }
             // 中继不改写原文：放不下完整原文就放弃这条中继
             if (request.isRelay && built.truncated) return false
             if (!request.isRelay && built.truncated) {
                 _state.update {
-                    it.copy(notice = "载荷预算收紧至 ${budget}B，实际发出 ${built.text.length} 字")
+                    it.copy(notice = L10n.get(R.string.mgr_mesh_notice_budget_tightened, budget, built.text.length))
                 }
             }
 
@@ -636,7 +646,7 @@ class BleMeshManager(private val context: Context) {
                     stopActiveAdvertising()
                     val nextBudget = budget - PAYLOAD_BUDGET_STEP
                     if (nextBudget < MIN_PAYLOAD_BUDGET) {
-                        publishError("广播数据超长（BLE 31B 限制）：协议头已占满载荷，无法再缩短")
+                        publishError(L10n.get(R.string.mgr_mesh_err_data_too_large))
                         return false
                     }
                     _state.update { it.copy(payloadBudget = nextBudget) }
@@ -950,37 +960,37 @@ class BleMeshManager(private val context: Context) {
     }
 }
 
-/** 权限名 → 中文标签 */
+/** 权限名 → 本地化标签 */
 private fun permissionLabel(permission: String): String = when (permission) {
-    Manifest.permission.BLUETOOTH_SCAN -> "扫描附近的设备"
-    Manifest.permission.BLUETOOTH_ADVERTISE -> "广播附近的设备"
-    Manifest.permission.BLUETOOTH_CONNECT -> "连接 / 读取蓝牙状态"
-    Manifest.permission.ACCESS_FINE_LOCATION -> "精确位置"
+    Manifest.permission.BLUETOOTH_SCAN -> L10n.get(R.string.mgr_mesh_perm_scan)
+    Manifest.permission.BLUETOOTH_ADVERTISE -> L10n.get(R.string.mgr_mesh_perm_advertise)
+    Manifest.permission.BLUETOOTH_CONNECT -> L10n.get(R.string.mgr_mesh_perm_connect)
+    Manifest.permission.ACCESS_FINE_LOCATION -> L10n.get(R.string.mgr_mesh_perm_location)
     else -> permission
 }
 
 /** ScanCallback 错误码 → 可读原因 */
 private fun describeScanFailure(errorCode: Int): String = when (errorCode) {
-    ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "扫描已在进行中（请先停止再重试）"
-    ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "扫描回调注册失败，请关闭蓝牙再重新打开"
-    ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "系统内部错误，请关闭蓝牙再重新打开"
-    ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "此设备不支持 BLE 扫描"
-    ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> "蓝牙硬件资源不足，请关闭其他扫描类应用"
-    ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> "扫描过于频繁，约 30 秒后重试"
-    else -> "扫描失败（系统错误码 $errorCode）"
+    ScanCallback.SCAN_FAILED_ALREADY_STARTED -> L10n.get(R.string.mgr_mesh_scan_already_started)
+    ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> L10n.get(R.string.mgr_mesh_scan_reg_failed)
+    ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> L10n.get(R.string.mgr_mesh_scan_internal)
+    ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> L10n.get(R.string.mgr_mesh_scan_unsupported)
+    ScanCallback.SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> L10n.get(R.string.mgr_mesh_scan_no_resources)
+    ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY -> L10n.get(R.string.mgr_mesh_scan_too_frequent)
+    else -> L10n.get(R.string.mgr_mesh_scan_failed_code, errorCode)
 }
 
 /** AdvertiseCallback 错误码 → 可读原因 */
 private fun advertiseFailureText(code: Int): String = when (code) {
-    AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE -> "广播数据超长（code=1）"
-    AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> "广播槽位被占用（code=2）"
-    AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED -> "广播会话已在运行（code=3）"
-    AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR -> "控制器内部错误（code=4）"
-    AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "控制器不支持 BLE 广播（code=5）"
-    -1 -> "等待广播回调超时（系统无响应）"
-    -2 -> "缺少 BLUETOOTH_ADVERTISE 权限"
-    -3 -> "蓝牙适配器不可用"
-    -4 -> "控制器不提供 BLE 广播"
-    -5 -> "startAdvertising 抛出异常"
-    else -> "广播启动失败（code=$code）"
+    AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE -> L10n.get(R.string.mgr_mesh_adv_data_too_large)
+    AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> L10n.get(R.string.mgr_mesh_adv_too_many)
+    AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED -> L10n.get(R.string.mgr_mesh_adv_already_started)
+    AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR -> L10n.get(R.string.mgr_mesh_adv_internal)
+    AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> L10n.get(R.string.mgr_mesh_adv_unsupported)
+    -1 -> L10n.get(R.string.mgr_mesh_adv_timeout)
+    -2 -> L10n.get(R.string.mgr_mesh_adv_no_permission)
+    -3 -> L10n.get(R.string.mgr_mesh_adv_no_adapter)
+    -4 -> L10n.get(R.string.mgr_mesh_adv_no_advertiser)
+    -5 -> L10n.get(R.string.mgr_mesh_adv_exception)
+    else -> L10n.get(R.string.mgr_mesh_adv_failed_code, code)
 }

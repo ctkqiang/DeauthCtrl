@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.terminal
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import com.termux.terminal.TerminalColors
 import com.termux.terminal.TextStyle
@@ -223,7 +226,7 @@ object TerminalSpecs {
             "TMPDIR=$tmp",
             "PATH=$path",
             "ENV=$profile",
-            "PS1=哪吒终端 $ ",
+            "PS1=" + L10n.get(R.string.term_spec_ps1) + " ",
             "SHELL=$shellPath",
         )
         return TerminalSpec(shellPath, args, path, env, home, label)
@@ -239,9 +242,9 @@ object TerminalSpecs {
         runCatching {
             if (profile.parentFile?.exists() == false) profile.parentFile?.mkdirs()
             val content = buildString {
-                appendLine("# DeauthCtrl 终端 profile —— 应用自动生成，可自由修改")
+                appendLine("# " + L10n.get(R.string.term_spec_profile_comment))
                 appendLine("export PATH=\"$path\"")
-                appendLine("export PS1='哪吒终端 $ '")
+                appendLine("export PS1='" + L10n.get(R.string.term_spec_ps1) + " '")
                 appendLine("alias ll='ls -la'")
             }
             if (!profile.exists() || profile.readText() != content) {

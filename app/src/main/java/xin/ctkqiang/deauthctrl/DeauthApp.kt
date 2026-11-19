@@ -25,6 +25,9 @@ class DeauthApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // 非 UI 层字符串解析入口:manager/service 用 L10n.get 按当前语言取文本
+        L10n.init(this)
+
         // 战术照片中继常开:同网段设备随时可投递,收到即发系统通知。
         // 必须走进程级单例 —— 相机页也订阅同一个实例,重复 new 会二次绑定 9997/10088
         // 并抛 BindException,导致页面订阅的 peers 永远为空。

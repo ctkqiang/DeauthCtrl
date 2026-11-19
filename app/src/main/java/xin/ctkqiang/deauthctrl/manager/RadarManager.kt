@@ -16,6 +16,8 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -152,7 +154,13 @@ class RadarManager(private val context: Context) {
                         val rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE).toInt()
                         if (rssi == Short.MIN_VALUE.toInt()) return
                         val addr = device?.address ?: return
-                        addBtTarget(device, addr, device?.name ?: "(BT设备)", rssi, source = "classic")
+                        addBtTarget(
+                            device,
+                            addr,
+                            device?.name ?: L10n.get(R.string.mgr_radar_placeholder_bt),
+                            rssi,
+                            source = "classic",
+                        )
                     }
                     BluetoothAdapter.ACTION_DISCOVERY_STARTED -> { btDiscoveryActive = true }
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> { btDiscoveryActive = false }
@@ -185,7 +193,7 @@ class RadarManager(private val context: Context) {
         val buckets = advanceHitBuckets(prev, now)
         targets[r.BSSID] = RadarTarget(
             id = r.BSSID,
-            name = r.SSID.ifBlank { "<隐藏SSID>" },
+            name = r.SSID.ifBlank { L10n.get(R.string.mgr_radar_hidden_ssid) },
             type = "wifi",
             rssi = r.level,
             distanceM = rssiDistanceEstimateM(r.level, -40f),
@@ -322,18 +330,18 @@ class RadarManager(private val context: Context) {
      */
     @SuppressLint("MissingPermission")
     fun sendPairingPopup(addr: String, message: String): String? {
-        val adapter = btManager?.adapter ?: return "蓝牙不可用"
+        val adapter = btManager?.adapter ?: return L10n.get(R.string.mgr_radar_err_bt_unavailable)
         val device = runCatching { adapter.getRemoteDevice(addr) }.getOrNull()
-            ?: return "目标地址无效: $addr"
+            ?: return L10n.get(R.string.mgr_radar_err_bad_address, addr)
         val msg = message.trim().take(60)
-        if (msg.isEmpty()) return "消息不能为空"
+        if (msg.isEmpty()) return L10n.get(R.string.mgr_radar_err_empty_message)
         val originalName = runCatching { adapter.name }.getOrNull()
         val renameOk = runCatching { adapter.setName(msg) }.isSuccess
-        if (!renameOk) return "修改本机蓝牙名失败(需要 BLUETOOTH_CONNECT 权限)"
+        if (!renameOk) return L10n.get(R.string.mgr_radar_err_rename_failed)
         val bonded = runCatching { device.createBond() }.getOrDefault(false)
         if (!bonded) {
             runCatching { originalName?.let { adapter.setName(it) } }
-            return "配对请求发起失败 —— 目标可能不在可配对状态"
+            return L10n.get(R.string.mgr_radar_err_pair_failed)
         }
         // 60 秒后恢复本机蓝牙名(配对弹窗生命周期已过)
         val restoreName = originalName
@@ -393,7 +401,7 @@ class RadarManager(private val context: Context) {
                 val rssi = result.rssi
                 val addr = device.address ?: return
                 val rec = result.scanRecord
-                val name = device.name ?: rec?.deviceName ?: "(BLE设备)"
+                val name = device.name ?: rec?.deviceName ?: L10n.get(R.string.mgr_radar_placeholder_ble)
                 // result.timestampNanos 与 SensorEvent.timestamp 同一基准;<=0 时回退并标 approx
                 val nanos = result.timestampNanos.takeIf { it > 0 } ?: android.os.SystemClock.elapsedRealtimeNanos()
                 addBtTarget(device, addr, name, rssi, source = "ble", freshAdv = result.toBleAdv(), timestampNanos = nanos)
@@ -583,16 +591,16 @@ class RadarManager(private val context: Context) {
 
     @Suppress("DEPRECATION")
     private fun majorClassName(cls: BluetoothClass?): String = when (cls?.majorDeviceClass) {
-        BluetoothClass.Device.Major.COMPUTER -> "计算机"
-        BluetoothClass.Device.Major.PHONE -> "电话"
-        BluetoothClass.Device.Major.IMAGING -> "影像设备"
-        BluetoothClass.Device.Major.AUDIO_VIDEO -> "音频/视频"
-        BluetoothClass.Device.Major.WEARABLE -> "可穿戴"
-        BluetoothClass.Device.Major.NETWORKING -> "网络设备"
-        BluetoothClass.Device.Major.HEALTH -> "健康设备"
-        BluetoothClass.Device.Major.PERIPHERAL -> "外设"
-        BluetoothClass.Device.Major.TOY -> "玩具"
-        BluetoothClass.Device.Major.UNCATEGORIZED -> "未分类"
+        BluetoothClass.Device.Major.COMPUTER -> L10n.get(R.string.mgr_radar_class_computer)
+        BluetoothClass.Device.Major.PHONE -> L10n.get(R.string.mgr_radar_class_phone)
+        BluetoothClass.Device.Major.IMAGING -> L10n.get(R.string.mgr_radar_class_imaging)
+        BluetoothClass.Device.Major.AUDIO_VIDEO -> L10n.get(R.string.mgr_radar_class_audio_video)
+        BluetoothClass.Device.Major.WEARABLE -> L10n.get(R.string.mgr_radar_class_wearable)
+        BluetoothClass.Device.Major.NETWORKING -> L10n.get(R.string.mgr_radar_class_network)
+        BluetoothClass.Device.Major.HEALTH -> L10n.get(R.string.mgr_radar_class_health)
+        BluetoothClass.Device.Major.PERIPHERAL -> L10n.get(R.string.mgr_radar_class_peripheral)
+        BluetoothClass.Device.Major.TOY -> L10n.get(R.string.mgr_radar_class_toy)
+        BluetoothClass.Device.Major.UNCATEGORIZED -> L10n.get(R.string.mgr_radar_class_uncategorized)
         else -> ""
     }
 
@@ -602,29 +610,29 @@ class RadarManager(private val context: Context) {
         val major = cls.majorDeviceClass
         return when (major) {
             BluetoothClass.Device.Major.PHONE -> when (minor and 0xFC) {
-                BluetoothClass.Device.PHONE_SMART -> "智能手机"
-                BluetoothClass.Device.PHONE_CELLULAR -> "蜂窝电话"
-                BluetoothClass.Device.PHONE_CORDLESS -> "无绳电话"
-                BluetoothClass.Device.PHONE_MODEM_OR_GATEWAY -> "调制解调器/网关"
+                BluetoothClass.Device.PHONE_SMART -> L10n.get(R.string.mgr_radar_minor_smartphone)
+                BluetoothClass.Device.PHONE_CELLULAR -> L10n.get(R.string.mgr_radar_minor_cellular)
+                BluetoothClass.Device.PHONE_CORDLESS -> L10n.get(R.string.mgr_radar_minor_cordless)
+                BluetoothClass.Device.PHONE_MODEM_OR_GATEWAY -> L10n.get(R.string.mgr_radar_minor_modem_gateway)
                 else -> ""
             }
             BluetoothClass.Device.Major.COMPUTER -> when (minor and 0xFC) {
-                BluetoothClass.Device.COMPUTER_DESKTOP -> "台式机"
-                BluetoothClass.Device.COMPUTER_LAPTOP -> "笔记本"
-                BluetoothClass.Device.COMPUTER_HANDHELD_PC_PDA -> "掌上电脑/PDA"
-                BluetoothClass.Device.COMPUTER_WEARABLE -> "可穿戴计算机"
+                BluetoothClass.Device.COMPUTER_DESKTOP -> L10n.get(R.string.mgr_radar_minor_desktop)
+                BluetoothClass.Device.COMPUTER_LAPTOP -> L10n.get(R.string.mgr_radar_minor_laptop)
+                BluetoothClass.Device.COMPUTER_HANDHELD_PC_PDA -> L10n.get(R.string.mgr_radar_minor_handheld)
+                BluetoothClass.Device.COMPUTER_WEARABLE -> L10n.get(R.string.mgr_radar_minor_wearable_computer)
                 else -> ""
             }
             BluetoothClass.Device.Major.AUDIO_VIDEO -> when (minor and 0xFC) {
-                BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES -> "耳机"
-                BluetoothClass.Device.AUDIO_VIDEO_LOUDSPEAKER -> "音箱"
-                BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET -> "头戴式耳机"
-                BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO -> "车载音响"
+                BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES -> L10n.get(R.string.mgr_radar_minor_headphones)
+                BluetoothClass.Device.AUDIO_VIDEO_LOUDSPEAKER -> L10n.get(R.string.mgr_radar_minor_loudspeaker)
+                BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET -> L10n.get(R.string.mgr_radar_minor_headset)
+                BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO -> L10n.get(R.string.mgr_radar_minor_car_audio)
                 else -> ""
             }
             BluetoothClass.Device.Major.WEARABLE -> when (minor and 0xFC) {
-                BluetoothClass.Device.WEARABLE_WRIST_WATCH -> "智能手表"
-                BluetoothClass.Device.WEARABLE_GLASSES -> "智能眼镜"
+                BluetoothClass.Device.WEARABLE_WRIST_WATCH -> L10n.get(R.string.mgr_radar_minor_wrist_watch)
+                BluetoothClass.Device.WEARABLE_GLASSES -> L10n.get(R.string.mgr_radar_minor_glasses)
                 else -> ""
             }
             else -> ""
@@ -632,16 +640,16 @@ class RadarManager(private val context: Context) {
     }
 
     private fun bondStateName(state: Int): String = when (state) {
-        BluetoothDevice.BOND_BONDED -> "已绑定"
-        BluetoothDevice.BOND_BONDING -> "绑定中"
-        else -> "未绑定"
+        BluetoothDevice.BOND_BONDED -> L10n.get(R.string.mgr_radar_bond_bonded)
+        BluetoothDevice.BOND_BONDING -> L10n.get(R.string.mgr_radar_bond_bonding)
+        else -> L10n.get(R.string.mgr_radar_bond_none)
     }
 
     private fun linkTypeName(type: Int?): String = when (type) {
-        BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR 经典"
-        BluetoothDevice.DEVICE_TYPE_LE -> "BLE 低功耗"
-        BluetoothDevice.DEVICE_TYPE_DUAL -> "双模"
-        BluetoothDevice.DEVICE_TYPE_UNKNOWN -> "未知"
+        BluetoothDevice.DEVICE_TYPE_CLASSIC -> L10n.get(R.string.mgr_radar_link_classic)
+        BluetoothDevice.DEVICE_TYPE_LE -> L10n.get(R.string.mgr_radar_link_le)
+        BluetoothDevice.DEVICE_TYPE_DUAL -> L10n.get(R.string.mgr_radar_link_dual)
+        BluetoothDevice.DEVICE_TYPE_UNKNOWN -> L10n.get(R.string.mgr_radar_link_unknown)
         else -> ""
     }
 
@@ -653,7 +661,7 @@ class RadarManager(private val context: Context) {
     private fun ouiVendor(mac: String): String {
         val oui = mac.replace(":", "").take(6).uppercase()
             .chunked(2).joinToString(":")
-        return OUI_VENDORS[oui] ?: "未知厂商"
+        return OUI_VENDORS[oui] ?: L10n.get(R.string.mgr_radar_vendor_unknown)
     }
 
     companion object {

@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 /** 一条权限在界面上的标题与说明 */
@@ -108,21 +110,21 @@ object RequiredPermissions {
             runtime.filter { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }
         }.getOrDefault(emptyList())
 
-    /** 权限 → 界面标题与说明 */
-    fun describe(permission: String): PermissionCopy = when (permission) {
-        Manifest.permission.BLUETOOTH_SCAN -> PermissionCopy("附近设备 · 扫描", "发现并列出附近的 BLE 设备")
-        Manifest.permission.BLUETOOTH_CONNECT -> PermissionCopy("附近设备 · 连接", "读取设备名称与已配对信息")
-        Manifest.permission.BLUETOOTH_ADVERTISE -> PermissionCopy("附近设备 · 广播", "BLE 广播相关功能")
+    /** 权限 → 界面标题与说明(文案随界面语言) */
+    fun describe(context: Context, permission: String): PermissionCopy = when (permission) {
+        Manifest.permission.BLUETOOTH_SCAN -> PermissionCopy(context.getString(R.string.perm_nearby_scan), context.getString(R.string.perm_nearby_scan_desc))
+        Manifest.permission.BLUETOOTH_CONNECT -> PermissionCopy(context.getString(R.string.perm_nearby_connect), context.getString(R.string.perm_nearby_connect_desc))
+        Manifest.permission.BLUETOOTH_ADVERTISE -> PermissionCopy(context.getString(R.string.perm_nearby_advertise), context.getString(R.string.perm_nearby_advertise_desc))
         Manifest.permission.NEARBY_WIFI_DEVICES -> PermissionCopy(
-            "附近 Wi-Fi 设备",
-            "Android 13+ 创建本机热点（LocalOnlyHotspot）必需；不会注入 802.11 帧"
+            context.getString(R.string.perm_nearby_wifi),
+            context.getString(R.string.perm_nearby_wifi_desc),
         )
-        Manifest.permission.ACCESS_FINE_LOCATION -> PermissionCopy("位置信息", "WiFi/BLE 扫描与基站定位依赖此项")
-        Manifest.permission.RECORD_AUDIO -> PermissionCopy("麦克风", "对讲机语音 · 语音频谱 · 超声监测")
-        Manifest.permission.CAMERA -> PermissionCopy("相机", "战术相机 · 夜视 · 加密拍摄 · 闪光灯发报")
-        Manifest.permission.READ_PHONE_STATE -> PermissionCopy("电话状态", "读取附近基站 CellInfo 做 GSM 基站定位")
-        Manifest.permission.POST_NOTIFICATIONS -> PermissionCopy("通知", "照片接收与前台服务的系统通知")
-        Manifest.permission.ACTIVITY_RECOGNITION -> PermissionCopy("身体活动", "步测归航:计步传感器读取步数")
+        Manifest.permission.ACCESS_FINE_LOCATION -> PermissionCopy(context.getString(R.string.perm_location), context.getString(R.string.perm_location_desc))
+        Manifest.permission.RECORD_AUDIO -> PermissionCopy(context.getString(R.string.perm_mic), context.getString(R.string.perm_mic_desc))
+        Manifest.permission.CAMERA -> PermissionCopy(context.getString(R.string.perm_camera), context.getString(R.string.perm_camera_desc))
+        Manifest.permission.READ_PHONE_STATE -> PermissionCopy(context.getString(R.string.perm_phone_state), context.getString(R.string.perm_phone_state_desc))
+        Manifest.permission.POST_NOTIFICATIONS -> PermissionCopy(context.getString(R.string.perm_notifications), context.getString(R.string.perm_notifications_desc))
+        Manifest.permission.ACTIVITY_RECOGNITION -> PermissionCopy(context.getString(R.string.perm_activity), context.getString(R.string.perm_activity_desc))
         else -> PermissionCopy(permission.substringAfterLast('.'), "")
     }
 }
@@ -168,9 +170,9 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             StarBadge(64.dp)
             Spacer(Modifier.height(12.dp))
-            Text("哪吒网络安全终端", fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 0.sp, color = White)
+            Text(stringResource(R.string.app_name), fontFamily = Sans, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 0.sp, color = White)
             Spacer(Modifier.height(4.dp))
-            Text("> 战前授权 · 授予所需权限", fontFamily = Sans, fontSize = 12.sp, color = Gray)
+            Text(stringResource(R.string.perm_subtitle), fontFamily = Sans, fontSize = 12.sp, color = Gray)
             Spacer(Modifier.height(28.dp))
 
             AnimatedVisibility(
@@ -183,17 +185,17 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                             Star(Gold, 9.dp)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                if (missing.isEmpty()) "权限已齐备" else "还需 ${missing.size} 项权限",
+                                if (missing.isEmpty()) stringResource(R.string.perm_status_ready) else stringResource(R.string.perm_status_missing, missing.size),
                                 fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Red,
                             )
                         }
                         Spacer(Modifier.height(14.dp))
                         if (missing.isEmpty()) {
-                            PermissionItem("全部已授予", "可以进入主界面")
+                            PermissionItem(stringResource(R.string.perm_item_all), stringResource(R.string.perm_item_all_desc))
                         } else {
                             missing.forEachIndexed { index, permission ->
                                 if (index > 0) Spacer(Modifier.height(10.dp))
-                                val copy = RequiredPermissions.describe(permission)
+                                val copy = RequiredPermissions.describe(context, permission)
                                 PermissionItem(copy.title, copy.reason)
                             }
                         }
@@ -212,7 +214,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = Red, contentColor = White),
             ) {
                 Text(
-                    if (missing.isEmpty()) "[ 进入主界面 ]" else "[ 授予权限 ]",
+                    if (missing.isEmpty()) stringResource(R.string.perm_btn_enter) else stringResource(R.string.perm_btn_grant),
                     fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 15.sp,
                 )
             }
@@ -224,7 +226,7 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); context.openAppSettings() },
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
                 ) {
-                    Text("[ 去系统设置授权 ]", fontFamily = Sans, fontSize = 12.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.perm_btn_settings), fontFamily = Sans, fontSize = 12.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
                 }
             }
 
@@ -233,11 +235,11 @@ fun PermissionRequestScreen(onAllGranted: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); onAllGranted() },
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, BorderDim),
             ) {
-                Text("[ 跳过 —— 蓝牙与 WiFi 功能将不可用 ]", fontFamily = Sans, fontSize = 11.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
+                Text(stringResource(R.string.perm_btn_skip), fontFamily = Sans, fontSize = 11.sp, color = Gray, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = TextAlign.Center)
             }
 
             Spacer(Modifier.height(28.dp))
-            Text("哪吒网络安全终端 · 仅供授权安全研究使用", fontFamily = Sans, fontSize = 11.sp, color = GoldDim)
+            Text(stringResource(R.string.perm_footer), fontFamily = Sans, fontSize = 11.sp, color = GoldDim)
         }
         ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Red)
     }

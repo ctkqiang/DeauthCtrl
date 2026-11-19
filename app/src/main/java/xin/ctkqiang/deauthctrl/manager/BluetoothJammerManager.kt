@@ -20,6 +20,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.model.JammerLogEntry
 import java.util.ArrayDeque
 import java.util.concurrent.ConcurrentHashMap
@@ -138,21 +140,21 @@ class BluetoothJammerManager(private val context: Context) {
 
         val missing = missingPermissions()
         if (Manifest.permission.BLUETOOTH_CONNECT in missing) {
-            _error.value = "缺少附近设备权限 BLUETOOTH_CONNECT：无法读取蓝牙状态。请先在权限网关授予。"
+            _error.value = L10n.get(R.string.mgr_btjam_err_connect_permission)
             return
         }
         val bt = adapter ?: run {
-            _error.value = "本机没有蓝牙适配器"
+            _error.value = L10n.get(R.string.mgr_btjam_err_no_adapter)
             return
         }
         val enabled = try {
             bt.isEnabled
         } catch (se: SecurityException) {
-            _error.value = "读取蓝牙状态被拒绝（BLUETOOTH_CONNECT）：${se.message.orEmpty()}"
+            _error.value = L10n.get(R.string.mgr_btjam_err_read_denied, se.message.orEmpty())
             return
         }
         if (!enabled) {
-            _error.value = "蓝牙未开启，请先打开蓝牙"
+            _error.value = L10n.get(R.string.mgr_btjam_err_bt_off)
             return
         }
 
@@ -165,15 +167,15 @@ class BluetoothJammerManager(private val context: Context) {
         }
         if (bleAdvertiser == null) {
             _error.value = if (!canAdvertise) {
-                "缺少 BLUETOOTH_ADVERTISE：BLE 广播不可用（经典蓝牙发现仍可运行）"
+                L10n.get(R.string.mgr_btjam_err_no_advertise_perm)
             } else {
-                "本机控制器不提供 BLE 广播（BluetoothLeAdvertiser=null），经典发现仍可运行"
+                L10n.get(R.string.mgr_btjam_err_no_advertiser)
             }
         }
 
         val canInquire = Manifest.permission.BLUETOOTH_SCAN !in missing
         if (bleAdvertiser == null && !canInquire) {
-            _error.value = "BLE 广播与经典发现均不可用：请授予 BLUETOOTH_ADVERTISE / BLUETOOTH_SCAN"
+            _error.value = L10n.get(R.string.mgr_btjam_err_both_unavailable)
             return
         }
 
@@ -197,7 +199,7 @@ class BluetoothJammerManager(private val context: Context) {
                 publishStats()
             }
         }
-        log("BT", "BLE 广播 + 经典蓝牙发现已启动（不会压制或断开他人设备）")
+        log("BT", L10n.get(R.string.mgr_btjam_log_started))
     }
 
     fun stop() {
@@ -211,7 +213,12 @@ class BluetoothJammerManager(private val context: Context) {
         publishStats(finalize = true)
         log(
             "BT",
-            "stopped | 广播会话=${blePkt.get()} Inquiry轮次=${inqPkt.get()} devices=${discoveredMap.size}"
+            L10n.get(
+                R.string.mgr_btjam_log_stopped,
+                blePkt.get(),
+                inqPkt.get(),
+                discoveredMap.size,
+            ),
         )
     }
 
@@ -230,7 +237,7 @@ class BluetoothJammerManager(private val context: Context) {
 
     private suspend fun bleFlood() {
         val adv = bleAdvertiser ?: run {
-            _error.value = "BLE 广播不可用：本机没有 advertiser 或缺少 BLUETOOTH_ADVERTISE"
+            _error.value = L10n.get(R.string.mgr_btjam_err_adv_unavailable)
             _bleAdvertisingActive.value = false
             return
         }
@@ -251,8 +258,11 @@ class BluetoothJammerManager(private val context: Context) {
                 for (frame in frames) {
                     if (!_isRunning.value) break
                     if (frame.payload.size + 4 > LEGACY_ADV_MAX_BYTES) {
-                        _error.value =
-                            "广播数据超长：${frame.payload.size + 4} > $LEGACY_ADV_MAX_BYTES 字节（legacy advertising）"
+                        _error.value = L10n.get(
+                            R.string.mgr_btjam_err_data_too_large,
+                            frame.payload.size + 4,
+                            LEGACY_ADV_MAX_BYTES,
+                        )
                         continue
                     }
 
@@ -272,8 +282,7 @@ class BluetoothJammerManager(private val context: Context) {
                             if (outcome.code == AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS) {
                                 consecutiveTooMany++
                                 if (consecutiveTooMany >= MAX_TOO_MANY_RETRIES) {
-                                    _error.value =
-                                        "蓝牙广播槽位耗尽（code 2 连续 $consecutiveTooMany 次）：请关闭/重启蓝牙后重试"
+                                    _error.value = L10n.get(R.string.mgr_btjam_err_slots_exhausted, consecutiveTooMany)
                                     log("BLE", _error.value.orEmpty())
                                     return
                                 }
@@ -413,15 +422,15 @@ class BluetoothJammerManager(private val context: Context) {
     }
 
     private fun advertiseFailureMessage(code: Int): String = when (code) {
-        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE -> "广播数据超长（code=1）"
+        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE -> L10n.get(R.string.mgr_btjam_adv_data_too_large)
         AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS ->
-            "广播槽位被占用（code=2）：正在退避重试"
-        AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED -> "广播会话已启动（code=3）"
-        AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR -> "控制器内部错误（code=4）"
-        AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "控制器不支持 BLE 广播（code=5）"
-        ERROR_PERMISSION -> "缺少 BLUETOOTH_ADVERTISE 权限"
-        ERROR_INTERNAL -> "startAdvertising 抛出异常（详见日志）"
-        else -> "广播启动失败（code=$code）"
+            L10n.get(R.string.mgr_btjam_adv_too_many)
+        AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED -> L10n.get(R.string.mgr_btjam_adv_already_started)
+        AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR -> L10n.get(R.string.mgr_btjam_adv_internal)
+        AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> L10n.get(R.string.mgr_btjam_adv_unsupported)
+        ERROR_PERMISSION -> L10n.get(R.string.mgr_btjam_adv_no_permission)
+        ERROR_INTERNAL -> L10n.get(R.string.mgr_btjam_adv_exception)
+        else -> L10n.get(R.string.mgr_btjam_adv_failed_code, code)
     }
 
     // ─── 经典蓝牙 inquiry（本机扫描，不干扰他人） ──────────────────────────────
@@ -435,10 +444,13 @@ class BluetoothJammerManager(private val context: Context) {
                 val started = try {
                     adapter?.startDiscovery() ?: false
                 } catch (_: SecurityException) {
-                    _error.value = "缺少 BLUETOOTH_SCAN：无法执行经典蓝牙发现"
+                    _error.value = L10n.get(R.string.mgr_btjam_err_scan_permission)
                     false
                 } catch (t: Throwable) {
-                    _error.value = "startDiscovery 失败：${t.javaClass.simpleName}"
+                    _error.value = L10n.get(
+                        R.string.mgr_btjam_err_start_discovery,
+                        t.message ?: t.javaClass.simpleName,
+                    )
                     false
                 }
 
@@ -451,7 +463,7 @@ class BluetoothJammerManager(private val context: Context) {
                 inqPkt.incrementAndGet()
                 _inquiryActive.value = true
                 publishStats()
-                log("INQUIRY", "经典蓝牙发现已启动（本机扫描，不干扰其他设备）")
+                log("INQUIRY", L10n.get(R.string.mgr_btjam_log_inquiry_started))
 
                 // 等待 ACTION_DISCOVERY_FINISHED 或超时；1.5 秒就 cancel 会漏掉大量设备
                 val deadline = SystemClock.elapsedRealtime() + INQUIRY_MAX_MS

@@ -30,11 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.FlipperTvLib
 import xin.ctkqiang.deauthctrl.ui.components.Danger
 import xin.ctkqiang.deauthctrl.ui.components.Dark
@@ -73,11 +75,11 @@ fun FlipperTvScreen(back: () -> Unit) {
     var tab by remember { mutableStateOf(0) }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("万能遥控 · FLIPPER TV", back)
+        TerminalHeader(stringResource(R.string.flipper_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             // Tab 切换
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("TV 万能遥控" to 0, "按键克隆库" to 1).forEach { (label, i) ->
+                listOf(R.string.flipper_tab_tv to 0, R.string.flipper_tab_clone to 1).forEach { (labelRes, i) ->
                     val on = tab == i
                     Surface(
                         modifier = Modifier.weight(1f).clickable { haptic.hud(); tab = i },
@@ -85,7 +87,7 @@ fun FlipperTvScreen(back: () -> Unit) {
                         color = if (on) Red.copy(alpha = 0.14f) else SurfaceBg,
                         border = BorderStroke(1.dp, if (on) Red.copy(alpha = 0.6f) else BorderDim),
                     ) {
-                        Text(label, fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) Red else Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(labelRes), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) Red else Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                     }
                 }
             }
@@ -105,26 +107,26 @@ private fun TvUniversalPanel(
     haptic: androidx.compose.ui.hapticfeedback.HapticFeedback,
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TermPanel("候选库 · tv.ir (Flipper Zero 开源固件)") {
+        TermPanel(stringResource(R.string.flipper_panel_candidates)) {
             val total = vm.tvButtons.values.sumOf { it.size }
-            Text("按钮组 ${vm.tvButtons.size} 组 · 共 $total 条候选码", fontFamily = Mono, fontSize = 10.sp, color = Gold)
+            Text(stringResource(R.string.flipper_candidate_counts, vm.tvButtons.size, total), fontFamily = Mono, fontSize = 10.sp, color = Gold)
             Spacer(Modifier.height(3.dp))
-            Text("支持协议: NEC/NECext/Samsung32/RC5/RC5X/RC6/SIRC/SIRC20;Kaseikyo/Pioneer/RCA/NEC42 候选将被跳过(如实计数)", fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp)
+            Text(stringResource(R.string.flipper_supported_protocols), fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp)
         }
         Spacer(Modifier.height(8.dp))
 
         // 6 大按钮
         val buttons = listOf(
-            "Power" to "电源",
-            "Vol_up" to "音量 +",
-            "Vol_dn" to "音量 -",
-            "Ch_next" to "频道 +",
-            "Ch_prev" to "频道 -",
-            "Mute" to "静音",
+            "Power" to R.string.flipper_btn_power,
+            "Vol_up" to R.string.flipper_btn_vol_up,
+            "Vol_dn" to R.string.flipper_btn_vol_down,
+            "Ch_next" to R.string.flipper_btn_ch_next,
+            "Ch_prev" to R.string.flipper_btn_ch_prev,
+            "Mute" to R.string.flipper_btn_mute,
         )
         buttons.chunked(2).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (key, label) ->
+                row.forEach { (key, labelRes) ->
                     val active = flood.running && flood.button == key
                     val count = vm.tvButtons[key]?.size ?: 0
                     Surface(
@@ -137,8 +139,8 @@ private fun TvUniversalPanel(
                         border = BorderStroke(1.5.dp, if (active) Red.copy(alpha = 0.8f) else BorderDim),
                     ) {
                         Column(Modifier.padding(vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(label, fontFamily = Sans, fontSize = 16.sp, fontWeight = FontWeight.Black, color = if (active) Red else White)
-                            Text("$count 候选", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                            Text(stringResource(labelRes), fontFamily = Sans, fontSize = 16.sp, fontWeight = FontWeight.Black, color = if (active) Red else White)
+                            Text(stringResource(R.string.flipper_candidate_count, count), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                         }
                     }
                 }
@@ -150,7 +152,7 @@ private fun TvUniversalPanel(
         if (flood.running) {
             Spacer(Modifier.height(4.dp))
             Text(
-                "泛洪中 · ${flood.button} ${flood.index}/${flood.total} · ${flood.protocol} · 跳过 ${flood.skipped}",
+                stringResource(R.string.flipper_flood_status, flood.button, flood.index, flood.total, flood.protocol, flood.skipped),
                 fontFamily = Mono, fontSize = 10.sp, color = Gold,
             )
             Spacer(Modifier.height(4.dp))
@@ -160,7 +162,7 @@ private fun TvUniversalPanel(
                 color = Danger.copy(alpha = 0.1f),
                 border = BorderStroke(1.dp, Danger.copy(alpha = 0.5f)),
             ) {
-                Text("■ 停止轮发", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Danger, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                Text(stringResource(R.string.flipper_stop_flood), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Danger, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
             }
         }
         lastTx?.let {
@@ -169,7 +171,7 @@ private fun TvUniversalPanel(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "用法: 对准电视按「电源」,遥控器会像 Flipper 一样逐个尝试 317 个品牌的电源码(250ms/个),电视亮起时再次点击停止。全程约 80 秒。",
+            stringResource(R.string.flipper_usage),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
     }
@@ -190,8 +192,8 @@ private fun CloneLibraryPanel(vm: FlipperTvViewModel, haptic: androidx.compose.u
     fun save() {
         val addr = editAddr.trim().toIntOrNull(16) ?: 0
         val cmd = editCmd.trim().toIntOrNull(16) ?: 0
-        val remoteName = editRemoteName.trim().ifBlank { "我的遥控" }
-        val keyName = editKeyName.trim().ifBlank { "按键 ${remotes.size + 1}" }
+        val remoteName = editRemoteName.trim().ifBlank { context.getString(R.string.flipper_default_remote_name) }
+        val keyName = editKeyName.trim().ifBlank { context.getString(R.string.flipper_default_key_name, remotes.size + 1) }
         val key = FlipperTvLib.CloneKey(keyName, editProtocol, addr, cmd, editRaw.trim())
         val existing = remotes.firstOrNull { it.name == remoteName }
         remotes = if (existing != null) {
@@ -205,14 +207,14 @@ private fun CloneLibraryPanel(vm: FlipperTvViewModel, haptic: androidx.compose.u
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Text(
-            "[!] 手机没有红外接收器,无法像 Flipper 那样空中学习 —— 本库为手动录入键码的克隆库:从 tv.ir 查到候选码、从资料里抄录,或输入 RAW 脉冲(µs 逗号分隔)后永久保存并回放。",
+            stringResource(R.string.flipper_clone_warning),
             fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(8.dp))
-        TermPanel("新建按键") {
-            TermInput("遥控名", editRemoteName, placeholder = "如 客厅电视") { editRemoteName = it }
+        TermPanel(stringResource(R.string.flipper_panel_new_key)) {
+            TermInput(stringResource(R.string.flipper_remote_name_label), editRemoteName, placeholder = stringResource(R.string.flipper_remote_name_placeholder)) { editRemoteName = it }
             Spacer(Modifier.height(6.dp))
-            TermInput("按键名", editKeyName, placeholder = "如 电源") { editKeyName = it }
+            TermInput(stringResource(R.string.flipper_key_name_label), editKeyName, placeholder = stringResource(R.string.flipper_key_name_placeholder)) { editKeyName = it }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 listOf("NEC", "NECext", "Samsung32", "RC5", "RC5X", "RC6", "SIRC", "SIRC20").forEach { p ->
@@ -229,11 +231,11 @@ private fun CloneLibraryPanel(vm: FlipperTvViewModel, haptic: androidx.compose.u
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                TermInput("地址(hex)", editAddr, placeholder = "08", modifier = Modifier.weight(1f)) { editAddr = it }
-                TermInput("命令(hex)", editCmd, placeholder = "05", modifier = Modifier.weight(1f)) { editCmd = it }
+                TermInput(stringResource(R.string.flipper_address_label), editAddr, placeholder = "08", modifier = Modifier.weight(1f)) { editAddr = it }
+                TermInput(stringResource(R.string.flipper_command_label), editCmd, placeholder = "05", modifier = Modifier.weight(1f)) { editCmd = it }
             }
             Spacer(Modifier.height(6.dp))
-            TermInput("RAW 脉冲(可选,µs)", editRaw, placeholder = "9000,4500,560,1690,…(留空用协议生成)") { editRaw = it }
+            TermInput(stringResource(R.string.flipper_raw_label), editRaw, placeholder = stringResource(R.string.flipper_raw_placeholder)) { editRaw = it }
             Spacer(Modifier.height(8.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); save() },
@@ -241,13 +243,13 @@ private fun CloneLibraryPanel(vm: FlipperTvViewModel, haptic: androidx.compose.u
                 color = Red.copy(alpha = 0.14f),
                 border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
             ) {
-                Text("保存按键 ▸", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
+                Text(stringResource(R.string.flipper_save_key), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
             }
         }
         Spacer(Modifier.height(8.dp))
-        TermPanel("我的遥控 (${remotes.size})") {
+        TermPanel(stringResource(R.string.flipper_panel_my_remotes, remotes.size)) {
             if (remotes.isEmpty()) {
-                EmptyHint("保存的按键会按遥控分组显示在这里")
+                EmptyHint(stringResource(R.string.flipper_empty_remotes))
             } else {
                 remotes.forEach { r ->
                     Spacer(Modifier.height(4.dp))

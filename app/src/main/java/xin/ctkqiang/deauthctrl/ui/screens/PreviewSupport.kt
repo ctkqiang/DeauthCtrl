@@ -14,10 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.components.Gold
 import xin.ctkqiang.deauthctrl.ui.components.Gray
 import xin.ctkqiang.deauthctrl.ui.components.Sans
@@ -70,9 +72,9 @@ internal fun PreviewFallback(name: String) {
     ) {
         Text("★", color = Gold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
-        Text("$name 需要系统服务", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEDEDEF))
+        Text(stringResource(R.string.preview_needs_services, name), fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEDEDEF))
         Spacer(Modifier.height(4.dp))
-        Text("请切换到真机预览（Preview on device）\n即可查看完整界面", fontFamily = Sans, fontSize = 11.sp, color = Gray, lineHeight = 17.sp)
+        Text(stringResource(R.string.preview_switch_to_device), fontFamily = Sans, fontSize = 11.sp, color = Gray, lineHeight = 17.sp)
     }
 }
 

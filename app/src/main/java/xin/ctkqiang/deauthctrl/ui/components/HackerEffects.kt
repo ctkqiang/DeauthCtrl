@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +67,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 /**
@@ -224,16 +226,16 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
     // 1. 运行时权限 —— 这一项失败会让所有扫描类功能一起失效
     val missing = RequiredPermissions.missing(context)
     add(
-        if (missing.isEmpty()) StartupCheck("作战授权", "全部已授予", CheckLevel.OK)
-        else StartupCheck("作战授权", "缺 ${missing.size} 项，相关功能不可用", CheckLevel.FAIL)
+        if (missing.isEmpty()) StartupCheck(context.getString(R.string.boot_check_authz), context.getString(R.string.boot_check_all_granted), CheckLevel.OK)
+        else StartupCheck(context.getString(R.string.boot_check_authz), context.getString(R.string.boot_check_missing, missing.size), CheckLevel.FAIL)
     )
 
     // 2. 蓝牙适配器
     when (val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter) {
-        null -> add(StartupCheck("短波通讯", "此设备没有蓝牙硬件", CheckLevel.FAIL))
+        null -> add(StartupCheck(context.getString(R.string.boot_check_radio), context.getString(R.string.boot_check_no_bt), CheckLevel.FAIL))
         else -> add(
-            if (adapter.isEnabled) StartupCheck("短波通讯", "已就绪", CheckLevel.OK)
-            else StartupCheck("短波通讯", "已关闭，BLE 功能需先开启", CheckLevel.WARN)
+            if (adapter.isEnabled) StartupCheck(context.getString(R.string.boot_check_radio), context.getString(R.string.boot_check_ready), CheckLevel.OK)
+            else StartupCheck(context.getString(R.string.boot_check_radio), context.getString(R.string.boot_check_bt_off), CheckLevel.WARN)
         )
     }
 
@@ -245,15 +247,15 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
     }
     val scanGranted = ContextCompat.checkSelfPermission(context, scanPermission) == PackageManager.PERMISSION_GRANTED
     add(
-        if (scanGranted) StartupCheck("电子侦察授权", "已授予", CheckLevel.OK)
-        else StartupCheck("电子侦察授权", "未授予，BLE 嗅探不可用", CheckLevel.FAIL)
+        if (scanGranted) StartupCheck(context.getString(R.string.boot_check_recon), context.getString(R.string.boot_check_granted), CheckLevel.OK)
+        else StartupCheck(context.getString(R.string.boot_check_recon), context.getString(R.string.boot_check_no_scan), CheckLevel.FAIL)
     )
 
     // 4. 活跃网络接口 —— 局域网类功能（Web 服务、文件快传、对讲机）都依赖它
     val iface = activeInterfaceName(context.getSystemService(ConnectivityManager::class.java))
     add(
-        if (iface.isNullOrEmpty()) StartupCheck("战地链路", "无活动网络，局域网功能受限", CheckLevel.WARN)
-        else StartupCheck("战地链路", "$iface 在线", CheckLevel.OK)
+        if (iface.isNullOrEmpty()) StartupCheck(context.getString(R.string.boot_check_link), context.getString(R.string.boot_check_no_net), CheckLevel.WARN)
+        else StartupCheck(context.getString(R.string.boot_check_link), context.getString(R.string.boot_check_link_up, iface), CheckLevel.OK)
     )
 
     // 5. 可用内存
@@ -263,8 +265,8 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
         val detail = "${formatGigabytes(memory.availMem)} / ${formatGigabytes(memory.totalMem)}"
         val low = memory.availMem.toDouble() / memory.totalMem < LOW_MEMORY_RATIO
         add(
-            if (low) StartupCheck("战术内存", "$detail（偏低）", CheckLevel.WARN)
-            else StartupCheck("战术内存", detail, CheckLevel.OK)
+            if (low) StartupCheck(context.getString(R.string.boot_check_mem), context.getString(R.string.boot_check_low, detail), CheckLevel.WARN)
+            else StartupCheck(context.getString(R.string.boot_check_mem), detail, CheckLevel.OK)
         )
     }
 
@@ -272,8 +274,8 @@ private fun collectStartupChecks(context: Context): List<StartupCheck> = buildLi
     val free = context.filesDir.usableSpace
     if (free > 0L) {
         add(
-            if (free < LOW_STORAGE_BYTES) StartupCheck("储备空间", "${formatGigabytes(free)}（偏低）", CheckLevel.WARN)
-            else StartupCheck("储备空间", "${formatGigabytes(free)} 可用", CheckLevel.OK)
+            if (free < LOW_STORAGE_BYTES) StartupCheck(context.getString(R.string.boot_check_storage), context.getString(R.string.boot_check_low, formatGigabytes(free)), CheckLevel.WARN)
+            else StartupCheck(context.getString(R.string.boot_check_storage), context.getString(R.string.boot_check_free, formatGigabytes(free)), CheckLevel.OK)
         )
     }
 }
@@ -314,9 +316,9 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
         runCatching { collectStartupChecks(context) }
             .getOrElse {
                 listOf(
-                    StartupCheck("作战授权", "预览模式", CheckLevel.OK),
-                    StartupCheck("战地链路", "预览模式", CheckLevel.OK),
-                    StartupCheck("战术内存", "预览模式", CheckLevel.OK),
+                    StartupCheck(context.getString(R.string.boot_check_authz), context.getString(R.string.boot_preview_mode), CheckLevel.OK),
+                    StartupCheck(context.getString(R.string.boot_check_link), context.getString(R.string.boot_preview_mode), CheckLevel.OK),
+                    StartupCheck(context.getString(R.string.boot_check_mem), context.getString(R.string.boot_preview_mode), CheckLevel.OK),
                 )
             }
     }
@@ -331,7 +333,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     var shown by remember { mutableIntStateOf(0) }
     var phase by remember { mutableIntStateOf(0) }
     var blink by remember { mutableStateOf(true) }
-    val motto = remember { mutableStateOf(BOOT_MOTTOS.first()) }
+    val motto = remember { mutableIntStateOf(BOOT_MOTTO_RES.first()) }
 
     val failed = checks.count { it.level == CheckLevel.FAIL }
     val warned = checks.count { it.level == CheckLevel.WARN }
@@ -361,7 +363,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     LaunchedEffect(phase) {
         var i = 0
         while (phase == 2) {
-            motto.value = BOOT_MOTTOS[i % BOOT_MOTTOS.size]
+            motto.value = BOOT_MOTTO_RES[i % BOOT_MOTTO_RES.size]
             i++
             delay(1100)
         }
@@ -427,7 +429,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        "哪吒网络安全终端 · 全息战术系统",
+                        stringResource(R.string.boot_title),
                         fontFamily = FontFamily.Default,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -436,7 +438,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "TACTICAL BOOT SEQUENCE // AUTH: 授权安全研究",
+                        stringResource(R.string.boot_auth_line),
                         fontFamily = FontFamily.Monospace,
                         fontSize = 8.sp,
                         color = Gray,
@@ -466,9 +468,9 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
                     AsciiDivider()
                     Spacer(Modifier.height(8.dp))
                     val summary = when {
-                        failed > 0 -> "> 部署警告 — $failed 项异常，$warned 项警告"
-                        warned > 0 -> "> 部署就绪 — $warned 项警告"
-                        else -> "> 系统就绪 — 全息终端待命"
+                        failed > 0 -> stringResource(R.string.boot_deploy_warn, failed, warned)
+                        warned > 0 -> stringResource(R.string.boot_deploy_ready, warned)
+                        else -> stringResource(R.string.boot_sys_ready)
                     }
                     Text(
                         if (blink) "$summary _" else summary,
@@ -479,7 +481,7 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
                     // 自检进行中的军语
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "⟫ ${motto.value}",
+                        "⟫ ${stringResource(motto.value)}",
                         fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Gold,
                     )
                 }
@@ -511,21 +513,21 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             Text("DEAUTHCTRL v1.0", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = Gray)
             Text("  //  ", fontFamily = FontFamily.Monospace, fontSize = 9.sp, color = GrayDark)
-            Text("中国红客 · 国产自主 · 安全可控", fontFamily = FontFamily.Default, fontSize = 9.sp, color = Gray)
+            Text(stringResource(R.string.boot_footer), fontFamily = FontFamily.Default, fontSize = 9.sp, color = Gray)
         }
 
         ScanlineOverlay(lineSpacing = 4.dp, alpha = 0.03f, color = Red)
     }
 }
 
-/** 自检期间的轮播军语 */
-private val BOOT_MOTTOS = listOf(
-    "链路加密已建立 · AES-256",
-    "战术终端自检中",
-    "信号侦测阵列上线",
-    "全息投影校准",
-    "战术网络待命",
-    "陀螺仪航向锁定",
+/** 自检期间的轮播军语 —— 存资源 id,composable 内再解析,跟随语言切换 */
+private val BOOT_MOTTO_RES = listOf(
+    R.string.boot_log_encryption,
+    R.string.boot_log_selfcheck,
+    R.string.boot_log_array,
+    R.string.boot_log_projection,
+    R.string.boot_log_network,
+    R.string.boot_log_gyro,
 )
 
 // ─── Android Studio 预览 ──────────────────────────────────────────────────────

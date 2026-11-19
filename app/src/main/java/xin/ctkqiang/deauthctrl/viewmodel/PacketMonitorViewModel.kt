@@ -8,6 +8,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.PacketCaptureService
 import xin.ctkqiang.deauthctrl.manager.PacketMonitorState
 
@@ -52,7 +54,7 @@ class PacketMonitorViewModel(application: Application) : AndroidViewModel(applic
         val intent = VpnService.prepare(context.applicationContext)
         if (intent == null) VpnPrepareResult.Ready else VpnPrepareResult.ConsentNeeded(intent)
     }.getOrElse {
-        VpnPrepareResult.Failed("[!] VPN 授权查询失败 —— ${it.javaClass.simpleName}")
+        VpnPrepareResult.Failed(L10n.get(R.string.vm_pkt_vpn_query_failed, it.javaClass.simpleName))
     }
 
     /** 启动前台抓包服务(调用前必须已获得 VPN 授权) */
@@ -66,7 +68,11 @@ class PacketMonitorViewModel(application: Application) : AndroidViewModel(applic
                 Intent(app, PacketCaptureService::class.java),
             )
         }.onFailure {
-            _uiError.value = "[!] 抓包服务启动失败 —— ${it.javaClass.simpleName}: ${it.message ?: ""}"
+            _uiError.value = L10n.get(
+                R.string.vm_pkt_service_start_failed,
+                it.javaClass.simpleName,
+                it.message ?: "",
+            )
         }
     }
 
@@ -80,7 +86,7 @@ class PacketMonitorViewModel(application: Application) : AndroidViewModel(applic
      */
     fun stopService(context: Context) {
         runCatching { PacketCaptureService.requestStop(context) }
-            .onFailure { _uiError.value = "[!] 抓包服务停止失败 —— ${it.javaClass.simpleName}" }
+            .onFailure { _uiError.value = L10n.get(R.string.vm_pkt_service_stop_failed, it.javaClass.simpleName) }
     }
 
     /** 清空页面上的包列表(不影响服务继续抓包与累计计数) */

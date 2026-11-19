@@ -1,5 +1,6 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -40,6 +41,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.IrRemoteManager
 import xin.ctkqiang.deauthctrl.manager.SCOPE_CAPACITY
 import xin.ctkqiang.deauthctrl.manager.SCOPE_MAX_CHANNELS
@@ -97,7 +100,10 @@ fun LogicScopeScreen(back: () -> Unit) {
     val lastIr by irManager.lastPattern.collectAsState()
     LaunchedEffect(lastIr) {
         lastIr?.let { pattern ->
-            vm.submitIrPattern(pattern.toList(), "IR ${pattern.size} 段")
+            vm.submitIrPattern(
+                pattern.toList(),
+                irContext.getString(R.string.lscope_ir_pattern_segments, pattern.size),
+            )
         }
     }
 
@@ -111,7 +117,7 @@ fun LogicScopeScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("逻辑示波 · LOGIC SCOPE", back)
+        TerminalHeader(stringResource(R.string.lscope_title), back)
         Column(
             Modifier.fillMaxSize()
                 .navigationBarsPadding()
@@ -121,7 +127,7 @@ fun LogicScopeScreen(back: () -> Unit) {
             ScopeWarningStrip(state)
 
             // ── 通道选择 ──────────────────────────────────────────────────
-            TermPanel("通道选择 · CHANNELS") {
+            TermPanel(stringResource(R.string.lscope_channels_panel)) {
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -137,9 +143,9 @@ fun LogicScopeScreen(back: () -> Unit) {
                 Spacer(Modifier.height(5.dp))
                 Text(
                     if (state.running) {
-                        "运行中通道选择已锁定 —— 先「停止采集」再切换"
+                        stringResource(R.string.lscope_channels_locked)
                     } else {
-                        "多选 · 最多同屏 $SCOPE_MAX_CHANNELS 个 · 至少保留 1 个 · 默认 BLE 脉冲 + 音频"
+                        stringResource(R.string.lscope_channels_multi_hint, SCOPE_MAX_CHANNELS)
                     },
                     fontFamily = Sans,
                     fontSize = 8.sp,
@@ -152,8 +158,8 @@ fun LogicScopeScreen(back: () -> Unit) {
 
             ActionButton(
                 running = state.running,
-                runLabel = "启动采集",
-                stopLabel = "停止采集",
+                runLabel = stringResource(R.string.lscope_start_capture),
+                stopLabel = stringResource(R.string.lscope_stop_capture),
             ) {
                 if (state.running) vm.stop() else vm.start()
             }
@@ -161,7 +167,7 @@ fun LogicScopeScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
 
             // ── 主示波器 ──────────────────────────────────────────────────
-            TermPanel("波形 · WAVEFORM") {
+            TermPanel(stringResource(R.string.lscope_waveform_panel)) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(300.dp),
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -185,29 +191,32 @@ fun LogicScopeScreen(back: () -> Unit) {
                                 "-${SCOPE_WINDOW_MS / 1000} s",
                                 fontFamily = Mono, fontSize = 8.sp, color = Gray,
                             )
-                            Text("现在", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                            Text(stringResource(R.string.lscope_now), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                         }
                     }
                 }
                 Spacer(Modifier.height(5.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        "窗口 ${SCOPE_WINDOW_MS / 1000}s · 8×6 格",
+                        stringResource(R.string.lscope_window_info, SCOPE_WINDOW_MS / 1000),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                     Text(
-                        "$SCOPE_CAPACITY 点/通道",
+                        stringResource(R.string.lscope_capacity_points, SCOPE_CAPACITY),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                     Text(
-                        "${state.channels.values.sumOf { it.size }} 点在缓存",
+                        stringResource(
+                            R.string.lscope_points_cached,
+                            state.channels.values.sumOf { it.size },
+                        ),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                 }
                 if (state.running && state.channels.values.all { it.isEmpty() }) {
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        "等待首个真实采样 —— 扫描事件出现后轨迹开始滚动",
+                        stringResource(R.string.lscope_waiting_first_sample),
                         fontFamily = Sans, fontSize = 8.sp, color = Gray,
                     )
                 }
@@ -216,14 +225,18 @@ fun LogicScopeScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
 
             // ── 通道读数 ──────────────────────────────────────────────────
-            TermPanel("通道读数 · READOUT") {
+            TermPanel(stringResource(R.string.lscope_readout_panel)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "进行中 ${state.activeChannels.size} / ${selected.size} 通道",
+                        stringResource(
+                            R.string.lscope_active_channels,
+                            state.activeChannels.size,
+                            selected.size,
+                        ),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray,
                         modifier = Modifier.weight(1f),
                     )
-                    GhostButton("清空轨迹") { vm.clear() }
+                    GhostButton(stringResource(R.string.lscope_clear_trace)) { vm.clear() }
                 }
                 Spacer(Modifier.height(5.dp))
                 val shown = ScopeChannel.values().filter { it.id in selected }
@@ -254,6 +267,9 @@ private fun scopeColor(channel: ScopeChannel): Color = when (channel) {
     ScopeChannel.AUDIO -> White
     ScopeChannel.IR -> Warn
 }
+
+/** 通道显示名资源：由 ScopeChannel.labelRes 提供，界面语言切换时同步更新 */
+private fun scopeChannelLabelRes(channel: ScopeChannel): Int = channel.labelRes
 
 /**
  * 通道芯片
@@ -287,7 +303,7 @@ private fun ScopeChannelChip(
             Star(if (selected) color else Gray.copy(alpha = if (locked) 0.5f else 1f), 6.dp)
             Spacer(Modifier.width(6.dp))
             Text(
-                channel.label,
+                stringResource(scopeChannelLabelRes(channel)),
                 fontFamily = Sans,
                 fontSize = 11.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
@@ -319,7 +335,7 @@ private fun ScopeLegend(
                 )
                 Spacer(Modifier.width(5.dp))
                 Text(
-                    channel.label,
+                    stringResource(scopeChannelLabelRes(channel)),
                     fontFamily = Mono,
                     fontSize = 8.sp,
                     color = if (hasData) scopeColor(channel) else Gray.copy(alpha = 0.75f),
@@ -442,6 +458,8 @@ private fun ScopeReadoutRow(channel: ScopeChannel, state: ScopeState) {
     val latest = points.lastOrNull()
     val color = scopeColor(channel)
     val active = state.running && channel.id in state.activeChannels
+    val context = LocalContext.current
+    val channelLabel = stringResource(scopeChannelLabelRes(channel))
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -454,7 +472,7 @@ private fun ScopeReadoutRow(channel: ScopeChannel, state: ScopeState) {
                 Star(color, 7.dp)
                 Spacer(Modifier.width(7.dp))
                 Text(
-                    channel.label,
+                    channelLabel,
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -463,9 +481,9 @@ private fun ScopeReadoutRow(channel: ScopeChannel, state: ScopeState) {
                 )
                 Text(
                     when {
-                        active -> "采集"
-                        state.running -> "未启动"
-                        else -> "已停止"
+                        active -> stringResource(R.string.lscope_state_capturing)
+                        state.running -> stringResource(R.string.lscope_state_idle)
+                        else -> stringResource(R.string.lscope_state_stopped)
                     },
                     fontFamily = Mono,
                     fontSize = 8.sp,
@@ -473,7 +491,7 @@ private fun ScopeReadoutRow(channel: ScopeChannel, state: ScopeState) {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "计数 ${state.eventCounts[channel.id] ?: 0L}",
+                    stringResource(R.string.lscope_event_count, state.eventCounts[channel.id] ?: 0L),
                     fontFamily = Mono,
                     fontSize = 8.sp,
                     color = Gray,
@@ -491,10 +509,14 @@ private fun ScopeReadoutRow(channel: ScopeChannel, state: ScopeState) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     if (latest != null) {
-                        "工程值 ${rawValueText(channel, latest)} · ${latest.label ?: "无标签"} · " +
-                            elapsedText(System.currentTimeMillis() - latest.timeMs)
+                        stringResource(
+                            R.string.lscope_readout_value,
+                            rawValueText(context, channel, latest),
+                            latest.label ?: stringResource(R.string.lscope_no_label),
+                            elapsedText(context, System.currentTimeMillis() - latest.timeMs),
+                        )
                     } else {
-                        "暂无采样 —— 等待 ${channel.label} 数据"
+                        stringResource(R.string.lscope_no_sample_waiting, channelLabel)
                     },
                     fontFamily = Mono,
                     fontSize = 8.sp,
@@ -508,7 +530,7 @@ private fun ScopeReadoutRow(channel: ScopeChannel, state: ScopeState) {
 }
 
 /** 归一化幅度按通道公式还原为工程读数（反向映射，用于人工核对；量程边界不伪造精确值） */
-private fun rawValueText(channel: ScopeChannel, point: ScopePoint): String = when (channel) {
+private fun rawValueText(context: Context, channel: ScopeChannel, point: ScopePoint): String = when (channel) {
     ScopeChannel.BLE, ScopeChannel.WIFI -> when {
         point.value01 <= 0f -> "≤ -100 dBm"
         point.value01 >= 1f -> "≥ -20 dBm"
@@ -524,15 +546,22 @@ private fun rawValueText(channel: ScopeChannel, point: ScopePoint): String = whe
         point.value01 >= 1f -> "≥ 0 dBFS"
         else -> "%.0f dBFS".format(point.value01 * 80f - 80f)
     }
-    ScopeChannel.IR -> if (point.value01 > 0.5f) "载波脉冲" else "间隔"
+    ScopeChannel.IR -> if (point.value01 > 0.5f) {
+        context.getString(R.string.lscope_ir_carrier)
+    } else {
+        context.getString(R.string.lscope_ir_gap)
+    }
 }
 
 /** 距最新样本的时长；仅用于「这读数有多新」，不参与任何计算 */
-private fun elapsedText(ageMs: Long): String = when {
-    ageMs < 0L -> "刚刚"
-    ageMs < 1_000L -> "$ageMs ms 前"
-    ageMs < 60_000L -> "%.1f s 前".format(ageMs / 1000f)
-    else -> "${ageMs / 60_000L} min 前"
+private fun elapsedText(context: Context, ageMs: Long): String = when {
+    ageMs < 0L -> context.getString(R.string.lscope_age_just_now)
+    ageMs < 1_000L -> context.getString(R.string.lscope_age_ms_ago, ageMs)
+    ageMs < 60_000L -> context.getString(
+        R.string.lscope_age_sec_ago,
+        "%.1f".format(ageMs / 1000f),
+    )
+    else -> context.getString(R.string.lscope_age_min_ago, ageMs / 60_000L)
 }
 
 /**
@@ -549,7 +578,10 @@ private fun ScopeWarningStrip(state: ScopeState) {
     if (fatal.isNotEmpty()) items += Danger to fatal
     ScopeChannel.values().forEach { channel ->
         val note = state.channelNotes[channel.id]?.trim().orEmpty()
-        if (note.isNotEmpty()) items += Warn to "${channel.label}: $note"
+        if (note.isNotEmpty()) {
+            val label = stringResource(scopeChannelLabelRes(channel))
+            items += Warn to stringResource(R.string.lscope_channel_note, label, note)
+        }
     }
 
     items.forEach { (color, text) ->
@@ -560,7 +592,7 @@ private fun ScopeWarningStrip(state: ScopeState) {
             border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
         ) {
             Text(
-                "[!] $text",
+                stringResource(R.string.lscope_warning_prefix, text),
                 fontFamily = Sans,
                 fontSize = 10.sp,
                 color = color,
@@ -578,11 +610,9 @@ private fun ScopeWarningStrip(state: ScopeState) {
 /** 诚实说明 —— 指出「事件脉冲 ≠ 空口波形」「RMS 包络 ≠ 原始音频」等语义边界 */
 @Composable
 private fun ScopeHonestyPanel() {
-    TermPanel("映射与边界 · HONESTY") {
+    TermPanel(stringResource(R.string.lscope_honesty_panel)) {
         Text(
-            "脉冲通道（BLE / WiFi / 蜂窝 / 红外）画的是 Android 系统上报的扫描事件时刻与信号强度，"
-                + "按采样保持绘制成方波；它不是空口射频波形的物理采样，也不代表信号占用带宽。"
-                + "蜂窝通道为 2s 轮询的离散样本，红外通道需调用 submitIrPattern 注入真实发射图案后才有轨迹。",
+            stringResource(R.string.lscope_honesty_p1),
             fontFamily = Sans,
             fontSize = 9.sp,
             color = Gray,
@@ -590,9 +620,7 @@ private fun ScopeHonestyPanel() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "幅度映射：BLE / WiFi =（RSSI + 100）/ 80（-100 dBm → 0%，-20 dBm → 100%）；"
-                + "蜂窝 =（RSRP + 140）/ 100（-140 → 0%，-40 → 100%）；"
-                + "音频 =（dBFS + 80）/ 80（-80 dBFS → 0%，0 dBFS → 100%）；红外 载波 = 100%，间隔 = 0%。",
+            stringResource(R.string.lscope_honesty_p2),
             fontFamily = Mono,
             fontSize = 8.sp,
             color = Gray,
@@ -600,9 +628,7 @@ private fun ScopeHonestyPanel() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "音频通道 AudioRecord 16kHz / 16bit / 单声道，带宽上限 8kHz；每 100ms 的 1600 个原始采样"
-                + "压缩为一个 RMS 包络点（10Hz），画的是能量包络而不是原始音频波形；"
-                + "16kHz 采样无法还原 8kHz 以上的声音细节。",
+            stringResource(R.string.lscope_honesty_p3),
             fontFamily = Sans,
             fontSize = 9.sp,
             color = Gray,
@@ -610,8 +636,7 @@ private fun ScopeHonestyPanel() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "超出通道量程的样本在图中压在 0% / 100% 边界，读数以「≤ / ≥ 量程端点」标注，"
-                + "不把溢出值伪造成一个精确数字；音频标签中的 dBFS 才是该帧的真实测量值。",
+            stringResource(R.string.lscope_honesty_p4),
             fontFamily = Sans,
             fontSize = 9.sp,
             color = Gray,
@@ -619,8 +644,7 @@ private fun ScopeHonestyPanel() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "所有读数都来自系统 API 的真实返回值；没有数据时显示「--」，不插值、不编造。"
-                + "颜色只用于区分通道；本页是工程调试可视化，不是频谱分析仪，也没有测向或定位能力。",
+            stringResource(R.string.lscope_honesty_p5),
             fontFamily = Sans,
             fontSize = 9.sp,
             color = Gray,
@@ -628,8 +652,7 @@ private fun ScopeHonestyPanel() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "权限：BLE 扫描、Wi-Fi 扫描 / 位置信息、电话状态、录音由应用网关统一申请；"
-                + "任一权限缺失时对应通道会显示明确原因，而不是静默失败。",
+            stringResource(R.string.lscope_honesty_p6),
             fontFamily = Sans,
             fontSize = 9.sp,
             color = Gray.copy(alpha = 0.85f),

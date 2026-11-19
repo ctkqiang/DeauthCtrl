@@ -28,10 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.model.ScanState
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -89,14 +91,14 @@ fun DbViewScreen(
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("信号数据库", back)
+        TerminalHeader(stringResource(R.string.dbview_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             // ── 刷新操作行 ──
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("SQLite · signals.db", fontFamily = Mono, fontSize = 9.sp, color = Gold)
                     Text(
-                        lastRefresh?.let { "上次注入 ${tf.format(Date(it))} · +$lastInserted 条" } ?: "尚未注入 · 点击右侧刷新",
+                        lastRefresh?.let { stringResource(R.string.dbview_last_refresh, tf.format(Date(it)), lastInserted) } ?: stringResource(R.string.dbview_never_refreshed),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray,
                     )
                 }
@@ -107,7 +109,7 @@ fun DbViewScreen(
                     border = BorderStroke(1.dp, Gold.copy(alpha = 0.7f)),
                 ) {
                     Text(
-                        "⟳ 刷新注入",
+                        stringResource(R.string.dbview_refresh),
                         fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Black,
                         color = White,
                         textAlign = TextAlign.Center,
@@ -115,15 +117,15 @@ fun DbViewScreen(
                     )
                 }
             }
-            Text("只 INSERT 注入最新数据,历史记录永久保留", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+            Text(stringResource(R.string.dbview_insert_note), fontFamily = Sans, fontSize = 8.sp, color = Gray)
 
             Spacer(Modifier.height(8.dp))
 
             // ── 来源统计芯片 ──
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                DbChip("全部", records.size.toString(), filter == null, Gold) { filter = null }
+                DbChip(stringResource(R.string.dbview_filter_all), records.size.toString(), filter == null, Gold) { filter = null }
                 counts.forEach { (src, n) ->
-                    DbChip(src.removePrefix("雷达·"), "$n", filter == src, TacGreen) { filter = src }
+                    DbChip(sourceChipLabel(src), "$n", filter == src, TacGreen) { filter = src }
                 }
             }
 
@@ -133,7 +135,7 @@ fun DbViewScreen(
             if (visible.isEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "暂无数据 —— 打开雷达/BLE 扫描后点击「刷新注入」\n最新信号情报会写入数据库",
+                    stringResource(R.string.dbview_empty),
                     fontFamily = Sans, fontSize = 10.sp, color = Gray,
                     textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
                     lineHeight = 15.sp,
@@ -150,7 +152,7 @@ fun DbViewScreen(
                             Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(sourceTag(r.source), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = sourceColor(r.source), modifier = Modifier.width(52.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(r.name.ifBlank { "<无名>" }.take(20), fontFamily = Sans, fontSize = 11.sp, color = White)
+                                    Text(r.name.ifBlank { stringResource(R.string.dbview_unnamed) }.take(20), fontFamily = Sans, fontSize = 11.sp, color = White)
                                     Text("${r.mac} · ${r.detail}", fontFamily = Mono, fontSize = 8.sp, color = Gray, maxLines = 1)
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
@@ -172,6 +174,12 @@ private fun sourceTag(source: String): String = when {
     source.contains("嗅探") -> "BLE"
     source.contains("WiFi") -> "WIFI"
     else -> source
+}
+
+/** 来源芯片标签 —— 数据值("雷达·WiFi" / "BLE 嗅探" 等)到语言中立技术词的显示映射 */
+private fun sourceChipLabel(source: String): String = when {
+    source.contains("WiFi") -> "WIFI"
+    else -> "BLE"
 }
 
 private fun sourceColor(source: String): Color = when {

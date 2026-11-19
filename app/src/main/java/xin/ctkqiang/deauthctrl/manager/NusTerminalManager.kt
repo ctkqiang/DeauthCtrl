@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * NUS 终端连接阶段
@@ -33,13 +36,13 @@ import java.util.UUID
  * 与 nRF Connect 的 NUS 面板一致：断开 → 连接中 → 发现服务 → 已连接；
  * 目标不提供 NUS / FFE0 服务时停在「无 NUS 服务」，配置失败停在「错误」。
  */
-enum class NusPhase(val label: String) {
-    DISCONNECTED("断开"),
-    CONNECTING("连接中"),
-    DISCOVERING("发现服务"),
-    CONNECTED("已连接"),
-    NO_NUS("无 NUS 服务"),
-    ERROR("错误"),
+enum class NusPhase(@StringRes val labelRes: Int) {
+    DISCONNECTED(R.string.mgr_nus_phase_disconnected),
+    CONNECTING(R.string.mgr_nus_phase_connecting),
+    DISCOVERING(R.string.mgr_nus_phase_discovering),
+    CONNECTED(R.string.mgr_nus_phase_connected),
+    NO_NUS(R.string.mgr_nus_phase_no_nus),
+    ERROR(R.string.mgr_nus_phase_error),
 }
 
 /**
@@ -47,11 +50,11 @@ enum class NusPhase(val label: String) {
  *
  * RAW 不追加任何字节；其余选项对应 Arduino `Serial.print` / `Serial.println` 的常见写法。
  */
-enum class NusLineEnding(val label: String, val bytes: ByteArray) {
-    CRLF("CRLF", byteArrayOf(0x0D, 0x0A)),
-    CR("CR", byteArrayOf(0x0D)),
-    LF("LF", byteArrayOf(0x0A)),
-    RAW("RAW", ByteArray(0)),
+enum class NusLineEnding(@StringRes val labelRes: Int, val bytes: ByteArray) {
+    CRLF(R.string.mgr_nus_ending_crlf, byteArrayOf(0x0D, 0x0A)),
+    CR(R.string.mgr_nus_ending_cr, byteArrayOf(0x0D)),
+    LF(R.string.mgr_nus_ending_lf, byteArrayOf(0x0A)),
+    RAW(R.string.mgr_nus_ending_raw, ByteArray(0)),
 }
 
 /**
@@ -173,23 +176,28 @@ class NusTerminalManager(private val context: Context) {
     fun connect(mac: String): Boolean {
         val normalized = normalizeNusMac(mac)
         if (normalized == null) {
-            publishError("MAC 格式无效 —— 应为 AA:BB:CC:DD:EE:FF（12 位十六进制）")
+            publishError(L10n.get(R.string.mgr_nus_err_mac_invalid))
             return false
         }
 
         val missing = missingPermissions()
         if (missing.isNotEmpty()) {
-            publishError("缺少蓝牙权限：${missing.joinToString("、") { permissionLabel(it) }} —— 请先在应用权限网关授予")
+            publishError(
+                L10n.get(
+                    R.string.mgr_nus_err_missing_perm,
+                    missing.joinToString(L10n.get(R.string.mgr_nus_perm_separator)) { permissionLabel(it) },
+                ),
+            )
             return false
         }
 
         val adapter = adapterOrNull()
         if (adapter == null) {
-            publishError("本机没有蓝牙适配器")
+            publishError(L10n.get(R.string.mgr_nus_err_no_adapter))
             return false
         }
         if (!runCatching { adapter.isEnabled }.getOrDefault(false)) {
-            publishError("蓝牙未开启 —— 请先在系统设置中打开蓝牙")
+            publishError(L10n.get(R.string.mgr_nus_err_bt_off))
             return false
         }
 
@@ -197,7 +205,7 @@ class NusTerminalManager(private val context: Context) {
 
         val device = runCatching { adapter.getRemoteDevice(normalized) }.getOrNull()
         if (device == null) {
-            publishError("系统无法解析该 MAC 地址")
+            publishError(L10n.get(R.string.mgr_nus_err_mac_resolve))
             return false
         }
 
@@ -217,13 +225,13 @@ class NusTerminalManager(private val context: Context) {
             error = null,
         )
         synchronized(rxLock) { utf8Remainder = ByteArray(0) }
-        log("开始连接 $normalized（$name），LE 传输，10 秒超时")
+        log(L10n.get(R.string.mgr_nus_log_connecting, normalized, name))
 
         connectTimeoutJob = scope.launch {
             delay(CONNECT_TIMEOUT_MS)
             if (_state.value.phase == NusPhase.CONNECTING) {
                 connectTimeoutJob = null
-                failSession("连接超时（10 秒）—— 目标可能不在范围内、未处于可连接状态，或已被其他主机连接")
+                failSession(L10n.get(R.string.mgr_nus_err_connect_timeout))
             }
         }
 
@@ -238,7 +246,7 @@ class NusTerminalManager(private val context: Context) {
         if (connection == null) {
             connectTimeoutJob?.cancel()
             connectTimeoutJob = null
-            publishFatal("连接失败 —— 系统返回 null，请关闭蓝牙后重新打开再试")
+            publishFatal(L10n.get(R.string.mgr_nus_err_connect_null))
             return false
         }
         gattRef = connection
@@ -259,7 +267,7 @@ class NusTerminalManager(private val context: Context) {
             )
         }
         synchronized(rxLock) { utf8Remainder = ByteArray(0) }
-        if (hadSession) log("已主动断开连接")
+        if (hadSession) log(L10n.get(R.string.mgr_nus_log_disconnected))
     }
 
     /** ViewModel 回收时调用：断开并取消所有后台协程 */
@@ -295,28 +303,28 @@ class NusTerminalManager(private val context: Context) {
     fun send(text: String, ending: NusLineEnding): Boolean {
         val gatt = gattRef
         if (gatt == null || _state.value.phase != NusPhase.CONNECTED) {
-            publishError("未连接 —— 请先连接设备并等待 NUS 终端就绪")
+            publishError(L10n.get(R.string.mgr_nus_err_not_connected))
             return false
         }
         val rx = rxCharacteristic
         if (rx == null) {
-            publishError("RX 特征不可用 —— 请断开后重新连接")
+            publishError(L10n.get(R.string.mgr_nus_err_rx_unavailable))
             return false
         }
         if (_state.value.sending) {
-            publishError("上一帧尚未写入完成 —— 请稍候再发送")
+            publishError(L10n.get(R.string.mgr_nus_err_sending_pending))
             return false
         }
 
         val payload = text.toByteArray(Charsets.UTF_8) + ending.bytes
         if (payload.isEmpty()) {
-            publishError("发送内容为空 —— 请输入文本或选择行尾")
+            publishError(L10n.get(R.string.mgr_nus_err_empty_payload))
             return false
         }
         val mtu = _state.value.mtu.takeIf { it >= 23 } ?: 23
         val maxPayload = mtu - 3
         if (payload.size > maxPayload) {
-            publishError("发送 ${payload.size}B 超过当前 MTU $mtu 允许的单次写入 $maxPayload B —— 请缩短内容")
+            publishError(L10n.get(R.string.mgr_nus_err_payload_too_long, payload.size, mtu, maxPayload))
             return false
         }
 
@@ -344,11 +352,18 @@ class NusTerminalManager(private val context: Context) {
 
         if (!accepted) {
             _state.update { it.copy(sending = false) }
-            publishError("写入请求被系统拒绝 —— 检查连接状态后重试")
+            publishError(L10n.get(R.string.mgr_nus_err_write_rejected))
             return false
         }
 
-        log("已发送 ${payload.size}B → RX ${shortUuid(rx.uuid)}（${ending.label}）")
+        log(
+            L10n.get(
+                R.string.mgr_nus_log_sent,
+                payload.size,
+                shortUuid(rx.uuid),
+                L10n.get(ending.labelRes),
+            ),
+        )
         startWriteTimeout()
         return true
     }
@@ -369,19 +384,21 @@ class NusTerminalManager(private val context: Context) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     if (status != BluetoothGatt.GATT_SUCCESS) {
-                        failSession("连接失败（status=$status）${gattStatusHint(status)}")
+                        failSession(
+                            L10n.get(R.string.mgr_nus_err_connect_status, status, gattStatusHint(status)),
+                        )
                         return
                     }
                     connectTimeoutJob?.cancel()
                     connectTimeoutJob = null
-                    log("已连接 ${_state.value.deviceAddress}，开始发现 GATT 服务")
+                    log(L10n.get(R.string.mgr_nus_log_connected, _state.value.deviceAddress))
                     _state.update {
                         it.copy(phase = NusPhase.DISCOVERING, mtu = 23, error = null)
                     }
 
                     val started = runCatching { gatt.discoverServices() }.getOrDefault(false)
                     if (!started) {
-                        failSession("服务发现启动失败 —— discoverServices() 返回 false")
+                        failSession(L10n.get(R.string.mgr_nus_err_discover_start))
                         return
                     }
                     startDiscoverTimeout()
@@ -403,16 +420,23 @@ class NusTerminalManager(private val context: Context) {
                             phy = "--",
                             sending = false,
                             error = if (status != BluetoothGatt.GATT_SUCCESS) {
-                                "连接已断开（status=$status）${gattStatusHint(status)}"
+                                L10n.get(
+                                    R.string.mgr_nus_err_disconnected_status,
+                                    status,
+                                    gattStatusHint(status),
+                                )
                             } else {
                                 null
                             },
                         )
                     }
                     if (status == BluetoothGatt.GATT_SUCCESS) {
-                        log("设备已断开连接")
+                        log(L10n.get(R.string.mgr_nus_log_device_disconnected))
                     } else {
-                        log("连接已断开（status=$status）${gattStatusHint(status)}", isError = true)
+                        log(
+                            L10n.get(R.string.mgr_nus_err_disconnected_status, status, gattStatusHint(status)),
+                            isError = true,
+                        )
                     }
                 }
 
@@ -426,7 +450,7 @@ class NusTerminalManager(private val context: Context) {
             discoverTimeoutJob = null
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                failSession("服务发现失败（status=$status）${gattStatusHint(status)}")
+                failSession(L10n.get(R.string.mgr_nus_err_discover_status, status, gattStatusHint(status)))
                 return
             }
 
@@ -435,8 +459,7 @@ class NusTerminalManager(private val context: Context) {
             val service = nusService ?: ffe0Service
             if (service == null) {
                 failSession(
-                    "未发现 Nordic UART Service（6E400001-…）或 FFE0 / FFE1 串口服务 —— " +
-                        "目标设备可能未烧录 NUS 固件",
+                    L10n.get(R.string.mgr_nus_err_no_nus_service),
                     NusPhase.NO_NUS,
                 )
                 return
@@ -457,13 +480,17 @@ class NusTerminalManager(private val context: Context) {
             if (rx == null) rx = service.getCharacteristic(FFE1_CHARACTERISTIC_UUID)
             if (tx == null) tx = service.getCharacteristic(FFE1_CHARACTERISTIC_UUID)
 
-            val profile = if (isFfe0) "FFE0 / FFE1 串口" else "NUS 6E400001"
+            val profile = if (isFfe0) {
+                L10n.get(R.string.mgr_nus_profile_ffe0)
+            } else {
+                L10n.get(R.string.mgr_nus_profile_nus)
+            }
             if (rx == null) {
-                failSession("找到 $profile 服务，但缺少可写 RX 特征")
+                failSession(L10n.get(R.string.mgr_nus_err_no_rx, profile))
                 return
             }
             if (tx == null) {
-                failSession("找到 $profile 服务，但缺少通知 TX 特征")
+                failSession(L10n.get(R.string.mgr_nus_err_no_tx, profile))
                 return
             }
 
@@ -472,7 +499,13 @@ class NusTerminalManager(private val context: Context) {
                     BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                 ) != 0
             if (!canWrite) {
-                failSession("RX 特征 ${shortUuid(rx.uuid)} 不支持写入（属性 ${propertyShort(rx.properties)}）")
+                failSession(
+                    L10n.get(
+                        R.string.mgr_nus_err_rx_unwritable,
+                        shortUuid(rx.uuid),
+                        propertyShort(rx.properties),
+                    ),
+                )
                 return
             }
             val canNotify = tx.properties and (
@@ -480,7 +513,13 @@ class NusTerminalManager(private val context: Context) {
                     BluetoothGattCharacteristic.PROPERTY_INDICATE
                 ) != 0
             if (!canNotify) {
-                failSession("TX 特征 ${shortUuid(tx.uuid)} 不支持通知 / 指示（属性 ${propertyShort(tx.properties)}）")
+                failSession(
+                    L10n.get(
+                        R.string.mgr_nus_err_tx_unnotifiable,
+                        shortUuid(tx.uuid),
+                        propertyShort(tx.properties),
+                    ),
+                )
                 return
             }
 
@@ -492,14 +531,14 @@ class NusTerminalManager(private val context: Context) {
                 gatt.setCharacteristicNotification(tx, true)
             }.getOrDefault(false)
             if (!localRegistered) {
-                failSession("本地通知注册失败 —— 系统拒绝了 setCharacteristicNotification")
+                failSession(L10n.get(R.string.mgr_nus_err_local_notify))
                 return
             }
 
             val descriptor = runCatching { tx.getDescriptor(CCCD_UUID) }.getOrNull()
             if (descriptor == null) {
                 runCatching { gatt.setCharacteristicNotification(tx, false) }
-                failSession("TX 特征缺少 CCCD 描述符（0x2902）—— 无法开启远端通知")
+                failSession(L10n.get(R.string.mgr_nus_err_no_cccd))
                 return
             }
 
@@ -526,11 +565,18 @@ class NusTerminalManager(private val context: Context) {
             if (!accepted) {
                 pendingSubscribe = false
                 runCatching { gatt.setCharacteristicNotification(tx, false) }
-                failSession("通知订阅请求被系统拒绝 —— 请稍后重试")
+                failSession(L10n.get(R.string.mgr_nus_err_notify_rejected))
                 return
             }
 
-            log("已找到 $profile：RX ${shortUuid(rx.uuid)} / TX ${shortUuid(tx.uuid)}，等待 CCCD 写入回调")
+            log(
+                L10n.get(
+                    R.string.mgr_nus_log_profile_hit,
+                    profile,
+                    shortUuid(rx.uuid),
+                    shortUuid(tx.uuid),
+                ),
+            )
             startSubscribeTimeout()
         }
 
@@ -542,7 +588,7 @@ class NusTerminalManager(private val context: Context) {
             if (gatt !== gattRef) return
             if (!pendingSubscribe) {
                 if (status != BluetoothGatt.GATT_SUCCESS) {
-                    publishError("描述符写入失败（status=$status）${gattStatusHint(status)}")
+                    publishError(L10n.get(R.string.mgr_nus_err_desc_write, status, gattStatusHint(status)))
                 }
                 return
             }
@@ -551,12 +597,12 @@ class NusTerminalManager(private val context: Context) {
             subscribeTimeoutJob = null
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                failSession("开启通知失败（status=$status）${gattStatusHint(status)}")
+                failSession(L10n.get(R.string.mgr_nus_err_notify_failed, status, gattStatusHint(status)))
                 return
             }
 
             _state.update { it.copy(phase = NusPhase.CONNECTED, error = null) }
-            log("通知已开启，NUS 终端就绪")
+            log(L10n.get(R.string.mgr_nus_log_ready))
             requestConnectionParameters(gatt)
         }
 
@@ -591,9 +637,9 @@ class NusTerminalManager(private val context: Context) {
             val wasSending = _state.value.sending
             _state.update { it.copy(sending = false) }
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                publishError("发送失败（status=$status）${gattStatusHint(status)}")
+                publishError(L10n.get(R.string.mgr_nus_err_send_failed, status, gattStatusHint(status)))
             } else if (wasSending) {
-                log("已写入 ${shortUuid(characteristic.uuid)}")
+                log(L10n.get(R.string.mgr_nus_log_written, shortUuid(characteristic.uuid)))
             }
         }
 
@@ -601,10 +647,10 @@ class NusTerminalManager(private val context: Context) {
             if (gatt !== gattRef) return
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 _state.update { it.copy(mtu = mtu, error = null) }
-                log("MTU 协商完成：$mtu B（单次可写负载 ${mtu - 3} B）")
+                log(L10n.get(R.string.mgr_nus_log_mtu, mtu, mtu - 3))
             } else {
                 _state.update { it.copy(mtu = 23) }
-                publishError("MTU 协商失败（status=$status）—— 继续使用默认 23 B")
+                publishError(L10n.get(R.string.mgr_nus_err_mtu_failed, status))
             }
         }
 
@@ -613,10 +659,10 @@ class NusTerminalManager(private val context: Context) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val text = "TX ${phyName(txPhy)} / RX ${phyName(rxPhy)}"
                 _state.update { it.copy(phy = text) }
-                log("PHY 读取完成：$text")
+                log(L10n.get(R.string.mgr_nus_log_phy, text))
             } else {
                 _state.update { it.copy(phy = "--") }
-                publishError("PHY 读取失败（status=$status）")
+                publishError(L10n.get(R.string.mgr_nus_err_phy_failed, status))
             }
         }
     }
@@ -689,7 +735,7 @@ class NusTerminalManager(private val context: Context) {
             delay(DISCOVER_TIMEOUT_MS)
             if (_state.value.phase == NusPhase.DISCOVERING) {
                 discoverTimeoutJob = null
-                failSession("服务发现超时（10 秒）—— 设备未返回服务表；可重新连接，或先在系统蓝牙中配对")
+                failSession(L10n.get(R.string.mgr_nus_err_discover_timeout))
             }
         }
     }
@@ -700,7 +746,7 @@ class NusTerminalManager(private val context: Context) {
             delay(SUBSCRIBE_TIMEOUT_MS)
             if (pendingSubscribe) {
                 subscribeTimeoutJob = null
-                failSession("通知订阅超时（10 秒）—— CCCD 写入未收到系统回调")
+                failSession(L10n.get(R.string.mgr_nus_err_subscribe_timeout))
             }
         }
     }
@@ -712,7 +758,7 @@ class NusTerminalManager(private val context: Context) {
             if (_state.value.sending) {
                 writeTimeoutJob = null
                 _state.update { it.copy(sending = false) }
-                publishError("写入超时（5 秒）—— 未收到 onCharacteristicWrite 回调")
+                publishError(L10n.get(R.string.mgr_nus_err_write_timeout))
             }
         }
     }
@@ -721,18 +767,18 @@ class NusTerminalManager(private val context: Context) {
     private fun requestConnectionParameters(gatt: BluetoothGatt) {
         val mtuAccepted = runCatching { gatt.requestMtu(REQUEST_MTU) }.getOrDefault(false)
         if (mtuAccepted) {
-            log("已请求 MTU $REQUEST_MTU（等待 onMtuChanged）")
+            log(L10n.get(R.string.mgr_nus_log_mtu_requested, REQUEST_MTU))
         } else {
-            log("[!] MTU 请求未被系统接受 —— 继续使用默认 23 B", isError = true)
+            log(L10n.get(R.string.mgr_nus_log_mtu_rejected), isError = true)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // readPhy() 返回 void，只能以调用是否抛异常判断请求是否发出
             runCatching { gatt.readPhy() }.onFailure {
-                log("[!] PHY 读取请求失败 —— 显示 --", isError = true)
+                log(L10n.get(R.string.mgr_nus_log_phy_request_failed), isError = true)
             }
         } else {
-            _state.update { it.copy(phy = "API < 26 不支持") }
+            _state.update { it.copy(phy = L10n.get(R.string.mgr_nus_phy_api_unsupported)) }
         }
     }
 
@@ -842,7 +888,7 @@ class NusTerminalManager(private val context: Context) {
         BluetoothDevice.PHY_LE_1M -> "1M"
         BluetoothDevice.PHY_LE_2M -> "2M"
         BluetoothDevice.PHY_LE_CODED -> "Coded"
-        else -> "未知($phy)"
+        else -> L10n.get(R.string.mgr_nus_phy_unknown, phy)
     }
 
     companion object {
@@ -894,28 +940,36 @@ class NusTerminalManager(private val context: Context) {
 
 /** 权限名 → 中文标签 */
 private fun permissionLabel(permission: String): String = when (permission) {
-    Manifest.permission.BLUETOOTH_CONNECT -> "连接设备 / 读取蓝牙状态"
-    Manifest.permission.BLUETOOTH -> "蓝牙（旧版权限）"
-    Manifest.permission.BLUETOOTH_ADMIN -> "蓝牙管理（旧版权限）"
+    Manifest.permission.BLUETOOTH_CONNECT -> L10n.get(R.string.mgr_nus_perm_connect)
+    Manifest.permission.BLUETOOTH -> L10n.get(R.string.mgr_nus_perm_bluetooth)
+    Manifest.permission.BLUETOOTH_ADMIN -> L10n.get(R.string.mgr_nus_perm_bluetooth_admin)
     else -> permission
 }
 
 /** GATT / ATT 状态码 → 可读原因 */
 private fun gattStatusHint(status: Int): String = when (status) {
-    133 -> " —— 设备不可达 / 已被其他主机连接 / 配对缓存异常；可在系统蓝牙中取消配对后重试"
-    8 -> " —— 连接超时"
-    19 -> " —— 远端主动断开"
-    22 -> " —— 本机主动断开"
-    5 -> " —— 认证不足，可能需要先在系统蓝牙中配对"
-    3 -> " —— 写入不被允许"
-    6 -> " —— 请求不被支持"
-    15 -> " —— 加密密钥长度不足"
+    133 -> L10n.get(R.string.mgr_nus_hint_unreachable)
+    8 -> L10n.get(R.string.mgr_nus_hint_timeout)
+    19 -> L10n.get(R.string.mgr_nus_hint_remote_disconnect)
+    22 -> L10n.get(R.string.mgr_nus_hint_local_disconnect)
+    5 -> L10n.get(R.string.mgr_nus_hint_auth)
+    3 -> L10n.get(R.string.mgr_nus_hint_write_denied)
+    6 -> L10n.get(R.string.mgr_nus_hint_not_supported)
+    15 -> L10n.get(R.string.mgr_nus_hint_key_size)
     else -> ""
 }
 
 /** connectGatt 抛出的异常 → 可读中文 */
 private fun connectFailureText(t: Throwable): String = when (t) {
-    is SecurityException -> "连接被系统拒绝：${t.message ?: "缺少 BLUETOOTH_CONNECT 权限"}"
-    is IllegalArgumentException -> "MAC 地址无效：${t.message ?: "系统无法解析"}"
-    else -> "连接失败：${t.message ?: t.javaClass.simpleName}"
+    is SecurityException -> L10n.get(
+        R.string.mgr_nus_connect_denied,
+        t.message ?: L10n.get(R.string.mgr_nus_connect_denied_no_perm),
+    )
+
+    is IllegalArgumentException -> L10n.get(
+        R.string.mgr_nus_mac_invalid_ex,
+        t.message ?: L10n.get(R.string.mgr_nus_mac_unresolved),
+    )
+
+    else -> L10n.get(R.string.mgr_nus_connect_failed_ex, t.message ?: t.javaClass.simpleName)
 }

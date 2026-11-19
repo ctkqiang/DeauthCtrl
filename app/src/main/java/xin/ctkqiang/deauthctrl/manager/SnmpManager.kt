@@ -1,5 +1,7 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -151,7 +153,9 @@ class SnmpManager {
             expandTargets(target)
         } catch (e: IllegalArgumentException) {
             stop()
-            _state.value = SnmpState(error = e.message ?: "目标格式无效")
+            _state.value = SnmpState(
+                error = e.message ?: L10n.get(R.string.mgr_snmp_error_invalid_target),
+            )
             return
         }
 
@@ -161,7 +165,7 @@ class SnmpManager {
             .distinct()
         if (dictionary.isEmpty()) {
             stop()
-            _state.value = SnmpState(error = "至少输入一个社区串")
+            _state.value = SnmpState(error = L10n.get(R.string.mgr_snmp_error_no_communities))
             return
         }
 
@@ -200,7 +204,7 @@ class SnmpManager {
                     done,
                     pairs.size,
                     scanning = false,
-                    error = "扫描异常: ${describe(e)}",
+                    error = L10n.get(R.string.mgr_snmp_error_scan_exception, describe(e)),
                 )
             }
         }
@@ -347,10 +351,10 @@ class SnmpManager {
      */
     private fun expandTargets(target: String): List<String> {
         val text = target.trim()
-        require(text.isNotEmpty()) { "请输入目标 IP 或网段" }
+        require(text.isNotEmpty()) { L10n.get(R.string.mgr_snmp_error_target_required) }
         if (!text.contains('/')) {
             val single = parseIpv4(text)
-                ?: throw IllegalArgumentException("IP 格式无效: $text")
+                ?: throw IllegalArgumentException(L10n.get(R.string.mgr_snmp_error_bad_ip, text))
             return listOf(formatIpv4(single))
         }
         return expandCidr(text)
@@ -358,17 +362,21 @@ class SnmpManager {
 
     private fun expandCidr(target: String): List<String> {
         val parts = target.split('/')
-        require(parts.size == 2) { "网段格式应为 a.b.c.d/前缀" }
+        require(parts.size == 2) { L10n.get(R.string.mgr_snmp_error_cidr_format) }
         val base = parseIpv4(parts[0])
-            ?: throw IllegalArgumentException("网段地址无效: ${parts[0]}")
+            ?: throw IllegalArgumentException(L10n.get(R.string.mgr_snmp_error_bad_network, parts[0]))
         val prefix = parts[1].toIntOrNull()
-            ?: throw IllegalArgumentException("前缀长度无效: ${parts[1]}")
-        require(prefix in 0..32) { "前缀长度应在 0..32: $prefix" }
+            ?: throw IllegalArgumentException(L10n.get(R.string.mgr_snmp_error_bad_prefix, parts[1]))
+        require(prefix in 0..32) { L10n.get(R.string.mgr_snmp_error_prefix_range, prefix) }
 
         val hostBits = 32 - prefix
         val addressCount = 1L shl hostBits
         require(addressCount <= SNMP_MAX_HOSTS) {
-            "网段过大: $addressCount 个地址，上限 $SNMP_MAX_HOSTS；请使用更小的网段"
+            L10n.get(
+                R.string.mgr_snmp_error_subnet_too_large,
+                addressCount,
+                SNMP_MAX_HOSTS,
+            )
         }
 
         val mask = if (prefix == 0) 0L else (0xFFFFFFFFL shl hostBits) and 0xFFFFFFFFL

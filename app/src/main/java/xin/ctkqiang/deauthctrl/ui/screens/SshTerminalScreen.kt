@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.SshClientManager
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -100,6 +102,7 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
     var ctrlDown by remember { mutableStateOf(false) }
     val inputFocus = remember { FocusRequester() }
     val imeVisible = WindowInsets.isImeVisible
+    val fillHostFirst = stringResource(R.string.ssh_fill_host_first)
 
     // 离开页面断开连接
     DisposableEffect(Unit) {
@@ -136,12 +139,12 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
     }
 
     Column(Modifier.fillMaxSize().background(Dark).navigationBarsPadding().imePadding()) {
-        TerminalHeader("SSH 客户端", back)
+        TerminalHeader(stringResource(R.string.ssh_title), back)
 
         if (!online) {
             // ── 连接表单 ──
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(14.dp)) {
-                Text("远程连接", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Black, color = White)
+                Text(stringResource(R.string.ssh_remote_connection), fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Black, color = White)
                 Text("JSch · ChannelShell · xterm-256color", fontFamily = Mono, fontSize = 8.sp, color = Gray)
                 Spacer(Modifier.height(10.dp))
                 // 本地会话:Termux 引擎本机 shell,无需配置任何服务器
@@ -155,27 +158,27 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
                     border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
                 ) {
                     Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("▸ 本地终端 · LOCALHOST", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.weight(1f))
-                        Text("本机 pty shell · 无需服务器", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                        Text(stringResource(R.string.ssh_local_terminal), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.ssh_local_terminal_desc), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                     }
                 }
                 Spacer(Modifier.height(12.dp))
 
-                SshField("主机 HOST", host, "192.168.1.1", Modifier.fillMaxWidth()) { vm.manager.host.value = it }
+                SshField(stringResource(R.string.ssh_host_label), host, "192.168.1.1", Modifier.fillMaxWidth()) { vm.manager.host.value = it }
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SshField("端口", port, "22", Modifier.weight(0.35f), keyboardType = KeyboardType.Number) { vm.manager.port.value = it }
-                    SshField("用户名 USER", username, "root", Modifier.weight(0.65f)) { vm.manager.username.value = it }
+                    SshField(stringResource(R.string.ssh_port_label), port, "22", Modifier.weight(0.35f), keyboardType = KeyboardType.Number) { vm.manager.port.value = it }
+                    SshField(stringResource(R.string.ssh_username_label), username, "root", Modifier.weight(0.65f)) { vm.manager.username.value = it }
                 }
                 Spacer(Modifier.height(8.dp))
-                SshField("密码 PASS", password, "••••••", Modifier.fillMaxWidth(), mask = true) { vm.manager.password.value = it }
+                SshField(stringResource(R.string.ssh_password_label), password, "••••••", Modifier.fillMaxWidth(), mask = true) { vm.manager.password.value = it }
 
                 Spacer(Modifier.height(12.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth().clickable {
                         haptic.hud()
                         if (vm.host.value.isBlank()) {
-                            xin.ctkqiang.deauthctrl.ui.components.StickerBus.show("先填主机地址!")
+                            xin.ctkqiang.deauthctrl.ui.components.StickerBus.show(fillHostFirst)
                         } else {
                             vm.connect()
                         }
@@ -186,8 +189,8 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
                 ) {
                     Text(
                         when (status) {
-                            is SshClientManager.Status.Connecting -> "连接中…"
-                            else -> "建 立 连 接"
+                            is SshClientManager.Status.Connecting -> stringResource(R.string.ssh_connecting)
+                            else -> stringResource(R.string.ssh_establish_connection)
                         },
                         fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Black,
                         color = White,
@@ -200,7 +203,7 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
                     Text("[!] ${it.message}", fontFamily = Mono, fontSize = 9.sp, color = Danger)
                 }
                 Spacer(Modifier.height(10.dp))
-                Text("首次连接跳过主机指纹校验(StrictHostKeyChecking=no),请仅在授权的目标上使用", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                Text(stringResource(R.string.ssh_strict_host_key_warning), fontFamily = Sans, fontSize = 8.sp, color = Gray)
             }
         } else {
             // ── 会话工具条 ──
@@ -211,7 +214,7 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
                 Box(Modifier.width(7.dp).height(7.dp).background(TacGreen, CutCornerShape(topStart = 2.dp, bottomEnd = 2.dp)))
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "在线 · ${host}:${port}",
+                    stringResource(R.string.ssh_online_status, host, port),
                     fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TacGreen,
                     maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
@@ -220,14 +223,14 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
                 Spacer(Modifier.width(4.dp))
                 GhostButton("＋") { fontSize = (fontSize + 1).coerceAtMost(24) }
                 Spacer(Modifier.width(4.dp))
-                GhostButton("粘贴") {
+                GhostButton(stringResource(R.string.ssh_paste)) {
                     haptic.hud()
                     clipboard.getText()?.let { vm.send(it.text) }
                 }
                 Spacer(Modifier.width(4.dp))
-                GhostButton("清屏") { vm.clear() }
+                GhostButton(stringResource(R.string.ssh_clear)) { vm.clear() }
                 Spacer(Modifier.width(4.dp))
-                GhostButton("断开") { haptic.hud(); vm.disconnect() }
+                GhostButton(stringResource(R.string.ssh_disconnect)) { haptic.hud(); vm.disconnect() }
             }
 
             // ── 终端显示区(网格渲染 + 尺寸自适应) ──
@@ -285,7 +288,7 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
                         modifier = Modifier.fillMaxWidth().focusRequester(inputFocus),
                         decorationBox = { inner ->
                             if (input.isEmpty() && !imeVisible) {
-                                Text("键入命令 · 点击上方终端唤起键盘", fontFamily = Sans, fontSize = 9.sp, color = Gray.copy(alpha = 0.6f))
+                                Text(stringResource(R.string.ssh_input_hint), fontFamily = Sans, fontSize = 9.sp, color = Gray.copy(alpha = 0.6f))
                             }
                             inner()
                         },

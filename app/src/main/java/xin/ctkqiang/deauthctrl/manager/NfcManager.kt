@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.Context
@@ -62,7 +65,7 @@ class NfcManager(private val context: Context) {
     fun startReader(activity: Activity) {
         val a = adapter ?: return
         if (!a.isEnabled) {
-            _message.value = "NFC 未开启 —— 请在系统设置中启用"
+            _message.value = L10n.get(R.string.mgr_nfc_disabled)
             return
         }
         val options = android.os.Bundle()
@@ -86,7 +89,7 @@ class NfcManager(private val context: Context) {
     /** 下次读到标签时写入该文本 */
     fun queueWrite(text: String) {
         pendingWrite = text
-        _message.value = "已就绪 —— 将标签贴近手机完成写入"
+        _message.value = L10n.get(R.string.mgr_nfc_write_ready)
     }
 
     private fun handleTag(tag: Tag) {
@@ -111,7 +114,7 @@ class NfcManager(private val context: Context) {
                 pendingWrite?.let { text ->
                     val rec = NdefRecord.createTextRecord("zh", text)
                     ndef.writeNdefMessage(NdefMessage(rec))
-                    _message.value = "写入成功: $text"
+                    _message.value = L10n.get(R.string.mgr_nfc_write_success, text)
                     pendingWrite = null
                 }
                 ndef.close()
@@ -145,7 +148,7 @@ class NfcManager(private val context: Context) {
             readMs = System.currentTimeMillis(),
         )
         if (ndefRecords.isEmpty() && pendingWrite == null) {
-            _message.value = "已读取 UID $uid"
+            _message.value = L10n.get(R.string.mgr_nfc_uid_read, uid)
         }
     }
 

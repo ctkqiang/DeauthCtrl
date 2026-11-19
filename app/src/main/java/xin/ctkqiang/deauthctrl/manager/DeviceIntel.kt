@@ -1,5 +1,9 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import androidx.annotation.StringRes
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 /**
  * 一条设备指纹命中结果。
  *
@@ -50,43 +54,43 @@ object DeviceIntel {
     /** 名称关键词规则(品牌/型号) */
     private data class NameRule(
         val keyword: String,
-        val label: String,
-        val note: String,
+        @StringRes val labelRes: Int,
+        @StringRes val noteRes: Int,
         val wholeWord: Boolean = false,
     )
 
     private val WEARABLE_RULES = listOf(
-        NameRule("apple watch", "Apple Watch", "Apple Watch 默认广播名"),
-        NameRule("galaxy watch", "Samsung Galaxy Watch", "三星 Galaxy Watch 默认广播名"),
-        NameRule("mi band", "小米手环 / Mi Band", "小米手环默认广播名"),
-        NameRule("miband", "小米手环 / Mi Band", "小米手环默认广播名变体"),
-        NameRule("amazfit", "Amazfit", "Amazfit 手表默认广播名"),
-        NameRule("huawei watch", "Huawei Watch", "华为手表默认广播名"),
+        NameRule("apple watch", R.string.mgr_intel_label_apple_watch, R.string.mgr_intel_note_apple_watch),
+        NameRule("galaxy watch", R.string.mgr_intel_label_galaxy_watch, R.string.mgr_intel_note_galaxy_watch),
+        NameRule("mi band", R.string.mgr_intel_label_mi_band, R.string.mgr_intel_note_mi_band),
+        NameRule("miband", R.string.mgr_intel_label_mi_band, R.string.mgr_intel_note_miband),
+        NameRule("amazfit", R.string.mgr_intel_label_amazfit, R.string.mgr_intel_note_amazfit),
+        NameRule("huawei watch", R.string.mgr_intel_label_huawei_watch, R.string.mgr_intel_note_huawei_watch),
     )
 
     private val AUDIO_RULES = listOf(
-        NameRule("airpods", "Apple AirPods", "AirPods 默认广播名"),
-        NameRule("galaxy buds", "Samsung Galaxy Buds", "Galaxy Buds 默认广播名"),
-        NameRule("redmi buds", "Redmi Buds", "Redmi Buds 默认广播名"),
+        NameRule("airpods", R.string.mgr_intel_label_airpods, R.string.mgr_intel_note_airpods),
+        NameRule("galaxy buds", R.string.mgr_intel_label_galaxy_buds, R.string.mgr_intel_note_galaxy_buds),
+        NameRule("redmi buds", R.string.mgr_intel_label_redmi_buds, R.string.mgr_intel_note_redmi_buds),
     )
 
     private val IOT_RULES = listOf(
-        NameRule("sonoff", "Sonoff 智能设备", "Sonoff 设备常见命名"),
-        NameRule("tuya", "涂鸦智能设备", "Tuya 设备常见命名"),
-        NameRule("yeelight", "Yeelight 智能灯", "Yeelight 设备常见命名"),
-        NameRule("aqara", "Aqara 智能设备", "Aqara 设备常见命名"),
-        NameRule("switchbot", "SwitchBot 设备", "SwitchBot 设备常见命名"),
-        NameRule("tp-link", "TP-Link 设备", "TP-Link 设备常见命名"),
+        NameRule("sonoff", R.string.mgr_intel_label_sonoff, R.string.mgr_intel_note_sonoff),
+        NameRule("tuya", R.string.mgr_intel_label_tuya, R.string.mgr_intel_note_tuya),
+        NameRule("yeelight", R.string.mgr_intel_label_yeelight, R.string.mgr_intel_note_yeelight),
+        NameRule("aqara", R.string.mgr_intel_label_aqara, R.string.mgr_intel_note_aqara),
+        NameRule("switchbot", R.string.mgr_intel_label_switchbot, R.string.mgr_intel_note_switchbot),
+        NameRule("tp-link", R.string.mgr_intel_label_tp_link, R.string.mgr_intel_note_tp_link),
         NameRule(
             "ring",
-            "Ring 智能门铃",
-            "Ring 设备常见命名(按整词匹配,避免 Springfield 之类普通单词误报)",
+            R.string.mgr_intel_label_ring,
+            R.string.mgr_intel_note_ring,
             wholeWord = true,
         ),
         NameRule(
             "tile",
-            "Tile 追踪器",
-            "Tile 追踪器常见命名(按整词匹配)",
+            R.string.mgr_intel_label_tile,
+            R.string.mgr_intel_note_tile,
             wholeWord = true,
         ),
     )
@@ -117,7 +121,7 @@ object DeviceIntel {
                 CATEGORY_HACKER,
                 "Flipper Zero",
                 0.9f,
-                "名称含 \"Flipper\":与 Flipper Zero 默认 BLE 广播名一致",
+                L10n.get(R.string.mgr_intel_basis_flipper),
             )
         }
 
@@ -126,7 +130,7 @@ object DeviceIntel {
                 CATEGORY_HACKER,
                 "Deauther Watch / DSTIKE",
                 0.95f,
-                "名称含 \"pwned\":Deauther Watch / DSTIKE 等 WiFi 攻击设备默认热点 SSID",
+                L10n.get(R.string.mgr_intel_basis_pwned),
             )
         }
 
@@ -135,7 +139,7 @@ object DeviceIntel {
                 CATEGORY_HACKER,
                 "WiFi Pineapple",
                 0.9f,
-                "SSID 前缀为 \"Pineapple_\" / \"Hak5\":Hak5 WiFi Pineapple 默认热点命名",
+                L10n.get(R.string.mgr_intel_basis_pineapple),
             )
         }
 
@@ -145,7 +149,7 @@ object DeviceIntel {
                 CATEGORY_HACKER,
                 "O.MG Cable",
                 0.6f,
-                "BLE 广播名含 \"OMG\":与 O.MG Cable 命名特征相符,低置信,可能误报",
+                L10n.get(R.string.mgr_intel_basis_omg),
             )
         }
 
@@ -155,9 +159,9 @@ object DeviceIntel {
             lower.contains("esp_")
         if (manufacturerId == MANUFACTURER_ESPRESSIF || espByName) {
             val basis = if (manufacturerId == MANUFACTURER_ESPRESSIF) {
-                "厂商 ID 0x02E5 = Espressif Systems:仅说明采用 ESP 芯片,整机品牌可能不同"
+                L10n.get(R.string.mgr_intel_basis_espressif)
             } else {
-                "名称含 ESP32 / ESP8266 / ESP_ 关键字"
+                L10n.get(R.string.mgr_intel_basis_esp_name)
             }
             return IntelHit(CATEGORY_DEV_BOARD, "ESP32 / ESP8266", 0.85f, basis)
         }
@@ -165,9 +169,9 @@ object DeviceIntel {
         val nordicByName = lower.contains("nrf") || lower.contains("nordic_")
         if (manufacturerId == MANUFACTURER_NORDIC || nordicByName) {
             val basis = if (manufacturerId == MANUFACTURER_NORDIC) {
-                "厂商 ID 0x0059 = Nordic Semiconductor:仅说明采用 nRF 芯片,整机品牌可能不同"
+                L10n.get(R.string.mgr_intel_basis_nordic)
             } else {
-                "名称含 nRF / Nordic_ 关键字"
+                L10n.get(R.string.mgr_intel_basis_nordic_name)
             }
             return IntelHit(CATEGORY_DEV_BOARD, "Nordic nRF", 0.85f, basis)
         }
@@ -177,7 +181,7 @@ object DeviceIntel {
                 CATEGORY_DEV_BOARD,
                 "Arduino",
                 0.8f,
-                "名称含 \"Arduino\":Arduino 开发板默认广播/热点命名",
+                L10n.get(R.string.mgr_intel_basis_arduino),
             )
         }
 
@@ -185,9 +189,9 @@ object DeviceIntel {
         matchRule(lower, IOT_RULES)?.let { rule ->
             return IntelHit(
                 CATEGORY_IOT,
-                rule.label,
+                L10n.get(rule.labelRes),
                 0.75f,
-                "名称含 \"${rule.keyword}\":${rule.note}",
+                L10n.get(R.string.mgr_intel_basis_keyword, rule.keyword, L10n.get(rule.noteRes)),
             )
         }
 
@@ -195,18 +199,18 @@ object DeviceIntel {
         matchRule(lower, WEARABLE_RULES)?.let { rule ->
             return IntelHit(
                 CATEGORY_WEARABLE,
-                rule.label,
+                L10n.get(rule.labelRes),
                 0.8f,
-                "名称含 \"${rule.keyword}\":${rule.note}",
+                L10n.get(R.string.mgr_intel_basis_keyword, rule.keyword, L10n.get(rule.noteRes)),
             )
         }
 
         matchRule(lower, AUDIO_RULES)?.let { rule ->
             return IntelHit(
                 CATEGORY_AUDIO,
-                rule.label,
+                L10n.get(rule.labelRes),
                 0.8f,
-                "名称含 \"${rule.keyword}\":${rule.note}",
+                L10n.get(R.string.mgr_intel_basis_keyword, rule.keyword, L10n.get(rule.noteRes)),
             )
         }
 
@@ -216,7 +220,7 @@ object DeviceIntel {
                 CATEGORY_COMPUTER,
                 "Raspberry Pi",
                 0.9f,
-                "名称含 \"Raspberry\":树莓派主机名/热点默认命名",
+                L10n.get(R.string.mgr_intel_basis_raspberry),
             )
         }
 
@@ -224,9 +228,9 @@ object DeviceIntel {
         if (manufacturerId == MANUFACTURER_APPLE) {
             return IntelHit(
                 CATEGORY_PHONE,
-                "苹果设备",
+                L10n.get(R.string.mgr_intel_label_apple_device),
                 0.7f,
-                "厂商 ID 0x004C = Apple Inc.:无法区分 iPhone / iPad / Mac / 配件",
+                L10n.get(R.string.mgr_intel_basis_apple),
             )
         }
 

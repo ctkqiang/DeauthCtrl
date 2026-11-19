@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -116,7 +117,7 @@ fun ErrorStickerOverlay() {
                     ) {
                         Image(
                             painter = painterResource(R.drawable.error_sticker),
-                            contentDescription = "错误贴纸",
+                            contentDescription = stringResource(R.string.error_sticker_desc),
                             modifier = Modifier.size(200.dp),
                         )
                         Text(

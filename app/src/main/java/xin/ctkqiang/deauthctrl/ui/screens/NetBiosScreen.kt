@@ -28,11 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.NetBiosHost
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -78,10 +80,10 @@ fun NetBiosScreen(back: () -> Unit) {
     }
 
     val statusText = when {
-        state.scanning -> "扫描中"
-        state.total == 0 -> "待命"
-        state.progress >= state.total -> "已完成"
-        else -> "已停止"
+        state.scanning -> stringResource(R.string.netbios_status_scanning)
+        state.total == 0 -> stringResource(R.string.netbios_status_idle)
+        state.progress >= state.total -> stringResource(R.string.netbios_status_done)
+        else -> stringResource(R.string.netbios_status_stopped)
     }
     val progressFraction = if (state.total > 0) {
         (state.progress.toFloat() / state.total).coerceIn(0f, 1f)
@@ -90,7 +92,7 @@ fun NetBiosScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("NetBIOS 扫描 · NBTSCAN", back)
+        TerminalHeader(stringResource(R.string.netbios_title), back)
 
         Column(
             Modifier.fillMaxSize()
@@ -99,17 +101,17 @@ fun NetBiosScreen(back: () -> Unit) {
                 .padding(12.dp),
         ) {
             // ── 目标与控制 ──────────────────────────────────────
-            TermPanel("扫描目标 · TARGET") {
+            TermPanel(stringResource(R.string.netbios_panel_target)) {
                 TermInput(
-                    label = "目标 IP / 网段",
+                    label = stringResource(R.string.netbios_target_label),
                     value = target,
-                    placeholder = "例如 192.168.1.0/24 或 192.168.1.10",
+                    placeholder = stringResource(R.string.netbios_target_placeholder),
                 ) { target = it }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(
                     running = state.scanning,
-                    runLabel = "启动扫描",
-                    stopLabel = "停止扫描",
+                    runLabel = stringResource(R.string.netbios_start),
+                    stopLabel = stringResource(R.string.netbios_stop),
                 ) {
                     if (state.scanning) {
                         vm.stop()
@@ -141,7 +143,7 @@ fun NetBiosScreen(back: () -> Unit) {
 
             // ── 进度 ────────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("扫描进度 · PROGRESS") {
+            TermPanel(stringResource(R.string.netbios_panel_progress)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         statusText,
@@ -152,14 +154,14 @@ fun NetBiosScreen(back: () -> Unit) {
                     )
                     Spacer(Modifier.width(9.dp))
                     Text(
-                        "目标 ${if (state.total > 0) "${state.progress}/${state.total}" else "--"}",
+                        stringResource(R.string.netbios_target_count, if (state.total > 0) "${state.progress}/${state.total}" else "--"),
                         fontFamily = Mono,
                         fontSize = 10.sp,
                         color = Gold,
                         modifier = Modifier.weight(1f),
                     )
                     Text(
-                        "响应 ${state.hosts.size} 台",
+                        stringResource(R.string.netbios_responders, state.hosts.size),
                         fontFamily = Mono,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -187,14 +189,14 @@ fun NetBiosScreen(back: () -> Unit) {
                 if (state.target.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "本轮范围: ${state.target}",
+                        stringResource(R.string.netbios_range, state.target),
                         fontFamily = Mono,
                         fontSize = 9.sp,
                         color = Gray,
                     )
                 }
                 Text(
-                    "单目标 UDP 137 · 超时 200 ms · 8 路并发",
+                    stringResource(R.string.netbios_scan_params),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -204,13 +206,13 @@ fun NetBiosScreen(back: () -> Unit) {
 
             // ── 结果 ────────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("扫描结果 · HOSTS (${state.hosts.size})") {
+            TermPanel(stringResource(R.string.netbios_panel_hosts, state.hosts.size)) {
                 if (state.hosts.isEmpty()) {
                     EmptyHint(
                         when {
-                            state.scanning -> "正在逐个查询目标,响应的 NetBIOS 主机会实时出现在这里"
-                            state.total > 0 -> "本轮没有主机响应 NBSTAT —— 见下方说明,这是常见结果"
-                            else -> "输入 IP / 网段后点「启动扫描」"
+                            state.scanning -> stringResource(R.string.netbios_empty_scanning)
+                            state.total > 0 -> stringResource(R.string.netbios_empty_none)
+                            else -> stringResource(R.string.netbios_empty_idle)
                         },
                     )
                 } else {
@@ -223,33 +225,29 @@ fun NetBiosScreen(back: () -> Unit) {
 
             // ── 说明与边界 ──────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("说明与边界 · NOTES") {
+            TermPanel(stringResource(R.string.netbios_panel_notes)) {
                 NoteLine(
-                    "[!] 只有运行 Windows 且启用 NetBIOS over TCP/IP 的设备会响应 UDP 137;" +
-                        "Windows 10/11 默认可能关闭该功能,结果少甚至为零属于正常现象,不代表网段内没有设备。",
+                    stringResource(R.string.netbios_note_windows),
                     Warn,
                 )
                 NoteLine(
-                    "响应中的 <00> 是工作站名,<03> 是信使/登录用户,<20> 是文件服务,<1D> 是主浏览器;" +
-                        "其余名称类型已过滤。",
+                    stringResource(R.string.netbios_note_names),
                     White,
                 )
                 NoteLine(
-                    "MAC 优先取自响应统计区的 Unit ID;没有统计区时尝试系统 ARP 缓存(Android 10+ 通常不可读)," +
-                        "都拿不到时显示 --,不做任何推测。",
+                    stringResource(R.string.netbios_note_mac),
                     Gray,
                 )
                 NoteLine(
-                    "厂商来自内置的常用 OUI 前 3 字节表,未收录地址显示「未知厂商」;" +
-                        "该表只是离线小表,不是权威数据库。",
+                    stringResource(R.string.netbios_note_vendor),
                     Gray,
                 )
                 NoteLine(
-                    "/24 及更大网段只扫描输入地址所在的 /24(1-254);/25-/32 按实际主机范围枚举。",
+                    stringResource(R.string.netbios_note_scope),
                     Gray,
                 )
                 NoteLine(
-                    "所有结果均来自真实 NBSTAT 响应,原始报文完整保存在 rawHex 中,可导出后用 Wireshark 复核。",
+                    stringResource(R.string.netbios_note_raw),
                     Gray,
                 )
             }
@@ -280,7 +278,7 @@ private fun NetBiosHostRow(host: NetBiosHost) {
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    "${host.names.size} 个名称",
+                    stringResource(R.string.netbios_name_count, host.names.size),
                     fontFamily = Mono,
                     fontSize = 8.sp,
                     color = Gray,
@@ -288,10 +286,10 @@ private fun NetBiosHostRow(host: NetBiosHost) {
             }
             Spacer(Modifier.height(5.dp))
 
-            NetBiosField("主机名 <00>", host.hostName ?: "--", Gold)
-            NetBiosField("用户 <03>", host.userName ?: "--", White)
-            host.fileService?.let { NetBiosField("文件服务 <20>", it, White) }
-            host.masterBrowser?.let { NetBiosField("主浏览器 <1D>", it, White) }
+            NetBiosField(stringResource(R.string.netbios_field_hostname), host.hostName ?: "--", Gold)
+            NetBiosField(stringResource(R.string.netbios_field_user), host.userName ?: "--", White)
+            host.fileService?.let { NetBiosField(stringResource(R.string.netbios_field_file_service), it, White) }
+            host.masterBrowser?.let { NetBiosField(stringResource(R.string.netbios_field_master_browser), it, White) }
             NetBiosField(
                 label = "MAC",
                 value = if (host.mac.isBlank()) "--" else "${host.mac} · ${host.vendor}",

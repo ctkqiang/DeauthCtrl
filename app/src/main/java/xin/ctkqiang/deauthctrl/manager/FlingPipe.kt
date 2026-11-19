@@ -1,5 +1,7 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -109,11 +111,11 @@ class FlingPipe(private val saveDir: File? = null) {
      */
     fun startReceive(port: Int = 0, saveToFile: Boolean = false) {
         if (_state.value.running) {
-            appendLog("已有传输任务运行，无法启动接收", FlingLogLevel.ERROR)
+            appendLog(L10n.get(R.string.mgr_fling_busy_receive), FlingLogLevel.ERROR)
             return
         }
         if (port !in 0..65535) {
-            fail("端口无效：$port（接收端允许 0-65535）")
+            fail(L10n.get(R.string.mgr_fling_invalid_receive_port, port))
             return
         }
 
@@ -127,7 +129,11 @@ class FlingPipe(private val saveDir: File? = null) {
                     bind(InetSocketAddress(port))
                 }
             } catch (t: Throwable) {
-                val message = "监听端口 $port 失败：${t.message ?: t.javaClass.simpleName}"
+                val message = L10n.get(
+                    R.string.mgr_fling_listen_failed,
+                    port,
+                    t.message ?: t.javaClass.simpleName,
+                )
                 _state.update { it.copy(mode = FlingMode.IDLE, running = false, error = message) }
                 appendLog(message, FlingLogLevel.ERROR)
                 return@launch
@@ -150,8 +156,14 @@ class FlingPipe(private val saveDir: File? = null) {
                 )
             }
             appendLog(
-                "接收端已监听 0.0.0.0:${server.localPort}" +
-                    if (port == 0) "（内核临时端口）" else "",
+                if (port == 0) {
+                    L10n.get(
+                        R.string.mgr_fling_receiver_listening_ephemeral,
+                        server.localPort,
+                    )
+                } else {
+                    L10n.get(R.string.mgr_fling_receiver_listening, server.localPort)
+                },
             )
 
             try {
@@ -172,7 +184,7 @@ class FlingPipe(private val saveDir: File? = null) {
                 if (serverSocket === server) serverSocket = null
                 if (session == sessionId) {
                     _state.update { it.copy(mode = FlingMode.IDLE, running = false) }
-                    appendLog("接收端已停止")
+                    appendLog(L10n.get(R.string.mgr_fling_receiver_stopped))
                 }
             }
         }
@@ -192,7 +204,7 @@ class FlingPipe(private val saveDir: File? = null) {
         receiveJob?.cancel()
         receiveJob = null
         _state.update { it.copy(mode = FlingMode.IDLE, running = false) }
-        appendLog("接收端已停止")
+        appendLog(L10n.get(R.string.mgr_fling_receiver_stopped))
     }
 
     /**
@@ -201,7 +213,7 @@ class FlingPipe(private val saveDir: File? = null) {
     private fun handleClient(client: Socket, saveToFile: Boolean) {
         activeClient = client
         val peer = "${client.inetAddress?.hostAddress ?: "--"}:${client.port}"
-        appendLog("连接建立：$peer")
+        appendLog(L10n.get(R.string.mgr_fling_connection_established, peer))
         _state.update {
             it.copy(
                 bytes = 0,
@@ -223,7 +235,7 @@ class FlingPipe(private val saveDir: File? = null) {
             if (saveToFile) {
                 val dir = saveDir
                 if (dir == null) {
-                    appendLog("写文件不可用：未配置保存目录，本次仅保留内存预览", FlingLogLevel.ERROR)
+                    appendLog(L10n.get(R.string.mgr_fling_save_dir_missing), FlingLogLevel.ERROR)
                 } else {
                     if (!dir.exists()) dir.mkdirs()
                     val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
@@ -267,15 +279,28 @@ class FlingPipe(private val saveDir: File? = null) {
                 )
             }
             appendLog(
-                "接收完成：$total 字节" +
-                    if (file != null) " → ${file.absolutePath}" else "（仅内存预览，未落盘）",
+                if (file != null) {
+                    L10n.get(
+                        R.string.mgr_fling_receive_complete_file,
+                        total,
+                        file.absolutePath,
+                    )
+                } else {
+                    L10n.get(R.string.mgr_fling_receive_complete_preview, total)
+                },
                 FlingLogLevel.OK,
             )
         } catch (t: Throwable) {
             if (stopping) {
-                appendLog("接收已中止：$peer", FlingLogLevel.INFO)
+                appendLog(
+                    L10n.get(R.string.mgr_fling_receive_aborted, peer),
+                    FlingLogLevel.INFO,
+                )
             } else {
-                val message = "接收中断：${t.message ?: t.javaClass.simpleName}"
+                val message = L10n.get(
+                    R.string.mgr_fling_receive_interrupted,
+                    t.message ?: t.javaClass.simpleName,
+                )
                 _state.update { it.copy(error = message) }
                 appendLog(message, FlingLogLevel.ERROR)
             }
@@ -302,7 +327,7 @@ class FlingPipe(private val saveDir: File? = null) {
     /** 发送一段文本（UTF-8 原样字节） */
     fun sendText(host: String, port: Int, text: String) {
         val data = text.toByteArray(Charsets.UTF_8)
-        send(host, port, "文本 ${data.size} B", data.size.toLong()) {
+        send(host, port, L10n.get(R.string.mgr_fling_text_label, data.size), data.size.toLong()) {
             ByteArrayInputStream(data)
         }
     }
@@ -324,15 +349,15 @@ class FlingPipe(private val saveDir: File? = null) {
         val cleanHost = host.trim()
         when {
             _state.value.running -> {
-                appendLog("已有传输任务运行，本次发送被拒绝", FlingLogLevel.ERROR)
+                appendLog(L10n.get(R.string.mgr_fling_busy_send), FlingLogLevel.ERROR)
                 return
             }
             cleanHost.isEmpty() -> {
-                fail("接收端 IP 为空")
+                fail(L10n.get(R.string.mgr_fling_empty_host))
                 return
             }
             port !in 1..65535 -> {
-                fail("端口无效：$port（发送端允许 1-65535）")
+                fail(L10n.get(R.string.mgr_fling_invalid_send_port, port))
                 return
             }
         }
@@ -350,16 +375,17 @@ class FlingPipe(private val saveDir: File? = null) {
                 error = null,
             )
         }
-        appendLog("发送开始：$label → $cleanHost:$port")
+        appendLog(L10n.get(R.string.mgr_fling_send_started, label, cleanHost, port))
 
         scope.launch {
             var sent = 0L
             try {
-                val input = openStream() ?: throw IOException("无法打开待发送内容")
+                val input = openStream()
+                    ?: throw IOException(L10n.get(R.string.mgr_fling_open_stream_failed))
                 input.use { stream ->
                     Socket().use { socket ->
                         socket.connect(InetSocketAddress(cleanHost, port), CONNECT_TIMEOUT_MS)
-                        appendLog("已连接：$cleanHost:$port")
+                        appendLog(L10n.get(R.string.mgr_fling_connected, cleanHost, port))
                         socket.getOutputStream().use { out ->
                             val buffer = ByteArray(BUFFER_SIZE)
                             var lastPublish = 0L
@@ -389,9 +415,15 @@ class FlingPipe(private val saveDir: File? = null) {
                         error = null,
                     )
                 }
-                appendLog("发送完成：$sent 字节 → $cleanHost:$port", FlingLogLevel.OK)
+                appendLog(
+                    L10n.get(R.string.mgr_fling_send_complete, sent, cleanHost, port),
+                    FlingLogLevel.OK,
+                )
             } catch (t: Throwable) {
-                val message = "发送失败：${t.message ?: t.javaClass.simpleName}"
+                val message = L10n.get(
+                    R.string.mgr_fling_send_failed,
+                    t.message ?: t.javaClass.simpleName,
+                )
                 _state.update { it.copy(error = message) }
                 appendLog(message, FlingLogLevel.ERROR)
             } finally {

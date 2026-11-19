@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 /**
  * 一条 AD Structure 的解析结果
  *
@@ -56,10 +59,10 @@ object AdStructureDecoder {
             // 长度字节之后必须还有一个类型字节
             if (index + 1 >= advBytes.size) {
                 fields += AdField(
-                    name = "长度字段异常",
+                    name = L10n.get(R.string.mgr_ads_field_length_error),
                     typeHex = "--",
                     valueHex = "",
-                    decoded = "[!] 偏移 $index 处声明长度 ${length}B，但其后没有 AD 类型字节，数据在此截断",
+                    decoded = L10n.get(R.string.mgr_ads_err_length_no_type, index, length),
                 )
                 break
             }
@@ -122,7 +125,7 @@ object AdStructureDecoder {
         val name = typeName(type)
         val base = decodeByType(type, data)
         val decoded = if (truncated) {
-            "$base；[!] 声明数据 ${declaredDataLength}B，实际仅剩 ${actualDataLength}B，已截断"
+            L10n.get(R.string.mgr_ads_truncated, base, declaredDataLength, actualDataLength)
         } else {
             base
         }
@@ -154,65 +157,77 @@ object AdStructureDecoder {
         0x24 -> decodeUri(data)
         0xFF -> decodeManufacturerData(data)
         else -> if (isKnownType(type)) {
-            "该类型已收录但本页未展开字段结构 —— 原始值 ${data.toAdHex().ifEmpty { "(空)" }}"
+            L10n.get(
+                R.string.mgr_ads_known_unexpanded,
+                data.toAdHex().ifEmpty { L10n.get(R.string.mgr_ads_empty) },
+            )
         } else {
-            "未知 AD 类型 0x%02X —— 原始值 ${data.toAdHex().ifEmpty { "(空)" }}".format(type)
+            L10n.get(
+                R.string.mgr_ads_unknown_type,
+                type,
+                data.toAdHex().ifEmpty { L10n.get(R.string.mgr_ads_empty) },
+            )
         }
     }
 
     // ─── 各字段解码 ──────────────────────────────────────────────────────────
 
     private fun decodeFlags(data: ByteArray): String {
-        if (data.isEmpty()) return "标志字节缺失"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_flags_missing)
         val bits = data[0].toInt() and 0xFF
         val parts = buildList {
-            if (bits and 0x01 != 0) add("LE 限定发现模式")
-            if (bits and 0x02 != 0) add("LE 通用发现模式")
-            add(if (bits and 0x04 != 0) "BR/EDR 不支持（LE 专用）" else "BR/EDR 可用")
-            if (bits and 0x08 != 0) add("LE 与 BR/EDR 同时支持（控制器）")
-            if (bits and 0x10 != 0) add("LE 与 BR/EDR 同时支持（主机）")
+            if (bits and 0x01 != 0) add(L10n.get(R.string.mgr_ads_flag_limited))
+            if (bits and 0x02 != 0) add(L10n.get(R.string.mgr_ads_flag_general))
+            add(
+                if (bits and 0x04 != 0) L10n.get(R.string.mgr_ads_flag_no_br_edr)
+                else L10n.get(R.string.mgr_ads_flag_br_edr)
+            )
+            if (bits and 0x08 != 0) add(L10n.get(R.string.mgr_ads_flag_dual_controller))
+            if (bits and 0x10 != 0) add(L10n.get(R.string.mgr_ads_flag_dual_host))
         }
         val reserved = bits and 0xE0
-        val suffix = if (reserved != 0) "；[!] 保留位 0x%02X 非零".format(reserved) else ""
-        return "0x%02X：%s%s".format(bits, parts.joinToString(" + "), suffix)
+        val suffix = if (reserved != 0) L10n.get(R.string.mgr_ads_reserved_bits, reserved) else ""
+        return L10n.get(R.string.mgr_ads_flags_line, bits, parts.joinToString(" + "), suffix)
     }
 
     private fun decodeUuid16List(data: ByteArray): String {
-        if (data.isEmpty()) return "UUID 列表为空"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_uuid_empty)
         if (data.size % 2 != 0) {
-            return "数据长度 ${data.size}B 不是 2 的整数倍，末尾 ${data.size % 2}B 无法解析"
+            return L10n.get(R.string.mgr_ads_err_len_not2, data.size, data.size % 2)
         }
         val values = mutableListOf<String>()
         var offset = 0
         while (offset + 1 < data.size) {
             val value = readU16(data, offset)
-            val name = SERVICE_UUIDS_16[value]
-            values += "0x%04X".format(value) + if (name != null) "（$name）" else ""
+            val nameRes = SERVICE_UUIDS_16[value]
+            values += "0x%04X".format(value) +
+                if (nameRes != null) L10n.get(R.string.mgr_ads_paren, L10n.get(nameRes)) else ""
             offset += 2
         }
         return values.joinToString(" · ")
     }
 
     private fun decodeUuid32List(data: ByteArray): String {
-        if (data.isEmpty()) return "UUID 列表为空"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_uuid_empty)
         if (data.size % 4 != 0) {
-            return "数据长度 ${data.size}B 不是 4 的整数倍，末尾 ${data.size % 4}B 无法解析"
+            return L10n.get(R.string.mgr_ads_err_len_not4, data.size, data.size % 4)
         }
         val values = mutableListOf<String>()
         var offset = 0
         while (offset + 3 < data.size) {
             val value = readU32(data, offset)
-            val alias = if (value in 0..0xFFFF) SERVICE_UUIDS_16[value] else null
-            values += "0x%08X".format(value) + if (alias != null) "（16-bit 别名：$alias）" else ""
+            val aliasRes = if (value in 0..0xFFFF) SERVICE_UUIDS_16[value] else null
+            values += "0x%08X".format(value) +
+                if (aliasRes != null) L10n.get(R.string.mgr_ads_alias16, L10n.get(aliasRes)) else ""
             offset += 4
         }
         return values.joinToString(" · ")
     }
 
     private fun decodeUuid128List(data: ByteArray): String {
-        if (data.isEmpty()) return "UUID 列表为空"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_uuid_empty)
         if (data.size % 16 != 0) {
-            return "数据长度 ${data.size}B 不是 16 的整数倍，末尾 ${data.size % 16}B 无法解析"
+            return L10n.get(R.string.mgr_ads_err_len_not16, data.size, data.size % 16)
         }
         val values = mutableListOf<String>()
         var offset = 0
@@ -224,141 +239,164 @@ object AdStructureDecoder {
     }
 
     private fun decodeLocalName(data: ByteArray): String {
-        if (data.isEmpty()) return "名称为空"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_name_empty)
         val raw = String(data, Charsets.UTF_8)
         val replacement = raw.count { it == '�' }
         val clean = raw.filter { ch ->
             ch == '\n' || ch == '\r' || ch == '\t' || !ch.isISOControl()
         }
-        val suffix = if (replacement > 0) "；[!] 含 $replacement 个非 UTF-8 替换字符" else ""
-        return "\"$clean\"（${data.size}B UTF-8）$suffix"
+        val suffix = if (replacement > 0) L10n.get(R.string.mgr_ads_bad_utf8, replacement) else ""
+        return L10n.get(R.string.mgr_ads_local_name, clean, data.size, suffix)
     }
 
     private fun decodeTxPower(data: ByteArray): String {
-        if (data.isEmpty()) return "功率字节缺失"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_tx_power_missing)
         // Byte → Int 保留符号位，得到真实 dBm
         val dbm = data[0].toInt()
-        return "$dbm dBm（有符号 8-bit）"
+        return L10n.get(R.string.mgr_ads_tx_power, dbm)
     }
 
     private fun decodeClassOfDevice(data: ByteArray): String {
-        if (data.size < 3) return "数据不足 3B（Class of Device 为 24-bit）"
+        if (data.size < 3) return L10n.get(R.string.mgr_ads_err_cod_short)
         val cod = readU24(data, 0)
         val majorDevice = (cod shr 8) and 0x1F
         val serviceBits = cod shr 13
         val services = buildList {
-            if (serviceBits and 0x001 != 0) add("受限发现")
-            if (serviceBits and 0x002 != 0) add("定位")
-            if (serviceBits and 0x004 != 0) add("网络")
-            if (serviceBits and 0x008 != 0) add("渲染")
-            if (serviceBits and 0x010 != 0) add("捕获")
-            if (serviceBits and 0x020 != 0) add("对象传输")
-            if (serviceBits and 0x040 != 0) add("音频")
-            if (serviceBits and 0x080 != 0) add("电话")
-            if (serviceBits and 0x100 != 0) add("信息")
+            if (serviceBits and 0x001 != 0) add(L10n.get(R.string.mgr_ads_cod_service_limited))
+            if (serviceBits and 0x002 != 0) add(L10n.get(R.string.mgr_ads_cod_service_positioning))
+            if (serviceBits and 0x004 != 0) add(L10n.get(R.string.mgr_ads_cod_service_networking))
+            if (serviceBits and 0x008 != 0) add(L10n.get(R.string.mgr_ads_cod_service_rendering))
+            if (serviceBits and 0x010 != 0) add(L10n.get(R.string.mgr_ads_cod_service_capturing))
+            if (serviceBits and 0x020 != 0) add(L10n.get(R.string.mgr_ads_cod_service_object_transfer))
+            if (serviceBits and 0x040 != 0) add(L10n.get(R.string.mgr_ads_cod_service_audio))
+            if (serviceBits and 0x080 != 0) add(L10n.get(R.string.mgr_ads_cod_service_telephony))
+            if (serviceBits and 0x100 != 0) add(L10n.get(R.string.mgr_ads_cod_service_information))
         }
-        val deviceName = MAJOR_DEVICE_CLASSES[majorDevice] ?: "未收录设备类"
-        val serviceText = if (services.isEmpty()) "无" else services.joinToString("/")
-        return "0x%06X：主要设备类 %s；服务类 %s".format(cod, deviceName, serviceText)
+        val deviceName = MAJOR_DEVICE_CLASSES[majorDevice]?.let { L10n.get(it) }
+            ?: L10n.get(R.string.mgr_ads_err_cod_unknown)
+        val serviceText = if (services.isEmpty()) {
+            L10n.get(R.string.mgr_ads_none)
+        } else {
+            services.joinToString("/")
+        }
+        return L10n.get(R.string.mgr_ads_cod_line, cod, deviceName, serviceText)
     }
 
     private fun decodeConnectionInterval(data: ByteArray): String {
-        if (data.size < 4) return "数据不足 4B（需要最小 / 最大连接间隔各 2B）"
+        if (data.size < 4) return L10n.get(R.string.mgr_ads_err_conn_short)
         val min = readU16(data, 0)
         val max = readU16(data, 2)
-        return "最小 %.2f ms（0x%04X） · 最大 %.2f ms（0x%04X） · 单位 1.25 ms"
-            .format(min * 1.25, min, max * 1.25, max)
+        return L10n.get(R.string.mgr_ads_conn_interval, min * 1.25, min, max * 1.25, max)
     }
 
     private fun decodeAppearance(data: ByteArray): String {
-        if (data.size < 2) return "数据不足 2B（Appearance 为 16-bit）"
+        if (data.size < 2) return L10n.get(R.string.mgr_ads_err_appearance_short)
         val code = readU16(data, 0)
-        val name = APPEARANCES[code]
-        return if (name != null) {
-            "0x%04X · %s".format(code, name)
+        val nameRes = APPEARANCES[code]
+        return if (nameRes != null) {
+            "0x%04X · %s".format(code, L10n.get(nameRes))
         } else {
-            "0x%04X · 未收录外观码".format(code)
+            L10n.get(R.string.mgr_ads_appearance_unknown, code)
         }
     }
 
     private fun decodeAdvertisingInterval(data: ByteArray): String {
-        if (data.size < 2) return "数据不足 2B（Advertising Interval 为 16-bit）"
+        if (data.size < 2) return L10n.get(R.string.mgr_ads_err_adv_interval_short)
         val raw = readU16(data, 0)
-        return "0x%04X · %.2f ms（单位 0.625 ms）".format(raw, raw * 0.625)
+        return L10n.get(R.string.mgr_ads_adv_interval, raw, raw * 0.625)
     }
 
     private fun decodeLeDeviceAddress(data: ByteArray): String {
-        if (data.size < 6) return "数据不足 6B（LE 设备地址为 6B）"
+        if (data.size < 6) return L10n.get(R.string.mgr_ads_err_le_addr_short)
         // 广播中地址按小端排列，展示时反转为常见的 AA:BB:CC:DD:EE:FF
         val address = data.copyOfRange(0, 6).reversedArray()
             .joinToString(":") { "%02X".format(it) }
         val typeText = when {
-            data.size < 7 -> "地址类型缺失"
-            (data[6].toInt() and 0xFF) == 0 -> "公共地址"
-            (data[6].toInt() and 0xFF) == 1 -> "随机地址"
-            else -> "未知地址类型 ${data[6].toInt() and 0xFF}"
+            data.size < 7 -> L10n.get(R.string.mgr_ads_addr_type_missing)
+            (data[6].toInt() and 0xFF) == 0 -> L10n.get(R.string.mgr_ads_addr_public)
+            (data[6].toInt() and 0xFF) == 1 -> L10n.get(R.string.mgr_ads_addr_random)
+            else -> L10n.get(R.string.mgr_ads_addr_type_unknown, data[6].toInt() and 0xFF)
         }
         return "$address · $typeText"
     }
 
     private fun decodeLeRole(data: ByteArray): String {
-        if (data.isEmpty()) return "角色字节缺失"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_role_missing)
         return when (data[0].toInt() and 0xFF) {
-            0 -> "仅 Peripheral（从机）"
-            1 -> "仅 Central（主机）"
-            2 -> "偏好 Peripheral"
-            3 -> "偏好 Central"
-            else -> "未收录角色值 ${data[0].toInt() and 0xFF}"
+            0 -> L10n.get(R.string.mgr_ads_role_peripheral_only)
+            1 -> L10n.get(R.string.mgr_ads_role_central_only)
+            2 -> L10n.get(R.string.mgr_ads_role_prefer_peripheral)
+            3 -> L10n.get(R.string.mgr_ads_role_prefer_central)
+            else -> L10n.get(R.string.mgr_ads_role_unknown, data[0].toInt() and 0xFF)
         }
     }
 
     private fun decodeServiceData16(data: ByteArray): String {
-        if (data.size < 2) return "数据不足 2B（缺少 16-bit 服务 UUID）"
+        if (data.size < 2) return L10n.get(R.string.mgr_ads_err_svcdata16_short)
         val uuid = readU16(data, 0)
         val payload = data.copyOfRange(2, data.size)
-        val name = SERVICE_UUIDS_16[uuid]
-        val uuidText = "0x%04X".format(uuid) + if (name != null) "（$name）" else ""
-        return "UUID $uuidText · 数据 ${payload.toAdHex().ifEmpty { "(空)" }}${textSuffix(payload)}"
+        val nameRes = SERVICE_UUIDS_16[uuid]
+        val uuidText = "0x%04X".format(uuid) +
+            if (nameRes != null) L10n.get(R.string.mgr_ads_paren, L10n.get(nameRes)) else ""
+        return L10n.get(
+            R.string.mgr_ads_svcdata,
+            uuidText,
+            payload.toAdHex().ifEmpty { L10n.get(R.string.mgr_ads_empty) },
+            textSuffix(payload),
+        )
     }
 
     private fun decodeServiceData32(data: ByteArray): String {
-        if (data.size < 4) return "数据不足 4B（缺少 32-bit 服务 UUID）"
+        if (data.size < 4) return L10n.get(R.string.mgr_ads_err_svcdata32_short)
         val uuid = readU32(data, 0)
         val payload = data.copyOfRange(4, data.size)
-        val alias = if (uuid in 0..0xFFFF) SERVICE_UUIDS_16[uuid] else null
-        val uuidText = "0x%08X".format(uuid) + if (alias != null) "（16-bit 别名：$alias）" else ""
-        return "UUID $uuidText · 数据 ${payload.toAdHex().ifEmpty { "(空)" }}${textSuffix(payload)}"
+        val aliasRes = if (uuid in 0..0xFFFF) SERVICE_UUIDS_16[uuid] else null
+        val uuidText = "0x%08X".format(uuid) +
+            if (aliasRes != null) L10n.get(R.string.mgr_ads_alias16, L10n.get(aliasRes)) else ""
+        return L10n.get(
+            R.string.mgr_ads_svcdata,
+            uuidText,
+            payload.toAdHex().ifEmpty { L10n.get(R.string.mgr_ads_empty) },
+            textSuffix(payload),
+        )
     }
 
     private fun decodeServiceData128(data: ByteArray): String {
-        if (data.size < 16) return "数据不足 16B（缺少 128-bit 服务 UUID）"
+        if (data.size < 16) return L10n.get(R.string.mgr_ads_err_svcdata128_short)
         val uuid = describeUuid128(uuid128FromLe(data, 0))
         val payload = data.copyOfRange(16, data.size)
-        return "UUID $uuid · 数据 ${payload.toAdHex().ifEmpty { "(空)" }}${textSuffix(payload)}"
+        return L10n.get(
+            R.string.mgr_ads_svcdata,
+            uuid,
+            payload.toAdHex().ifEmpty { L10n.get(R.string.mgr_ads_empty) },
+            textSuffix(payload),
+        )
     }
 
     private fun decodeUri(data: ByteArray): String {
-        if (data.isEmpty()) return "URI 为空"
+        if (data.isEmpty()) return L10n.get(R.string.mgr_ads_err_uri_empty)
         val text = String(data, Charsets.UTF_8)
-        return "\"$text\"（${data.size}B UTF-8）"
+        return L10n.get(R.string.mgr_ads_uri, text, data.size)
     }
 
     private fun decodeManufacturerData(data: ByteArray): String {
-        if (data.size < 2) return "数据不足 2B（缺少公司 ID）"
+        if (data.size < 2) return L10n.get(R.string.mgr_ads_err_manufacturer_short)
         val companyId = readU16(data, 0)
-        val company = COMPANY_IDS[companyId] ?: "未收录公司 ID"
+        val company = COMPANY_IDS[companyId] ?: L10n.get(R.string.mgr_ads_err_company_unknown)
         val payload = data.copyOfRange(2, data.size)
-        return "公司 ID 0x%04X · %s · 数据 %s%s".format(
+        return L10n.get(
+            R.string.mgr_ads_manufacturer_line,
             companyId,
             company,
-            payload.toAdHex().ifEmpty { "(空)" },
+            payload.toAdHex().ifEmpty { L10n.get(R.string.mgr_ads_empty) },
             textSuffix(payload),
         )
     }
 
     // ─── 编号表 ──────────────────────────────────────────────────────────────
 
-    private fun typeName(type: Int): String = TYPE_NAMES[type] ?: "未知 AD 类型"
+    private fun typeName(type: Int): String =
+        TYPE_NAMES[type] ?: L10n.get(R.string.mgr_ads_field_unknown_type)
 
     private fun isKnownType(type: Int): Boolean = TYPE_NAMES.containsKey(type)
 
@@ -388,11 +426,11 @@ object AdStructureDecoder {
         val upper = uuid.uppercase()
         if (upper.startsWith("0000") && upper.endsWith("-0000-1000-8000-00805F9B34FB")) {
             val short = upper.substring(4, 8)
-            val name = short.toIntOrNull(16)?.let { SERVICE_UUIDS_16[it] }
-            return if (name != null) {
-                "$uuid（16-bit 别名 0x$short：$name）"
+            val nameRes = short.toIntOrNull(16)?.let { SERVICE_UUIDS_16[it] }
+            return if (nameRes != null) {
+                L10n.get(R.string.mgr_ads_uuid128_alias_named, uuid, short, L10n.get(nameRes))
             } else {
-                "$uuid（16-bit 别名 0x$short）"
+                L10n.get(R.string.mgr_ads_uuid128_alias, uuid, short)
             }
         }
         return uuid
@@ -400,7 +438,11 @@ object AdStructureDecoder {
 
     private fun textSuffix(payload: ByteArray): String {
         val preview = printableText(payload)
-        return if (preview.isNotEmpty()) " · 文本 \"$preview\"" else ""
+        return if (preview.isNotEmpty()) {
+            " · " + L10n.get(R.string.mgr_ads_text_suffix, preview)
+        } else {
+            ""
+        }
     }
 
     /** 只在整段可按 UTF-8 解码且均为可打印字符时给出文本预览 */
@@ -464,31 +506,31 @@ object AdStructureDecoder {
     )
 
     /** 常用 16-bit UUID；0xFFA0-0xFFFF 为厂商自定义区 */
-    private val SERVICE_UUIDS_16: Map<Int, String> = mapOf(
-        0x1800 to "Generic Access 通用访问",
-        0x1801 to "Generic Attribute 通用属性",
-        0x1802 to "Immediate Alert 即时告警",
-        0x1803 to "Link Loss 链路丢失",
-        0x1804 to "Tx Power 发射功率",
-        0x1805 to "Current Time 当前时间",
-        0x1808 to "Glucose 血糖",
-        0x1809 to "Health Thermometer 体温计",
-        0x180A to "Device Information 设备信息",
-        0x180D to "Heart Rate 心率",
-        0x180F to "Battery 电池",
-        0x1810 to "Blood Pressure 血压",
-        0x1811 to "Alert Notification 告警通知",
-        0x1812 to "HID 人机接口",
-        0x1814 to "Running Speed and Cadence 跑步速度与步频",
-        0x1816 to "Cycling Speed and Cadence 骑行速度与踏频",
-        0x1818 to "Cycling Power 骑行功率",
-        0x1819 to "Location and Navigation 定位与导航",
-        0x181A to "Environmental Sensing 环境传感",
-        0x1826 to "Fitness Machine 健身器械",
-        0x1843 to "Volume Control 音量控制",
-        0x1846 to "Coordinated Set Identification 协调集合标识",
-        0x1848 to "Media Control 媒体控制",
-        0xFFE0 to "厂商自定义串口服务区（常见 FFE0）",
+    private val SERVICE_UUIDS_16: Map<Int, Int> = mapOf(
+        0x1800 to R.string.mgr_ads_svc_generic_access,
+        0x1801 to R.string.mgr_ads_svc_generic_attribute,
+        0x1802 to R.string.mgr_ads_svc_immediate_alert,
+        0x1803 to R.string.mgr_ads_svc_link_loss,
+        0x1804 to R.string.mgr_ads_svc_tx_power,
+        0x1805 to R.string.mgr_ads_svc_current_time,
+        0x1808 to R.string.mgr_ads_svc_glucose,
+        0x1809 to R.string.mgr_ads_svc_health_thermometer,
+        0x180A to R.string.mgr_ads_svc_device_information,
+        0x180D to R.string.mgr_ads_svc_heart_rate,
+        0x180F to R.string.mgr_ads_svc_battery,
+        0x1810 to R.string.mgr_ads_svc_blood_pressure,
+        0x1811 to R.string.mgr_ads_svc_alert_notification,
+        0x1812 to R.string.mgr_ads_svc_hid,
+        0x1814 to R.string.mgr_ads_svc_running_speed,
+        0x1816 to R.string.mgr_ads_svc_cycling_speed,
+        0x1818 to R.string.mgr_ads_svc_cycling_power,
+        0x1819 to R.string.mgr_ads_svc_location_navigation,
+        0x181A to R.string.mgr_ads_svc_environmental_sensing,
+        0x1826 to R.string.mgr_ads_svc_fitness_machine,
+        0x1843 to R.string.mgr_ads_svc_volume_control,
+        0x1846 to R.string.mgr_ads_svc_coordinated_set,
+        0x1848 to R.string.mgr_ads_svc_media_control,
+        0xFFE0 to R.string.mgr_ads_svc_vendor_ffe0,
     )
 
     /** 公司 ID（Bluetooth SIG Assigned Numbers，小端传输）；只收录确认过的编号 */
@@ -510,66 +552,66 @@ object AdStructureDecoder {
     )
 
     /** 常见 Appearance 值；未收录的值如实显示码值 */
-    private val APPEARANCES: Map<Int, String> = mapOf(
-        0x0000 to "未知",
-        0x0040 to "手机",
-        0x0080 to "电脑",
-        0x00C0 to "手表",
-        0x0100 to "时钟",
-        0x0140 to "显示器",
-        0x0180 to "遥控器",
-        0x01C0 to "眼镜",
-        0x0200 to "标签",
-        0x0240 to "钥匙扣",
-        0x0280 to "媒体播放器",
-        0x02C0 to "条码扫描器",
-        0x0300 to "温度计",
-        0x0340 to "心率传感器",
-        0x0380 to "血压计",
-        0x03C0 to "HID 人机接口设备",
-        0x0400 to "血糖仪",
-        0x0440 to "跑步 / 步行传感器",
-        0x0480 to "骑行传感器",
-        0x04C0 to "控制设备",
-        0x0500 to "网络设备",
-        0x0540 to "传感器",
-        0x0580 to "灯具",
-        0x05C0 to "风扇",
-        0x0600 to "HVAC 暖通设备",
-        0x0640 to "空调",
-        0x0680 to "加湿器",
-        0x06C0 to "加热器",
-        0x0700 to "门禁",
-        0x0740 to "电动设备",
-        0x0780 to "电源设备",
-        0x07C0 to "光源",
-        0x0800 to "窗帘",
-        0x0840 to "音频接收器",
-        0x0841 to "耳机",
-        0x0842 to "扬声器",
-        0x0843 to "耳麦",
-        0x0880 to "音频源",
-        0x0900 to "机动车",
-        0x0940 to "家用电器",
-        0x0980 to "可穿戴音频设备",
-        0x09C0 to "飞行器",
-        0x0A00 to "视听设备",
-        0x0AC0 to "游戏设备",
-        0x0B00 to "标牌",
+    private val APPEARANCES: Map<Int, Int> = mapOf(
+        0x0000 to R.string.mgr_ads_app_unknown,
+        0x0040 to R.string.mgr_ads_app_phone,
+        0x0080 to R.string.mgr_ads_app_computer,
+        0x00C0 to R.string.mgr_ads_app_watch,
+        0x0100 to R.string.mgr_ads_app_clock,
+        0x0140 to R.string.mgr_ads_app_display,
+        0x0180 to R.string.mgr_ads_app_remote,
+        0x01C0 to R.string.mgr_ads_app_eyewear,
+        0x0200 to R.string.mgr_ads_app_tag,
+        0x0240 to R.string.mgr_ads_app_keyring,
+        0x0280 to R.string.mgr_ads_app_media_player,
+        0x02C0 to R.string.mgr_ads_app_barcode_scanner,
+        0x0300 to R.string.mgr_ads_app_thermometer,
+        0x0340 to R.string.mgr_ads_app_heart_rate,
+        0x0380 to R.string.mgr_ads_app_blood_pressure,
+        0x03C0 to R.string.mgr_ads_app_hid,
+        0x0400 to R.string.mgr_ads_app_glucose,
+        0x0440 to R.string.mgr_ads_app_running,
+        0x0480 to R.string.mgr_ads_app_cycling,
+        0x04C0 to R.string.mgr_ads_app_control,
+        0x0500 to R.string.mgr_ads_app_network,
+        0x0540 to R.string.mgr_ads_app_sensor,
+        0x0580 to R.string.mgr_ads_app_light_fixture,
+        0x05C0 to R.string.mgr_ads_app_fan,
+        0x0600 to R.string.mgr_ads_app_hvac,
+        0x0640 to R.string.mgr_ads_app_air_conditioning,
+        0x0680 to R.string.mgr_ads_app_humidifier,
+        0x06C0 to R.string.mgr_ads_app_heater,
+        0x0700 to R.string.mgr_ads_app_access_control,
+        0x0740 to R.string.mgr_ads_app_motorized,
+        0x0780 to R.string.mgr_ads_app_power,
+        0x07C0 to R.string.mgr_ads_app_light_source,
+        0x0800 to R.string.mgr_ads_app_window_covering,
+        0x0840 to R.string.mgr_ads_app_audio_sink,
+        0x0841 to R.string.mgr_ads_app_headset,
+        0x0842 to R.string.mgr_ads_app_speaker,
+        0x0843 to R.string.mgr_ads_app_earbuds,
+        0x0880 to R.string.mgr_ads_app_audio_source,
+        0x0900 to R.string.mgr_ads_app_vehicle,
+        0x0940 to R.string.mgr_ads_app_home_appliance,
+        0x0980 to R.string.mgr_ads_app_wearable_audio,
+        0x09C0 to R.string.mgr_ads_app_aircraft,
+        0x0A00 to R.string.mgr_ads_app_av_equipment,
+        0x0AC0 to R.string.mgr_ads_app_gaming,
+        0x0B00 to R.string.mgr_ads_app_signage,
     )
 
     /** Class of Device 主要设备类（bits 8-12） */
-    private val MAJOR_DEVICE_CLASSES: Map<Int, String> = mapOf(
-        0x00 to "杂项",
-        0x01 to "计算机",
-        0x02 to "手机",
-        0x03 to "局域网 / 网络接入点",
-        0x04 to "音频 / 视频",
-        0x05 to "外设",
-        0x06 to "成像",
-        0x07 to "可穿戴",
-        0x08 to "玩具",
-        0x09 to "健康",
-        0x1F to "未分类",
+    private val MAJOR_DEVICE_CLASSES: Map<Int, Int> = mapOf(
+        0x00 to R.string.mgr_ads_major_misc,
+        0x01 to R.string.mgr_ads_major_computer,
+        0x02 to R.string.mgr_ads_major_phone,
+        0x03 to R.string.mgr_ads_major_lan,
+        0x04 to R.string.mgr_ads_major_av,
+        0x05 to R.string.mgr_ads_major_peripheral,
+        0x06 to R.string.mgr_ads_major_imaging,
+        0x07 to R.string.mgr_ads_major_wearable,
+        0x08 to R.string.mgr_ads_major_toy,
+        0x09 to R.string.mgr_ads_major_health,
+        0x1F to R.string.mgr_ads_major_uncategorized,
     )
 }

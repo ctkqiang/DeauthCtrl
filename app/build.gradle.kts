@@ -47,6 +47,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric 需要 app 资源(strings.xml 等)参与单元测试
+            isIncludeAndroidResources = true
+        }
+    }
+
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -102,6 +109,9 @@ dependencies {
 
     // 协议层单元测试 —— 会议视频修复的运行时证据(纯 JVM,无 Android 依赖)
     testImplementation("junit:junit:4.13.2")
+    // DeviceIntel 分类器单测:classify 经 L10n 解析显示文本,需要 Android resources 环境
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("androidx.test:core:1.6.1")
 
     // 真机运行时验证(MediaCodec 编解码 / BLE 广播会话 / UI 导航截图)
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

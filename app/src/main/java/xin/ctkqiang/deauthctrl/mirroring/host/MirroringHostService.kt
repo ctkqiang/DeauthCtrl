@@ -12,7 +12,9 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
+import xin.ctkqiang.deauthctrl.L10n
 import xin.ctkqiang.deauthctrl.MainActivity
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * 前台服务：保持屏幕镜像在后台持续运行。
@@ -138,8 +140,8 @@ class MirroringHostService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("屏幕镜像运行中")
-            .setContentText("正在共享屏幕")
+            .setContentTitle(L10n.get(R.string.mirror_host_notif_title))
+            .setContentText(L10n.get(R.string.mirror_host_notif_text))
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setContentIntent(pi)
             .setOngoing(true)
@@ -147,7 +149,7 @@ class MirroringHostService : Service() {
     }
 
     private fun createNotificationChannel() {
-        val ch = NotificationChannel(CHANNEL_ID, "屏幕镜像", NotificationManager.IMPORTANCE_LOW)
+        val ch = NotificationChannel(CHANNEL_ID, L10n.get(R.string.mirror_host_channel_name), NotificationManager.IMPORTANCE_LOW)
         getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
     }
 }

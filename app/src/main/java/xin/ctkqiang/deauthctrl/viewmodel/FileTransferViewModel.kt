@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.FileTransferManager
 import xin.ctkqiang.deauthctrl.manager.SendPeer
 import java.io.File
@@ -32,7 +34,7 @@ class FileTransferViewModel(application: Application) : AndroidViewModel(applica
     private val _error = MutableStateFlow<String?>(null); val error: StateFlow<String?> = _error
     private val _sentCount = MutableStateFlow(0); val sentCount: StateFlow<Int> = _sentCount
     private var pollJob: Job? = null
-    val localIp: String get() = manager.localIpAddress ?: "未知"
+    val localIp: String get() = manager.localIpAddress ?: L10n.get(R.string.vm_ft_unknown_ip)
 
     init {
         manager.deviceName = android.os.Build.MODEL
@@ -45,7 +47,7 @@ class FileTransferViewModel(application: Application) : AndroidViewModel(applica
         if (manager.start(dir)) {
             _isRunning.value = true; _error.value = null
             pollJob = CoroutineScope(Dispatchers.IO).launch { while (isActive) { _peers.value = manager.peers.values.toList(); delay(500) } }
-        } else _error.value = "启动失败 — 端口可能被占用"
+        } else _error.value = L10n.get(R.string.vm_ft_start_failed)
     }
 
     /** 发送文件到所有已发现设备 + 手动IP */
@@ -61,12 +63,12 @@ class FileTransferViewModel(application: Application) : AndroidViewModel(applica
                 tmp.outputStream().use { input.copyTo(it) }; input.close()
 
                 val targetIps = if (manualIp.isNotBlank()) listOf(manualIp.trim()) else manager.peers.values.map { it.ip }
-                if (targetIps.isEmpty()) { _error.value = "未发现设备，请输入对方IP"; return@launch }
+                if (targetIps.isEmpty()) { _error.value = L10n.get(R.string.vm_ft_no_device); return@launch }
                 var ok = 0; val total = targetIps.size
                 targetIps.forEach { ip -> if (manager.sendFile(tmp, ip)) ok++ }
                 withContext(Dispatchers.Main) {
                     _sentCount.value = ok
-                    if (ok == 0) _error.value = "发送失败 — 检查对方IP和网络"
+                    if (ok == 0) _error.value = L10n.get(R.string.vm_ft_send_failed)
                     else _error.value = null
                 }
                 tmp.delete()

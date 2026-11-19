@@ -2,7 +2,7 @@
 
 > **中国红客 · 哪吒网络安全**
 > Android 网络安全工具集 · 纯软件实现 · 终端美学
-> 13 合 1 安全工具 + WiFi 对讲机 · 触觉反馈 · 好莱坞黑客 UI
+> 50+ 战术模块 · 中英双语界面 · 触觉反馈 · 好莱坞黑客 UI
 
 ---
 
@@ -23,6 +23,31 @@
 - BLE / WiFi 攻击可能违反无线电管理条例
 - **开发者不对任何滥用行为承担责任**
 - 使用本工具即表示您已充分理解并承诺合规使用
+
+---
+
+## 界面语言（中英双语）
+
+全界面中英双语,两套语言开箱即用:
+
+| 机制 | 行为 |
+| ---- | ---- |
+| 跟随系统 | 默认策略:中文设备显示中文,英文设备显示英文 |
+| 应用内切换 | 设置 → 语言:系统 / 中文 / English,选择后立即重建界面并持久化 |
+| 技术缩写 | BSSID / RSSI / SNR / TAC / 协议名 / 单位等保持原文,两种语言一致 |
+
+### 实现
+
+```
+values/strings.xml          英文 default(未命中语言的兜底)
+values-zh-rCN/strings.xml   简体中文
+LocaleManager               attachBaseContext 注入 locale,全局生效
+stringResource()            Compose 资源解析,配置变化自动重组
+```
+
+- 语言偏好持久化在 `deauthctrl_prefs`(`app_language` = `system` / `zh` / `en`)
+- 切换由 `LocaleManager.apply()` 落盘 + recreate,Activity、前台服务通知、Compose UI 同步生效
+- 字符串按屏幕分片维护(`strings_<模块>.xml`),新增模块自带独立资源文件,互不冲突
 
 ---
 
@@ -232,6 +257,7 @@ cd DeauthCtrl
 | 邮箱 | ctkqiang@dingtalk.com              |
 | 仓库 | gitcode.com/ctkqiang_sr/DeauthCtrl |
 | 架构 | MVVM + StateFlow + Jetpack Compose |
+| 语言 | 中文 / English(设置内可切换)        |
 | 许可 | 仅供授权安全研究使用               |
 
 ---

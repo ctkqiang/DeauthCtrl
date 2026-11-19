@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
@@ -93,7 +96,7 @@ class ThreatDetector(context: Context) {
                     cascade = loadCascade()
                 }
                 if (cascade == null) {
-                    _status.value = DetectorStatus.Unavailable("Haar 级联加载失败(文件损坏且重试无效)")
+                    _status.value = DetectorStatus.Unavailable(L10n.get(R.string.mgr_threat_cascade_failed))
                     return
                 }
                 faceCascade = cascade
@@ -103,7 +106,7 @@ class ThreatDetector(context: Context) {
                 _status.value = DetectorStatus.Ready
             } catch (t: Throwable) {
                 _status.value = DetectorStatus.Unavailable(
-                    "${t.javaClass.simpleName}: ${t.message ?: "OpenCV 初始化失败"}",
+                    "${t.javaClass.simpleName}: " + L10n.get(R.string.mgr_threat_init_failed),
                 )
             }
         }
@@ -155,11 +158,11 @@ class ThreatDetector(context: Context) {
         val cascade = faceCascade
         val hogDetector = hog
         if (cascade == null && hogDetector == null) {
-            val reason = (_status.value as? DetectorStatus.Unavailable)?.reason ?: "检测器不可用"
+            val reason = (_status.value as? DetectorStatus.Unavailable)?.reason ?: L10n.get(R.string.mgr_threat_unavailable)
             return DetectionFrame(emptyList(), 0, 0, 0, false, false, reason)
         }
         if (grayImage.width <= 0 || grayImage.height <= 0) {
-            return DetectionFrame(emptyList(), 0, 0, 0, false, false, "空帧")
+            return DetectionFrame(emptyList(), 0, 0, 0, false, false, L10n.get(R.string.mgr_threat_empty_frame))
         }
 
         var srcMat: Mat? = null

@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -215,7 +218,7 @@ class TacticalMapManager(context: Context) {
     private fun startInternal() {
         publishStatus()
         if (!hasPermission()) {
-            _error.value = "未授权定位权限"
+            _error.value = L10n.get(R.string.mgr_tacmap_permission_denied)
             return
         }
         _error.value = null
@@ -235,19 +238,19 @@ class TacticalMapManager(context: Context) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 2f, listener)
             }.onFailure {
                 // 不再 runCatching 吞掉:写进 error,UI 可诊断
-                _error.value = "GPS 定位注册失败: ${it.message ?: it.javaClass.simpleName}"
+                _error.value = L10n.get(R.string.mgr_tacmap_gps_register_failed, it.message ?: it.javaClass.simpleName)
             }
         }
         if (providerEnabled(LocationManager.NETWORK_PROVIDER)) {
             runCatching {
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000L, 5f, listener)
             }.onFailure {
-                _error.value = "网络定位注册失败: ${it.message ?: it.javaClass.simpleName}"
+                _error.value = L10n.get(R.string.mgr_tacmap_network_register_failed, it.message ?: it.javaClass.simpleName)
             }
         }
         if (!fineGranted() && providerEnabled(LocationManager.GPS_PROVIDER)) {
             // 仅粗定位:GPS provider 需要 FINE,不能注册;只提示一次
-            _error.value = "仅授予粗略定位 —— 使用网络定位,精度较低"
+            _error.value = L10n.get(R.string.mgr_tacmap_coarse_only)
         }
 
         registerHeading()
@@ -354,7 +357,7 @@ class TacticalMapManager(context: Context) {
     /** 长按地图投放标记:默认标签「标记 %02d」,id 单调递增不重复 */
     fun addMarker(label: String, lat: Double, lon: Double) {
         val id = nextMarkerId++
-        val fallback = "标记 %02d".format(id)
+        val fallback = L10n.get(R.string.mgr_tacmap_marker_fallback, id)
         _markers.value = (
             _markers.value + TacticalMarker(
                 id = id,
@@ -482,7 +485,7 @@ class TacticalSelfOverlay(
 
         // 「本机」标签
         canvas.drawText(
-            "本机",
+            L10n.get(R.string.mgr_tacmap_self_label),
             cx + half + 4f * density,
             cy + labelPaint.textSize * 0.35f,
             labelPaint,

@@ -104,13 +104,13 @@ class WalkieTalkieService : Service() {
         val piStop = PendingIntent.getService(this, 1, Intent(this, WalkieTalkieService::class.java).apply { action = ACTION_STOP }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("WiFi 对讲机")
-            .setContentText(if (isTalking) "发送中..." else "正在监听")
+            .setContentTitle(getString(R.string.notif_walkie_title))
+            .setContentText(if (isTalking) getString(R.string.notif_walkie_tx) else getString(R.string.notif_walkie_rx))
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .addAction(android.R.drawable.ic_media_play, if (isTalking) "停止说话" else "LIVE 10s", piLive)
-            .addAction(android.R.drawable.ic_delete, "关闭", piStop)
+            .addAction(android.R.drawable.ic_media_play, if (isTalking) getString(R.string.notif_walkie_stop_talk) else "LIVE 10s", piLive)
+            .addAction(android.R.drawable.ic_delete, getString(R.string.notif_walkie_close), piStop)
             .build()
     }
 
@@ -122,7 +122,7 @@ class WalkieTalkieService : Service() {
      */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "WiFi 对讲机", NotificationManager.IMPORTANCE_LOW).apply { description = "对讲机前台服务" }
+            val channel = NotificationChannel(CHANNEL_ID, getString(R.string.notif_walkie_title), NotificationManager.IMPORTANCE_LOW).apply { description = getString(R.string.notif_walkie_channel_desc) }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }

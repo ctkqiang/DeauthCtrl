@@ -10,7 +10,10 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.model.BleAdvertLogEntry
 import xin.ctkqiang.deauthctrl.model.BlePayloadProfile
 import kotlinx.coroutines.*
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.ArrayDeque
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
@@ -42,12 +46,12 @@ data class BleFrame(
  * 必须保留这一限定，避免用户误以为"高功率"能显著扩大范围。
  */
 enum class BleTxPower(
-    val displayName: String,
+    @StringRes val labelRes: Int,
     val settingsConstant: Int,
 ) {
-    LOW("低功率 ≈ -15 dBm（相对值，非最大功率）", AdvertiseSettings.ADVERTISE_TX_POWER_LOW),
-    MEDIUM("中功率 ≈ -7 dBm（相对值，非最大功率）", AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM),
-    HIGH("高功率 ≈ +1 dBm（相对值，非最大功率）", AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
+    LOW(R.string.mgr_ble_tx_low, AdvertiseSettings.ADVERTISE_TX_POWER_LOW),
+    MEDIUM(R.string.mgr_ble_tx_medium, AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM),
+    HIGH(R.string.mgr_ble_tx_high, AdvertiseSettings.ADVERTISE_TX_POWER_HIGH);
 }
 
 /**
@@ -57,10 +61,10 @@ enum class BleTxPower(
  * - [RANDOM]:   ALL 模式下每次随机抽一个 Profile，规避过滤趋同
  * - [SINGLE]:   锁定当前 [BleSpamManager.currentProfile]，不参与轮换
  */
-enum class BleCycleMode(val displayName: String) {
-    SEQUENCE("顺序轮换"),
-    RANDOM("随机轮换"),
-    SINGLE("固定单一"),
+enum class BleCycleMode(@StringRes val labelRes: Int) {
+    SEQUENCE(R.string.mgr_ble_cycle_sequence),
+    RANDOM(R.string.mgr_ble_cycle_random),
+    SINGLE(R.string.mgr_ble_cycle_single),
 }
 
 /**
@@ -173,6 +177,8 @@ class BleSpamManager(private val context: Context) {
     private val dwellTotalMs = AtomicLong(0L)
     private val startTimeMs = AtomicLong(0L)
     private val lastFailureCode = AtomicInteger(NO_FAILURE_CODE)
+    /** 失败率警告是否已挂出 —— 回落时用于撤下诊断文本 */
+    private val highFailRatePosted = AtomicBoolean(false)
 
     /** 最近 N 次会话成功/失败滑动窗口，用于实时失败率诊断 */
     private val recentResults = ArrayDeque<Boolean>()
@@ -233,26 +239,25 @@ class BleSpamManager(private val context: Context) {
 
         val missing = missingPermissions()
         if (missing.isNotEmpty()) {
-            _error.value =
-                "缺少附近设备权限：${missing.joinToString(" / ")}。请先在权限网关授予。"
+            _error.value = L10n.get(R.string.mgr_ble_err_permissions, missing.joinToString(" / "))
             return
         }
 
         val bt = adapter ?: run {
-            _error.value = "本机没有蓝牙适配器"
+            _error.value = L10n.get(R.string.mgr_ble_err_no_adapter)
             return
         }
         val enabled = runCatching { bt.isEnabled }.getOrElse {
-            _error.value = "读取蓝牙状态失败：${it.message ?: it.javaClass.simpleName}"
+            _error.value = L10n.get(R.string.mgr_ble_err_read_state, it.message ?: it.javaClass.simpleName)
             return
         }
         if (!enabled) {
-            _error.value = "蓝牙未开启，请先打开蓝牙"
+            _error.value = L10n.get(R.string.mgr_ble_err_bt_off)
             return
         }
         advertiser = runCatching { bt.bluetoothLeAdvertiser }.getOrElse { null }
         if (advertiser == null) {
-            _error.value = "本机控制器不提供 BLE 广播（BluetoothLeAdvertiser=null）"
+            _error.value = L10n.get(R.string.mgr_ble_err_no_advertiser)
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -346,8 +351,12 @@ class BleSpamManager(private val context: Context) {
                 continue
             }
             if (frame.payload.size + 4 > maxAdvertisingDataLength) {
-                _error.value =
-                    "广播数据超长：${frame.payload.size + 4} > $maxAdvertisingDataLength 字节（profile=${profile.displayName}）"
+                _error.value = L10n.get(
+                    R.string.mgr_ble_err_data_too_large,
+                    frame.payload.size + 4,
+                    maxAdvertisingDataLength,
+                    L10n.get(profile.displayNameRes),
+                )
                 delay(advertiseIntervalMs)
                 localCycle++
                 continue
@@ -374,8 +383,7 @@ class BleSpamManager(private val context: Context) {
                     if (outcome.code == AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS) {
                         consecutiveTooMany++
                         if (consecutiveTooMany >= MAX_TOO_MANY_RETRIES) {
-                            _error.value =
-                                "蓝牙广播槽位耗尽（code 2 连续 $consecutiveTooMany 次）：请关闭/重启蓝牙后重试"
+                            _error.value = L10n.get(R.string.mgr_ble_err_slots_exhausted, consecutiveTooMany)
                             stop()
                             return
                         }
@@ -397,9 +405,10 @@ class BleSpamManager(private val context: Context) {
             if (localCycle % RECENT_WINDOW == 0) {
                 val recentFailRate = computeRecentFailRate()
                 if (recentFailRate > FAIL_RATE_WARN_THRESHOLD) {
-                    _error.value =
-                        "high failure rate ${(recentFailRate * 100).toInt()}% (last $RECENT_WINDOW) -- try reducing interval"
-                } else if (_error.value?.startsWith("high failure rate") == true) {
+                    highFailRatePosted.set(true)
+                    _error.value = L10n.get(R.string.mgr_ble_high_fail_rate, (recentFailRate * 100).toInt(), RECENT_WINDOW)
+                } else if (highFailRatePosted.getAndSet(false)) {
+                    // 失败率回落,撤下诊断文本 —— 布尔标志替代字符串前缀比较,与显示语言解耦
                     _error.value = null
                 }
             }
@@ -535,16 +544,16 @@ class BleSpamManager(private val context: Context) {
     }
 
     private fun advertiseFailureMessage(code: Int): String = when (code) {
-        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE -> "广播数据超长（code=1）"
+        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE -> L10n.get(R.string.mgr_ble_adv_data_too_large)
         AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS ->
-            "广播槽位被占用（code=2）：正在退避重试"
-        AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED -> "广播会话已启动（code=3）"
-        AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR -> "控制器内部错误（code=4）"
-        AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "控制器不支持 BLE 广播（code=5）"
-        ERROR_PERMISSION -> "缺少 BLUETOOTH_ADVERTISE 权限"
-        ERROR_NOT_AVAILABLE -> "BLE advertiser 不可用"
-        ERROR_INTERNAL -> "startAdvertising 抛出异常"
-        else -> "广播启动失败（code=$code）"
+            L10n.get(R.string.mgr_ble_adv_too_many)
+        AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED -> L10n.get(R.string.mgr_ble_adv_already_started)
+        AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR -> L10n.get(R.string.mgr_ble_adv_internal)
+        AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> L10n.get(R.string.mgr_ble_adv_unsupported)
+        ERROR_PERMISSION -> L10n.get(R.string.mgr_ble_adv_no_permission)
+        ERROR_NOT_AVAILABLE -> L10n.get(R.string.mgr_ble_adv_unavailable)
+        ERROR_INTERNAL -> L10n.get(R.string.mgr_ble_adv_exception)
+        else -> L10n.get(R.string.mgr_ble_adv_failed_code, code)
     }
 
     // ─── Payload 构造 ──────────────────────────────────────────────────────────

@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -246,7 +249,7 @@ class PdrHomingManager(context: Context) {
         if (sensorManager == null || sensor == null) {
             _state.value = _state.value.copy(
                 running = false,
-                error = "[!] 本机未提供计步传感器(TYPE_STEP_COUNTER / TYPE_STEP_DETECTOR 均不可用) —— 步测不可用",
+                error = L10n.get(R.string.mgr_pdr_no_step_sensor),
             )
             return
         }
@@ -254,7 +257,7 @@ class PdrHomingManager(context: Context) {
             _state.value = _state.value.copy(
                 running = false,
                 stepPermissionGranted = false,
-                error = "[!] Android 10+ 读取计步传感器需要「身体活动」权限,当前未授予 —— 授予后重新进入本页",
+                error = L10n.get(R.string.mgr_pdr_activity_permission),
             )
             return
         }
@@ -287,7 +290,7 @@ class PdrHomingManager(context: Context) {
             hasStepSensor = true,
             hasHeadingSensor = rotationSensor != null,
             error = if (rotationSensor == null) {
-                "[!] 无旋转矢量传感器 —— 航向不可用,步数与距离仍可计数,但位置无法推算"
+                L10n.get(R.string.mgr_pdr_no_rotation_sensor)
             } else {
                 null
             },
@@ -366,7 +369,7 @@ class PdrHomingManager(context: Context) {
         if (!stepRegistered) {
             _state.value = _state.value.copy(
                 running = false,
-                error = "[!] 计步传感器注册失败 —— 系统可能限制了传感器访问",
+                error = L10n.get(R.string.mgr_pdr_step_register_failed),
             )
         }
     }

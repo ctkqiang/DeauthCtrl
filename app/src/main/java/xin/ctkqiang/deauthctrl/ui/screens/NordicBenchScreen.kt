@@ -31,11 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.AdField
 import xin.ctkqiang.deauthctrl.manager.BondState
 import xin.ctkqiang.deauthctrl.manager.BondedDevice
@@ -102,6 +104,11 @@ fun NordicBenchScreen(back: () -> Unit) {
     // 绑定页签的待确认删除目标
     var pendingRemove by remember { mutableStateOf<BondedDevice?>(null) }
 
+    // 解析错误提示在组合期解析，供非组合的点击回调使用
+    val errEmptyHex = stringResource(R.string.nordic_err_empty_hex)
+    val errInvalidHex = stringResource(R.string.nordic_err_invalid_hex)
+    val errEmptyAd = stringResource(R.string.nordic_err_empty_ad)
+
     // 离开页面主动断开，避免 GATT 连接留在后台
     DisposableEffect(Unit) {
         onDispose { vm.disconnect() }
@@ -113,7 +120,7 @@ fun NordicBenchScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark).navigationBarsPadding().imePadding()) {
-        TerminalHeader("Nordic 工作台", back)
+        TerminalHeader(stringResource(R.string.nordic_title), back)
 
         Column(
             Modifier
@@ -123,9 +130,9 @@ fun NordicBenchScreen(back: () -> Unit) {
                 .padding(12.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                SelectChip(tab == 0, "广告解析") { tab = 0 }
-                SelectChip(tab == 1, "NUS 终端") { tab = 1 }
-                SelectChip(tab == 2, "绑定管理") { tab = 2 }
+                SelectChip(tab == 0, stringResource(R.string.nordic_tab_adv)) { tab = 0 }
+                SelectChip(tab == 1, stringResource(R.string.nordic_tab_nus)) { tab = 1 }
+                SelectChip(tab == 2, stringResource(R.string.nordic_tab_bond)) { tab = 2 }
             }
             Spacer(Modifier.height(10.dp))
 
@@ -140,19 +147,18 @@ fun NordicBenchScreen(back: () -> Unit) {
                         val input = adHex.trim()
                         if (input.isEmpty()) {
                             adFields = emptyList()
-                            adError = "请输入广播数据的十六进制字节"
+                            adError = errEmptyHex
                             adParsed = true
                         } else {
                             val result = vm.decodeAdvertising(input)
                             when {
                                 result == null -> {
                                     adFields = emptyList()
-                                    adError = "十六进制格式无效 —— 字节须为偶数个十六进制字符，" +
-                                        "可用空格 / 冒号 / 短横线分隔"
+                                    adError = errInvalidHex
                                 }
                                 result.isEmpty() -> {
                                     adFields = emptyList()
-                                    adError = "AD 数据为空或首字节长度为 0 —— 没有可解析的字段"
+                                    adError = errEmptyAd
                                 }
                                 else -> {
                                     adFields = result
@@ -214,21 +220,20 @@ private fun AdDecodeTab(
     onParse: () -> Unit,
     onClear: () -> Unit,
 ) {
-    TermPanel("广播数据 · AD STRUCTURE") {
+    TermPanel(stringResource(R.string.nordic_panel_adv_input)) {
         TermInput(
-            "AD 数据（十六进制）",
+            stringResource(R.string.nordic_input_hex_label),
             hexInput,
-            placeholder = "例如 02 01 06 03 03 0F 18 0B 09 44 65 61 75 74 68",
+            placeholder = stringResource(R.string.nordic_input_hex_placeholder),
         ) { onHexInput(it) }
         Spacer(Modifier.height(7.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            GhostButton("解析") { onParse() }
-            GhostButton("清空") { onClear() }
+            GhostButton(stringResource(R.string.nordic_btn_parse)) { onParse() }
+            GhostButton(stringResource(R.string.nordic_btn_clear)) { onClear() }
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            "格式：[长度 1B][类型 1B][数据 …]，长度字节包含类型字节本身；" +
-                "长度 0x00 表示广播数据结束。长度越界时按实际剩余字节截断并标注。",
+            stringResource(R.string.nordic_format_note),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -242,13 +247,13 @@ private fun AdDecodeTab(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("解析结果 · ${fields.size} 个字段") {
+    TermPanel(stringResource(R.string.nordic_panel_result, fields.size)) {
         if (fields.isEmpty()) {
             EmptyHint(
                 if (parsedOnce) {
-                    "没有可展示的字段 —— 修正上方输入后重新解析"
+                    stringResource(R.string.nordic_empty_no_fields)
                 } else {
-                    "粘贴一段真实广播数据后点击「解析」；本页不生成示例数据"
+                    stringResource(R.string.nordic_empty_hint)
                 },
             )
         } else {
@@ -256,8 +261,7 @@ private fun AdDecodeTab(
             fields.forEachIndexed { index, field -> AdFieldRow(index, field) }
             Spacer(Modifier.height(6.dp))
             Text(
-                "128-bit UUID 按小端反序还原为标准 UUID；公司 ID / 服务 UUID 同样按小端解析。" +
-                    "未收录的编号保留原始十六进制，不做猜测。",
+                stringResource(R.string.nordic_uuid_note),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Gray,
@@ -267,10 +271,9 @@ private fun AdDecodeTab(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("接入说明 · SCOPE") {
+    TermPanel(stringResource(R.string.nordic_panel_scope)) {
         Text(
-            "雷达 / BLE 扫描页的广播详情与本页共用同一个 AdStructureDecoder" +
-                "（主线程负责把解码器接进扫描页详情），两处按相同的 AD Structure 规则解析，结果一致。",
+            stringResource(R.string.nordic_scope_note1),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -278,9 +281,7 @@ private fun AdDecodeTab(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "解析覆盖：Flags、16 / 32 / 128-bit UUID 列表、本地名、发射功率、" +
-                "Class of Device、连接间隔范围、Service Data、Appearance、广播间隔、" +
-                "LE 设备地址、LE Role、URI 与厂商自定义数据。未收录类型显示「未知 AD 类型」与原始十六进制。",
+            stringResource(R.string.nordic_scope_note2),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -296,10 +297,10 @@ private fun AdFieldHeader() {
         Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AdHeaderCell("名称", 1.05f)
-        AdHeaderCell("类型", 0.5f)
-        AdHeaderCell("原始值", 1.2f)
-        AdHeaderCell("解码说明", 2.1f)
+        AdHeaderCell(stringResource(R.string.nordic_col_name), 1.05f)
+        AdHeaderCell(stringResource(R.string.nordic_col_type), 0.5f)
+        AdHeaderCell(stringResource(R.string.nordic_col_raw), 1.2f)
+        AdHeaderCell(stringResource(R.string.nordic_col_decoded), 2.1f)
     }
     Spacer(Modifier.fillMaxWidth().height(0.5.dp).background(BorderDim))
 }
@@ -340,7 +341,7 @@ private fun AdFieldRow(index: Int, field: AdField) {
             lineHeight = 11.sp,
         )
         Text(
-            field.valueHex.ifEmpty { "(空)" },
+            if (field.valueHex.isEmpty()) stringResource(R.string.nordic_empty_value) else field.valueHex,
             Modifier.weight(1.2f),
             fontFamily = Mono,
             fontSize = 8.sp,
@@ -388,18 +389,22 @@ private fun NusTab(
         }
     }
 
-    TermPanel("连接 · NORDIC UART SERVICE") {
-        TermInput("目标 MAC 地址", macInput, placeholder = "AA:BB:CC:DD:EE:FF") {
+    TermPanel(stringResource(R.string.nordic_panel_connect)) {
+        TermInput(stringResource(R.string.nordic_mac_label), macInput, placeholder = "AA:BB:CC:DD:EE:FF") {
             onMacInput(it.take(32))
         }
         Spacer(Modifier.height(8.dp))
-        ActionButton(running = state.active, runLabel = "连接", stopLabel = "断开") {
+        ActionButton(
+            running = state.active,
+            runLabel = stringResource(R.string.nordic_btn_connect),
+            stopLabel = stringResource(R.string.nordic_btn_disconnect),
+        ) {
             if (state.active) vm.disconnect() else vm.connect(macInput)
         }
         Spacer(Modifier.height(8.dp))
-        PanelStat("状态", state.phase.label, nusPhaseColor(state.phase))
-        PanelStat("设备名称", state.deviceName.ifBlank { "--" })
-        PanelStat("服务配置", state.profile)
+        PanelStat(stringResource(R.string.nordic_stat_status), stringResource(state.phase.labelRes), nusPhaseColor(state.phase))
+        PanelStat(stringResource(R.string.nordic_stat_device_name), state.deviceName.ifBlank { "--" })
+        PanelStat(stringResource(R.string.nordic_stat_profile), state.profile)
         PanelStat(
             "MTU",
             if (state.mtu > 0) "${state.mtu} B" else "--",
@@ -408,8 +413,7 @@ private fun NusTab(
         PanelStat("PHY", state.phy)
         Spacer(Modifier.height(5.dp))
         Text(
-            "连接后请求 MTU 247，实际值以系统 onMtuChanged 回调为准；" +
-                "Android 8.0 以下不支持读取 PHY。NUS 服务为 6E400001，兼容 FFE0 / FFE1 串口。",
+            stringResource(R.string.nordic_mtu_note),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -423,9 +427,13 @@ private fun NusTab(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("终端 · RX BUFFER") {
+    TermPanel(stringResource(R.string.nordic_panel_terminal)) {
         LogHeader(
-            "接收缓冲（${state.rxBuffer.length}/${NusTerminalManager.MAX_RX_CHARS} 字符）",
+            stringResource(
+                R.string.nordic_rx_buffer,
+                state.rxBuffer.length,
+                NusTerminalManager.MAX_RX_CHARS,
+            ),
             showClear = true,
         ) { vm.clearTerminal() }
         Spacer(Modifier.height(5.dp))
@@ -438,7 +446,7 @@ private fun NusTab(
             Column(Modifier.fillMaxSize().verticalScroll(terminalScroll).padding(8.dp)) {
                 if (state.rxBuffer.isEmpty()) {
                     Text(
-                        "等待设备数据 —— TX 通知的 UTF-8 文本会追加到这里",
+                        stringResource(R.string.nordic_rx_waiting),
                         fontFamily = Sans,
                         fontSize = 9.sp,
                         color = Gray,
@@ -456,18 +464,22 @@ private fun NusTab(
             }
         }
         Spacer(Modifier.height(7.dp))
-        TermInput("发送内容（UTF-8）", sendText, placeholder = "例如 AT+VERSION?") {
+        TermInput(
+            stringResource(R.string.nordic_send_label),
+            sendText,
+            placeholder = stringResource(R.string.nordic_send_placeholder),
+        ) {
             onSendText(it.take(4096))
         }
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             NusLineEnding.values().forEach { ending ->
-                SelectChip(lineEnding == ending, ending.label) { onLineEnding(ending) }
+                SelectChip(lineEnding == ending, stringResource(ending.labelRes)) { onLineEnding(ending) }
             }
         }
         Spacer(Modifier.height(7.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            GhostButton("发送") {
+            GhostButton(stringResource(R.string.nordic_btn_send)) {
                 if (vm.send(sendText, lineEnding)) onSendText("")
             }
             GhostButton("Serial.println") {
@@ -476,8 +488,7 @@ private fun NusTab(
         }
         Spacer(Modifier.height(5.dp))
         Text(
-            "发送写入 RX 特征；Serial.println 等价于在文本后追加 CRLF。" +
-                "单次写入不得超过 MTU-3 字节，超长会明确拒绝而不是静默截断。",
+            stringResource(R.string.nordic_send_note),
             fontFamily = Sans,
             fontSize = 8.sp,
             color = Gray,
@@ -485,7 +496,7 @@ private fun NusTab(
         )
         if (state.sending) {
             Text(
-                "发送中 —— 等待 onCharacteristicWrite 回调",
+                stringResource(R.string.nordic_sending),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Warn,
@@ -495,12 +506,12 @@ private fun NusTab(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("连接日志 · NUS LOG") {
-        LogHeader("事件流（最新在上）", showClear = true) { vm.clearNusLog() }
+    TermPanel(stringResource(R.string.nordic_panel_log)) {
+        LogHeader(stringResource(R.string.nordic_log_header), showClear = true) { vm.clearNusLog() }
         Spacer(Modifier.height(4.dp))
         if (state.log.isEmpty()) {
             Text(
-                "暂无日志 —— 连接、服务发现、CCCD 订阅、收发与错误事件都会记录在这里",
+                stringResource(R.string.nordic_log_empty),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Gray,
@@ -516,7 +527,7 @@ private fun NusTab(
             }
             if (state.log.size > 60) {
                 Text(
-                    "仅显示最近 60 条，共 ${state.log.size} 条",
+                    stringResource(R.string.nordic_log_limit, state.log.size),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -542,17 +553,20 @@ private fun BondTab(
     pendingRemove: BondedDevice?,
     onPendingRemove: (BondedDevice?) -> Unit,
 ) {
-    TermPanel("已配对设备 · BONDED DEVICES") {
+    TermPanel(stringResource(R.string.nordic_panel_bonds)) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GhostButton(if (state.loading) "读取中…" else "刷新列表") {
+            GhostButton(
+                if (state.loading) stringResource(R.string.nordic_btn_loading)
+                else stringResource(R.string.nordic_btn_refresh),
+            ) {
                 if (!state.loading) vm.refreshBonds()
             }
             Text(
-                "${state.devices.size} 台",
+                stringResource(R.string.nordic_device_count, state.devices.size),
                 fontFamily = Mono,
                 fontSize = 9.sp,
                 color = Gray,
@@ -563,9 +577,9 @@ private fun BondTab(
         if (state.devices.isEmpty()) {
             EmptyHint(
                 if (state.loading) {
-                    "正在读取系统配对列表"
+                    stringResource(R.string.nordic_bond_loading_hint)
                 } else {
-                    "没有已配对设备 —— 先在系统蓝牙中完成配对后刷新"
+                    stringResource(R.string.nordic_bond_empty)
                 },
             )
         } else {
@@ -591,15 +605,16 @@ private fun BondTab(
                                 color = Gray,
                             )
                             Text(
-                                "状态 ${device.bondState}",
+                                stringResource(R.string.nordic_bond_state, device.bondState),
                                 fontFamily = Mono,
                                 fontSize = 8.sp,
-                                color = if (device.bondState == "已配对") TacGreen else Warn,
+                                color = if (device.bondState == stringResource(R.string.mgr_bond_state_bonded)) TacGreen else Warn,
                             )
                         }
                         Spacer(Modifier.width(8.dp))
                         GhostButton(
-                            if (state.busyAddress == device.address) "解绑中…" else "删除",
+                            if (state.busyAddress == device.address) stringResource(R.string.nordic_btn_unbonding)
+                            else stringResource(R.string.nordic_btn_delete),
                         ) {
                             if (state.busyAddress == null) onPendingRemove(device)
                         }
@@ -623,7 +638,11 @@ private fun BondTab(
         ) {
             Column(Modifier.fillMaxWidth().padding(10.dp)) {
                 Text(
-                    "[!] 确认解绑 ${device.name}（${device.address}）？",
+                    "[!] " + stringResource(
+                        R.string.nordic_unbond_confirm,
+                        device.name,
+                        device.address,
+                    ),
                     fontFamily = Sans,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
@@ -632,8 +651,7 @@ private fun BondTab(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "程序化解绑依赖 BluetoothDevice.removeBond() 隐藏方法，" +
-                        "Android 9+ 可能被系统拒绝；解绑后需要重新配对。",
+                    stringResource(R.string.nordic_unbond_note),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -641,11 +659,11 @@ private fun BondTab(
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    GhostButton("确认解绑") {
+                    GhostButton(stringResource(R.string.nordic_btn_confirm_unbond)) {
                         vm.removeBond(device.address)
                         onPendingRemove(null)
                     }
-                    GhostButton("取消") { onPendingRemove(null) }
+                    GhostButton(stringResource(R.string.nordic_btn_cancel)) { onPendingRemove(null) }
                 }
             }
         }
@@ -667,11 +685,11 @@ private fun BondTab(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("说明 · BONDING") {
-        BulletLine("删除按钮只对系统已配对设备开放；列表为空时说明当前没有配对记录。")
-        BulletLine("解绑调用返回 true 仅代表系统接受了请求，最终以配对列表是否移除为准。")
-        BulletLine("若系统限制隐藏 API 或厂商 ROM 不提供 removeBond，请到系统蓝牙设置中忽略该设备。")
-        BulletLine("重新配对需要在系统蓝牙弹窗中确认；本页不提供静默配对。")
+    TermPanel(stringResource(R.string.nordic_panel_bonding)) {
+        BulletLine(stringResource(R.string.nordic_bond_bullet1))
+        BulletLine(stringResource(R.string.nordic_bond_bullet2))
+        BulletLine(stringResource(R.string.nordic_bond_bullet3))
+        BulletLine(stringResource(R.string.nordic_bond_bullet4))
     }
 }
 
@@ -720,12 +738,12 @@ private fun BulletLine(text: String) {
 /** 页脚能力边界说明 —— 三个模块共用的诚实约束 */
 @Composable
 private fun HonestyPanel() {
-    TermPanel("能力边界 · HONESTY") {
-        BulletLine("广告解析只解码输入的真实字节；字段含义来自 Bluetooth Assigned Numbers，不推测业务语义。")
-        BulletLine("NUS 是 Nordic 官方演示服务，仅对烧录了 NUS 固件（或 FFE0 / FFE1 串口固件）的设备有效。")
-        BulletLine("MTU / PHY 为连接后协商值，设备可以拒绝请求或回落到更低档位。")
-        BulletLine("绑定管理依赖隐藏方法 removeBond()；系统拒绝时请到系统蓝牙设置中忽略设备，本页不会假装已删除。")
-        BulletLine("蓝牙连接与配对需要「附近的设备」权限，申请由应用权限网关统一处理。")
+    TermPanel(stringResource(R.string.nordic_panel_honesty)) {
+        BulletLine(stringResource(R.string.nordic_honesty1))
+        BulletLine(stringResource(R.string.nordic_honesty2))
+        BulletLine(stringResource(R.string.nordic_honesty3))
+        BulletLine(stringResource(R.string.nordic_honesty4))
+        BulletLine(stringResource(R.string.nordic_honesty5))
     }
 }
 

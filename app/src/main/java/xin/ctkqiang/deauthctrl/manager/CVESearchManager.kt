@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -20,27 +23,27 @@ class CVESearchManager {
         job = CoroutineScope(Dispatchers.IO).launch {
             try {
                 val q = query.trim()
-                if (q.isEmpty()) { onStatus("请输入搜索关键词"); onComplete(); return@launch }
+                if (q.isEmpty()) { onStatus(L10n.get(R.string.mgr_cve_prompt_empty)); onComplete(); return@launch }
 
                 if (q.uppercase().startsWith("CVE-")) searchById(q, onResult, onStatus)
                 else searchByKeyword(q, onResult, onStatus)
-            } catch (e: Exception) { onStatus("错误: ${e.message}") }
+            } catch (e: Exception) { onStatus(L10n.get(R.string.mgr_cve_error, e.message.toString())) }
             finally { withContext(Dispatchers.Main) { onComplete() } }
         }
     }
 
     private suspend fun searchById(cveId: String, onResult: (CVEResult) -> Unit, onStatus: (String) -> Unit) {
-        onStatus("查询 $cveId ...")
+        onStatus(L10n.get(R.string.mgr_cve_looking_up, cveId))
         val url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=$cveId"
-        val body = httpGet(url) ?: run { onStatus("网络不通 — 请检查 WiFi/数据连接"); return }
+        val body = httpGet(url) ?: run { onStatus(L10n.get(R.string.mgr_cve_network_unreachable)); return }
         parseNvdResponse(body, onResult, onStatus)
     }
 
     private suspend fun searchByKeyword(keyword: String, onResult: (CVEResult) -> Unit, onStatus: (String) -> Unit) {
-        onStatus("搜索 \"$keyword\" ...")
+        onStatus(L10n.get(R.string.mgr_cve_searching, keyword))
         val encoded = URLEncoder.encode(keyword, "UTF-8")
         val url = "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=$encoded&resultsPerPage=20"
-        val body = httpGet(url) ?: run { onStatus("网络不通 — 请检查 WiFi/数据连接"); return }
+        val body = httpGet(url) ?: run { onStatus(L10n.get(R.string.mgr_cve_network_unreachable)); return }
         parseNvdResponse(body, onResult, onStatus)
     }
 
@@ -48,7 +51,7 @@ class CVESearchManager {
         try {
             val root = JSONObject(body)
             val vulns = root.optJSONArray("vulnerabilities")
-            if (vulns == null || vulns.length() == 0) { onStatus("未找到结果"); return }
+            if (vulns == null || vulns.length() == 0) { onStatus(L10n.get(R.string.mgr_cve_no_results)); return }
             val count = minOf(vulns.length(), 20)
             for (i in 0 until count) {
                 val cve = vulns.getJSONObject(i).optJSONObject("cve") ?: continue
@@ -62,8 +65,8 @@ class CVESearchManager {
                 val published = cve.optString("published", "").take(10)
                 withContext(Dispatchers.Main) { onResult(CVEResult(id, desc, cvss, published)) }
             }
-            onStatus("找到 ${vulns.length()} 条结果")
-        } catch (e: Exception) { onStatus("解析失败: ${e.message}") }
+            onStatus(L10n.get(R.string.mgr_cve_found_count, vulns.length()))
+        } catch (e: Exception) { onStatus(L10n.get(R.string.mgr_cve_parse_failed, e.message.toString())) }
     }
 
     private fun httpGet(urlStr: String): String? {

@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -130,8 +133,8 @@ class ConferenceHostService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("局域网会议运行中")
-            .setContentText("屏幕共享需用户授权，停止后需重新授权")
+            .setContentTitle(L10n.get(R.string.mgr_confhost_notif_title))
+            .setContentText(L10n.get(R.string.mgr_confhost_notif_text))
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setContentIntent(pi)
             .setOngoing(true)
@@ -141,7 +144,7 @@ class ConferenceHostService : Service() {
     private fun createNotificationChannel() {
         // NotificationChannel 是 API 26+；API 23-25 直接用通知构造器的 channelId 即可
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val ch = NotificationChannel(CHANNEL_ID, "局域网会议", NotificationManager.IMPORTANCE_LOW)
+        val ch = NotificationChannel(CHANNEL_ID, L10n.get(R.string.mgr_confhost_channel_name), NotificationManager.IMPORTANCE_LOW)
         getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
     }
 }

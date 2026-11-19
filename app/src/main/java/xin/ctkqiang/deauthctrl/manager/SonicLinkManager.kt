@@ -5,6 +5,8 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -105,7 +107,7 @@ class SonicLinkManager {
         val elements = buildTxSequence(text)
         if (elements.isEmpty()) {
             _state.update {
-                it.copy(error = "没有可发送的符号 —— 仅支持 0-9、A-D、*、# 与空格")
+                it.copy(error = L10n.get(R.string.mgr_sonic_error_no_symbols))
             }
             return
         }
@@ -126,7 +128,9 @@ class SonicLinkManager {
                 while (written < plan.pcm.size && !stopSend) {
                     val chunk = minOf(WRITE_CHUNK, plan.pcm.size - written)
                     val n = track.write(plan.pcm, written, chunk, AudioTrack.WRITE_BLOCKING)
-                    if (n <= 0) throw IllegalStateException("AudioTrack 写入失败($n)")
+                    if (n <= 0) {
+                        throw IllegalStateException(L10n.get(R.string.mgr_sonic_error_track_write, n))
+                    }
                     written += n
                     publishTxProgress(track, plan)
                 }
@@ -214,7 +218,7 @@ class SonicLinkManager {
             if (out.size >= MAX_TX_SYMBOLS) break
             val c = raw.uppercaseChar()
             if (c == ' ') {
-                out.add(TxElement(null, "空格"))
+                out.add(TxElement(null, L10n.get(R.string.mgr_sonic_symbol_space)))
                 continue
             }
             val freq = frequenciesFor(c) ?: continue
@@ -230,7 +234,7 @@ class SonicLinkManager {
             AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
         )
-        if (minBuf <= 0) throw IllegalStateException("设备不支持 44.1kHz PCM 输出")
+        if (minBuf <= 0) throw IllegalStateException(L10n.get(R.string.mgr_sonic_error_no_pcm_output))
         val track = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -250,7 +254,7 @@ class SonicLinkManager {
             .build()
         if (track.state != AudioTrack.STATE_INITIALIZED) {
             runCatching { track.release() }
-            throw IllegalStateException("AudioTrack 初始化失败（音频输出可能被占用）")
+            throw IllegalStateException(L10n.get(R.string.mgr_sonic_error_track_init))
         }
         return track
     }
@@ -280,7 +284,7 @@ class SonicLinkManager {
                     AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
                 )
-                if (minBuf <= 0) throw IllegalStateException("设备不支持 44.1kHz 麦克风采集")
+                if (minBuf <= 0) throw IllegalStateException(L10n.get(R.string.mgr_sonic_error_no_mic_capture))
                 record = AudioRecord(
                     MediaRecorder.AudioSource.MIC,
                     SAMPLE_RATE,
@@ -290,7 +294,7 @@ class SonicLinkManager {
                 )
                 recordRef = record
                 if (record.state != AudioRecord.STATE_INITIALIZED) {
-                    throw IllegalStateException("麦克风初始化失败（可能被其他应用占用）")
+                    throw IllegalStateException(L10n.get(R.string.mgr_sonic_error_mic_init))
                 }
                 record.startRecording()
 
@@ -300,7 +304,9 @@ class SonicLinkManager {
                     var read = 0
                     while (read < FRAME_SIZE && !stopReceive) {
                         val n = record.read(frame, read, FRAME_SIZE - read)
-                        if (n < 0) throw IllegalStateException("麦克风读取失败($n)")
+                        if (n < 0) {
+                            throw IllegalStateException(L10n.get(R.string.mgr_sonic_error_mic_read, n))
+                        }
                         if (n == 0) break
                         read += n
                     }
@@ -310,7 +316,7 @@ class SonicLinkManager {
                 }
             } catch (se: SecurityException) {
                 _state.update {
-                    it.copy(error = "缺少录音权限（RECORD_AUDIO），请在应用网关授权后重试")
+                    it.copy(error = L10n.get(R.string.mgr_sonic_error_no_record_permission))
                 }
             } catch (t: Throwable) {
                 if (!stopReceive) {

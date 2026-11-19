@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.RadarManager
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.manager.RssiSample
@@ -558,7 +560,7 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
     val compassOnline: StateFlow<Boolean> = _compassOnline
 
     /** 北向基准：磁北 / 真北 */
-    private val _northRef = MutableStateFlow("磁北")
+    private val _northRef = MutableStateFlow(L10n.get(R.string.vm_radar_north_magnetic))
     val northRef: StateFlow<String> = _northRef
 
     /** 新目标探测事件（一次性事件，timeMs 变化即代表新一轮） */
@@ -788,8 +790,8 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
                 loc.latitude.toFloat(), loc.longitude.toFloat(), loc.altitude.toFloat(),
                 System.currentTimeMillis(),
             ).declination
-            _northRef.value = "真北"
-        } catch (_: Exception) { _northRef.value = "磁北" }
+            _northRef.value = L10n.get(R.string.vm_radar_north_true)
+        } catch (_: Exception) { _northRef.value = L10n.get(R.string.vm_radar_north_magnetic) }
     }
 
     // ─── 扫描与轮询 ───────────────────────────────────────────────────────────

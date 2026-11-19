@@ -7,7 +7,10 @@ import android.location.LocationManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,12 +33,12 @@ data class ChanAp(
 )
 
 /** 由 Beacon capabilities 字符串解析出的安全类型 */
-enum class ChanSecurity(val label: String) {
-    OPEN("开放"),
-    WEP("WEP"),
-    WPA2("WPA2"),
-    WPA3("WPA3"),
-    OTHER("其他"),
+enum class ChanSecurity(@StringRes val labelRes: Int) {
+    OPEN(R.string.mgr_chsurvey_security_open),
+    WEP(R.string.mgr_chsurvey_security_wep),
+    WPA2(R.string.mgr_chsurvey_security_wpa2),
+    WPA3(R.string.mgr_chsurvey_security_wpa3),
+    OTHER(R.string.mgr_chsurvey_security_other),
 }
 
 /** 单信道聚合结果 —— 由 ScanResult 按信道归并生成 */
@@ -84,10 +87,10 @@ data class SecurityDistribution(
 }
 
 /** 信道拥堵分级 —— 只由可见 AP 数决定,不涉及空口利用率 */
-enum class CongestionLevel(val label: String) {
-    IDLE("空闲"),      // 0-2 个 AP
-    CROWDED("拥挤"),   // 3-5 个 AP
-    SEVERE("严重"),    // 6+ 个 AP
+enum class CongestionLevel(@StringRes val labelRes: Int) {
+    IDLE(R.string.mgr_chsurvey_congestion_idle),      // 0-2 个 AP
+    CROWDED(R.string.mgr_chsurvey_congestion_crowded),   // 3-5 个 AP
+    SEVERE(R.string.mgr_chsurvey_congestion_severe),    // 6+ 个 AP
 }
 
 /** AP 数 → 拥堵分级 */
@@ -120,20 +123,6 @@ data class ChanSurveyState(
     /** startScan 返回 false:本轮读取的是系统缓存,数据可能滞后数秒 */
     val throttled: Boolean = false,
 )
-
-/** 缺少精确定位权限 */
-private const val PERMISSION_ERROR =
-    "缺少「位置信息」权限 —— Android 要求精确定位(ACCESS_FINE_LOCATION)才能读取 Wi-Fi 扫描结果,请授予后重试"
-
-/** 系统定位总开关关闭 */
-private const val LOCATION_OFF_ERROR =
-    "系统定位开关已关闭 —— Android 9+ 关闭定位后扫描结果为空,请开启定位后重试"
-
-/** Wi-Fi 关闭 */
-private const val WIFI_OFF_ERROR = "Wi-Fi 已关闭 —— 请先打开 Wi-Fi 再扫描周围信道"
-
-/** 设备没有 Wi-Fi 服务 */
-private const val NO_WIFI_SERVICE = "设备未提供 Wi-Fi 服务 —— 无法读取扫描结果"
 
 /** 5 GHz 常见信道(36-165 之间步进 4 的标准信道集合) */
 private val FIVE_GHZ_CHANNELS = setOf(
@@ -194,7 +183,7 @@ class ChannelSurveyManager(private val context: Context) {
 
         val wm = wifiManager
         if (wm == null) {
-            _state.value = ChanSurveyState(error = NO_WIFI_SERVICE)
+            _state.value = ChanSurveyState(error = L10n.get(R.string.mgr_chsurvey_error_no_service))
             return
         }
 
@@ -239,7 +228,10 @@ class ChannelSurveyManager(private val context: Context) {
                 scanError = if (t is SecurityException) {
                     securityMessage()
                 } else {
-                    "启动扫描失败: ${t.message ?: t.javaClass.simpleName}"
+                    L10n.get(
+                        R.string.mgr_chsurvey_scan_start_failed,
+                        t.message ?: t.javaClass.simpleName,
+                    )
                 }
                 false
             }
@@ -253,7 +245,10 @@ class ChannelSurveyManager(private val context: Context) {
                         scanError = if (t is SecurityException) {
                             securityMessage()
                         } else {
-                            "读取扫描结果失败: ${t.message ?: t.javaClass.simpleName}"
+                            L10n.get(
+                                R.string.mgr_chsurvey_read_results_failed,
+                                t.message ?: t.javaClass.simpleName,
+                            )
                         }
                     }
                 }
@@ -271,7 +266,7 @@ class ChannelSurveyManager(private val context: Context) {
                 // 扫描被拒绝 / 结果读取失败:保留上一帧真实快照与时间戳,只发布错误
                 _state.value = _state.value.copy(
                     scanning = true,
-                    error = scanError ?: "扫描未产生结果",
+                    error = scanError ?: L10n.get(R.string.mgr_chsurvey_no_results),
                     throttled = false,
                 )
             }
@@ -283,9 +278,10 @@ class ChannelSurveyManager(private val context: Context) {
 
     /** 每轮扫描前的真实前提检查;返回 null 表示可以扫描 */
     private fun precheck(wm: WifiManager): String? = when {
-        !hasPermission -> PERMISSION_ERROR
-        !locationEnabled() -> LOCATION_OFF_ERROR
-        !runCatching { wm.isWifiEnabled }.getOrDefault(false) -> WIFI_OFF_ERROR
+        !hasPermission -> L10n.get(R.string.mgr_chsurvey_error_permission)
+        !locationEnabled() -> L10n.get(R.string.mgr_chsurvey_error_location_off)
+        !runCatching { wm.isWifiEnabled }.getOrDefault(false) ->
+            L10n.get(R.string.mgr_chsurvey_error_wifi_off)
         else -> null
     }
 
@@ -431,9 +427,9 @@ class ChannelSurveyManager(private val context: Context) {
             }
         }
         return if (missing.isEmpty()) {
-            "扫描被系统拒绝:未定位到缺失权限(可能是厂商 ROM 的策略限制)"
+            L10n.get(R.string.mgr_chsurvey_rejected_unknown)
         } else {
-            "扫描被拒绝:缺少 ${missing.joinToString(" / ")}"
+            L10n.get(R.string.mgr_chsurvey_rejected_missing, missing.joinToString(" / "))
         }
     }
 

@@ -29,6 +29,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.view.Surface
+import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.net.DatagramPacket
@@ -45,13 +46,15 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.thread
 import kotlin.math.min
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /** 会议流源类型 */
-enum class ConfStreamType(val beacon: String, val label: String) {
-    NONE("none", "关闭"),
-    CAMERA_FRONT("front", "前置摄"),
-    CAMERA_BACK("back", "后置摄"),
-    SCREEN("screen", "屏幕"),
+enum class ConfStreamType(val beacon: String, @StringRes val labelRes: Int) {
+    NONE("none", R.string.mgr_conf_stream_none),
+    CAMERA_FRONT("front", R.string.mgr_conf_stream_front),
+    CAMERA_BACK("back", R.string.mgr_conf_stream_back),
+    SCREEN("screen", R.string.mgr_conf_stream_screen),
 }
 
 /** 会议成员（含自己） */
@@ -140,7 +143,7 @@ class ConferenceManager(private val context: Context) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    private val _videoStats = MutableStateFlow("视频: 未开始")
+    private val _videoStats = MutableStateFlow(L10n.get(R.string.mgr_conf_video_idle))
     val videoStats: StateFlow<String> = _videoStats
 
     /** 接收端：每个成员的重组/解码统计，每秒刷新 */
@@ -246,7 +249,7 @@ class ConferenceManager(private val context: Context) {
         val gen = sessionGeneration
         resetTxCounters()
         _error.value = null
-        _videoStats.value = "视频: 准备中…"
+        _videoStats.value = L10n.get(R.string.mgr_conf_video_preparing)
         try {
             connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             synchronized(networkLock) { bindNetworkLocked() }
@@ -272,10 +275,10 @@ class ConferenceManager(private val context: Context) {
             thread(name = "conf-audio-play") { audioPlayLoop(gen) }
             thread(name = "conf-housekeep") { housekeepLoop(gen) }
 
-            _videoStats.value = "视频: 未选择流源"
+            _videoStats.value = L10n.get(R.string.mgr_conf_video_no_source)
             takePendingProjection()
         } catch (t: Throwable) {
-            _error.value = "会议启动失败: ${t.message}"
+            _error.value = L10n.get(R.string.mgr_conf_err_start_failed, t.message.orEmpty())
             stop()
         }
     }
@@ -320,7 +323,7 @@ class ConferenceManager(private val context: Context) {
         _myStream.value = ConfStreamType.NONE
         _rxStats.value = emptyMap()
         _txStats.value = SenderTxStats()
-        _videoStats.value = "视频: 已关闭"
+        _videoStats.value = L10n.get(R.string.mgr_conf_video_off)
         if (activeManager === this) activeManager = null
     }
 
@@ -331,7 +334,7 @@ class ConferenceManager(private val context: Context) {
     /** 切换本机流源：关闭 / 前置 / 后置 / 屏幕。屏幕源仅表达意图，等授权交接后再启动。 */
     fun setStream(type: ConfStreamType) {
         if (!_running.value && type != ConfStreamType.NONE) {
-            _error.value = "未进入会议，无法开启视频源"
+            _error.value = L10n.get(R.string.mgr_conf_err_not_running_stream)
             return
         }
         if (type == requestedStream) return
@@ -348,20 +351,20 @@ class ConferenceManager(private val context: Context) {
         _myStream.value = ConfStreamType.NONE
         _error.value = null
         when (type) {
-            ConfStreamType.NONE -> _videoStats.value = "视频: 已关闭"
+            ConfStreamType.NONE -> _videoStats.value = L10n.get(R.string.mgr_conf_video_off)
             ConfStreamType.CAMERA_FRONT -> {
-                _videoStats.value = "视频: 正在启动前置摄像头…"
+                _videoStats.value = L10n.get(R.string.mgr_conf_video_starting_front)
                 startCameraEncoder(CameraCharacteristics.LENS_FACING_FRONT)
             }
             ConfStreamType.CAMERA_BACK -> {
-                _videoStats.value = "视频: 正在启动后置摄像头…"
+                _videoStats.value = L10n.get(R.string.mgr_conf_video_starting_back)
                 startCameraEncoder(CameraCharacteristics.LENS_FACING_BACK)
             }
             ConfStreamType.SCREEN -> {
                 if (screenProjection == null) {
-                    _videoStats.value = "视频: 等待屏幕授权…（每次共享需系统确认）"
+                    _videoStats.value = L10n.get(R.string.mgr_conf_video_wait_screen_auth)
                 } else {
-                    _videoStats.value = "视频: 正在创建屏幕采集…"
+                    _videoStats.value = L10n.get(R.string.mgr_conf_video_creating_screen)
                     startScreenEncoder()
                 }
             }
@@ -371,7 +374,7 @@ class ConferenceManager(private val context: Context) {
     private fun failStream(gen: Int, message: String) {
         if (gen != encoderGen) return
         _error.value = message
-        _videoStats.value = "视频: $message"
+        _videoStats.value = L10n.get(R.string.mgr_conf_video_with_message, message)
         requestedStream = ConfStreamType.NONE
         _myStream.value = ConfStreamType.NONE
         stopEncoder()
@@ -384,7 +387,7 @@ class ConferenceManager(private val context: Context) {
         try {
             val manager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
             if (manager == null) {
-                failStream(gen, "相机服务不可用")
+                failStream(gen, L10n.get(R.string.mgr_conf_err_camera_unavailable))
                 return
             }
             cameraManager = manager
@@ -392,7 +395,7 @@ class ConferenceManager(private val context: Context) {
                 manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) == facing
             } ?: manager.cameraIdList.firstOrNull()
             if (camId == null) {
-                failStream(gen, "未检测到相机")
+                failStream(gen, L10n.get(R.string.mgr_conf_err_no_camera))
                 return
             }
 
@@ -422,27 +425,33 @@ class ConferenceManager(private val context: Context) {
                                         addTarget(inputSurface)
                                     }
                                     session.setRepeatingRequest(request.build(), null, encHandler)
-                                    val label = if (facing == CameraCharacteristics.LENS_FACING_FRONT) "前置" else "后置"
-                                    encoderLabel = "摄像头 $label"
+                                    encoderLabel = if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                                        L10n.get(R.string.mgr_conf_encoder_front_camera)
+                                    } else {
+                                        L10n.get(R.string.mgr_conf_encoder_back_camera)
+                                    }
                                     _myStream.value = if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
                                         ConfStreamType.CAMERA_FRONT
                                     } else {
                                         ConfStreamType.CAMERA_BACK
                                     }
-                                    _videoStats.value = "视频: $encoderLabel 640×480@15 · 等待首帧"
+                                    _videoStats.value = L10n.get(
+                                        R.string.mgr_conf_video_wait_first_frame,
+                                        encoderLabel,
+                                    )
                                     _error.value = null
                                 } catch (t: Throwable) {
                                     runCatching { session.close() }
-                                    failStream(gen, "相机采集会话启动失败: ${t.message}")
+                                    failStream(gen, L10n.get(R.string.mgr_conf_err_camera_session, t.message.orEmpty()))
                                 }
                             }
 
                             override fun onConfigureFailed(session: CameraCaptureSession) {
                                 runCatching { session.close() }
-                                failStream(gen, "相机编码会话失败")
+                                failStream(gen, L10n.get(R.string.mgr_conf_err_camera_session_generic))
                             }
                         }, encHandler)
-                    }.onFailure { failStream(gen, "相机编码会话失败: ${it.message}") }
+                    }.onFailure { failStream(gen, L10n.get(R.string.mgr_conf_err_camera_session_msg, it.message.orEmpty())) }
                 }
 
                 override fun onDisconnected(cam: CameraDevice) {
@@ -453,18 +462,18 @@ class ConferenceManager(private val context: Context) {
                         // 否则信标仍宣称有前置/后置画面，对端只能看到一个黑格。
                         requestedStream = ConfStreamType.NONE
                         _myStream.value = ConfStreamType.NONE
-                        _videoStats.value = "视频: 相机已断开"
+                        _videoStats.value = L10n.get(R.string.mgr_conf_video_camera_disconnected)
                     }
                 }
 
                 override fun onError(cam: CameraDevice, error: Int) {
                     runCatching { cam.close() }
                     if (cameraDevice === cam) cameraDevice = null
-                    failStream(gen, "相机错误 $error")
+                    failStream(gen, L10n.get(R.string.mgr_conf_err_camera_error, error))
                 }
             }, encHandler)
         } catch (t: Throwable) {
-            failStream(gen, "相机启动失败: ${t.message}")
+            failStream(gen, L10n.get(R.string.mgr_conf_err_camera_start, t.message.orEmpty()))
         }
     }
 
@@ -487,13 +496,13 @@ class ConferenceManager(private val context: Context) {
         if (previous !== null && previous !== projection) runCatching { previous.stop() }
         registerProjectionCallback(projection)
         if (!_running.value) {
-            _videoStats.value = "视频: 屏幕授权已就绪，入会后选择「屏幕」"
+            _videoStats.value = L10n.get(R.string.mgr_conf_video_screen_ready_join)
             return
         }
         if (requestedStream == ConfStreamType.SCREEN) {
             startScreenEncoder()
         } else {
-            _videoStats.value = "视频: 屏幕授权已就绪，选择「屏幕」开始（每次共享需系统确认）"
+            _videoStats.value = L10n.get(R.string.mgr_conf_video_screen_ready_select)
         }
     }
 
@@ -502,14 +511,14 @@ class ConferenceManager(private val context: Context) {
             projection.registerCallback(object : MediaProjection.Callback() {
                 override fun onStop() {
                     if (screenProjection !== projection) return
-                    onScreenCaptureStopped("屏幕共享已结束")
+                    onScreenCaptureStopped(L10n.get(R.string.mgr_conf_video_screen_ended))
                 }
 
                 override fun onCapturedContentResize(width: Int, height: Int) {
                     // Android 14+ 一个授权会话只能 createVirtualDisplay 一次；
                     // 无法无损重建采集尺寸，只能提示重新授权。
                     if (screenProjection !== projection) return
-                    _videoStats.value = "视频: 屏幕内容 ${width}×${height}，如需改变采集分辨率请重新授权"
+                    _videoStats.value = L10n.get(R.string.mgr_conf_video_screen_size, width, height)
                 }
             }, Handler(Looper.getMainLooper()))
         }
@@ -520,13 +529,13 @@ class ConferenceManager(private val context: Context) {
         stopEncoder()
         requestedStream = ConfStreamType.NONE
         _myStream.value = ConfStreamType.NONE
-        _videoStats.value = "视频: $reason"
+        _videoStats.value = L10n.get(R.string.mgr_conf_video_with_message, reason)
     }
 
     private fun startScreenEncoder() {
         val projection = screenProjection
         if (projection == null) {
-            _videoStats.value = "视频: 等待屏幕授权…（每次共享需系统确认）"
+            _videoStats.value = L10n.get(R.string.mgr_conf_video_wait_screen_auth)
             return
         }
         // Android 一个 MediaProjection 授权只能 createVirtualDisplay 一次;
@@ -535,8 +544,8 @@ class ConferenceManager(private val context: Context) {
             screenProjection = null
             projectionVdUsed = false
             runCatching { projection.stop() }
-            _error.value = "该次屏幕授权已用过,请重新选择「屏幕」触发重新授权"
-            _videoStats.value = "视频: 需重新授权"
+            _error.value = L10n.get(R.string.mgr_conf_err_reauth_used)
+            _videoStats.value = L10n.get(R.string.mgr_conf_video_reauth_needed)
             requestedStream = ConfStreamType.NONE
             _myStream.value = ConfStreamType.NONE
             return
@@ -551,17 +560,24 @@ class ConferenceManager(private val context: Context) {
                 inputSurface, null, null,
             )
             if (virtualDisplay == null) {
-                failStream(gen, "屏幕采集创建失败")
+                failStream(gen, L10n.get(R.string.mgr_conf_err_screen_create))
                 return
             }
             projectionVdUsed = true
-            encoderLabel = "屏幕"
+            encoderLabel = L10n.get(R.string.mgr_conf_encoder_screen)
             _myStream.value = ConfStreamType.SCREEN
-            _videoStats.value = "视频: 屏幕 640×480@15 · 等待首帧"
+            _videoStats.value = L10n.get(
+                R.string.mgr_conf_video_wait_first_frame,
+                encoderLabel,
+            )
             _error.value = null
         } catch (t: Throwable) {
-            val hint = if (t is IllegalStateException) "需重新授权（${t.message}）" else t.message
-            failStream(gen, "屏幕采集失败: $hint")
+            val hint = if (t is IllegalStateException) {
+                L10n.get(R.string.mgr_conf_reauth_hint, t.message.orEmpty())
+            } else {
+                t.message.orEmpty()
+            }
+            failStream(gen, L10n.get(R.string.mgr_conf_err_screen_failed, hint))
         }
     }
 
@@ -618,7 +634,7 @@ class ConferenceManager(private val context: Context) {
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) {
                     // 编码器死掉必须复位流状态,否则信标继续宣称有画面,同源按钮还被去重吞掉
                     if (gen == encoderGen) {
-                        failStream(gen, "编码器错误: ${e.message}")
+                        failStream(gen, L10n.get(R.string.mgr_conf_err_encoder_error, e.message.orEmpty()))
                     }
                 }
 
@@ -631,7 +647,7 @@ class ConferenceManager(private val context: Context) {
                         cachedCsd1 = ByteArray(csd1.remaining()).also { csd1.get(it) }
                         broadcastCachedConfig()
                     } catch (t: Throwable) {
-                        _error.value = "CSD 提取失败: ${t.message}"
+                        _error.value = L10n.get(R.string.mgr_conf_err_csd, t.message.orEmpty())
                     }
                 }
             }, encHandler)
@@ -641,7 +657,7 @@ class ConferenceManager(private val context: Context) {
             codecSurface = surface
             surface
         } catch (t: Throwable) {
-            failStream(gen, "编码器启动失败: ${t.message}")
+            failStream(gen, L10n.get(R.string.mgr_conf_err_encoder_start, t.message.orEmpty()))
             null
         }
     }
@@ -723,7 +739,7 @@ class ConferenceManager(private val context: Context) {
         val maxPayload = ConfProtocol.MAX_FRAG - HEADER_LEN
         val fragCount = ((data.size + maxPayload - 1) / maxPayload).coerceAtLeast(1)
         if (fragCount > 255) {
-            _error.value = "帧过大 ${data.size}B（超过 255 分片），已丢弃"
+            _error.value = L10n.get(R.string.mgr_conf_err_frame_too_large, data.size)
             txFailures.incrementAndGet()
             return
         }
@@ -765,12 +781,12 @@ class ConferenceManager(private val context: Context) {
                 if (isIdr) txKeyFrames.incrementAndGet()
                 txLastFrameAtMs = System.currentTimeMillis()
                 if (txFrames.get() == 1L) {
-                    _videoStats.value = "视频: $encoderLabel 640×480@15 · 已发出首帧"
+                    _videoStats.value = L10n.get(R.string.mgr_conf_video_first_frame_sent, encoderLabel)
                 }
             }
         } catch (t: Throwable) {
             txFailures.incrementAndGet()
-            _error.value = "视频发送失败: ${t.message}"
+            _error.value = L10n.get(R.string.mgr_conf_err_video_send, t.message.orEmpty())
         }
     }
 
@@ -921,7 +937,11 @@ class ConferenceManager(private val context: Context) {
                     encoderLabel = encoderLabel,
                 )
                 if (txFrames.get() > 0 && _myStream.value != ConfStreamType.NONE && encoderLabel.isNotEmpty()) {
-                    _videoStats.value = "视频: $encoderLabel 640×480@15 · 已发 ${txFrames.get()} 帧"
+                    _videoStats.value = L10n.get(
+                        R.string.mgr_conf_video_frames_sent,
+                        encoderLabel,
+                        txFrames.get(),
+                    )
                 }
             } catch (_: Throwable) {
             }
@@ -1147,9 +1167,9 @@ class ConferenceManager(private val context: Context) {
         // 端口绑定失败不是“暂时没画面”而是本机网络能力问题，必须如实提示，
         // 否则 UI 只会一直显示等待成员/等待画面。
         if (resolved == null) {
-            _error.value = "未解析到 Wi-Fi 网络接口（已回退系统默认接口）：组播可能不可用，请确认已连接同一 Wi-Fi"
+            _error.value = L10n.get(R.string.mgr_conf_err_wifi_unresolved)
         } else if (videoRecvSocket == null || beaconSocket == null) {
-            _error.value = "局域网端口绑定失败：视频/发现通道不可用（检查端口占用或 Wi-Fi 状态）"
+            _error.value = L10n.get(R.string.mgr_conf_err_port_bind)
         }
     }
 
@@ -1596,7 +1616,7 @@ private class DecoderSlot(private val sourceId: String) {
             val inputIdx = try {
                 c.dequeueInputBuffer(0)
             } catch (t: Throwable) {
-                failCodec("取输入缓冲失败: ${t.message}")
+                failCodec(L10n.get(R.string.mgr_conf_err_input_buffer, t.message.orEmpty()))
                 continue
             }
             if (inputIdx < 0) {
@@ -1616,7 +1636,7 @@ private class DecoderSlot(private val sourceId: String) {
                 drainOutputLocked(c)
                 if (decoderState != "解码中") decoderState = "解码中"
             } catch (t: Throwable) {
-                failCodec("解码失败: ${t.message}")
+                failCodec(L10n.get(R.string.mgr_conf_err_decode, t.message.orEmpty()))
             }
         }
     }
@@ -1627,7 +1647,7 @@ private class DecoderSlot(private val sourceId: String) {
             val outIdx = try {
                 c.dequeueOutputBuffer(info, 0)
             } catch (t: Throwable) {
-                failCodec("解码输出失败: ${t.message}")
+                failCodec(L10n.get(R.string.mgr_conf_err_decode_output, t.message.orEmpty()))
                 return
             }
             if (outIdx == MediaCodec.INFO_TRY_AGAIN_LATER) return
@@ -1696,7 +1716,7 @@ private class DecoderSlot(private val sourceId: String) {
             // configure/start 失败:释放刚创建的实例 —— 否则资源紧张时每帧重试泄漏一个 MediaCodec
             created?.let { runCatching { it.release() } }
             decoderState = "解码器创建失败"
-            lastError = "解码器创建失败: ${t.message}"
+            lastError = L10n.get(R.string.mgr_conf_err_decoder_create, t.message.orEmpty())
         }
     }
 

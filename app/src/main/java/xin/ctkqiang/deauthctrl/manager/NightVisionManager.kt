@@ -17,6 +17,8 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Size
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.nio.ByteBuffer
@@ -47,7 +49,7 @@ data class DetectionStats(
     val inferenceMs: Long = 0,
     val faces: Int = 0,
     val humans: Int = 0,
-    val status: String = "加载中",
+    val status: String = L10n.get(R.string.mgr_nv_status_loading),
     val error: String? = null,
 )
 
@@ -74,22 +76,22 @@ class NightVisionManager(private val context: Context) {
     private val cameraManager = appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
     /** 可用镜头（优先后置） */
-    data class Cam(val id: String, val name: String)
+    data class Cam(val id: String, val name: String, val facing: Int)
 
     val cameras: List<Cam> = buildList {
         runCatching {
             cameraManager.cameraIdList.forEach { id ->
                 val chars = cameraManager.getCameraCharacteristics(id)
-                val facing = chars.get(CameraCharacteristics.LENS_FACING)
+                val facing = chars.get(CameraCharacteristics.LENS_FACING) ?: -1
                 val name = when (facing) {
-                    CameraCharacteristics.LENS_FACING_FRONT -> "前置镜头"
-                    CameraCharacteristics.LENS_FACING_BACK -> "后置镜头"
-                    else -> "外部镜头"
+                    CameraCharacteristics.LENS_FACING_FRONT -> L10n.get(R.string.mgr_nv_lens_front)
+                    CameraCharacteristics.LENS_FACING_BACK -> L10n.get(R.string.mgr_nv_lens_back)
+                    else -> L10n.get(R.string.mgr_nv_lens_external)
                 }
-                add(Cam(id, name))
+                add(Cam(id, name, facing))
             }
         }
-    }.sortedByDescending { it.name == "后置镜头" }
+    }.sortedByDescending { it.facing == CameraCharacteristics.LENS_FACING_BACK }
 
     /** 当前增强帧（Compose Image 直接显示） */
     private val _frame = MutableStateFlow<Bitmap?>(null)
@@ -171,7 +173,7 @@ class NightVisionManager(private val context: Context) {
             stopFlag = false
             _error.value = null
             _tracks.value = emptyList()
-            _stats.value = DetectionStats(status = "加载中")
+            _stats.value = DetectionStats(status = L10n.get(R.string.mgr_nv_status_loading))
             try {
                 val cameraThread = HandlerThread("nv-camera").also { it.start() }
                 threadRef = cameraThread
@@ -186,7 +188,7 @@ class NightVisionManager(private val context: Context) {
                 val map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                 val yuvSizes = map?.getOutputSizes(ImageFormat.YUV_420_888).orEmpty()
                 if (yuvSizes.isEmpty()) {
-                    _error.value = "该镜头不支持 YUV 输出,夜视不可用"
+                    _error.value = L10n.get(R.string.mgr_nv_error_no_yuv)
                     stopLocked()
                     return
                 }
@@ -238,7 +240,7 @@ class NightVisionManager(private val context: Context) {
                             }
 
                             override fun onConfigureFailed(s: CameraCaptureSession) {
-                                _error.value = "夜视会话配置失败"
+                                _error.value = L10n.get(R.string.mgr_nv_error_session_config)
                                 _running.value = false
                             }
                         }, cameraHandler)
@@ -253,7 +255,7 @@ class NightVisionManager(private val context: Context) {
                         cam.close()
                         if (gen == generation) {
                             _running.value = false
-                            _error.value = "相机错误 $error"
+                            _error.value = L10n.get(R.string.mgr_nv_error_camera, error)
                         }
                     }
                 }, cameraHandler)
@@ -282,7 +284,7 @@ class NightVisionManager(private val context: Context) {
         pendingGray.set(null)
         pendingSlot.set(-1)
         _tracks.value = emptyList()
-        _stats.value = DetectionStats(status = "已停止")
+        _stats.value = DetectionStats(status = L10n.get(R.string.mgr_nv_status_stopped))
         _frame.value = null
 
         val oldProcess = processThread
@@ -382,8 +384,8 @@ class NightVisionManager(private val context: Context) {
                     faces = tracks.count { it.kind == "face" && it.confirmed },
                     humans = tracks.count { it.kind == "human" && it.confirmed },
                     status = when (val s = detectorStatus.value) {
-                        DetectorStatus.Ready -> "就绪"
-                        DetectorStatus.Loading -> "加载中"
+                        DetectorStatus.Ready -> L10n.get(R.string.mgr_nv_status_ready)
+                        DetectorStatus.Loading -> L10n.get(R.string.mgr_nv_status_loading)
                         is DetectorStatus.Unavailable -> s.reason
                     },
                     error = frameResult.error,
@@ -396,7 +398,7 @@ class NightVisionManager(private val context: Context) {
         }
         _stats.value = DetectionStats(status = if (detectorStatus.value is DetectorStatus.Unavailable) {
             (detectorStatus.value as DetectorStatus.Unavailable).reason
-        } else "已停止")
+        } else L10n.get(R.string.mgr_nv_status_stopped))
     }
 
     /**

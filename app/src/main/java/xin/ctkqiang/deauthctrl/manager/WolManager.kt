@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -89,7 +92,7 @@ class WolManager {
                     it.copy(
                         sending = false,
                         sent = false,
-                        lastResult = "[!] MAC 格式无效 —— 支持 aa:bb:cc:dd:ee:ff、aa-bb-cc-dd-ee-ff 或 12 位十六进制",
+                        lastResult = L10n.get(R.string.mgr_wol_invalid_mac),
                     )
                 }
                 return@launch
@@ -98,7 +101,7 @@ class WolManager {
             val packet = magicPacket(normalized)
             if (packet == null) {
                 _state.update {
-                    it.copy(sending = false, sent = false, lastResult = "[!] 魔术包构建失败 —— MAC 地址无法解析")
+                    it.copy(sending = false, sent = false, lastResult = L10n.get(R.string.mgr_wol_packet_failed))
                 }
                 return@launch
             }
@@ -142,15 +145,20 @@ class WolManager {
             val ports = if (alsoPort7) "9 / 7" else "9"
             val lastResult = when {
                 success == 0 ->
-                    "[!] 发送失败 —— " + (failures.firstOrNull() ?: "所有广播地址均不可达")
+                    L10n.get(R.string.mgr_wol_send_failed, failures.firstOrNull() ?: L10n.get(R.string.mgr_wol_all_unreachable))
 
                 failures.isNotEmpty() ->
-                    "[!] 部分发送失败 ${failures.size}/${targets.size}：${failures.joinToString("；")}；" +
-                        "已成功 $success 个。端口 $ports。"
+                    L10n.get(
+                        R.string.mgr_wol_partial,
+                        failures.size,
+                        targets.size,
+                        failures.joinToString(L10n.get(R.string.mgr_wol_failure_separator)),
+                        success,
+                        ports,
+                    )
 
                 else ->
-                    "已发送 102 B 魔术包 × $success → $normalized（广播地址 ${targets.size} 个，端口 $ports）。" +
-                        "UDP 无回执，无法确认目标是否唤醒。"
+                    L10n.get(R.string.mgr_wol_sent, success, normalized, targets.size, ports)
             }
 
             _state.update {

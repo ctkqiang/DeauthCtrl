@@ -177,4 +177,105 @@
     <string name="home_dbview_desc">SQLite 信号情报库 · 刷新注入</string>
     <string name="home_conference_name">局域网会议</string>
     <string name="home_conference_desc">多方视频 · 屏幕/摄像头 · PTT 语音</string>
+
+    <!-- ─── 法律免责声明 ─── -->
+    <string name="disc_title">法律警告</string>
+    <string name="disc_body">本应用仅供授权安全研究与教育用途。\n\n真实能力清单（UI 不夸大平台做不到的事）：\n\n▸ Wi-Fi：只能创建「本机」SoftAP 热点 / 轮换本机热点\n  SSID。不会发送 deauth / beacon 帧注入，不会断开\n  他人的连接；启动热点还可能中断本机 Wi-Fi。\n▸ BLE：只广播伪造厂商广告，可能让附近设备显示配对\n  或连续性提示，不能压制、不能断开设备；效果取决于\n  接收端的系统与版本。\n▸ 蓝牙发现：只是本机扫描附近经典蓝牙设备，不会干扰\n  其他设备。\n▸ 802.11 帧注入 / 去认证需要 root + 特定芯片与固件。\n  应用会在使用时检测能力，检测不通过会明确提示「当前\n  系统不支持」，不会提供可执行的假象。\n\n使用本应用即表示您确认：\n\n▸ 干扰不属于您的网络或设备是违法行为\n▸ 请仅在您拥有或已获得书面授权的环境中测试\n▸ 开发者对因滥用本工具造成的损害不承担任何责任\n\n请负责任地使用。</string>
+    <string name="disc_confirm">我已知晓，继续</string>
+    <string name="disc_restricted">仅限授权使用</string>
+
+    <!-- ─── 操作员注册 ─── -->
+    <string name="op_register_title">操作员注册</string>
+    <string name="op_register_desc">首次启动 · 请设置你的呼号\n用于相机署名、对讲与终端识别</string>
+    <string name="op_callsign_label">呼号 CALLSIGN</string>
+    <string name="op_callsign_placeholder">输入呼号（如 007）</string>
+    <string name="op_confirm">确 认 加 入</string>
+    <string name="op_skip">暂不设置 · 使用默认呼号 ▸</string>
+    <string name="op_footer">DeauthCtrl · 战术终端</string>
+
+    <!-- ─── 启动自检 / BootSequence ─── -->
+    <string name="boot_check_authz">作战授权</string>
+    <string name="boot_check_all_granted">全部已授予</string>
+    <string name="boot_check_missing">缺 %1$d 项，相关功能不可用</string>
+    <string name="boot_check_radio">短波通讯</string>
+    <string name="boot_check_no_bt">此设备没有蓝牙硬件</string>
+    <string name="boot_check_ready">已就绪</string>
+    <string name="boot_check_bt_off">已关闭，BLE 功能需先开启</string>
+    <string name="boot_check_recon">电子侦察授权</string>
+    <string name="boot_check_granted">已授予</string>
+    <string name="boot_check_no_scan">未授予，BLE 嗅探不可用</string>
+    <string name="boot_check_link">战地链路</string>
+    <string name="boot_check_no_net">无活动网络，局域网功能受限</string>
+    <string name="boot_check_link_up">%1$s 在线</string>
+    <string name="boot_check_mem">战术内存</string>
+    <string name="boot_check_low">%1$s（偏低）</string>
+    <string name="boot_check_storage">储备空间</string>
+    <string name="boot_check_free">%1$s 可用</string>
+    <string name="boot_preview_mode">预览模式</string>
+    <string name="boot_title">哪吒网络安全终端 · 全息战术系统</string>
+    <string name="boot_auth_line">TACTICAL BOOT SEQUENCE // AUTH: 授权安全研究</string>
+    <string name="boot_deploy_warn">&gt; 部署警告 — %1$d 项异常，%2$d 项警告</string>
+    <string name="boot_deploy_ready">&gt; 部署就绪 — %1$d 项警告</string>
+    <string name="boot_sys_ready">&gt; 系统就绪 — 全息终端待命</string>
+    <string name="boot_footer">中国红客 · 国产自主 · 安全可控</string>
+    <string name="boot_log_encryption">链路加密已建立 · AES-256</string>
+    <string name="boot_log_selfcheck">战术终端自检中</string>
+    <string name="boot_log_array">信号侦测阵列上线</string>
+    <string name="boot_log_projection">全息投影校准</string>
+    <string name="boot_log_network">战术网络待命</string>
+    <string name="boot_log_gyro">陀螺仪航向锁定</string>
+
+    <!-- ─── 错误贴纸 ─── -->
+    <string name="error_sticker_desc">错误贴纸</string>
+
+    <!-- ─── 对讲机通知 ─── -->
+    <string name="notif_walkie_title">WiFi 对讲机</string>
+    <string name="notif_walkie_tx">发送中...</string>
+    <string name="notif_walkie_rx">正在监听</string>
+    <string name="notif_walkie_stop_talk">停止说话</string>
+    <string name="notif_walkie_close">关闭</string>
+    <string name="notif_walkie_channel_desc">对讲机前台服务</string>
+
+    <!-- ─── 权限请求页 ─── -->
+    <string name="perm_nearby_scan">附近设备 · 扫描</string>
+    <string name="perm_nearby_scan_desc">发现并列出附近的 BLE 设备</string>
+    <string name="perm_nearby_connect">附近设备 · 连接</string>
+    <string name="perm_nearby_connect_desc">读取设备名称与已配对信息</string>
+    <string name="perm_nearby_advertise">附近设备 · 广播</string>
+    <string name="perm_nearby_advertise_desc">BLE 广播相关功能</string>
+    <string name="perm_nearby_wifi">附近 Wi-Fi 设备</string>
+    <string name="perm_nearby_wifi_desc">Android 13+ 创建本机热点（LocalOnlyHotspot）必需；不会注入 802.11 帧</string>
+    <string name="perm_location">位置信息</string>
+    <string name="perm_location_desc">WiFi/BLE 扫描与基站定位依赖此项</string>
+    <string name="perm_mic">麦克风</string>
+    <string name="perm_mic_desc">对讲机语音 · 语音频谱 · 超声监测</string>
+    <string name="perm_camera">相机</string>
+    <string name="perm_camera_desc">战术相机 · 夜视 · 加密拍摄 · 闪光灯发报</string>
+    <string name="perm_phone_state">电话状态</string>
+    <string name="perm_phone_state_desc">读取附近基站 CellInfo 做 GSM 基站定位</string>
+    <string name="perm_notifications">通知</string>
+    <string name="perm_notifications_desc">照片接收与前台服务的系统通知</string>
+    <string name="perm_activity">身体活动</string>
+    <string name="perm_activity_desc">步测归航:计步传感器读取步数</string>
+    <string name="perm_subtitle">&gt; 战前授权 · 授予所需权限</string>
+    <string name="perm_status_ready">权限已齐备</string>
+    <string name="perm_status_missing">还需 %1$d 项权限</string>
+    <string name="perm_item_all">全部已授予</string>
+    <string name="perm_item_all_desc">可以进入主界面</string>
+    <string name="perm_btn_enter">[ 进入主界面 ]</string>
+    <string name="perm_btn_grant">[ 授予权限 ]</string>
+    <string name="perm_btn_settings">[ 去系统设置授权 ]</string>
+    <string name="perm_btn_skip">[ 跳过 —— 蓝牙与 WiFi 功能将不可用 ]</string>
+    <string name="perm_footer">哪吒网络安全终端 · 仅供授权安全研究使用</string>
+
+    <!-- ─── 共享组件 ─── -->
+    <string name="common_back">‹ 返回</string>
+    <string name="common_enter_arrow">进入 ›</string>
+    <string name="common_log_title">战地日志</string>
+    <string name="common_clear">清空</string>
+    <string name="warn_banner">仅供授权实验室测试使用。请勿用于非您拥有的设备。</string>
+
+    <!-- ─── 预览降级提示 ─── -->
+    <string name="preview_needs_services">%1$s 需要系统服务</string>
+    <string name="preview_switch_to_device">请切换到真机预览（Preview on device）\n即可查看完整界面</string>
 </resources>

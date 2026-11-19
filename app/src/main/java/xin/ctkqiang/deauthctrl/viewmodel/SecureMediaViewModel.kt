@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.SecureMediaEntry
 import xin.ctkqiang.deauthctrl.manager.SecureMediaManager
 import java.io.File
@@ -44,7 +46,7 @@ class SecureMediaViewModel(application: Application) : AndroidViewModel(applicat
             pendingFile = file
             val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
             Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply { putExtra(MediaStore.EXTRA_OUTPUT, uri); addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-        } catch (e: Exception) { _error.value = "相机: ${e.message}"; null }
+        } catch (e: Exception) { _error.value = L10n.get(R.string.vm_vault_camera_error, e.message ?: ""); null }
     }
 
     fun createVideoIntent(): Intent? {
@@ -54,13 +56,13 @@ class SecureMediaViewModel(application: Application) : AndroidViewModel(applicat
             pendingFile = file
             val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
             Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply { putExtra(MediaStore.EXTRA_OUTPUT, uri); addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-        } catch (e: Exception) { _error.value = "录像: ${e.message}"; null }
+        } catch (e: Exception) { _error.value = L10n.get(R.string.vm_vault_video_error, e.message ?: ""); null }
     }
 
     fun onMediaCaptured() {
         val file = pendingFile ?: return
         pendingFile = null
-        if (!file.exists() || file.length() == 0L) { _error.value = "未拍摄到内容"; file.delete(); return }
+        if (!file.exists() || file.length() == 0L) { _error.value = L10n.get(R.string.vm_vault_no_capture); file.delete(); return }
         val type = if (file.name.contains("photo")) "photo" else "video"
         encryptFile(file, type)
     }
@@ -70,7 +72,7 @@ class SecureMediaViewModel(application: Application) : AndroidViewModel(applicat
             val pwd = _passphrase.value.trim()
             val entry = withContext(Dispatchers.IO) { manager.encryptAndSave(file, pwd, type) }
             if (entry != null) { _entries.value = manager.getEntries(); _error.value = null }
-            else _error.value = "加密失败"
+            else _error.value = L10n.get(R.string.vm_vault_encrypt_failed)
         }
     }
 
@@ -105,7 +107,7 @@ class SecureMediaViewModel(application: Application) : AndroidViewModel(applicat
                 prepare(); start()
             }
             _isRecording.value = true
-        } catch (e: Exception) { _error.value = "录音失败: ${e.message}" }
+        } catch (e: Exception) { _error.value = L10n.get(R.string.vm_vault_record_failed, e.message ?: "") }
     }
 
     fun stopRecording() {
@@ -117,7 +119,7 @@ class SecureMediaViewModel(application: Application) : AndroidViewModel(applicat
     fun decrypt(entry: SecureMediaEntry) {
         val file = manager.decryptToTemp(entry, _passphrase.value.trim())
         if (file != null) _decryptedFile.value = file
-        else _error.value = "密码错误或文件损坏"
+        else _error.value = L10n.get(R.string.vm_vault_bad_password)
     }
 
     fun delete(entry: SecureMediaEntry) { manager.delete(entry); _entries.value = manager.getEntries(); _decryptedFile.value = null }

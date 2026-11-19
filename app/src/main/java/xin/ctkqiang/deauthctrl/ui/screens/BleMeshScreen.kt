@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +39,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.BleMeshManager
 import xin.ctkqiang.deauthctrl.manager.BleMeshMessage
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
@@ -101,7 +103,7 @@ fun BleMeshScreen(back: () -> Unit) {
             .navigationBarsPadding()
             .imePadding(),
     ) {
-        TerminalHeader("网格聊天 · BLE MESH", back)
+        TerminalHeader(stringResource(R.string.mesh_title), back)
 
         // ── 状态条：在线节点 / 已收消息 / 中继次数 ──────────────────────────
         Surface(
@@ -117,17 +119,17 @@ fun BleMeshScreen(back: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     StatChip(
-                        "在线节点",
+                        stringResource(R.string.mesh_stat_peers),
                         state.peers.size.toString(),
                         active = state.running && state.peers.isNotEmpty(),
                     )
-                    StatChip("已收消息", state.receivedCount.toString(), active = state.running)
-                    StatChip("中继次数", state.relayedCount.toString(), active = state.running)
+                    StatChip(stringResource(R.string.mesh_stat_received), state.receivedCount.toString(), active = state.running)
+                    StatChip(stringResource(R.string.mesh_stat_relayed), state.relayedCount.toString(), active = state.running)
                 }
                 Spacer(Modifier.height(6.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "本机 ID",
+                        stringResource(R.string.mesh_my_id),
                         fontFamily = Sans, fontSize = 9.sp, color = Gray,
                         modifier = Modifier.width(44.dp),
                     )
@@ -137,7 +139,7 @@ fun BleMeshScreen(back: () -> Unit) {
                         color = Gold, modifier = Modifier.weight(1f),
                     )
                     Text(
-                        "载荷预算 ${state.payloadBudget}B",
+                        stringResource(R.string.mesh_payload_budget, state.payloadBudget),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                 }
@@ -169,15 +171,15 @@ fun BleMeshScreen(back: () -> Unit) {
 
         // ── 在线节点 ──────────────────────────────────────────────────────
         TermPanel(
-            "在线节点 · PEERS",
+            stringResource(R.string.mesh_panel_peers),
             Modifier.padding(horizontal = 12.dp).padding(bottom = 8.dp),
         ) {
             if (state.peers.isEmpty()) {
                 Text(
                     if (state.running) {
-                        "监听中 —— 附近运行本模块的设备会在 8 秒窗口内出现在这里"
+                        stringResource(R.string.mesh_peers_empty_running)
                     } else {
-                        "网格未运行 —— 启动后最近 8 秒听到的节点会显示在这里"
+                        stringResource(R.string.mesh_peers_empty_stopped)
                     },
                     fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                 )
@@ -200,8 +202,11 @@ fun BleMeshScreen(back: () -> Unit) {
                                     fontWeight = FontWeight.Bold, color = Gold,
                                 )
                                 Text(
-                                    "${peer.rssi} dBm · ${ageSec}s · " +
-                                        (if (peer.hops == 0) "直连" else "${peer.hops} 跳"),
+                                    if (peer.hops == 0) {
+                                        stringResource(R.string.mesh_peer_direct, peer.rssi, ageSec)
+                                    } else {
+                                        stringResource(R.string.mesh_peer_hops, peer.rssi, ageSec, peer.hops)
+                                    },
                                     fontFamily = Mono, fontSize = 8.sp, color = Gray,
                                 )
                             }
@@ -213,15 +218,15 @@ fun BleMeshScreen(back: () -> Unit) {
 
         // ── 消息流（最新在上）─────────────────────────────────────────────
         TermPanel(
-            "消息流 · MESH LOG",
+            stringResource(R.string.mesh_panel_log),
             Modifier.weight(1f).padding(horizontal = 12.dp),
         ) {
             if (state.messages.isEmpty()) {
                 Text(
                     if (state.running) {
-                        "等待消息 —— 附近运行本模块的设备会互相转发广播；本机发送的消息也会出现在这里"
+                        stringResource(R.string.mesh_log_empty_running)
                     } else {
-                        "未运行 —— 启动后收到的消息会按时间倒序显示在这里"
+                        stringResource(R.string.mesh_log_empty_stopped)
                     },
                     fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
                 )
@@ -238,18 +243,18 @@ fun BleMeshScreen(back: () -> Unit) {
         }
 
         // ── 发射与启停 ────────────────────────────────────────────────────
-        TermPanel("发射 · MESH TX", Modifier.padding(12.dp)) {
+        TermPanel(stringResource(R.string.mesh_panel_tx), Modifier.padding(12.dp)) {
             TermInput(
-                "消息内容",
+                stringResource(R.string.mesh_input_label),
                 input,
-                placeholder = "18 字以内 · 明文广播 · 无回执",
+                placeholder = stringResource(R.string.mesh_input_placeholder),
             ) { value ->
                 input = value.take(MESH_INPUT_LIMIT)
             }
             Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "${input.length}/${BleMeshManager.MAX_MESSAGE_CHARS} 字",
+                    stringResource(R.string.mesh_char_count, input.length, BleMeshManager.MAX_MESSAGE_CHARS),
                     fontFamily = Mono, fontSize = 9.sp,
                     color = when {
                         input.length > BleMeshManager.MAX_MESSAGE_CHARS -> Warn
@@ -258,7 +263,7 @@ fun BleMeshScreen(back: () -> Unit) {
                     },
                 )
                 Spacer(Modifier.weight(1f))
-                GhostButton("发送") {
+                GhostButton(stringResource(R.string.mesh_send)) {
                     val body = input.trim()
                     if (body.isNotEmpty()) {
                         // 未运行时自动启动；启动失败则不吞掉输入
@@ -269,7 +274,7 @@ fun BleMeshScreen(back: () -> Unit) {
             }
             if (input.length > BleMeshManager.MAX_MESSAGE_CHARS) {
                 Text(
-                    "[!] 超出 ${BleMeshManager.MAX_MESSAGE_CHARS} 字上限，发送时将截断",
+                    stringResource(R.string.mesh_over_limit, BleMeshManager.MAX_MESSAGE_CHARS),
                     fontFamily = Sans, fontSize = 8.sp, color = Warn,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -277,33 +282,30 @@ fun BleMeshScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             ActionButton(
                 running = state.running,
-                runLabel = "启动网格",
-                stopLabel = "停止网格",
+                runLabel = stringResource(R.string.mesh_start),
+                stopLabel = stringResource(R.string.mesh_stop),
             ) {
                 if (state.running) vm.stop() else vm.start()
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "广播包共 31B：协议头 MESH|ID|seq|ttl| 占 16-19B，文本实际只剩约 5-8B" +
-                    "（ASCII 约 5-8 字，中文 1-3 字）；输入上限 18 字，发送时按字节截断。",
+                stringResource(R.string.mesh_note_packet),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
             )
             Text(
-                "典型距离 10-50m（开阔地、无遮挡）；TTL 初始 2，消息最多再经 2 跳，" +
-                    "每台设备对同一条消息只中继一次。",
+                stringResource(R.string.mesh_note_distance),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
             )
             Text(
-                "全程明文广播、无加密、无鉴权、无送达回执：范围内任何 BLE 扫描器都能读到内容。",
+                stringResource(R.string.mesh_note_plaintext),
                 fontFamily = Sans, fontSize = 8.sp, color = Danger, lineHeight = 11.sp,
             )
             Text(
-                "发送为 3 轮 × 1 秒广播窗口，速率约 3 秒/条；中继消息的 RSSI 是转发节点到本机的信号，" +
-                    "不代表原始发送者的距离。",
+                stringResource(R.string.mesh_note_tx),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
             )
             Text(
-                "节点 8 秒无广播视为离线；本机 ID 由随机字母数字生成并持久化，不来自硬件标识。",
+                stringResource(R.string.mesh_note_offline),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
             )
         }
@@ -326,13 +328,13 @@ private fun MeshMessageRow(message: BleMeshMessage, timeFormat: SimpleDateFormat
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (message.isMine) "ME" else message.sender,
+                if (message.isMine) stringResource(R.string.mesh_me) else message.sender,
                 fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 color = senderColor,
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                if (message.hops == 0) "直连" else "${message.hops} 跳",
+                if (message.hops == 0) stringResource(R.string.mesh_row_direct) else stringResource(R.string.mesh_row_hops, message.hops),
                 fontFamily = Mono, fontSize = 8.sp, color = Gray,
             )
             Spacer(Modifier.weight(1f))
@@ -349,7 +351,7 @@ private fun MeshMessageRow(message: BleMeshMessage, timeFormat: SimpleDateFormat
         }
         Spacer(Modifier.height(2.dp))
         Text(
-            if (message.isMine) "[ME] ${message.text}" else "[${message.sender}] ${message.text}",
+            if (message.isMine) stringResource(R.string.mesh_mine_message, message.text) else stringResource(R.string.mesh_peer_message, message.sender, message.text),
             fontFamily = Sans, fontSize = 12.sp, color = White, lineHeight = 16.sp,
         )
     }

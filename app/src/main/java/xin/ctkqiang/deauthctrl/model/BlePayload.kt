@@ -1,63 +1,68 @@
 package xin.ctkqiang.deauthctrl.model
 
+import androidx.annotation.StringRes
+import xin.ctkqiang.deauthctrl.R
+
 /**
  * BLE 广播载荷协议(参照 Flipper Zero BLE Spam 的公开载荷结构)
  *
  * 每个协议对应一类真实设备的广播模板。厂商 ID 采用蓝牙 SIG 公开
  * 分配表(Apple 0x004C / Microsoft 0x0006 / Google 0x00E0 / Samsung 0x0075)。
  * 载荷结构来自 Flipper Zero 固件公开源码,用于授权安全研究与协议学习。
+ *
+ * 显示名与描述为资源 id(中英双语):UI 用 stringResource,非 UI 层用 L10n.get。
  */
 enum class BlePayloadProfile(
-    val displayName: String,
-    val description: String,
+    @StringRes val displayNameRes: Int,
+    @StringRes val descriptionRes: Int,
 ) {
     APPLE_CONTINUITY(
-        displayName = "苹果连续性",
-        description = "伪造 AirDrop/Handoff/AirPods 近距离广播"
+        displayNameRes = R.string.payload_name_apple_continuity,
+        descriptionRes = R.string.payload_desc_apple_continuity,
     ),
     AIRPODS(
-        displayName = "AirPods 弹窗",
-        description = "伪造 AirPods 配对弹窗广播"
+        displayNameRes = R.string.payload_name_airpods,
+        descriptionRes = R.string.payload_desc_airpods,
     ),
     IOS_LOCK_SCREEN(
-        displayName = "iOS 锁屏弹窗",
-        description = "AppleTV 名称前缀伪装,附近 iPhone 弹设备窗口"
+        displayNameRes = R.string.payload_name_ios_lock_screen,
+        descriptionRes = R.string.payload_desc_ios_lock_screen,
     ),
     APPLE_ACTION(
-        displayName = "苹果动作消息",
-        description = "伪装 Apple 快捷动作,附近 iPhone 弹通知横幅"
+        displayNameRes = R.string.payload_name_apple_action,
+        descriptionRes = R.string.payload_desc_apple_action,
     ),
     CRASH_SAFARI(
-        displayName = "Safari 历史崩溃包",
-        description = "历史 iOS Safari 崩溃广播(现代 iOS 已修复,仅协议研究)"
+        displayNameRes = R.string.payload_name_crash_safari,
+        descriptionRes = R.string.payload_desc_crash_safari,
     ),
     ANDROID_DEVICE(
-        displayName = "Android 设备伪装",
-        description = "Fast Pair 变体,伪装安卓设备广播"
+        displayNameRes = R.string.payload_name_android_device,
+        descriptionRes = R.string.payload_desc_android_device,
     ),
     MICROSOFT_SWIFT_PAIR(
-        displayName = "微软 Swift Pair",
-        description = "伪造 Windows 外设配对广播"
+        displayNameRes = R.string.payload_name_swift_pair,
+        descriptionRes = R.string.payload_desc_swift_pair,
     ),
     GOOGLE_FAST_PAIR(
-        displayName = "谷歌 Fast Pair",
-        description = "伪造 Fast Pair 设备广播"
+        displayNameRes = R.string.payload_name_fast_pair,
+        descriptionRes = R.string.payload_desc_fast_pair,
     ),
     SAMSUNG_SMARTTHINGS(
-        displayName = "三星 SmartThings",
-        description = "伪造三星配件广播"
+        displayNameRes = R.string.payload_name_smartthings,
+        descriptionRes = R.string.payload_desc_smartthings,
     ),
     GENERIC_RANDOM(
-        displayName = "通用随机压力",
-        description = "测试厂商 ID 下的全随机载荷(协议压力测试)"
+        displayNameRes = R.string.payload_name_generic_random,
+        descriptionRes = R.string.payload_desc_generic_random,
     ),
     FLIPPER_STYLE(
-        displayName = "Flipper 风格泛洪",
-        description = "轮换多种伪造厂商广播模式"
+        displayNameRes = R.string.payload_name_flipper_style,
+        descriptionRes = R.string.payload_desc_flipper_style,
     ),
     ALL(
-        displayName = "全部协议 (轮换)",
-        description = "依次轮换所有可用协议"
+        displayNameRes = R.string.payload_name_all_rotate,
+        descriptionRes = R.string.payload_desc_all_rotate,
     );
 }
 

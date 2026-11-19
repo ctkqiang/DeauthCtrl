@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,15 +45,6 @@ data class GnssSkyState(
     val gpsEnabled: Boolean = false,
     val error: String? = null,
 )
-
-/** 定位总开关关闭时的原因(页面统一加 [!] 前缀展示) */
-private const val GPS_OFF_ERROR = "定位服务已关闭 —— 请在系统设置中开启「位置信息」,GNSS 才有卫星数据"
-
-/** 缺少精确位置权限 */
-private const val PERMISSION_ERROR = "缺少「位置信息」权限 —— 请到系统设置授予「精确位置」后重试"
-
-/** Android 7.0 以下没有 GnssStatus 回调 */
-private const val LEGACY_ERROR = "系统版本低于 Android 7.0 —— 无 GnssStatus 卫星回调,无法绘制天图"
 
 /**
  * GNSS 星座天图管理器 —— LocationManager.registerGnssStatusCallback 的真实卫星数据
@@ -102,20 +95,20 @@ class GnssSkyManager(private val context: Context) {
         if (!hasPermission) {
             _state.value = GnssSkyState(
                 gpsEnabled = locationManager?.let { gpsSwitchOn(it) } ?: false,
-                error = PERMISSION_ERROR,
+                error = L10n.get(R.string.mgr_gnss_error_permission),
             )
             return
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             _state.value = GnssSkyState(
                 gpsEnabled = locationManager?.let { gpsSwitchOn(it) } ?: false,
-                error = LEGACY_ERROR,
+                error = L10n.get(R.string.mgr_gnss_error_legacy),
             )
             return
         }
         val lm = locationManager
         if (lm == null) {
-            _state.value = GnssSkyState(error = "设备未提供定位服务 —— 无法读取 GNSS 状态")
+            _state.value = GnssSkyState(error = L10n.get(R.string.mgr_gnss_no_service))
             return
         }
 
@@ -123,7 +116,7 @@ class GnssSkyManager(private val context: Context) {
         val gpsOn = gpsSwitchOn(lm)
         _state.value = GnssSkyState(
             gpsEnabled = gpsOn,
-            error = if (gpsOn) null else GPS_OFF_ERROR,
+            error = if (gpsOn) null else L10n.get(R.string.mgr_gnss_error_gps_off),
         )
 
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -135,7 +128,7 @@ class GnssSkyManager(private val context: Context) {
             while (isActive) {
                 val on = gpsSwitchOn(lm)
                 val cur = _state.value
-                val newError = callbackError ?: if (on) null else GPS_OFF_ERROR
+                val newError = callbackError ?: if (on) null else L10n.get(R.string.mgr_gnss_error_gps_off)
                 if (cur.gpsEnabled != on || cur.error != newError) {
                     _state.value = cur.copy(gpsEnabled = on, error = newError)
                 }
@@ -174,7 +167,7 @@ class GnssSkyManager(private val context: Context) {
                 val on = gpsSwitchOn(lm)
                 val sats = parse(status)
                 if (sats.isEmpty()) {
-                    lastEmptyReason = "未捕获卫星信号 —— 室内或 GNSS 被遮挡时回调星数为 0;请到开阔天空/窗边测试"
+                    lastEmptyReason = L10n.get(R.string.mgr_gnss_empty_reason)
                 } else {
                     lastEmptyReason = null
                 }
@@ -184,7 +177,7 @@ class GnssSkyManager(private val context: Context) {
                     updatedAtMs = System.currentTimeMillis(),
                     gpsEnabled = on,
                     error = when {
-                        !on -> GPS_OFF_ERROR
+                        !on -> L10n.get(R.string.mgr_gnss_error_gps_off)
                         callbackError != null -> callbackError
                         sats.isEmpty() -> lastEmptyReason
                         else -> null
@@ -203,12 +196,15 @@ class GnssSkyManager(private val context: Context) {
                 lm.registerGnssStatusCallback(cb)
             }
         }.getOrElse { t ->
-            callbackError = "注册 GNSS 状态回调失败: ${t.message ?: t.javaClass.simpleName}"
+            callbackError = L10n.get(
+                R.string.mgr_gnss_register_failed,
+                t.message ?: t.javaClass.simpleName,
+            )
             false
         }
         if (!ok) {
             if (callbackError == null) {
-                callbackError = "系统拒绝注册 GNSS 状态回调 —— 请确认定位权限与 GNSS 硬件可用"
+                callbackError = L10n.get(R.string.mgr_gnss_register_rejected)
             }
             _state.value = _state.value.copy(error = callbackError)
         }

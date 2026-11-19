@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -78,7 +81,7 @@ class VoiceSdrManager(private val context: Context) {
                 )
                 recordRef = record
                 if (record.state != AudioRecord.STATE_INITIALIZED) {
-                    _error.value = "麦克风初始化失败（可能被其他应用占用）"
+                    _error.value = L10n.get(R.string.mgr_sdr_mic_init_failed)
                     return@thread
                 }
                 record.startRecording()

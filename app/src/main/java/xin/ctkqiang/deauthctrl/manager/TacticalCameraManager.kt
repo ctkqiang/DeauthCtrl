@@ -15,6 +15,8 @@ import android.os.HandlerThread
 import android.util.Size
 import android.view.Surface
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.concurrent.thread
@@ -41,7 +43,12 @@ data class CapturedShot(
 class TacticalCameraManager(private val context: Context) {
 
     /** 相机清单：id → 名称 + 最大 JPEG 尺寸 */
-    data class CameraInfo(val id: String, val name: String, val maxJpegSize: Size)
+    data class CameraInfo(
+        val id: String,
+        val name: String,
+        val maxJpegSize: Size,
+        val facing: Int,
+    )
 
     private val cameraManager =
         context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -50,20 +57,22 @@ class TacticalCameraManager(private val context: Context) {
         runCatching {
             cameraManager.cameraIdList.forEach { id ->
                 val chars = cameraManager.getCameraCharacteristics(id)
-                val facing = chars.get(CameraCharacteristics.LENS_FACING)
+                val facing = chars.get(CameraCharacteristics.LENS_FACING) ?: -1
                 val map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                     ?: return@forEach
                 val maxJpeg = map.getOutputSizes(ImageFormat.JPEG)
                     ?.maxByOrNull { it.width.toLong() * it.height } ?: Size(640, 480)
                 val name = when (facing) {
-                    CameraCharacteristics.LENS_FACING_FRONT -> "前置镜头"
-                    CameraCharacteristics.LENS_FACING_BACK -> "后置镜头"
-                    else -> "外部镜头"
+                    CameraCharacteristics.LENS_FACING_FRONT ->
+                        L10n.get(R.string.mgr_taccam_lens_front)
+                    CameraCharacteristics.LENS_FACING_BACK ->
+                        L10n.get(R.string.mgr_taccam_lens_back)
+                    else -> L10n.get(R.string.mgr_taccam_lens_external)
                 }
-                add(CameraInfo(id, name, maxJpeg))
+                add(CameraInfo(id, name, maxJpeg, facing))
             }
         }
-    }.sortedByDescending { it.name == "后置镜头" }
+    }.sortedByDescending { it.facing == CameraCharacteristics.LENS_FACING_BACK }
 
     /** 当前工作线程（Camera2 回调必须在专用 Handler 上） */
     private var cameraThread: HandlerThread? = null
@@ -135,7 +144,7 @@ class TacticalCameraManager(private val context: Context) {
                     if (gen == openGen) {
                         device = null
                         _opened.value = false
-                        _lastError.value = "相机错误 code=$error"
+                        _lastError.value = L10n.get(R.string.mgr_taccam_camera_error, error)
                     }
                 }
             }, cameraHandler)
@@ -165,7 +174,9 @@ class TacticalCameraManager(private val context: Context) {
                 }
 
                 override fun onConfigureFailed(s: CameraCaptureSession) {
-                    if (gen == openGen) _lastError.value = "预览会话配置失败"
+                    if (gen == openGen) {
+                        _lastError.value = L10n.get(R.string.mgr_taccam_session_config_failed)
+                    }
                 }
             }, cameraHandler)
         } catch (t: Throwable) {
@@ -174,7 +185,10 @@ class TacticalCameraManager(private val context: Context) {
             if (gen == openGen) {
                 device = null
                 _opened.value = false
-                _lastError.value = "预览会话创建失败: ${t.message}"
+                _lastError.value = L10n.get(
+                    R.string.mgr_taccam_session_create_failed,
+                    t.message ?: t.javaClass.simpleName,
+                )
             }
         }
     }
@@ -196,12 +210,12 @@ class TacticalCameraManager(private val context: Context) {
      */
     fun sendPending(targets: List<PhotoTarget>, senderName: String) {
         val shot = _pendingShot.value ?: run {
-            _lastError.value = "没有待发送的照片 —— 先拍摄"
+            _lastError.value = L10n.get(R.string.mgr_taccam_no_pending_photo)
             return
         }
         val uniqueTargets = targets.distinctBy { it.ip to it.port }
         if (uniqueTargets.isEmpty()) {
-            _lastError.value = "没有可发送的目标 —— 等待同网段设备上线"
+            _lastError.value = L10n.get(R.string.mgr_taccam_no_targets)
             return
         }
         thread(name = "photo-send") {
@@ -230,18 +244,31 @@ class TacticalCameraManager(private val context: Context) {
                 runCatching { worker.join(20_000) }
             }
             val finished = results.mapIndexed { index, r ->
-                r ?: SendResult(uniqueTargets[index].ip, false, "发送超时")
+                r ?: SendResult(
+                    uniqueTargets[index].ip,
+                    false,
+                    L10n.get(R.string.mgr_taccam_send_timeout),
+                )
             }
             val ok = finished.count { it.ok }
             val failed = finished.filter { !it.ok }
             _lastError.value = when {
                 finished.size == 1 && ok == 1 -> finished.first().detail
-                else -> buildString {
-                    append("送达 $ok/${finished.size} · ${shot.jpeg.size / 1024}KB JPEG")
-                    if (failed.isNotEmpty()) {
-                        append(" · 失败: ")
-                        append(failed.joinToString(", ") { it.ip })
-                    }
+                else -> if (failed.isEmpty()) {
+                    L10n.get(
+                        R.string.mgr_taccam_send_summary,
+                        ok,
+                        finished.size,
+                        shot.jpeg.size / 1024,
+                    )
+                } else {
+                    L10n.get(
+                        R.string.mgr_taccam_send_summary_failed,
+                        ok,
+                        finished.size,
+                        shot.jpeg.size / 1024,
+                        failed.joinToString(", ") { it.ip },
+                    )
                 }
             }
         }
@@ -253,7 +280,10 @@ class TacticalCameraManager(private val context: Context) {
     }
 
     private fun captureInternal() {
-        val dev = device ?: run { _lastError.value = "相机未就绪"; return }
+        val dev = device ?: run {
+            _lastError.value = L10n.get(R.string.mgr_taccam_camera_not_ready)
+            return
+        }
         val reader = imageReader ?: return
         val size = Size(reader.width, reader.height)
 
@@ -270,8 +300,12 @@ class TacticalCameraManager(private val context: Context) {
                         height = image.height,
                         timeMs = System.currentTimeMillis(),
                     )
-                    _lastError.value = "已捕获 · " + image.width + "×" + image.height + " · " +
-                        (bytes.size / 1024) + "KB —— 选择目标后发送"
+                    _lastError.value = L10n.get(
+                        R.string.mgr_taccam_captured,
+                        image.width,
+                        image.height,
+                        bytes.size / 1024,
+                    )
                 } catch (t: Throwable) {
                     _lastError.value = t.message
                 } finally {
@@ -299,7 +333,12 @@ class TacticalCameraManager(private val context: Context) {
                     }
                     s.setRepeatingRequest(previewReq.build(), null, cameraHandler)
                 }.onFailure { t ->
-                    if (!closed) _lastError.value = "预览恢复失败: ${t.message}"
+                    if (!closed) {
+                        _lastError.value = L10n.get(
+                            R.string.mgr_taccam_preview_resume_failed,
+                            t.message ?: t.javaClass.simpleName,
+                        )
+                    }
                 }
             }, 1200)
         } catch (t: Throwable) {

@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.screens.PreviewTheme
 
 /**
@@ -45,7 +47,8 @@ fun DisclaimerDialog(
     onAccept: () -> Unit,
 ) {
     val openDialog = remember { mutableStateOf(true) }
-    val R = Color(0xFF35C9FF)
+    // 局部色值命名为 RED 而非 R:与资源类 xin.ctkqiang.deauthctrl.R 冲突
+    val RED = Color(0xFF35C9FF)
     val GOLD = Color(0xFF9BD7FF)
     val BG = Color(0xFF0B1522)
     val W = Color(0xFFE8F4FF)
@@ -61,41 +64,17 @@ fun DisclaimerDialog(
                     Star(GOLD, 10.dp)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "法律警告",
+                        stringResource(R.string.disc_title),
                         fontFamily = FontFamily.Default,
                         fontWeight = FontWeight.Black,
                         fontSize = 17.sp,
-                        color = R,
+                        color = RED,
                     )
                 }
             },
             text = {
                 Text(
-                    """
-本应用仅供授权安全研究与教育用途。
-
-真实能力清单（UI 不夸大平台做不到的事）：
-
-▸ Wi-Fi：只能创建「本机」SoftAP 热点 / 轮换本机热点
-  SSID。不会发送 deauth / beacon 帧注入，不会断开
-  他人的连接；启动热点还可能中断本机 Wi-Fi。
-▸ BLE：只广播伪造厂商广告，可能让附近设备显示配对
-  或连续性提示，不能压制、不能断开设备；效果取决于
-  接收端的系统与版本。
-▸ 蓝牙发现：只是本机扫描附近经典蓝牙设备，不会干扰
-  其他设备。
-▸ 802.11 帧注入 / 去认证需要 root + 特定芯片与固件。
-  应用会在使用时检测能力，检测不通过会明确提示「当前
-  系统不支持」，不会提供可执行的假象。
-
-使用本应用即表示您确认：
-
-▸ 干扰不属于您的网络或设备是违法行为
-▸ 请仅在您拥有或已获得书面授权的环境中测试
-▸ 开发者对因滥用本工具造成的损害不承担任何责任
-
-请负责任地使用。
-                    """.trimIndent(),
+                    stringResource(R.string.disc_body),
                     fontFamily = FontFamily.Default,
                     fontSize = 12.sp,
                     lineHeight = 19.sp,
@@ -107,11 +86,11 @@ fun DisclaimerDialog(
                 Surface(
                     onClick = { openDialog.value = false; onAccept() },
                     shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                    color = R,
+                    color = RED,
                     border = BorderStroke(1.dp, GOLD.copy(alpha = 0.9f)),
                 ) {
                     Text(
-                        "我已知晓，继续",
+                        stringResource(R.string.disc_confirm),
                         fontFamily = FontFamily.Default,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -124,14 +103,14 @@ fun DisclaimerDialog(
             dismissButton = {
                 TextButton(onClick = { /* 不可关闭：必须明确确认 */ }) {
                     Text(
-                        "仅限授权使用",
+                        stringResource(R.string.disc_restricted),
                         fontFamily = FontFamily.Default,
                         fontSize = 11.sp,
                         color = G,
                     )
                 }
             },
-            titleContentColor = R,
+            titleContentColor = RED,
         )
     }
 }

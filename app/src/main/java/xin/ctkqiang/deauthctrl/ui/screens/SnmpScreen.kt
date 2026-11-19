@@ -30,11 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.DEFAULT_SNMP_COMMUNITIES
 import xin.ctkqiang.deauthctrl.manager.SNMP_CONCURRENCY
 import xin.ctkqiang.deauthctrl.manager.SNMP_PORT
@@ -95,7 +97,7 @@ fun SnmpScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("SNMP 扫描 · SNMPWALK", back)
+        TerminalHeader(stringResource(R.string.snmp_title), back)
 
         Column(
             Modifier
@@ -105,15 +107,15 @@ fun SnmpScreen(back: () -> Unit) {
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
             // ── 输入与启动 ────────────────────────────────────────────────
-            TermPanel("目标与社区串 · TARGET") {
+            TermPanel(stringResource(R.string.snmp_panel_target)) {
                 TermInput(
-                    label = "目标 IP 或网段",
+                    label = stringResource(R.string.snmp_target_label),
                     value = target,
-                    placeholder = "192.168.1.1 或 192.168.1.0/24",
+                    placeholder = stringResource(R.string.snmp_target_placeholder),
                 ) { vm.setTarget(it) }
                 Spacer(Modifier.height(8.dp))
                 TermInput(
-                    label = "社区串（逗号分隔，可编辑）",
+                    label = stringResource(R.string.snmp_communities_label),
                     value = communitiesText,
                     placeholder = DEFAULT_SNMP_COMMUNITIES.joinToString(", "),
                 ) { vm.setCommunities(it) }
@@ -123,13 +125,13 @@ fun SnmpScreen(back: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "UDP $SNMP_PORT · 单包 ${SNMP_TIMEOUT_MS / 1000}s 超时 · 并发 $SNMP_CONCURRENCY",
+                        stringResource(R.string.snmp_net_params, SNMP_PORT, SNMP_TIMEOUT_MS / 1000, SNMP_CONCURRENCY),
                         fontFamily = Mono,
                         fontSize = 8.sp,
                         color = Gray,
                         modifier = Modifier.weight(1f),
                     )
-                    GhostButton("默认字典") { vm.useDefaultCommunities() }
+                    GhostButton(stringResource(R.string.snmp_btn_default_dict)) { vm.useDefaultCommunities() }
                 }
                 state.error?.let { message ->
                     Spacer(Modifier.height(6.dp))
@@ -144,8 +146,8 @@ fun SnmpScreen(back: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 ActionButton(
                     running = state.scanning,
-                    runLabel = "启动扫描",
-                    stopLabel = "停止扫描",
+                    runLabel = stringResource(R.string.snmp_btn_start),
+                    stopLabel = stringResource(R.string.snmp_btn_stop),
                 ) {
                     if (state.scanning) vm.stop() else vm.start()
                 }
@@ -155,7 +157,7 @@ fun SnmpScreen(back: () -> Unit) {
 
             // ── 进度 ──────────────────────────────────────────────────────
             if (state.scanning || state.total > 0) {
-                TermPanel("进度 · PROGRESS") {
+                TermPanel(stringResource(R.string.snmp_panel_progress)) {
                     val fraction = state.progress.coerceIn(0f, 1f)
                     Box(
                         Modifier
@@ -178,13 +180,13 @@ fun SnmpScreen(back: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
-                            "已探测 ${state.done}/${state.total}",
+                            stringResource(R.string.snmp_probed, state.done, state.total),
                             fontFamily = Mono,
                             fontSize = 9.sp,
                             color = Gold,
                         )
                         Text(
-                            "命中 ${state.results.size} 台",
+                            stringResource(R.string.snmp_hits, state.results.size),
                             fontFamily = Mono,
                             fontSize = 9.sp,
                             color = if (state.results.isEmpty()) Gray else TacGreen,
@@ -201,10 +203,10 @@ fun SnmpScreen(back: () -> Unit) {
             }
 
             // ── 结果 ──────────────────────────────────────────────────────
-            TermPanel("结果 · RESPONSES (${state.results.size})") {
+            TermPanel(stringResource(R.string.snmp_panel_results, state.results.size)) {
                 if (state.results.isNotEmpty()) {
                     Text(
-                        "sysDescr 为设备自述的厂商 / 型号 / 固件文本，点击卡片可展开全文与原始报文",
+                        stringResource(R.string.snmp_results_hint),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
@@ -222,7 +224,7 @@ fun SnmpScreen(back: () -> Unit) {
                     }
                     state.scanning -> {
                         Text(
-                            "扫描中 —— 命中结果会实时列出",
+                            stringResource(R.string.snmp_scanning),
                             fontFamily = Sans,
                             fontSize = 10.sp,
                             color = Gray,
@@ -230,12 +232,11 @@ fun SnmpScreen(back: () -> Unit) {
                     }
                     state.total > 0 -> {
                         EmptyHint(
-                            "本轮 ${state.total} 次探测均无有效响应 —— " +
-                                "社区串不匹配、设备未开 SNMP、ACL 拦截或仅支持 v3 都会表现为无响应"
+                            stringResource(R.string.snmp_empty_no_response, state.total)
                         )
                     }
                     else -> {
-                        EmptyHint("输入目标与社区串后启动扫描；结果只来自设备的真实 SNMP 应答")
+                        EmptyHint(stringResource(R.string.snmp_empty_idle))
                     }
                 }
             }
@@ -243,9 +244,9 @@ fun SnmpScreen(back: () -> Unit) {
             Spacer(Modifier.height(8.dp))
 
             // ── 诚实说明 ──────────────────────────────────────────────────
-            TermPanel("诚实说明 · SCOPE") {
+            TermPanel(stringResource(R.string.snmp_panel_scope)) {
                 Text(
-                    "仅支持 SNMP v1/v2c；本页发送 v2c GetRequest，不做 v3 认证与加密协商。",
+                    stringResource(R.string.snmp_scope_protocol),
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     color = White,
@@ -253,8 +254,7 @@ fun SnmpScreen(back: () -> Unit) {
                 )
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "默认社区串的设备（打印机 / 路由器 / 交换机 / NAS）才可能响应；" +
-                        "社区串不对即无响应，且与 SNMP 关闭、ACL 拦截、仅开 v3 的表现相同，无法区分原因。",
+                    stringResource(R.string.snmp_scope_default),
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     color = Warn,
@@ -262,8 +262,7 @@ fun SnmpScreen(back: () -> Unit) {
                 )
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "sysDescr / sysName / sysObjectID 均为设备真实返回的文本，" +
-                        "读不到显示 \"--\"，不做推测；扫描为单包探测，无重试。",
+                    stringResource(R.string.snmp_scope_fields),
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     color = Gray,
@@ -271,7 +270,7 @@ fun SnmpScreen(back: () -> Unit) {
                 )
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "[!] 请只扫描已获授权的网络。",
+                    stringResource(R.string.snmp_scope_authorized),
                     fontFamily = Sans,
                     fontSize = 10.sp,
                     color = Danger,
@@ -375,7 +374,7 @@ private fun SnmpResultCard(result: SnmpResult) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "原始应答（hex）  ${result.raw}",
+                    stringResource(R.string.snmp_raw_response, result.raw),
                     fontFamily = Mono,
                     fontSize = 8.sp,
                     color = Gray,
@@ -384,7 +383,7 @@ private fun SnmpResultCard(result: SnmpResult) {
             } else {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "▸ 点击展开 sysDescr 全文 / sysObjectID / 原始报文",
+                    stringResource(R.string.snmp_expand_hint),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray.copy(alpha = 0.72f),

@@ -97,6 +97,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -107,6 +108,7 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.HttpClientManager
 import xin.ctkqiang.deauthctrl.manager.JammerScanState
 import xin.ctkqiang.deauthctrl.manager.AdStructureDecoder
@@ -319,24 +321,24 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("BLE 泛洪引擎", back)
+        TerminalHeader(stringResource(R.string.det_title_ble_flood), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                TermPanel("广播载荷") {
-                    Text("伪造协议", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                TermPanel(stringResource(R.string.det_panel_adv_payload)) {
+                    Text(stringResource(R.string.det_label_forged_profile), fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         vm.getProfiles().forEach { p ->
-                            SelectChip(selected = p == profile, text = p.displayName) {
+                            SelectChip(selected = p == profile, text = stringResource(p.displayNameRes)) {
                                 profile = p
                                 vm.setProfile(p)
                             }
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("循环模式", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                    Text(stringResource(R.string.det_label_cycle_mode), fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         vm.getCycleModes().forEach { m ->
-                            SelectChip(selected = m == cycleMode, text = m.displayName) {
+                            SelectChip(selected = m == cycleMode, text = stringResource(m.labelRes)) {
                                 cycleMode = m
                                 vm.setCycleMode(m)
                             }
@@ -346,11 +348,11 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
 
-                TermPanel("发送参数") {
-                    Text("功率档位", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                TermPanel(stringResource(R.string.det_panel_tx_params)) {
+                    Text(stringResource(R.string.det_label_tx_power), fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         vm.getTxPowerLevels().forEach { p ->
-                            SelectChip(selected = p == txPower, text = p.displayName) {
+                            SelectChip(selected = p == txPower, text = stringResource(p.labelRes)) {
                                 txPower = p
                                 vm.setTxPower(p)
                             }
@@ -358,24 +360,24 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("发送间隔", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                        Text(stringResource(R.string.det_label_tx_interval), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Text("${interval.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                     }
                     Slider(interval, { interval = it; vm.setInterval(interval.toLong()) }, valueRange = 20f..100f, steps = 7, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                     Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        TermInput("最大发包数", maxPacketsText, placeholder = "留空表示不限", modifier = Modifier.weight(1f)) { v ->
+                        TermInput(stringResource(R.string.det_label_max_packets), maxPacketsText, placeholder = stringResource(R.string.det_hint_leave_blank_unlimited), modifier = Modifier.weight(1f)) { v ->
                             maxPacketsText = v.filter { it.isDigit() }
                             vm.setMaxPackets(maxPacketsText.toLongOrNull() ?: -1L)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text("（留空=不限）", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                        Text(stringResource(R.string.det_hint_blank_unlimited_short), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                ActionButton(running, "执行泛洪", "停止泛洪") {
+                ActionButton(running, stringResource(R.string.det_btn_run_flood), stringResource(R.string.det_btn_stop_flood)) {
                     haptic.hud()
                     if (running) vm.stopSpam() else vm.startSpam()
                 }
@@ -398,17 +400,17 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
 private fun BleStatsPanel(vm: BleSpamViewModel) {
     val stats by vm.stats.collectAsState()
     Spacer(Modifier.height(8.dp))
-    TermPanel("运行统计") {
+    TermPanel(stringResource(R.string.det_panel_run_stats)) {
         val upSec = stats.uptimeMs / 1000
-        LiveStat("已发送", "${stats.sent}")
-        LiveStat("失败", "${stats.failed}", if (stats.failed > 0) Danger else White)
-        LiveStat("总尝试", "${stats.total}")
-        LiveStat("成功率", "%.1f%%".format(stats.successRate * 100), if (stats.successRate > 0.5f) White else Danger)
-        LiveStat("发包速率", "%.1f pps".format(stats.pps))
-        LiveStat("运行时长", "%02d:%02d".format(upSec / 60, upSec % 60))
+        LiveStat(stringResource(R.string.det_stat_sent), "${stats.sent}")
+        LiveStat(stringResource(R.string.det_stat_failed), "${stats.failed}", if (stats.failed > 0) Danger else White)
+        LiveStat(stringResource(R.string.det_stat_total_attempts), "${stats.total}")
+        LiveStat(stringResource(R.string.det_stat_success_rate), "%.1f%%".format(stats.successRate * 100), if (stats.successRate > 0.5f) White else Danger)
+        LiveStat(stringResource(R.string.det_stat_pps), "%.1f pps".format(stats.pps))
+        LiveStat(stringResource(R.string.det_stat_uptime), "%02d:%02d".format(upSec / 60, upSec % 60))
         if (stats.failRateRecent > 0.3f) {
             Spacer(Modifier.height(4.dp))
-            Text("[!] 近期失败率 %.0f%%，建议增大发送间隔".format(stats.failRateRecent * 100), fontFamily = Mono, fontSize = 10.sp, color = Danger)
+            Text(stringResource(R.string.det_warn_recent_fail_rate, stats.failRateRecent * 100), fontFamily = Mono, fontSize = 10.sp, color = Danger)
         }
     }
 }
@@ -424,11 +426,11 @@ private fun BleLogPanel(vm: BleSpamViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     LazyColumn(state = list, modifier = Modifier.fillMaxWidth().height(200.dp)) {
-        if (log.isEmpty()) item { HintBreathing("启动泛洪后，发包记录会实时显示在这里") }
+        if (log.isEmpty()) item { HintBreathing(stringResource(R.string.det_hint_ble_flood_log)) }
         items(log.asReversed()) { e ->
             LogLine(
                 tf.format(Date(e.timestamp)),
-                "${e.profile.displayName}  ${if (e.success) "成功" else "失败"}  #${e.index.toString().padStart(5, '0')}",
+                "${stringResource(e.profile.displayNameRes)}  ${if (e.success) stringResource(R.string.det_value_success) else stringResource(R.string.det_stat_failed)}  #${e.index.toString().padStart(5, '0')}",
                 if (e.success) White else Danger,
             )
         }
@@ -452,18 +454,18 @@ fun BtJamDetailScreen(vm: BluetoothJammerViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("蓝牙压制引擎", back)
+        TerminalHeader(stringResource(R.string.det_title_bt_jam), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                TermPanel("状态") {
+                TermPanel(stringResource(R.string.det_panel_status)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        StatChip("BLE 泛洪", if (running) "运行中" else "已停止", running)
-                        StatChip("设备发现", if (running) "运行中" else "已停止", running)
+                        StatChip(stringResource(R.string.det_chip_ble_flood), if (running) stringResource(R.string.det_state_running) else stringResource(R.string.det_state_stopped), running)
+                        StatChip(stringResource(R.string.det_chip_device_discovery), if (running) stringResource(R.string.det_state_running) else stringResource(R.string.det_state_stopped), running)
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行压制", "停止压制") {
+                ActionButton(running, stringResource(R.string.det_btn_run_suppress), stringResource(R.string.det_btn_stop_suppress)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -489,22 +491,22 @@ private fun BtJamLivePanel(vm: BluetoothJammerViewModel) {
     Column {
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth().background(SurfaceBg, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)).border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)).padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Text("已发现设备", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(stringResource(R.string.det_label_devices_found), fontFamily = Sans, fontSize = 10.sp, color = Gray)
             Spacer(Modifier.width(6.dp))
-            Text("$count 台", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold)
+            Text(stringResource(R.string.det_fmt_device_count, count), fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold)
         }
         if (stats.blePackets > 0 || stats.inquiryCycles > 0) {
             Spacer(Modifier.height(8.dp))
-            TermPanel("运行统计") {
-                LiveStat("BLE 数据包", "${stats.blePackets}")
-                LiveStat("扫描轮次", "${stats.inquiryCycles}")
-                LiveStat("发现设备", "${stats.devicesFound}")
-                LiveStat("运行时长", "${stats.uptimeMs / 1000}秒")
+            TermPanel(stringResource(R.string.det_panel_run_stats)) {
+                LiveStat(stringResource(R.string.det_stat_ble_packets), "${stats.blePackets}")
+                LiveStat(stringResource(R.string.det_stat_scan_cycles), "${stats.inquiryCycles}")
+                LiveStat(stringResource(R.string.det_stat_devices_found), "${stats.devicesFound}")
+                LiveStat(stringResource(R.string.det_stat_uptime), stringResource(R.string.det_fmt_uptime_seconds, stats.uptimeMs / 1000))
             }
         }
         if (devices.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            TermPanel("附近设备 (${devices.size})") {
+            TermPanel(stringResource(R.string.det_panel_nearby_devices, devices.size)) {
                 LazyColumn(Modifier.fillMaxWidth().height(140.dp)) {
                     items(devices.take(10)) { d ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -528,7 +530,7 @@ private fun BtJamLogPanel(vm: BluetoothJammerViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     LazyColumn(Modifier.fillMaxWidth().height(180.dp)) {
-        if (log.isEmpty()) item { HintBreathing("启动压制后，运行日志会实时显示在这里") }
+        if (log.isEmpty()) item { HintBreathing(stringResource(R.string.det_hint_bt_jam_log)) }
         items(log.asReversed()) { e ->
             LogLine(tf.format(Date(e.timestamp)), "[${e.module}] ${e.message}", White)
         }
@@ -559,20 +561,20 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
     LaunchedEffect(Unit) { if (ss is ScanState.Idle) vm.scanNetworks() }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("WiFi 干扰引擎", back)
+        TerminalHeader(stringResource(R.string.det_title_wifi_disrupt), back)
         PageEnter(locked = fl) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running = ss is ScanState.Scanning, runLabel = "扫描附近网络", stopLabel = "正在扫描…") {
+                ActionButton(running = ss is ScanState.Scanning, runLabel = stringResource(R.string.det_btn_scan_networks), stopLabel = stringResource(R.string.det_btn_scanning)) {
                     haptic.hud()
                     vm.scanNetworks()
                 }
                 Spacer(Modifier.height(8.dp))
 
                 when (val s = ss) {
-                    is ScanState.Scanning -> Text("正在扫描 2.4/5GHz 频段…", fontFamily = Sans, fontSize = 12.sp, color = White)
+                    is ScanState.Scanning -> Text(stringResource(R.string.det_msg_scanning_bands), fontFamily = Sans, fontSize = 12.sp, color = White)
                     is ScanState.Results -> {
                         val sorted = s.networks.sortedByDescending { it.signalStrength }
-                        Text("发现 ${sorted.size} 个网络 · 按信号排序 · 点击选择目标", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                        Text(stringResource(R.string.det_msg_networks_found, sorted.size), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Spacer(Modifier.height(4.dp))
                         LazyColumn(Modifier.fillMaxWidth().height(220.dp)) {
                             items(sorted, key = { it.bssid }) { n ->
@@ -582,7 +584,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                                     Row(Modifier.padding(vertical = 6.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(if (on) "▸" else " ", fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.width(18.dp))
                                         Column(Modifier.weight(1f)) {
-                                            Text(n.ssid.ifBlank { "<隐藏>" }.take(18), fontFamily = Mono, fontSize = 12.sp, color = if (on) White else Gray)
+                                            Text(n.ssid.ifBlank { stringResource(R.string.det_hidden_ssid) }.take(18), fontFamily = Mono, fontSize = 12.sp, color = if (on) White else Gray)
                                             Text("${n.bssid} · ${n.security} · ${n.band}", fontFamily = Mono, fontSize = 8.sp, color = Gray.copy(alpha = 0.8f))
                                         }
                                         // 信号强度条
@@ -606,26 +608,26 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                 AnimatedVisibility(sel != null) {
                     Column {
                         Spacer(Modifier.height(8.dp))
-                        TermPanel("泛洪参数") {
+                        TermPanel(stringResource(R.string.det_panel_flood_params)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("目标网络", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                                Text(stringResource(R.string.det_label_target_network), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 Text(sel?.ssid ?: "-", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
                             Spacer(Modifier.height(6.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("干扰时长", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                                Text(stringResource(R.string.det_label_disrupt_duration), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 Text("${dur}s", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
                             Slider(dur.toFloat(), { dur = it.toInt().coerceIn(1, 60) }, valueRange = 1f..60f, steps = 14, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                             Spacer(Modifier.height(4.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("切换间隔", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                                Text(stringResource(R.string.det_label_toggle_interval), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                                 Text("${toggle.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
                             Slider(toggle, { toggle = it; vm.setToggleInterval(toggle.toLong()) }, valueRange = 40f..500f, steps = 22, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                         }
                         Spacer(Modifier.height(8.dp))
-                        ActionButton(fl, "执行干扰", "停止干扰") {
+                        ActionButton(fl, stringResource(R.string.det_btn_run_disrupt), stringResource(R.string.det_btn_stop_disrupt)) {
                             haptic.hud()
                             vm.setDuration(dur)
                             vm.setToggleInterval(toggle.toLong())
@@ -674,19 +676,19 @@ private fun DeauthInjectionPanel(
     }
 
     Spacer(Modifier.height(8.dp))
-    TermPanel("真实注入 · DEAUTH INJECTION") {
+    TermPanel(stringResource(R.string.det_panel_deauth_injection)) {
         Text(
-            "root + 监控模式芯片才能启用;无 root 的 stock Android 无法注入 802.11 管理帧",
+            stringResource(R.string.det_deauth_requires_root),
             fontFamily = Sans, fontSize = 8.sp, color = Warn, lineHeight = 12.sp,
         )
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            QuickNavChip("探测能力", Gold, Modifier.weight(1f)) {
+            QuickNavChip(stringResource(R.string.det_btn_probe_capability), Gold, Modifier.weight(1f)) {
                 haptic.hud()
                 vm.probeDeauth()
             }
             if (session.running) {
-                QuickNavChip("■ 停止注入", Danger, Modifier.weight(1f)) {
+                QuickNavChip(stringResource(R.string.det_btn_stop_injection), Danger, Modifier.weight(1f)) {
                     haptic.hud()
                     vm.stopDeauth()
                 }
@@ -698,21 +700,25 @@ private fun DeauthInjectionPanel(
             if (p.rootGranted && (!p.aireplay || !p.monitorSupported)) {
                 Spacer(Modifier.height(3.dp))
                 Text(
-                    "缺少:${if (!p.aireplay) " aireplay-ng" else ""}${if (!p.monitorSupported) " 监控模式固件(Nexmon/QCACLD)" else ""} —— 安装后重新探测",
+                    stringResource(
+                        R.string.det_deauth_missing,
+                        if (!p.aireplay) stringResource(R.string.det_deauth_missing_aireplay) else "",
+                        if (!p.monitorSupported) stringResource(R.string.det_deauth_missing_monitor) else "",
+                    ),
                     fontFamily = Sans, fontSize = 8.sp, color = Warn,
                 )
             }
         }
         Spacer(Modifier.height(6.dp))
-        TermInput("目标 BSSID", bssid, placeholder = "AA:BB:CC:DD:EE:FF") { bssid = it; startError = null }
+        TermInput(stringResource(R.string.det_label_target_bssid), bssid, placeholder = "AA:BB:CC:DD:EE:FF") { bssid = it; startError = null }
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            TermInput("信道", channel, placeholder = "如 6", modifier = Modifier.weight(1f)) { channel = it }
-            TermInput("客户端 MAC(可选)", client, placeholder = "留空=广播全部", modifier = Modifier.weight(1.6f)) { client = it }
+            TermInput(stringResource(R.string.det_label_channel), channel, placeholder = stringResource(R.string.det_hint_channel_example), modifier = Modifier.weight(1f)) { channel = it }
+            TermInput(stringResource(R.string.det_label_client_mac), client, placeholder = stringResource(R.string.det_hint_blank_broadcast), modifier = Modifier.weight(1.6f)) { client = it }
         }
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            TermInput("每轮帧数", count, placeholder = "0=持续循环", modifier = Modifier.weight(1f)) { count = it }
+            TermInput(stringResource(R.string.det_label_frames_per_round), count, placeholder = stringResource(R.string.det_hint_persistent_loop), modifier = Modifier.weight(1f)) { count = it }
             Surface(
                 modifier = Modifier.weight(1f).clickable {
                     haptic.hud()
@@ -729,7 +735,7 @@ private fun DeauthInjectionPanel(
                 border = BorderStroke(1.5.dp, if (session.running) TacGreen.copy(alpha = 0.7f) else Red.copy(alpha = 0.6f)),
             ) {
                 Text(
-                    if (session.running) "注入中 · ${session.framesSent} 帧" else "开始注入",
+                    if (session.running) stringResource(R.string.det_btn_injecting, session.framesSent) else stringResource(R.string.det_btn_start_injection),
                     fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     color = if (session.running) TacGreen else Red,
                     textAlign = TextAlign.Center,
@@ -757,8 +763,8 @@ private fun DeauthInjectionPanel(
             border = BorderStroke(1.dp, if (session.running && session.phase == "被动嗅探") Gold.copy(alpha = 0.6f) else BorderDim),
         ) {
             Text(
-                if (session.running && session.phase == "被动嗅探") "■ 停止嗅探 · ${session.framesSent} 帧"
-                else "被动嗅探 · 信标/探测/去认证帧 (capture)",
+                if (session.running && session.phase == "被动嗅探") stringResource(R.string.det_btn_stop_sniffing, session.framesSent)
+                else stringResource(R.string.det_btn_passive_sniff),
                 fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                 color = if (session.running && session.phase == "被动嗅探") Gold else Gray,
                 textAlign = TextAlign.Center,
@@ -778,7 +784,7 @@ private fun DeauthInjectionPanel(
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            "注入会话由 su 驱动 aireplay-ng 执行;仅用于授权测试,目标必须是你拥有或获授权的网络",
+            stringResource(R.string.det_deauth_disclaimer),
             fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.75f), lineHeight = 11.sp,
         )
     }
@@ -795,20 +801,20 @@ private fun WifiLivePanel(vm: WifiDisruptViewModel, fl: Boolean) {
             is HotspotResult.Progress -> {
                 Spacer(Modifier.height(8.dp))
                 LinearProgressIndicator(progress = { r.cycle.toFloat() / r.totalCycles }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                Text("周期 ${r.cycle}/${r.totalCycles}", fontFamily = Sans, fontSize = 10.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                Text(stringResource(R.string.det_fmt_cycle, r.cycle, r.totalCycles), fontFamily = Sans, fontSize = 10.sp, color = White, modifier = Modifier.padding(top = 3.dp))
             }
-            is HotspotResult.Completed -> Text("泛洪完成", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(top = 6.dp))
+            is HotspotResult.Completed -> Text(stringResource(R.string.det_msg_flood_complete), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(top = 6.dp))
             is HotspotResult.Error -> ErrorBanner(r.message)
             else -> {}
         }
 
         if (fl || stats.startCount > 0 || stats.stopCount > 0) {
             Spacer(Modifier.height(8.dp))
-            TermPanel("运行统计") {
-                LiveStat("周期", "${stats.cycles}/${stats.totalCycles}")
-                LiveStat("热点启动", "${stats.startCount}")
-                LiveStat("热点停止", "${stats.stopCount}")
-                LiveStat("运行时长", "${stats.uptimeMs / 1000}秒")
+            TermPanel(stringResource(R.string.det_panel_run_stats)) {
+                LiveStat(stringResource(R.string.det_stat_cycle), "${stats.cycles}/${stats.totalCycles}")
+                LiveStat(stringResource(R.string.det_stat_hotspot_starts), "${stats.startCount}")
+                LiveStat(stringResource(R.string.det_stat_hotspot_stops), "${stats.stopCount}")
+                LiveStat(stringResource(R.string.det_stat_uptime), stringResource(R.string.det_fmt_uptime_seconds, stats.uptimeMs / 1000))
             }
         }
     }
@@ -832,19 +838,19 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("WiFi 压制引擎", back)
+        TerminalHeader(stringResource(R.string.det_title_wifi_jam), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermPanel("配置") {
+                TermPanel(stringResource(R.string.det_panel_config)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("信道切换间隔", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                        Text(stringResource(R.string.det_label_channel_switch_interval), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Text("${ms.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                     }
                     Slider(ms, { ms = it; vm.setInterval(ms.toLong()) }, valueRange = 60f..300f, steps = 11, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行压制", "停止压制") {
+                ActionButton(running, stringResource(R.string.det_btn_run_suppress), stringResource(R.string.det_btn_stop_suppress)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -871,19 +877,19 @@ private fun WifiJamLivePanel(vm: WifiJammerViewModel, running: Boolean, modifier
             Column {
                 Spacer(Modifier.height(8.dp))
                 LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-                Text("压制目标 ${tc} 个 · 轮次 ${stats.cycles} · 启动 ${stats.hotspotStarts} · 失败 ${stats.hotspotFailures}", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+                Text(stringResource(R.string.det_fmt_jam_progress, tc, stats.cycles, stats.hotspotStarts, stats.hotspotFailures), fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
             }
         }
 
         Spacer(Modifier.height(8.dp))
         when (val s = ss) {
-            is JammerScanState.Scanning -> Text("正在扫描目标…", fontFamily = Sans, fontSize = 12.sp, color = White)
+            is JammerScanState.Scanning -> Text(stringResource(R.string.det_msg_scanning_targets), fontFamily = Sans, fontSize = 12.sp, color = White)
             is JammerScanState.Results -> {
-                Text("发现目标 ${s.networks.size} 个", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text(stringResource(R.string.det_msg_targets_found, s.networks.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(0.4f)) {
                     items(s.networks.take(12)) { n ->
-                        LogLine("CH${n.channel.toString().padStart(2)}", "${n.bssid.take(17).padEnd(17)}  ${n.ssid.ifBlank { "<隐藏>" }.take(22)}  ${n.signalStrength}dBm", White)
+                        LogLine("CH${n.channel.toString().padStart(2)}", "${n.bssid.take(17).padEnd(17)}  ${n.ssid.ifBlank { stringResource(R.string.det_hidden_ssid) }.take(22)}  ${n.signalStrength}dBm", White)
                     }
                 }
             }
@@ -895,7 +901,7 @@ private fun WifiJamLivePanel(vm: WifiJammerViewModel, running: Boolean, modifier
         LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
         Spacer(Modifier.height(4.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(0.5f)) {
-            if (log.isEmpty()) item { HintBreathing("启动压制后，运行日志会实时显示在这里") }
+            if (log.isEmpty()) item { HintBreathing(stringResource(R.string.det_hint_bt_jam_log)) }
             items(log.asReversed()) { e ->
                 LogLine(tf.format(Date(e.timestamp)), "[${e.module}] ${e.message}", White)
             }
@@ -950,19 +956,19 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
     val host = url.substringAfter("http://", "").substringBefore(':')
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("WEB 服务器", back)
+        TerminalHeader(stringResource(R.string.det_title_web_server), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                TermPanel("网页文件") {
+                TermPanel(stringResource(R.string.det_panel_web_file)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(fileName, fontFamily = Mono, fontSize = 12.sp, color = White, modifier = Modifier.weight(1f))
                         Spacer(Modifier.width(8.dp))
-                        GhostButton("选择文件") { filePicker.launch(arrayOf("text/html")) }
+                        GhostButton(stringResource(R.string.det_btn_choose_file)) { filePicker.launch(arrayOf("text/html")) }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行服务器", "停止服务器") {
+                ActionButton(running, stringResource(R.string.det_btn_run_server), stringResource(R.string.det_btn_stop_server)) {
                     haptic.hud()
                     if (running) vm.stopServer() else vm.startServer()
                 }
@@ -973,22 +979,22 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
                         Spacer(Modifier.height(8.dp))
                         LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
                         Spacer(Modifier.height(8.dp))
-                        TermPanel("服务器信息") {
-                            PanelStat("监听地址", host)
+                        TermPanel(stringResource(R.string.det_panel_server_info)) {
+                            PanelStat(stringResource(R.string.det_label_listen_address), host)
                             Spacer(Modifier.height(8.dp))
-                            Text("响应头（服务器实际发出的字段）", fontFamily = Sans, fontSize = 10.sp, color = Red, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+                            Text(stringResource(R.string.det_label_response_headers), fontFamily = Sans, fontSize = 10.sp, color = Red, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
                             headerFields.forEach { field ->
                                 val shown = if (field.startsWith(CONTENT_LENGTH_PREFIX)) {
-                                    "$CONTENT_LENGTH_PREFIX <随页面大小变化>"
+                                    stringResource(R.string.det_fmt_content_length, CONTENT_LENGTH_PREFIX)
                                 } else {
                                     field
                                 }
                                 Text("  $shown", fontFamily = Mono, fontSize = 11.sp, color = if (field.startsWith("HTTP/")) White else Gray)
                             }
-                            Text("  其余状态: $otherStatuses", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                            Text("  " + stringResource(R.string.det_fmt_other_status, otherStatuses), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                             Spacer(Modifier.height(8.dp))
                             AsciiDivider(modifier = Modifier.padding(vertical = 4.dp))
-                            Text("浏览器访问地址", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 2.dp))
+                            Text(stringResource(R.string.det_label_browser_url), fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 2.dp))
                             Text(url, fontFamily = Mono, fontSize = 12.sp, color = White, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -1007,17 +1013,17 @@ fun WebServerDetailScreen(vm: WebServerViewModel, back: () -> Unit) {
 private fun WebServerStatsPanel(vm: WebServerViewModel, running: Boolean) {
     val stats by vm.stats.collectAsState()
     Spacer(Modifier.height(8.dp))
-    TermPanel("运行统计") {
-        LiveStat("总请求", "${stats.totalRequests}")
-        LiveStat("成功响应", "${stats.served200}")
-        LiveStat("未找到", "${stats.notFound404}")
-        LiveStat("方法拒绝", "${stats.rejectedMethod}")
-        LiveStat("错误请求", "${stats.badRequests}")
-        LiveStat("处理异常", "${stats.handlerErrors}")
-        LiveStat("活动连接", "${stats.activeConnections}")
-        LiveStat("每分钟请求", "%.1f".format(stats.requestsPerMinute))
-        LiveStat("运行时长", vm.formatUptime(stats.uptimeMs))
-        LiveStat("状态", if (running) "监听中" else "已停止", if (running) White else Gray)
+    TermPanel(stringResource(R.string.det_panel_run_stats)) {
+        LiveStat(stringResource(R.string.det_stat_total_requests), "${stats.totalRequests}")
+        LiveStat(stringResource(R.string.det_stat_success_responses), "${stats.served200}")
+        LiveStat(stringResource(R.string.det_stat_not_found), "${stats.notFound404}")
+        LiveStat(stringResource(R.string.det_stat_rejected_method), "${stats.rejectedMethod}")
+        LiveStat(stringResource(R.string.det_stat_bad_requests), "${stats.badRequests}")
+        LiveStat(stringResource(R.string.det_stat_handler_errors), "${stats.handlerErrors}")
+        LiveStat(stringResource(R.string.det_stat_active_connections), "${stats.activeConnections}")
+        LiveStat(stringResource(R.string.det_stat_requests_per_minute), "%.1f".format(stats.requestsPerMinute))
+        LiveStat(stringResource(R.string.det_stat_uptime), vm.formatUptime(stats.uptimeMs))
+        LiveStat(stringResource(R.string.det_stat_status), if (running) stringResource(R.string.det_state_listening) else stringResource(R.string.det_state_stopped), if (running) White else Gray)
     }
 }
 
@@ -1030,7 +1036,7 @@ private fun WebServerLogPanel(vm: WebServerViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     if (log.isEmpty()) {
-        HintBreathing("启动服务器后，访问日志会实时显示在这里")
+        HintBreathing(stringResource(R.string.det_hint_web_log))
     } else {
         Column(Modifier.fillMaxWidth()) {
             log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -1069,10 +1075,10 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("ARP 网络扫描", back)
+        TerminalHeader(stringResource(R.string.det_title_arp_scan), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "执行扫描", "取消扫描") {
+                ActionButton(running, stringResource(R.string.det_btn_run_scan), stringResource(R.string.det_btn_cancel_scan)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.scan()
                 }
@@ -1124,25 +1130,25 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
                 color = Red,
                 trackColor = Track,
             )
-            Text("已探测 ${stats.hostsScanned}/${stats.hostCount} 台主机", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+            Text(stringResource(R.string.det_fmt_hosts_probed, stats.hostsScanned, stats.hostCount), fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
         }
 
         Spacer(Modifier.height(8.dp))
-        TermPanel("扫描统计") {
-            LiveStat("网段", stats.subnet.ifEmpty { "—" })
-            LiveStat("本机地址", stats.localIp.ifEmpty { "—" })
-            LiveStat("已探测", "${stats.hostsScanned} / ${stats.hostCount}")
-            LiveStat("在线主机", "${stats.hostsReachable}", if (stats.hostsReachable > 0) White else Gray)
-            LiveStat("缓存命中", "${stats.arpCacheHits}")
-            LiveStat("反向解析", "${stats.hostnameResolved}")
-            LiveStat("发现设备", "${stats.deviceCount}")
-            LiveStat("耗时", vm.formatElapsed(stats.elapsedMs))
-            LiveStat("状态", if (running) "扫描中" else "空闲", if (running) White else Gray)
+        TermPanel(stringResource(R.string.det_panel_scan_stats)) {
+            LiveStat(stringResource(R.string.det_stat_subnet), stats.subnet.ifEmpty { "—" })
+            LiveStat(stringResource(R.string.det_stat_local_ip), stats.localIp.ifEmpty { "—" })
+            LiveStat(stringResource(R.string.det_stat_probed), "${stats.hostsScanned} / ${stats.hostCount}")
+            LiveStat(stringResource(R.string.det_stat_hosts_online), "${stats.hostsReachable}", if (stats.hostsReachable > 0) White else Gray)
+            LiveStat(stringResource(R.string.det_stat_arp_cache_hits), "${stats.arpCacheHits}")
+            LiveStat(stringResource(R.string.det_stat_reverse_dns), "${stats.hostnameResolved}")
+            LiveStat(stringResource(R.string.det_stat_devices_found), "${stats.deviceCount}")
+            LiveStat(stringResource(R.string.det_stat_elapsed), vm.formatElapsed(stats.elapsedMs))
+            LiveStat(stringResource(R.string.det_stat_status), if (running) stringResource(R.string.det_state_scanning) else stringResource(R.string.det_state_idle), if (running) White else Gray)
         }
 
         if (devices.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            TermPanel("发现 ${devices.size} 台设备") {
+            TermPanel(stringResource(R.string.det_panel_devices_found, devices.size)) {
                 devices.take(ARP_DEVICE_RENDER_LIMIT).forEachIndexed { i, d ->
                     Surface(
                         Modifier.fillMaxWidth().padding(vertical = 2.dp),
@@ -1155,7 +1161,7 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
                             Column(Modifier.weight(1f)) {
                                 Text(d.ip, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                                 Text(
-                                    "${d.mac.ifEmpty { "MAC 获取中" }} · ${d.hostname.ifEmpty { "主机名未知" }}",
+                                    "${d.mac.ifEmpty { stringResource(R.string.det_mac_pending) }} · ${d.hostname.ifEmpty { stringResource(R.string.det_hostname_unknown) }}",
                                     fontFamily = Mono, fontSize = 8.sp,
                                     color = if (d.mac.isNotEmpty()) Gray else RedDim.copy(alpha = 0.6f),
                                 )
@@ -1176,14 +1182,14 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
                                 color = Danger.copy(alpha = 0.1f),
                                 border = BorderStroke(1.dp, Danger.copy(alpha = 0.4f)),
                             ) {
-                                Text("踢", fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Danger, modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp))
+                                Text(stringResource(R.string.det_btn_kick), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Danger, modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp))
                             }
                         }
                     }
                 }
                 if (devices.size > ARP_DEVICE_RENDER_LIMIT) {
                     Spacer(Modifier.height(4.dp))
-                    Text("… 另有 ${devices.size - ARP_DEVICE_RENDER_LIMIT} 台未渲染（仅影响显示，统计数字仍为全量）", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                    Text(stringResource(R.string.det_fmt_unrendered_devices, devices.size - ARP_DEVICE_RENDER_LIMIT), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                 }
             }
         }
@@ -1192,7 +1198,7 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
         LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
         Spacer(Modifier.height(4.dp))
         if (log.isEmpty()) {
-            HintBreathing("扫描开始后，战地日志会实时显示在这里")
+            HintBreathing(stringResource(R.string.det_hint_arp_log))
         } else {
             Column(Modifier.fillMaxWidth()) {
                 log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -1210,22 +1216,21 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
                     border = BorderStroke(1.dp, Danger.copy(alpha = 0.6f)),
                 ) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("踢下线 · $ip", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Danger)
+                        Text(stringResource(R.string.det_dialog_kick_title, ip), fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Danger)
                         Spacer(Modifier.height(4.dp))
-                        Text("主机名: ${host.ifBlank { "未知" }}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                        Text(stringResource(R.string.det_label_hostname, host.ifBlank { stringResource(R.string.det_unknown) }), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                         Spacer(Modifier.height(10.dp))
-                        TermInput("网关 IP", kickGateway, placeholder = "如 192.168.1.1") { kickGateway = it }
+                        TermInput(stringResource(R.string.det_label_gateway_ip), kickGateway, placeholder = stringResource(R.string.det_hint_gateway_example)) { kickGateway = it }
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "机制: 持续向目标广播伪造 ARP 应答(宣称网关在假 MAC),目标 ARP 缓存被投毒后上行流量黑洞,等效断网。\n\n" +
-                                "前提与边界: 需要 root(部分设备 SELinux 拒绝 AF_PACKET 会如实报错);仅对动态 ARP 缓存客户端有效,启用防欺骗的设备免疫;停止后目标缓存过期(30-60s)自动恢复。这是主动干扰 —— 仅限你拥有或获授权的网络。",
+                            stringResource(R.string.det_arp_kick_mechanism),
                             fontFamily = Sans, fontSize = 8.5.sp, color = Gray, lineHeight = 13.sp,
                         )
                         Spacer(Modifier.height(4.dp))
                         kickResult?.let { Text(it, fontFamily = Sans, fontSize = 9.sp, color = if (it.startsWith("[!]")) Danger else TacGreen) }
                         if (deauthSession.running && deauthSession.phase == "ARP 踢人") {
                             Spacer(Modifier.height(4.dp))
-                            Text("投毒中 · ${deauthSession.framesSent} 帧", fontFamily = Mono, fontSize = 9.sp, color = Gold)
+                            Text(stringResource(R.string.det_fmt_poisoning_frames, deauthSession.framesSent), fontFamily = Mono, fontSize = 9.sp, color = Gold)
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1235,18 +1240,18 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
                                 color = Color.Transparent,
                                 border = BorderStroke(1.dp, BorderDim),
                             ) {
-                                Text("取消", fontFamily = Sans, fontSize = 11.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                                Text(stringResource(R.string.det_btn_cancel), fontFamily = Sans, fontSize = 11.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                             }
                             Surface(
                                 modifier = Modifier.weight(1f).clickable {
                                     kickHaptic.hud()
                                     if (deauthSession.running) {
                                         deauth.stop()
-                                        kickResult = "已停止投毒 —— 目标缓存过期后自动恢复网络"
+                                        kickResult = kickContext.getString(R.string.det_msg_kick_stopped)
                                     } else {
                                         kickResult = deauth.startArpKick(ip, kickGateway.trim(), 0, 200L)
                                             ?.let { "[!] $it" }
-                                            ?: "投毒已启动 —— 目标即将断网"
+                                            ?: kickContext.getString(R.string.det_msg_kick_started)
                                     }
                                 },
                                 shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
@@ -1254,7 +1259,7 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
                                 border = BorderStroke(1.dp, Danger.copy(alpha = 0.55f)),
                             ) {
                                 Text(
-                                    if (deauthSession.running && deauthSession.phase == "ARP 踢人") "停止投毒" else "开始踢人 ▸",
+                                    if (deauthSession.running && deauthSession.phase == "ARP 踢人") stringResource(R.string.det_btn_stop_poisoning) else stringResource(R.string.det_btn_start_kick),
                                     fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                                     color = Danger, textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(vertical = 9.dp),
@@ -1274,7 +1279,7 @@ private fun ArpIdleHint(vm: ArpScanViewModel) {
     val devices by vm.devices.collectAsState()
     if (devices.isEmpty()) {
         Spacer(Modifier.height(8.dp))
-        HintBreathing("执行上方任务扫描局域网，在线设备会实时列出")
+        HintBreathing(stringResource(R.string.det_hint_arp_idle))
     }
 }
 
@@ -1305,10 +1310,10 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("BLE 嗅探扫描", back)
+        TerminalHeader(stringResource(R.string.det_title_ble_scanner), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "执行嗅探", "停止嗅探") {
+                ActionButton(running, stringResource(R.string.det_btn_run_sniff), stringResource(R.string.det_btn_stop_sniff)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -1338,9 +1343,9 @@ private fun BleScannerLivePanel(
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(Modifier.fillMaxWidth(), color = Red, trackColor = Track)
             Row(Modifier.fillMaxWidth().padding(top = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("已发现 ${devices.size} 台设备", fontFamily = Sans, fontSize = 11.sp, color = White)
+                Text(stringResource(R.string.det_fmt_devices_found, devices.size), fontFamily = Sans, fontSize = 11.sp, color = White)
                 Text(
-                    "最强 ${devices.maxOfOrNull { it.rssi }?.let { "${it}dBm" } ?: "--"}",
+                    stringResource(R.string.det_fmt_strongest, devices.maxOfOrNull { it.rssi }?.let { "${it}dBm" } ?: "--"),
                     fontFamily = Mono, fontSize = 9.sp, color = Gold,
                 )
             }
@@ -1348,29 +1353,29 @@ private fun BleScannerLivePanel(
 
         if (!running && devices.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            HintBreathing("执行上方任务开始嗅探，附近 BLE 设备会实时出现")
+            HintBreathing(stringResource(R.string.det_hint_ble_scan_idle))
         }
 
         if (selDev != null) {
             Spacer(Modifier.height(8.dp))
-            TermPanel("设备详情 · ${selDev.name}") {
+            TermPanel(stringResource(R.string.det_panel_device_detail, selDev.name)) {
                 if (selDev.isDroneRemoteId) {
-                    PanelStat("[!] 无人机", "Remote-ID 广播检测 (ASTM F3411)")
+                    PanelStat(stringResource(R.string.det_label_drone), stringResource(R.string.det_value_drone_remote_id))
                     Spacer(Modifier.height(4.dp))
                 }
-                PanelStat("地址", selDev.address)
-                PanelStat("发射功率", if (selDev.txPower > Int.MIN_VALUE) "${selDev.txPower}dBm" else "未知")
-                PanelStat("设备类型", selDev.deviceType.ifEmpty { "未知" })
+                PanelStat(stringResource(R.string.det_label_address), selDev.address)
+                PanelStat(stringResource(R.string.det_label_tx_power_stat), if (selDev.txPower > Int.MIN_VALUE) "${selDev.txPower}dBm" else stringResource(R.string.det_unknown))
+                PanelStat(stringResource(R.string.det_label_device_type), selDev.deviceType.ifEmpty { stringResource(R.string.det_unknown) })
                 if (selDev.services.isNotEmpty()) {
-                    PanelStat("服务", selDev.services.joinToString(", "))
+                    PanelStat(stringResource(R.string.det_label_services), selDev.services.joinToString(", "))
                 }
                 if (selDev.manufacturerData.isNotEmpty()) {
-                    PanelStat("厂商数据", selDev.manufacturerData.entries.joinToString { "${it.key}: ${it.value}" })
+                    PanelStat(stringResource(R.string.det_label_manufacturer_data), selDev.manufacturerData.entries.joinToString { "${it.key}: ${it.value}" })
                 }
 
                 if (selDev.rssiHistory.size > 1) {
                     Spacer(Modifier.height(8.dp))
-                    Text("信号强度走势 (dBm)", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
+                    Text(stringResource(R.string.det_label_rssi_trend), fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
                     Box(Modifier.fillMaxWidth().height(60.dp).background(Color(0xFF04121C)).border(0.5.dp, Track, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))) {
                         Canvas(Modifier.fillMaxSize()) {
                             val h = size.height; val w = size.width
@@ -1388,12 +1393,12 @@ private fun BleScannerLivePanel(
                             }
                         }
                     }
-                    Text("最低:${selDev.rssiHistory.minOrNull() ?: 0}  最高:${selDev.rssiHistory.maxOrNull() ?: 0}  当前:${selDev.rssi}", fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(top = 2.dp))
+                    Text(stringResource(R.string.det_fmt_rssi_minmax, selDev.rssiHistory.minOrNull() ?: 0, selDev.rssiHistory.maxOrNull() ?: 0, selDev.rssi), fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.padding(top = 2.dp))
                 }
                 // ── Wireshark 式原始广播十六进制 ──
                 if (selDev.advBytesHex.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    Text("原始广播 · RAW ADVERTISEMENT (HEX)", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
+                    Text(stringResource(R.string.det_label_raw_adv), fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
                     Surface(
                         Modifier.fillMaxWidth(),
                         shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
@@ -1409,7 +1414,7 @@ private fun BleScannerLivePanel(
                         }
                     }
                     Text(
-                        "AD Structure: Length · Type · Value;广播字段与 Android BLE 栈解码值一致,可直接对照分析",
+                        stringResource(R.string.det_raw_adv_note),
                         fontFamily = Sans, fontSize = 7.5.sp, color = Gray, modifier = Modifier.padding(top = 2.dp),
                     )
                     // ── nRF Connect 式逐字段解码 ──
@@ -1420,7 +1425,7 @@ private fun BleScannerLivePanel(
                         }.getOrDefault(emptyList())
                     }
                     if (adFields.isNotEmpty()) {
-                        Text("AD 字段解码 · nRF Connect 风格", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
+                        Text(stringResource(R.string.det_label_ad_decode), fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 3.dp))
                         adFields.forEach { f ->
                             Column(Modifier.padding(vertical = 2.dp)) {
                                 Text("▸ ${f.name} [${f.typeHex}]", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = White)
@@ -1433,7 +1438,7 @@ private fun BleScannerLivePanel(
         }
 
         Spacer(Modifier.height(8.dp))
-        Text("已发现 ${devices.size} 台设备 · 点击查看详情", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+        Text(stringResource(R.string.det_fmt_devices_found_tap, devices.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
         Spacer(Modifier.height(4.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             items(devices, key = { it.address }) { d ->
@@ -1480,13 +1485,13 @@ fun PingScreen(vm: PingViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("PING 泛洪", back)
+        TerminalHeader(stringResource(R.string.det_title_ping), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermInput("目标主机", host, placeholder = "例如 8.8.8.8 或 baidu.com") { vm.setHost(it) }
+                TermInput(stringResource(R.string.det_label_target_host), host, placeholder = stringResource(R.string.det_hint_host_example)) { vm.setHost(it) }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行探测", "停止探测") {
+                ActionButton(running, stringResource(R.string.det_btn_run_probe), stringResource(R.string.det_btn_stop_probe)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -1517,30 +1522,30 @@ private fun PingLivePanel(vm: PingViewModel, running: Boolean, host: String, err
     Column {
         if (!running && sent == 0 && error == null) {
             Spacer(Modifier.height(8.dp))
-            HintBreathing("填入目标后执行上方任务，探测结果实时返回")
+            HintBreathing(stringResource(R.string.det_hint_ping_idle))
         }
 
         if (sent > 0) {
             Spacer(Modifier.height(8.dp))
-            TermPanel("统计") {
+            TermPanel(stringResource(R.string.det_panel_stats)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    StatChip("发送", "$sent")
-                    StatChip("接收", "$recv")
-                    StatChip("丢包", "${loss}%", loss == 0)
-                    StatChip("最小", "${min}ms")
-                    StatChip("平均", "${avg}ms")
-                    StatChip("最大", "${max}ms")
+                    StatChip(stringResource(R.string.det_stat_sent_count), "$sent")
+                    StatChip(stringResource(R.string.det_stat_received_count), "$recv")
+                    StatChip(stringResource(R.string.det_stat_loss), "${loss}%", loss == 0)
+                    StatChip(stringResource(R.string.det_stat_min), "${min}ms")
+                    StatChip(stringResource(R.string.det_stat_avg), "${avg}ms")
+                    StatChip(stringResource(R.string.det_stat_max), "${max}ms")
                 }
             }
         }
 
         if (results.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text("探测结果 · $host", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+            Text(stringResource(R.string.det_fmt_probe_results, host), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
             Spacer(Modifier.height(4.dp))
             LazyColumn(state = list, modifier = Modifier.fillMaxWidth().weight(1f)) {
                 items(results, key = { it.sequence }) { r ->
-                    LogLine("seq=${r.sequence}", "${r.bytes}b 来自 ${r.ip} · ttl=${r.ttl} · 耗时 ${r.timeMs}ms", if (r.timeMs > 500) Danger else if (r.timeMs > 100) RedDim else White)
+                    LogLine("seq=${r.sequence}", stringResource(R.string.det_fmt_ping_reply, r.bytes, r.ip, r.ttl, r.timeMs), if (r.timeMs > 500) Danger else if (r.timeMs > 100) RedDim else White)
                 }
             }
         }
@@ -1576,13 +1581,13 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
     val verb = method.trim().uppercase(Locale.US)
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("HTTP 客户端", back)
+        TerminalHeader(stringResource(R.string.det_title_http_client), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(12.dp)) {
-                TermInput("请求地址", url, placeholder = "https://example.com") { vm.setUrl(it) }
+                TermInput(stringResource(R.string.det_label_request_url), url, placeholder = "https://example.com") { vm.setUrl(it) }
 
                 Spacer(Modifier.height(8.dp))
-                Text("请求方法", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
+                Text(stringResource(R.string.det_label_request_method), fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(bottom = 5.dp))
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     HttpClientManager.SUPPORTED_METHODS.forEach { m ->
                         SelectChip(selected = m == verb, text = m) { vm.setMethod(m) }
@@ -1590,15 +1595,15 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(8.dp))
-                TermInput("请求头", headers, placeholder = "Key: Value（# 开头为注释行）") { vm.setHeaders(it) }
+                TermInput(stringResource(R.string.det_label_request_headers), headers, placeholder = stringResource(R.string.det_hint_headers_placeholder)) { vm.setHeaders(it) }
 
                 if (verb in HttpClientManager.BODY_METHODS) {
                     Spacer(Modifier.height(8.dp))
-                    TermInput("请求体", body) { vm.setBody(it) }
+                    TermInput(stringResource(R.string.det_label_request_body), body) { vm.setBody(it) }
                 }
 
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "发送请求", "取消请求") {
+                ActionButton(running, stringResource(R.string.det_btn_send_request), stringResource(R.string.det_btn_cancel_request)) {
                     haptic.hud()
                     if (running) vm.cancel() else vm.send()
                 }
@@ -1614,21 +1619,21 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                 resp?.let { r ->
                     Spacer(Modifier.height(10.dp))
                     AsciiDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    Text("状态 ${r.statusCode} · 耗时 ${r.timeMs}ms", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    Text(stringResource(R.string.det_fmt_response_status, r.statusCode, r.timeMs), fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold,
                         color = if (r.statusCode < 400) White else Danger,
                     )
-                    PanelStat("响应大小", vm.formatBytes(r.bodyBytes.toLong()))
-                    PanelStat("字符集", r.charset)
+                    PanelStat(stringResource(R.string.det_label_response_size), vm.formatBytes(r.bodyBytes.toLong()))
+                    PanelStat(stringResource(R.string.det_label_charset), r.charset)
                     if (r.redirected && r.finalUrl.isNotEmpty()) {
-                        PanelStat("重定向落点", r.finalUrl, Gray)
+                        PanelStat(stringResource(R.string.det_label_redirect_target), r.finalUrl, Gray)
                     }
                     if (r.truncated) {
-                        Text("[!] 响应体超过 ${vm.formatBytes(HttpClientManager.MAX_BODY_BYTES.toLong())}，已截断", fontFamily = Sans, fontSize = 10.sp, color = Danger, modifier = Modifier.padding(top = 3.dp))
+                        Text(stringResource(R.string.det_warn_body_truncated, vm.formatBytes(HttpClientManager.MAX_BODY_BYTES.toLong())), fontFamily = Sans, fontSize = 10.sp, color = Danger, modifier = Modifier.padding(top = 3.dp))
                     }
 
                     if (r.headers.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        TermPanel("响应头 (${r.headers.size})") {
+                        TermPanel(stringResource(R.string.det_panel_response_headers, r.headers.size)) {
                             r.headers.entries.sortedBy { it.key.lowercase(Locale.US) }.forEach { (k, v) ->
                                 Text("$k: ${v.joinToString(", ")}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
                             }
@@ -1636,7 +1641,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                     }
 
                     Spacer(Modifier.height(8.dp))
-                    Text("响应体", fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 4.dp))
+                    Text(stringResource(R.string.det_label_response_body), fontFamily = Sans, fontSize = 10.sp, color = RedDim, modifier = Modifier.padding(bottom = 4.dp))
                     LazyColumn(
                         Modifier
                             .fillMaxWidth()
@@ -1645,7 +1650,7 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
                             .border(1.dp, Track, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                             .padding(10.dp),
                     ) {
-                        item { SelectionContainer { Text(r.body.ifEmpty { "（空）" }, fontFamily = Mono, fontSize = 10.sp, color = White) } }
+                        item { SelectionContainer { Text(r.body.ifEmpty { stringResource(R.string.det_empty_body) }, fontFamily = Mono, fontSize = 10.sp, color = White) } }
                     }
                 }
 
@@ -1662,20 +1667,20 @@ fun HttpClientScreen(vm: HttpClientViewModel, back: () -> Unit) {
 private fun HttpStatsPanel(vm: HttpClientViewModel, running: Boolean) {
     val stats by vm.stats.collectAsState()
     Spacer(Modifier.height(8.dp))
-    TermPanel("请求统计") {
-        LiveStat("总请求", "${stats.attempts}")
-        LiveStat("成功 2xx", "${stats.successCount}")
-        LiveStat("重定向 3xx", "${stats.redirectCount}")
-        LiveStat("客户端错误 4xx", "${stats.clientErrorCount}")
-        LiveStat("服务端错误 5xx", "${stats.serverErrorCount}")
-        LiveStat("失败", "${stats.failureCount}", if (stats.failureCount > 0) Danger else White)
-        LiveStat("接收流量", vm.formatBytes(stats.bytesReceived))
-        LiveStat("平均耗时", "${stats.averageDurationMs} ms")
-        LiveStat("最近状态", if (stats.lastStatusCode == 0) "-" else "${stats.lastStatusCode}")
-        LiveStat("最近耗时", "${stats.lastDurationMs} ms")
-        if (stats.lastError.isNotEmpty()) LiveStat("最近错误", stats.lastError, Danger)
-        if (stats.redirected && stats.lastFinalUrl.isNotEmpty()) LiveStat("最近落点", stats.lastFinalUrl, Gray)
-        LiveStat("状态", if (running) "运行中" else "空闲", if (running) White else Gray)
+    TermPanel(stringResource(R.string.det_panel_request_stats)) {
+        LiveStat(stringResource(R.string.det_stat_total_requests), "${stats.attempts}")
+        LiveStat(stringResource(R.string.det_stat_success_2xx), "${stats.successCount}")
+        LiveStat(stringResource(R.string.det_stat_redirect_3xx), "${stats.redirectCount}")
+        LiveStat(stringResource(R.string.det_stat_client_error_4xx), "${stats.clientErrorCount}")
+        LiveStat(stringResource(R.string.det_stat_server_error_5xx), "${stats.serverErrorCount}")
+        LiveStat(stringResource(R.string.det_stat_failed), "${stats.failureCount}", if (stats.failureCount > 0) Danger else White)
+        LiveStat(stringResource(R.string.det_stat_bytes_received), vm.formatBytes(stats.bytesReceived))
+        LiveStat(stringResource(R.string.det_stat_avg_duration), "${stats.averageDurationMs} ms")
+        LiveStat(stringResource(R.string.det_stat_last_status), if (stats.lastStatusCode == 0) "-" else "${stats.lastStatusCode}")
+        LiveStat(stringResource(R.string.det_stat_last_duration), "${stats.lastDurationMs} ms")
+        if (stats.lastError.isNotEmpty()) LiveStat(stringResource(R.string.det_stat_last_error), stats.lastError, Danger)
+        if (stats.redirected && stats.lastFinalUrl.isNotEmpty()) LiveStat(stringResource(R.string.det_stat_last_redirect), stats.lastFinalUrl, Gray)
+        LiveStat(stringResource(R.string.det_stat_status), if (running) stringResource(R.string.det_state_running) else stringResource(R.string.det_state_idle), if (running) White else Gray)
     }
 }
 
@@ -1688,7 +1693,7 @@ private fun HttpLogPanel(vm: HttpClientViewModel) {
     LogHeader(showClear = log.isNotEmpty()) { vm.clearLog() }
     Spacer(Modifier.height(4.dp))
     if (log.isEmpty()) {
-        HintBreathing("发送请求后，传输日志会实时显示在这里")
+        HintBreathing(stringResource(R.string.det_hint_http_log))
     } else {
         Column(Modifier.fillMaxWidth()) {
             log.asReversed().take(LOG_TAIL).forEach { e ->
@@ -1717,12 +1722,12 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("端口扫描", back)
+        TerminalHeader(stringResource(R.string.det_title_port_scan), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermInput("目标主机", host, placeholder = "例如 192.168.1.1") { vm.setHost(it) }
+                TermInput(stringResource(R.string.det_label_target_host), host, placeholder = stringResource(R.string.det_hint_target_ip_example)) { vm.setHost(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行扫描", "取消扫描") {
+                ActionButton(running, stringResource(R.string.det_btn_run_scan), stringResource(R.string.det_btn_cancel_scan)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -1747,32 +1752,32 @@ private fun PortScanLivePanel(vm: PortScannerViewModel, running: Boolean, host: 
         if (running) {
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(progress = { scanned.toFloat() / maxOf(1, total) }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-            Text("已扫描 $scanned/$total · 开放 ${open.size}", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+            Text(stringResource(R.string.det_fmt_ports_scanned, scanned, total, open.size), fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
         }
 
         if (!running && results.isEmpty() && error == null) {
             Spacer(Modifier.height(8.dp))
-            HintBreathing("输入目标主机后启动扫描，开放端口会实时列出")
+            HintBreathing(stringResource(R.string.det_hint_port_scan_idle))
         }
 
         if (results.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text("扫描报告 · $host", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+            Text(stringResource(R.string.det_fmt_scan_report, host), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
             Spacer(Modifier.height(4.dp))
             LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                 item {
-                    TermPanel("扫描报告 · $host") {
-                        if (open.isEmpty()) Text("未发现开放端口", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    TermPanel(stringResource(R.string.det_fmt_scan_report, host)) {
+                        if (open.isEmpty()) Text(stringResource(R.string.det_msg_no_open_ports), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         open.forEach { p ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text("${p.port}/tcp", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.width(72.dp))
-                                Text("开放", fontFamily = Sans, fontSize = 10.sp, color = Red, modifier = Modifier.width(44.dp))
+                                Text(stringResource(R.string.det_state_open), fontFamily = Sans, fontSize = 10.sp, color = Red, modifier = Modifier.width(44.dp))
                                 Text(p.service, fontFamily = Mono, fontSize = 11.sp, color = White)
                             }
                             if (p.banner.isNotEmpty()) Text("  └ ${p.banner}", fontFamily = Mono, fontSize = 10.sp, color = Gray)
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text("共扫描 $total 个端口，${open.size} 个开放", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                        Text(stringResource(R.string.det_fmt_scan_summary, total, open.size), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                     }
                 }
             }
@@ -1816,7 +1821,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("WiFi 对讲机", back)
+        TerminalHeader(stringResource(R.string.det_title_walkie), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize()) {
                 // ── 滚动区:整页滚动,PTT 圆盘固定在底栏外 ──
@@ -1825,7 +1830,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 12.dp).padding(top = 12.dp),
                 ) {
-                    ActionButton(running, "执行对讲", "停止对讲") {
+                    ActionButton(running, stringResource(R.string.det_btn_run_walkie), stringResource(R.string.det_btn_stop_walkie)) {
                         haptic.hud()
                         if (running) vm.stop() else vm.start()
                     }
@@ -1854,7 +1859,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                             border = BorderStroke(1.5.dp, if (isLive) Gold else Red.copy(alpha = 0.3f)),
                         ) {
                             Text(
-                                if (isLive) "直播中 · 自动发送 ${countdown}s" else "直播模式 · 免按自动发送",
+                                if (isLive) stringResource(R.string.det_btn_live_active, countdown) else stringResource(R.string.det_btn_live_mode),
                                 fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                                 color = if (isLive) Red else Red.copy(alpha = 0.5f),
                                 modifier = Modifier.padding(vertical = 9.dp).fillMaxWidth(),
@@ -1915,7 +1920,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                                     Star(if (active) White else Red, 14.dp)
                                     Spacer(Modifier.height(7.dp))
                                     Text(
-                                        if (active) "发送中" else "按住说话",
+                                        if (active) stringResource(R.string.det_state_transmitting) else stringResource(R.string.det_btn_push_to_talk),
                                         fontFamily = Sans, fontSize = if (active) 15.sp else 14.sp, fontWeight = FontWeight.Black,
                                         color = if (active) White else Red,
                                     )
@@ -1924,7 +1929,7 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                             }
                         }
                         Text(
-                            "按住圆盘发送语音 · 松开停止 · 直播模式免按",
+                            stringResource(R.string.det_hint_ptt),
                             fontFamily = Sans, fontSize = 9.sp, color = Gray,
                             modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
                         )
@@ -1945,11 +1950,11 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
 private fun WalkieLinkPanel(vm: WalkieTalkieViewModel) {
     val link by vm.link.collectAsState()
     val info = link.info
-    TermPanel("本机链路 · RF LINK", Modifier.padding(top = 8.dp)) {
+    TermPanel(stringResource(R.string.det_panel_local_link), Modifier.padding(top = 8.dp)) {
         if (info == null) {
-            Text("WiFi 服务不可用", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(stringResource(R.string.det_msg_wifi_unavailable), fontFamily = Sans, fontSize = 10.sp, color = Gray)
         } else if (!info.connected) {
-            Text("WiFi 未连接 —— 热点模式下本机无上游链路可测", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(stringResource(R.string.det_msg_wifi_disconnected), fontFamily = Sans, fontSize = 10.sp, color = Gray)
         } else {
             fun rssiColor(level: Int?): Color = when (level) {
                 3, 4 -> TacGreen
@@ -1957,24 +1962,21 @@ private fun WalkieLinkPanel(vm: WalkieTalkieViewModel) {
                 1, 0 -> Danger
                 else -> Gray
             }
-            fun quality(level: Int?): String = when (level) {
-                4 -> "优"; 3 -> "良"; 2 -> "中"; 1 -> "弱"; 0 -> "极弱"; else -> "—"
-            }
-            WalkieInfoRow("SSID", info.ssid ?: "不可见(定位未开启)")
-            WalkieInfoRow("BSSID", info.bssid ?: "不可见")
-            WalkieInfoRow("本机 IP · 网关", "${info.localIp ?: "—"} · ${info.gatewayIp ?: "—"}")
+            WalkieInfoRow("SSID", info.ssid ?: stringResource(R.string.det_value_ssid_hidden))
+            WalkieInfoRow("BSSID", info.bssid ?: stringResource(R.string.det_value_invisible))
+            WalkieInfoRow(stringResource(R.string.det_label_local_ip_gateway), "${info.localIp ?: "—"} · ${info.gatewayIp ?: "—"}")
             WalkieInfoRow(
-                "信号强度",
-                if (info.rssiDbm != null) "${info.rssiDbm} dBm · ${quality(info.signalLevel)}" else "系统未提供",
+                stringResource(R.string.det_label_signal_strength),
+                if (info.rssiDbm != null) "${info.rssiDbm} dBm · ${walkieQuality(info.signalLevel)}" else stringResource(R.string.det_value_not_provided),
             )
-            WalkieInfoRow("信道 · 频率", "CH${info.channel ?: "—"} · ${info.frequencyMhz ?: "—"} MHz")
+            WalkieInfoRow(stringResource(R.string.det_label_channel_frequency), "CH${info.channel ?: "—"} · ${info.frequencyMhz ?: "—"} MHz")
             val rate = when {
                 info.txLinkSpeedMbps != null && info.rxLinkSpeedMbps != null -> "TX ${info.txLinkSpeedMbps} · RX ${info.rxLinkSpeedMbps} Mbps"
                 info.linkSpeedMbps != null -> "${info.linkSpeedMbps} Mbps"
-                else -> "系统未提供"
+                else -> stringResource(R.string.det_value_not_provided)
             }
-            WalkieInfoRow("协商速率", rate)
-            WalkieInfoRow("Wi-Fi 标准", info.wifiStandard ?: "系统未提供")
+            WalkieInfoRow(stringResource(R.string.det_label_negotiated_rate), rate)
+            WalkieInfoRow(stringResource(R.string.det_label_wifi_standard), info.wifiStandard ?: stringResource(R.string.det_value_not_provided))
             if (info.rssiDbm != null) {
                 // 信号条:RSSI -100..-30 → 0..5 格
                 val bars = ((info.rssiDbm + 100f) / 70f * 5f).toInt().coerceIn(0, 5)
@@ -1982,11 +1984,22 @@ private fun WalkieLinkPanel(vm: WalkieTalkieViewModel) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("▮".repeat(bars) + "▯".repeat(5 - bars), fontFamily = Mono, fontSize = 11.sp, color = rssiColor(info.signalLevel))
                     Spacer(Modifier.width(6.dp))
-                    Text("(本机 ↔ AP 实测)", fontFamily = Sans, fontSize = 7.5.sp, color = Gray)
+                    Text(stringResource(R.string.det_hint_local_ap_measured), fontFamily = Sans, fontSize = 7.5.sp, color = Gray)
                 }
             }
         }
     }
+}
+
+/** 链路质量文字 —— 与信号条同一 RSSI 分档口径 */
+@Composable
+private fun walkieQuality(level: Int?): String = when (level) {
+    4 -> stringResource(R.string.det_quality_excellent)
+    3 -> stringResource(R.string.det_quality_good)
+    2 -> stringResource(R.string.det_quality_fair)
+    1 -> stringResource(R.string.det_quality_weak)
+    0 -> stringResource(R.string.det_quality_very_weak)
+    else -> "—"
 }
 
 /**
@@ -2013,7 +2026,7 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
     val link by vm.link.collectAsState()
     if (running && peers.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))
-        TermPanel("在线节点 (${peers.size})") {
+        TermPanel(stringResource(R.string.det_panel_online_nodes, peers.size)) {
             peers.forEachIndexed { i, p ->
                 // key(p.ip):列表重排时整体重建入场状态,避免 remember 复位后动画永不重放
                 androidx.compose.runtime.key(p.ip) {
@@ -2032,12 +2045,12 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
                             Text(if (p.isTalking) "● " else "○ ", fontFamily = Mono, fontSize = 10.sp, color = if (p.isTalking) Red else Gray)
                             Text(p.name.take(16), fontFamily = Mono, fontSize = 11.sp, color = if (p.isTalking) Red else White, fontWeight = if (p.isTalking) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
                             if (link.info?.gatewayIp == p.ip) {
-                                Text("网关", fontFamily = Sans, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(end = 4.dp))
+                                Text(stringResource(R.string.det_tag_gateway), fontFamily = Sans, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = TacGreen, modifier = Modifier.padding(end = 4.dp))
                             }
                             Text(p.ip, fontFamily = Mono, fontSize = 10.sp, color = Gray)
                             if (p.isTalking) {
                                 Spacer(Modifier.width(6.dp))
-                                Text("说话中", fontFamily = Sans, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.det_state_talking), fontFamily = Sans, fontSize = 9.sp, color = Red, fontWeight = FontWeight.Bold)
                             }
                         }
                         // 链路质量行:RTT 为本机实测,自报字段明确标注
@@ -2047,17 +2060,17 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
                                 p.rttEwmaMs != null -> {
                                     val c = when { p.rttEwmaMs <= 30f -> TacGreen; p.rttEwmaMs <= 80f -> Warn; else -> Danger }
                                     Text(
-                                        "回显 ${p.rttEwmaMs.toInt()}ms" + (p.jitterMs?.let { " · 抖动 ${it.toInt()}ms" } ?: "") + (p.lossPct?.let { " · 丢包 $it%" } ?: ""),
+                                        stringResource(R.string.det_fmt_echo, p.rttEwmaMs.toInt()) + (p.jitterMs?.let { stringResource(R.string.det_fmt_jitter, it.toInt()) } ?: "") + (p.lossPct?.let { stringResource(R.string.det_fmt_loss, it) } ?: ""),
                                         fontFamily = Mono, fontSize = 8.sp, color = c,
                                     )
                                 }
-                                p.rttStatus == WalkieRttStatus.NoEcho -> Text("回显无响应(旧版本/弱网/已离开)", fontFamily = Mono, fontSize = 8.sp, color = Danger)
-                                else -> Text("回显测量中…", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                                p.rttStatus == WalkieRttStatus.NoEcho -> Text(stringResource(R.string.det_msg_echo_no_response), fontFamily = Mono, fontSize = 8.sp, color = Danger)
+                                else -> Text(stringResource(R.string.det_msg_echo_measuring), fontFamily = Mono, fontSize = 8.sp, color = Gray)
                             }
                             Spacer(Modifier.weight(1f))
                             if (p.selfRssiDbm != null || p.selfFrequencyMhz != null) {
                                 Text(
-                                    "自报 ${p.selfRssiDbm?.let { "$it dBm" } ?: "—"} · ${p.selfFrequencyMhz?.let { "$it MHz" } ?: "—"}",
+                                    stringResource(R.string.det_fmt_self_reported, p.selfRssiDbm?.let { "$it dBm" } ?: "—", p.selfFrequencyMhz?.let { "$it MHz" } ?: "—"),
                                     fontFamily = Mono, fontSize = 8.sp, color = Gold,
                                 )
                             }
@@ -2067,16 +2080,15 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
                 }
             }
             Text(
-                "RTT/抖动/丢包 = 本机实测(UDP 回显);「自报」= 对端上报其自身↔AP 链路;" +
-                    "对端相对本机的 RSSI 在无 root 设备上不可得",
+                stringResource(R.string.det_peers_metrics_note),
                 fontFamily = Sans, fontSize = 7.sp, color = Gray.copy(alpha = 0.8f),
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
     } else if (running) {
         Spacer(Modifier.height(8.dp))
-        TermPanel("在线节点 (0)") {
-            Text("未发现在线节点 —— 请确认对端在同一 WiFi 且已启动对讲", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+        TermPanel(stringResource(R.string.det_panel_online_nodes, 0)) {
+            Text(stringResource(R.string.det_msg_no_peers), fontFamily = Sans, fontSize = 10.sp, color = Gray)
         }
     }
 }
@@ -2086,7 +2098,7 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
 // ══════════════════════════════════════════════════════════════════════════
 
 /** 目标威胁分级 —— 雷达页实时标记与档案页战术评估共用同一套推演标准 */
-data class RadarThreatTier(val label: String, val color: Color, val desc: String)
+data class RadarThreatTier(val label: String, val color: Color, val desc: String, val key: String = "")
 
 /**
  * 按信号强度与估算距离推演目标威胁分级
@@ -2098,14 +2110,17 @@ fun radarThreatTier(t: RadarTarget): RadarThreatTier = when {
     t.distanceM < 8f || t.rssi > -45 -> RadarThreatTier(
         "高危接近", Danger,
         "目标信号极强 / 估算距离 ${"%.1f".format(t.distanceM)}m，位于贴身范围内，建议立即甄别身份",
+        key = "high",
     )
     t.distanceM < 25f || t.rssi > -65 -> RadarThreatTier(
         "中等接近", Warn,
         "目标位于 ${"%.1f".format(t.distanceM)}m 附近，信号稳定，持续跟踪其移动轨迹",
+        key = "mid",
     )
     else -> RadarThreatTier(
         "远端目标", TacGreen,
         "目标距本机较远（${"%.1f".format(t.distanceM)}m），属环境背景设备，维持常规监视",
+        key = "far",
     )
 }
 
@@ -2213,7 +2228,7 @@ fun RadarScreen(
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("设备雷达", back)
+        TerminalHeader(stringResource(R.string.det_title_radar), back)
         PageEnter(locked = running) {
             // 整页唯一纵向滚动流:面板随页面滚动,圆盘按屏宽动态定尺
             Column(
@@ -2227,12 +2242,12 @@ fun RadarScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ActionButton(running, "执行雷达", "停止雷达", modifier = Modifier.weight(1f)) {
+                    ActionButton(running, stringResource(R.string.det_btn_run_radar), stringResource(R.string.det_btn_stop_radar), modifier = Modifier.weight(1f)) {
                         haptic.hud()
                         if (running) vm.stop() else vm.start()
                     }
-                    QuickNavChip("网络拓扑", Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenNetmap() }
-                    QuickNavChip("信号库", Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenDb() }
+                    QuickNavChip(stringResource(R.string.det_btn_network_topology), Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenNetmap() }
+                    QuickNavChip(stringResource(R.string.det_btn_signal_db), Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenDb() }
                 }
                 // 定位关闭横幅:WiFi 目标此时不可能进雷达,给出原因与快捷入口
                 if (!locationOn) {
@@ -2243,9 +2258,9 @@ fun RadarScreen(
                         border = BorderStroke(1.dp, Warn.copy(alpha = 0.5f)),
                     ) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text("定位服务关闭 —— WiFi 目标不可见(BLE 不受影响)", fontFamily = Sans, fontSize = 10.sp, color = Warn, modifier = Modifier.weight(1f))
+                            Text(stringResource(R.string.det_warn_location_off), fontFamily = Sans, fontSize = 10.sp, color = Warn, modifier = Modifier.weight(1f))
                             Text(
-                                "打开设置 ▸",
+                                stringResource(R.string.det_btn_open_settings),
                                 fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold,
                                 modifier = Modifier.clickable {
                                     haptic.hud()
@@ -2297,8 +2312,8 @@ fun RadarScreen(
                         border = BorderStroke(1.dp, if (satelliteOn) Gold.copy(alpha = 0.6f) else BorderDim),
                     ) {
                         Text(
-                            if (gnssState.satellites.isEmpty()) "卫星 0 · 室内?"
-                            else "卫星 ${gnssState.satellites.size}",
+                            if (gnssState.satellites.isEmpty()) stringResource(R.string.det_sat_none)
+                            else stringResource(R.string.det_fmt_satellites, gnssState.satellites.size),
                             fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                             color = if (satelliteOn) Gold else Gray,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
@@ -2333,18 +2348,18 @@ fun RadarScreen(
                 border = BorderStroke(1.dp, Gold.copy(alpha = 0.6f)),
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("配对弹窗 · 目标 ${t.name.take(16)}", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Gold)
+                    Text(stringResource(R.string.det_dialog_pair_title, t.name.take(16)), fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Gold)
                     Spacer(Modifier.height(4.dp))
                     Text(t.address, fontFamily = Mono, fontSize = 9.sp, color = Gray)
                     Spacer(Modifier.height(10.dp))
-                    TermInput("弹窗消息(≤60 字)", pairMsg, placeholder = "将显示在对方的系统配对弹窗上") { pairMsg = it }
+                    TermInput(stringResource(R.string.det_label_popup_message), pairMsg, placeholder = stringResource(R.string.det_hint_popup_message)) { pairMsg = it }
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "机制: 本机蓝牙名临时改为消息 → 发起标准配对请求。仅对处于可发现/可配对状态的设备有效,是系统弹窗而非自定义 UI。",
+                        stringResource(R.string.det_pair_mechanism),
                         fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
                     )
                     Spacer(Modifier.height(8.dp))
-                    pairResult?.let { Text(it, fontFamily = Sans, fontSize = 9.sp, color = if (it.startsWith("已")) TacGreen else Danger) }
+                    pairResult?.let { Text(it, fontFamily = Sans, fontSize = 9.sp, color = if (it.startsWith("[!]")) Danger else TacGreen) }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Surface(
@@ -2353,24 +2368,24 @@ fun RadarScreen(
                             color = Color.Transparent,
                             border = BorderStroke(1.dp, BorderDim),
                         ) {
-                            Text("取消", fontFamily = Sans, fontSize = 11.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                            Text(stringResource(R.string.det_btn_cancel), fontFamily = Sans, fontSize = 11.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                         }
                         Surface(
                             modifier = Modifier.weight(1f).clickable {
                                 haptic.hud()
                                 if (pairMsg.isBlank()) {
-                                    xin.ctkqiang.deauthctrl.ui.components.StickerBus.show("先输入弹窗消息!")
-                                    pairResult = "[!] 消息不能为空"
+                                    xin.ctkqiang.deauthctrl.ui.components.StickerBus.show(context.getString(R.string.det_sticker_enter_message))
+                                    pairResult = context.getString(R.string.det_error_message_empty)
                                 } else {
                                     pairResult = vm.sendPairingPopup(t.address, pairMsg)?.let { "[!] $it" }
-                                        ?: "已发起配对请求 —— 对方屏幕将出现弹窗(60 秒后自动恢复本机蓝牙名)"
+                                        ?: context.getString(R.string.det_msg_pair_sent)
                                 }
                             },
                             shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
                             color = Red.copy(alpha = 0.14f),
                             border = BorderStroke(1.dp, Red.copy(alpha = 0.55f)),
                         ) {
-                            Text("发起弹窗 ▸", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                            Text(stringResource(R.string.det_btn_send_popup), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
                         }
                     }
                 }
@@ -2395,24 +2410,25 @@ private const val MAX_RADAR_TRACK_ROWS = 30
 @Composable
 private fun SnapshotChip(vm: RadarViewModel, dbVm: DbViewModel) {
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val lastRefresh by dbVm.lastRefresh.collectAsState()
     val lastInserted by dbVm.lastInserted.collectAsState()
     // 闪现消息:(触发时间, 文案) —— 所有反馈走同一套 1.6s 自动消失计时器
     var flash by remember { mutableStateOf<Pair<Long, String>?>(null) }
     LaunchedEffect(lastRefresh) {
-        if (lastRefresh != null) flash = System.currentTimeMillis() to "+$lastInserted 已入库"
+        if (lastRefresh != null) flash = System.currentTimeMillis() to context.getString(R.string.det_fmt_stored, lastInserted)
     }
     LaunchedEffect(flash) {
         if (flash != null) { delay(1600); flash = null }
     }
     QuickNavChip(
-        label = flash?.second ?: "入库",
+        label = flash?.second ?: stringResource(R.string.det_btn_snapshot),
         color = if (flash != null) TacGreen else Gold,
         modifier = Modifier.width(52.dp),
         onClick = {
             haptic.hud()
             if (vm.targets.value.isEmpty()) {
-                flash = System.currentTimeMillis() to "无目标"
+                flash = System.currentTimeMillis() to context.getString(R.string.det_msg_no_targets)
             } else {
                 dbVm.refresh(vm.targets.value, emptyList(), emptyList())
             }
@@ -2455,7 +2471,7 @@ private fun TacticalStatusStrip(
     val walkieRunning by walkieVm.isRunning.collectAsState()
     val counts by dbVm.counts.collectAsState()
 
-    val high = targets.count { radarThreatTier(it).label == "高危接近" }
+    val high = targets.count { radarThreatTier(it).key == "high" }
     val dbTotal = counts.values.sum()
 
     Surface(
@@ -2468,13 +2484,13 @@ private fun TacticalStatusStrip(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CompactStat("目标", "${targets.size}", TacGreen, Modifier.weight(1f))
+            CompactStat(stringResource(R.string.det_compact_targets), "${targets.size}", TacGreen, Modifier.weight(1f))
             StatDivider()
-            CompactStat("高危", "$high", Danger, Modifier.weight(1f))
+            CompactStat(stringResource(R.string.det_compact_high_risk), "$high", Danger, Modifier.weight(1f))
             StatDivider()
-            CompactStat("节点", if (walkieRunning) "${peers.size}" else "—", Gold, Modifier.weight(1f))
+            CompactStat(stringResource(R.string.det_compact_nodes), if (walkieRunning) "${peers.size}" else "—", Gold, Modifier.weight(1f))
             StatDivider()
-            CompactStat("情报", "$dbTotal", White, Modifier.weight(1f))
+            CompactStat(stringResource(R.string.det_compact_intel), "$dbTotal", White, Modifier.weight(1f))
         }
     }
 }
@@ -2522,13 +2538,13 @@ private fun MetalDetectStrip(vm: RadarViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Star(accent, 7.dp)
                 Spacer(Modifier.width(6.dp))
-                Text("金属探测 · MAG", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accent)
+                Text(stringResource(R.string.det_panel_metal_detect), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accent)
                 Spacer(Modifier.weight(1f))
                 val status = when {
-                    m == null -> "磁力计不可用"
-                    !m.calibrated -> "校准中 ${(m.calProgress * 100).toInt()}%"
-                    anomaly -> "磁场异常"
-                    else -> "环境稳定"
+                    m == null -> stringResource(R.string.det_metal_unavailable)
+                    !m.calibrated -> stringResource(R.string.det_fmt_calibrating, (m.calProgress * 100).toInt())
+                    anomaly -> stringResource(R.string.det_metal_anomaly)
+                    else -> stringResource(R.string.det_metal_stable)
                 }
                 val statusColor = when {
                     m == null -> Gray
@@ -2565,7 +2581,7 @@ private fun MetalDetectStrip(vm: RadarViewModel) {
                 )
             }
             Text(
-                "相对磁场异常检测 · 非距离测量 · 点击重新校准",
+                stringResource(R.string.det_metal_note),
                 fontFamily = Sans, fontSize = 7.sp, color = Gray.copy(alpha = 0.7f),
                 modifier = Modifier.padding(top = 2.dp),
             )
@@ -2599,16 +2615,16 @@ private fun MeshNodesPanel(vm: WalkieTalkieViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Star(Gold, 7.dp)
                 Spacer(Modifier.width(6.dp))
-                Text("网格节点", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold)
+                Text(stringResource(R.string.det_panel_mesh_nodes), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold)
                 Spacer(Modifier.width(8.dp))
                 if (running) {
-                    Text("${peers.size} 在线", fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
+                    Text(stringResource(R.string.det_fmt_online, peers.size), fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
                     if (talking) {
                         Spacer(Modifier.width(6.dp))
-                        Text("发送中", fontFamily = Sans, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Red)
+                        Text(stringResource(R.string.det_state_transmitting), fontFamily = Sans, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Red)
                     }
                 } else {
-                    Text("未运行", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    Text(stringResource(R.string.det_state_not_running), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 }
                 Spacer(Modifier.weight(1f))
                 if (running) {
@@ -2648,7 +2664,7 @@ private fun MeshNodesPanel(vm: WalkieTalkieViewModel) {
                     )
                 } else {
                     Text(
-                        "点击启动 ▸",
+                        stringResource(R.string.det_btn_tap_to_start),
                         fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen,
                         modifier = Modifier.clickable {
                             haptic.hud()
@@ -2709,19 +2725,19 @@ private fun CompassStrip(vm: RadarViewModel) {
                     "H ${heading.toInt().toString().padStart(3, '0')}°",
                     fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TacGreen,
                 )
-                Text("航向 · $northRef", fontFamily = Sans, fontSize = 7.sp, color = Gray)
+                Text(stringResource(R.string.det_fmt_heading, northRef), fontFamily = Sans, fontSize = 7.sp, color = Gray)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("%+d°".format(pitch.toInt()), fontFamily = Mono, fontSize = 11.sp, color = Gold)
-                Text("俯仰", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                Text(stringResource(R.string.det_label_pitch), fontFamily = Sans, fontSize = 8.sp, color = Gray)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("%+d°".format(roll.toInt()), fontFamily = Mono, fontSize = 11.sp, color = Gold)
-                Text("横滚", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                Text(stringResource(R.string.det_label_roll), fontFamily = Sans, fontSize = 8.sp, color = Gray)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(if (online) "陀螺仪+地磁 · 融合在线" else "传感器离线", fontFamily = Mono, fontSize = 8.sp, color = if (online) TacGreen else Danger)
-                Text("旋转矢量 · ROTATION_VECTOR", fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                Text(if (online) stringResource(R.string.det_compass_online) else stringResource(R.string.det_compass_offline), fontFamily = Mono, fontSize = 8.sp, color = if (online) TacGreen else Danger)
+                Text(stringResource(R.string.det_compass_sensor), fontFamily = Mono, fontSize = 8.sp, color = Gray)
             }
         }
     }
@@ -2738,7 +2754,7 @@ private fun RadarFilterBar(
 ) {
     Column(modifier) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("all" to "全部", "wifi" to "WIFI", "bt" to "BLE").forEach { (key, label) ->
+            listOf("all" to stringResource(R.string.det_filter_all), "wifi" to "WIFI", "bt" to "BLE").forEach { (key, label) ->
                 Surface(
                     modifier = Modifier.clickable { onTypeFilter(key) },
                     shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
@@ -2767,7 +2783,7 @@ private fun RadarFilterBar(
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 decorationBox = { inner ->
                     if (query.isEmpty()) {
-                        Text("筛选设备名…", fontFamily = Sans, fontSize = 10.sp, color = Gray.copy(alpha = 0.5f))
+                        Text(stringResource(R.string.det_hint_filter_device_name), fontFamily = Sans, fontSize = 10.sp, color = Gray.copy(alpha = 0.5f))
                     }
                     inner()
                 },
@@ -2804,6 +2820,21 @@ private fun RadarScope(
     val satState = gnss?.state?.collectAsState() // gnss 在 RadarScreen 层 remember, 参数 null 时组合不成立(设计如此)
     val textMeasurer = rememberTextMeasurer()
     val haptic = LocalHapticFeedback.current
+    val ctx = LocalContext.current
+    val cardinalLabels = listOf(
+        stringResource(R.string.det_cardinal_n) to 0f,
+        stringResource(R.string.det_cardinal_e) to 90f,
+        stringResource(R.string.det_cardinal_s) to 180f,
+        stringResource(R.string.det_cardinal_w) to 270f,
+    )
+    val scopeModeScan = stringResource(R.string.det_scope_mode_scan)
+    val scopeModeIdle = stringResource(R.string.det_scope_mode_idle)
+    val scopeSweepFmt = ctx.getString(R.string.det_fmt_scope_sweep)
+    val scopeHeadingFmt = ctx.getString(R.string.det_fmt_scope_heading)
+    val scopeStatus2Fmt = ctx.getString(R.string.det_fmt_scope_status2)
+    val meshLegendText = stringResource(R.string.det_legend_mesh_nodes)
+    val satelliteTagFmt = ctx.getString(R.string.det_fmt_satellites)
+    val bearingCollectingFmt = ctx.getString(R.string.det_fmt_bearing_collecting)
 
     // 文本测量缓存:罗盘字/网格标签/目标编号/图例等固定文本只测一次;
     // 每目标每帧 measure 是雷达卡顿的主因之一
@@ -2893,13 +2924,13 @@ private fun RadarScope(
             val statusStyle = TextStyle(fontFamily = Mono, fontSize = 8.5.sp, color = g.copy(alpha = 0.86f))
             val maxW = (size.width - 12.dp.toPx()).toInt().coerceAtLeast(1)
             val l1 = textMeasurer.measure(
-                (if (running) "模式: 扫描" else "模式: 待机") + "   扫描: %03d°".format(sweepDeg.toInt() % 360) + "   航向: %03d°".format(heading.toInt() % 360),
+                (if (running) scopeModeScan else scopeModeIdle) + "   " + String.format(scopeSweepFmt, sweepDeg.toInt() % 360) + "   " + String.format(scopeHeadingFmt, heading.toInt() % 360),
                 statusStyle,
                 constraints = Constraints(maxWidth = maxW),
             )
             val estCount = loc.values.count { it.state == LocState.ESTIMATED }
             val l2 = textMeasurer.measure(
-                "量程: 100m   目标: ${visibleTargets.size}/${targets.size}   定位: $estCount   节点: ${peers.size}",
+                String.format(scopeStatus2Fmt, visibleTargets.size, targets.size, estCount, peers.size),
                 statusStyle,
                 constraints = Constraints(maxWidth = maxW),
             )
@@ -2961,7 +2992,7 @@ private fun RadarScope(
                 )
             }
             // 罗盘方位字：北东南西固定在真实方位，随陀螺仪反向旋转
-            listOf("北" to 0f, "东" to 90f, "南" to 180f, "西" to 270f).forEach { (ch, deg) ->
+            cardinalLabels.forEach { (ch, deg) ->
                 val a = Math.toRadians((deg - heading - 90.0).toDouble()).toFloat()
                 val lr = r * 0.83f
                 val m = cachedMeasure("cardinal", ch, TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = g.copy(alpha = 0.9f)))
@@ -3107,7 +3138,7 @@ private fun RadarScope(
 
                     // ── 高危接近警示:红色双环 + 「!」标签(与档案页同一套威胁分级) ──
                     val tier = radarThreatTier(t)
-                    if (tier.label == "高危接近") {
+                    if (tier.key == "high") {
                         val warnR = 22.dp.toPx() + 3.dp.toPx() * sin(sweepDeg * 0.07f + i)
                         drawCircle(Danger.copy(alpha = bright * 0.85f), warnR, Offset(x, y), style = Stroke(2.2f))
                         drawCircle(Danger.copy(alpha = bright * 0.5f), warnR + 4.dp.toPx(), Offset(x, y), style = Stroke(1.2f))
@@ -3230,7 +3261,7 @@ private fun RadarScope(
                     // 采样中:圆盘底部提示旋转采集
                     val hint = cachedMeasure(
                         "hint",
-                        "方位推演采样中 · 覆盖 %d%% · 请缓慢旋转机身".format((foc.coverage * 100).toInt()),
+                        String.format(bearingCollectingFmt, (foc.coverage * 100).toInt()),
                         TextStyle(fontFamily = Sans, fontSize = 9.sp, color = Gold.copy(alpha = 0.9f)),
                     )
                     drawText(hint, topLeft = Offset(cx - hint.size.width / 2f, cy + r * 0.62f))
@@ -3288,7 +3319,7 @@ private fun RadarScope(
                 // 图例:左上角
                 val legend = cachedMeasure(
                     "legend",
-                    "◈ 同网节点(距离未知)",
+                    meshLegendText,
                     TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = Gold.copy(alpha = 0.8f)),
                 )
                 drawText(legend, topLeft = Offset(8.dp.toPx(), 8.dp.toPx()))
@@ -3316,7 +3347,7 @@ private fun RadarScope(
                 }
                 val satTag = cachedMeasure(
                     "sat",
-                    "卫星 ${satellites.size}",
+                    String.format(satelliteTagFmt, satellites.size),
                     TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = Gold.copy(alpha = 0.8f)),
                 )
                 drawText(satTag, topLeft = Offset(8.dp.toPx(), 20.dp.toPx()))
@@ -3360,17 +3391,17 @@ private fun RadarTrackPanel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Star(Gold, 8.dp)
             Spacer(Modifier.width(7.dp))
-            Text("目标列表 · ${filtered.size}/${targets.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, maxLines = 1, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.det_fmt_target_list, filtered.size, targets.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, maxLines = 1, modifier = Modifier.weight(1f))
             if (focusedId != null) {
                 Spacer(Modifier.width(6.dp))
-                Text("聚焦 · 降噪", fontFamily = Mono, fontSize = 8.sp, color = Gold)
+                Text(stringResource(R.string.det_tag_focus_denoise), fontFamily = Mono, fontSize = 8.sp, color = Gold)
             }
             Spacer(Modifier.width(6.dp))
             SnapshotChip(vm, dbVm)
         }
         Spacer(Modifier.height(4.dp))
         if (filtered.isEmpty()) {
-            EmptyHint(if (targets.isEmpty()) "启动雷达后，检测到的设备会亮在扫描盘上" else "过滤条件下没有匹配设备")
+            EmptyHint(if (targets.isEmpty()) stringResource(R.string.det_hint_radar_idle) else stringResource(R.string.det_hint_radar_no_match))
         } else {
             // 类型前缀 + 去重:BLE 扫描与经典发现可能瞬时上报同一地址
             val rows = filtered.sortedByDescending { it.rssi }.distinctBy { "${it.type}_${it.id}" }
@@ -3428,40 +3459,57 @@ private fun RadarTrackPanel(
                                 val e = locNow[t.id]
                                 val hasLoc = e != null && e.state == LocState.ESTIMATED && !e.bearingDeg.isNaN()
                                 Text(
-                                    if (hasLoc) "%.1fm · 估计 %03d°".format(e.distanceM, e.bearingDeg.toInt())
-                                    else "%.1fm · %03d° · 占位".format(t.distanceM, t.angleDeg.toInt()),
+                                    if (hasLoc) stringResource(R.string.det_fmt_range_estimated, e.distanceM, e.bearingDeg.toInt())
+                                    else stringResource(R.string.det_fmt_range_placeholder, t.distanceM, t.angleDeg.toInt()),
                                     fontFamily = Mono, fontSize = 8.sp,
                                     color = if (hasLoc) Gold else Gray,
                                 )
                                 // 威胁分级:与档案页战术评估共用同一套推演标准
                                 val tier = radarThreatTier(t)
-                                Text(tier.label, fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = tier.color)
+                                Text(
+                                    stringResource(
+                                        when (tier.key) {
+                                            "high" -> R.string.det_threat_high
+                                            "mid" -> R.string.det_threat_mid
+                                            else -> R.string.det_threat_far
+                                        },
+                                    ),
+                                    fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = tier.color,
+                                )
                             }
                         }
                         // ── 展开的内联技术详情：聚焦即降噪，详情就地展开 ──
                         if (expanded) {
                             Column(Modifier.padding(horizontal = 10.dp).padding(bottom = 8.dp)) {
-                                InlineInfoRow("标识", if (wifi) t.id else t.address)
-                                InlineInfoRow("厂商", "${t.vendor} · OUI ${t.vendorOui}")
-                                InlineInfoRow("信号", "RSSI ${t.rssi}dBm · SNR ${t.snrDb}dB · 底噪 ${t.noiseDbm}dBm")
+                                InlineInfoRow(stringResource(R.string.det_info_id), if (wifi) t.id else t.address)
+                                InlineInfoRow(stringResource(R.string.det_info_vendor), "${t.vendor} · OUI ${t.vendorOui}")
+                                InlineInfoRow(stringResource(R.string.det_info_signal), stringResource(R.string.det_fmt_signal_detail, t.rssi, t.snrDb, t.noiseDbm))
                                 if (wifi) {
-                                    InlineInfoRow("射频", "${t.frequencyMhz}MHz · ${t.channel} · ${t.channelWidth}")
-                                    InlineInfoRow("安全", t.security.ifEmpty { "--" })
+                                    InlineInfoRow(stringResource(R.string.det_info_radio), "${t.frequencyMhz}MHz · ${t.channel} · ${t.channelWidth}")
+                                    InlineInfoRow(stringResource(R.string.det_info_security), t.security.ifEmpty { "--" })
                                 } else {
-                                    InlineInfoRow("类别", "${t.deviceClassMajor}${if (t.deviceClassDetail.isNotEmpty()) " · ${t.deviceClassDetail}" else ""}")
-                                    InlineInfoRow("链路", "${t.linkType} · 绑定: ${t.bondState}")
+                                    InlineInfoRow(stringResource(R.string.det_info_class), "${t.deviceClassMajor}${if (t.deviceClassDetail.isNotEmpty()) " · ${t.deviceClassDetail}" else ""}")
+                                    InlineInfoRow(stringResource(R.string.det_info_link), stringResource(R.string.det_fmt_link_bond, t.linkType, t.bondState))
                                     if (t.bleAdv?.hasRecord == true) {
-                                        InlineInfoRow("广播", "TX ${if (t.txPowerDbm != null) "${t.txPowerDbm}dBm" else "—"} · UUID ${t.bleAdv.serviceUuids.size} 个 · 厂商ID ${if (t.bleAdv.manufacturerId >= 0) "0x%04X".format(t.bleAdv.manufacturerId) else "—"}")
+                                        InlineInfoRow(
+                                            stringResource(R.string.det_info_adv),
+                                            stringResource(
+                                                R.string.det_fmt_adv_info,
+                                                if (t.txPowerDbm != null) "${t.txPowerDbm}dBm" else "—",
+                                                t.bleAdv.serviceUuids.size,
+                                                if (t.bleAdv.manufacturerId >= 0) "0x%04X".format(t.bleAdv.manufacturerId) else "—",
+                                            ),
+                                        )
                                     }
                                 }
                                 // 设备情报指纹
                                 DeviceIntel.classify(t.name, t.id, t.bleAdv?.serviceUuids.orEmpty(), t.bleAdv?.manufacturerId)?.let { hit ->
-                                    InlineInfoRow("设备情报", "${hit.label} · 置信 ${(hit.confidence * 100).toInt()}% · ${hit.basis}")
+                                    InlineInfoRow(stringResource(R.string.det_info_device_intel), stringResource(R.string.det_fmt_intel_confidence, hit.label, (hit.confidence * 100).toInt(), hit.basis))
                                 }
                                 // 方位推演状态行
-                                InlineInfoRow("方位推演", locLabel(locNow[t.id]))
-                                InlineInfoRow("距离模型", if (t.txPowerDbm != null) "广播 ${t.txPowerDbm}dBm · n=2.5" else "假定 PTX · n=2.5(非测量)")
-                                InlineInfoRow("跟踪", "命中 ${t.hitCount} 次 · 首见 ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))}")
+                                InlineInfoRow(stringResource(R.string.det_info_bearing), locLabel(locNow[t.id]))
+                                InlineInfoRow(stringResource(R.string.det_info_distance_model), if (t.txPowerDbm != null) stringResource(R.string.det_fmt_range_model_tx, t.txPowerDbm) else stringResource(R.string.det_range_model_assumed))
+                                InlineInfoRow(stringResource(R.string.det_info_tracking), stringResource(R.string.det_fmt_tracking, t.hitCount, SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))))
                                 Spacer(Modifier.height(5.dp))
                                 Surface(
                                     modifier = Modifier.fillMaxWidth().clickable { onPair(t) },
@@ -3469,7 +3517,7 @@ private fun RadarTrackPanel(
                                     color = Gold.copy(alpha = 0.08f),
                                     border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
                                 ) {
-                                    Text("配对弹窗消息 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                                    Text(stringResource(R.string.det_btn_pair_popup), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
                                 }
                                 Spacer(Modifier.height(5.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -3479,7 +3527,7 @@ private fun RadarTrackPanel(
                                         color = Red.copy(alpha = 0.14f),
                                         border = BorderStroke(1.dp, Red.copy(alpha = 0.5f)),
                                     ) {
-                                        Text("打开完整档案 ▸", fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                                        Text(stringResource(R.string.det_btn_open_dossier), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Red, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
                                     }
                                     Surface(
                                         modifier = Modifier.weight(1f).clickable { onFocus(t.id) },
@@ -3487,7 +3535,7 @@ private fun RadarTrackPanel(
                                         color = Color.Transparent,
                                         border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
                                     ) {
-                                        Text("取消聚焦", fontFamily = Sans, fontSize = 10.sp, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                                        Text(stringResource(R.string.det_btn_unfocus), fontFamily = Sans, fontSize = 10.sp, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
                                     }
                                 }
                             }
@@ -3497,7 +3545,7 @@ private fun RadarTrackPanel(
             }
             if (rows.size > MAX_RADAR_TRACK_ROWS) {
                 Text(
-                    "仅显示信号最强的 $MAX_RADAR_TRACK_ROWS 个 · 另有 ${rows.size - MAX_RADAR_TRACK_ROWS} 个未列出,可用上方筛选缩小范围",
+                    stringResource(R.string.det_fmt_track_limit, MAX_RADAR_TRACK_ROWS, rows.size - MAX_RADAR_TRACK_ROWS),
                     fontFamily = Sans, fontSize = 8.sp, color = Gray,
                     modifier = Modifier.padding(top = 3.dp),
                 )
@@ -3507,14 +3555,18 @@ private fun RadarTrackPanel(
 }
 
 /** 方位推演状态文案 —— 列表展开行与档案页共用同一口径 */
+@Composable
 private fun locLabel(e: BearingEstimate?): String = when {
-    e == null -> "不可用（罗盘离线或样本不足）"
-    e.state == LocState.ESTIMATED -> "%03d° ± %d° · 置信 %d%% · %d 圈".format(e.bearingDeg.toInt(), e.sectorHalfWidthDeg.toInt(), (e.confidence * 100).toInt(), e.sweepCount)
-    e.state == LocState.COLLECTING -> "采样中 %d%% · 请缓慢旋转机身".format((e.coverage * 100).toInt())
-    e.state == LocState.AMBIGUOUS && e.fwhmDeg >= 350f -> "方向图平坦,调制不足,方位不可信"
-    e.state == LocState.AMBIGUOUS -> "多径多峰,方位不可靠"
-    e.state == LocState.STALE -> "过期,最后更新 %ds 前".format(e.ageMs / 1000)
-    else -> "不可用"
+    e == null -> stringResource(R.string.det_loc_unavailable)
+    e.state == LocState.ESTIMATED -> stringResource(
+        R.string.det_fmt_loc_estimated,
+        e.bearingDeg.toInt(), e.sectorHalfWidthDeg.toInt(), (e.confidence * 100).toInt(), e.sweepCount,
+    )
+    e.state == LocState.COLLECTING -> stringResource(R.string.det_fmt_loc_collecting, (e.coverage * 100).toInt())
+    e.state == LocState.AMBIGUOUS && e.fwhmDeg >= 350f -> stringResource(R.string.det_loc_flat)
+    e.state == LocState.AMBIGUOUS -> stringResource(R.string.det_loc_multipath)
+    e.state == LocState.STALE -> stringResource(R.string.det_fmt_loc_stale, e.ageMs / 1000)
+    else -> stringResource(R.string.det_loc_unavailable_short)
 }
 
 /** 内联详情行 —— 标签灰、数值白，等宽小字 */
@@ -3550,7 +3602,7 @@ fun ProbeMonitorScreen(vm: RadarViewModel, back: () -> Unit) {
     val wifiTargets = targets.filter { it.type == "wifi" }.sortedByDescending { it.rssi }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("Probe 监视 · FRAME MONITOR", back)
+        TerminalHeader(stringResource(R.string.det_title_probe_monitor), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(12.dp)) {
             Surface(
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
@@ -3558,18 +3610,18 @@ fun ProbeMonitorScreen(vm: RadarViewModel, back: () -> Unit) {
                 border = BorderStroke(1.dp, BorderDim),
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (running) "● 被动监视中" else "○ 待机", fontFamily = Mono, fontSize = 10.sp, color = if (running) TacGreen else Gray, modifier = Modifier.weight(1f))
-                    Text("信标帧 ${wifiTargets.size} 个", fontFamily = Mono, fontSize = 10.sp, color = Gold)
+                    Text(if (running) stringResource(R.string.det_state_passive_watching) else stringResource(R.string.det_state_standby), fontFamily = Mono, fontSize = 10.sp, color = if (running) TacGreen else Gray, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.det_fmt_beacon_count, wifiTargets.size), fontFamily = Mono, fontSize = 10.sp, color = Gold)
                 }
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "观察范围: 信标/探测响应帧的管理字段(WifiManager 扫描结果)。无 root 的 Android 无法捕获数据帧与全帧字节;如需全量抓包需 root + 外接网卡。",
+                stringResource(R.string.det_probe_scope_note),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
             )
             Spacer(Modifier.height(8.dp))
             if (wifiTargets.isEmpty()) {
-                EmptyHint("等待 WiFi 帧 —— 打开定位服务后信标自动进入")
+                EmptyHint(stringResource(R.string.det_hint_probe_wait))
             } else {
                 wifiTargets.take(60).forEach { t ->
                     val expanded = t.id == selectedId
@@ -3589,15 +3641,15 @@ fun ProbeMonitorScreen(vm: RadarViewModel, back: () -> Unit) {
                             if (expanded) {
                                 Spacer(Modifier.height(6.dp))
                                 // Wireshark 式字段表
-                                ProbeField("BSSID (hex)", t.id)
-                                ProbeField("Vendor OUI", "${t.vendor} · ${t.vendorOui}")
-                                ProbeField("Channel", "${t.channel} · ${t.frequencyMhz} MHz")
-                                ProbeField("Width", t.channelWidth.ifEmpty { "--" })
-                                ProbeField("CenterFreq", "0: ${if (t.centerFreq0Mhz > 0) "${t.centerFreq0Mhz}MHz" else "--"} · 1: ${if (t.centerFreq1Mhz > 0) "${t.centerFreq1Mhz}MHz" else "--"}")
-                                ProbeField("Capabilities", t.capabilitiesRaw.ifEmpty { "--" })
-                                ProbeField("Security", t.security)
-                                ProbeField("RSSI/SNR", "${t.rssi}dBm / ${t.snrDb}dB")
-                                ProbeField("Beacons", "${t.hitCount} 次 · 首见 ${SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))}")
+                                ProbeField(stringResource(R.string.det_field_bssid_hex), t.id)
+                                ProbeField(stringResource(R.string.det_field_vendor_oui), "${t.vendor} · ${t.vendorOui}")
+                                ProbeField(stringResource(R.string.det_field_channel), "${t.channel} · ${t.frequencyMhz} MHz")
+                                ProbeField(stringResource(R.string.det_field_width), t.channelWidth.ifEmpty { "--" })
+                                ProbeField(stringResource(R.string.det_field_center_freq), "0: ${if (t.centerFreq0Mhz > 0) "${t.centerFreq0Mhz}MHz" else "--"} · 1: ${if (t.centerFreq1Mhz > 0) "${t.centerFreq1Mhz}MHz" else "--"}")
+                                ProbeField(stringResource(R.string.det_field_capabilities), t.capabilitiesRaw.ifEmpty { "--" })
+                                ProbeField(stringResource(R.string.det_field_security), t.security)
+                                ProbeField(stringResource(R.string.det_field_rssi_snr), "${t.rssi}dBm / ${t.snrDb}dB")
+                                ProbeField(stringResource(R.string.det_field_beacons), stringResource(R.string.det_fmt_beacons_seen, t.hitCount, SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))))
                             }
                         }
                     }
@@ -3635,10 +3687,10 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.sendFile(it, manualIp) } }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("文件快传", back)
+        TerminalHeader(stringResource(R.string.det_title_file_transfer), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                ActionButton(running, "执行快传", "停止快传") {
+                ActionButton(running, stringResource(R.string.det_btn_run_transfer), stringResource(R.string.det_btn_stop_transfer)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -3646,7 +3698,7 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
 
                 if (running) {
                     Spacer(Modifier.height(6.dp))
-                    Text("本机地址: ${vm.localIp}", fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                    Text(stringResource(R.string.det_fmt_local_address, vm.localIp), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                     // 高频数据区独立订阅：UDP 发现期间设备列表与发送计数持续刷新
                     FileTransferLivePanel(vm, manualIp = manualIp, onManualIp = { manualIp = it }, picker = picker)
                 }
@@ -3671,7 +3723,7 @@ private fun FileTransferLivePanel(
     Column {
         if (peers.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
-            TermPanel("已发现设备 (${peers.size})") {
+            TermPanel(stringResource(R.string.det_panel_peers_found, peers.size)) {
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 100.dp)) {
                     items(peers, key = { it.ip }) { p ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -3683,9 +3735,9 @@ private fun FileTransferLivePanel(
             }
         } else {
             Spacer(Modifier.height(6.dp))
-            HintBreathing("未发现目标 —— 输入对方 IP 手动投递")
+            HintBreathing(stringResource(R.string.det_hint_no_transfer_peers))
             Spacer(Modifier.height(6.dp))
-            TermInput("对方 IP", manualIp, placeholder = "192.168.x.x") { onManualIp(it) }
+            TermInput(stringResource(R.string.det_label_peer_ip), manualIp, placeholder = "192.168.x.x") { onManualIp(it) }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -3696,11 +3748,11 @@ private fun FileTransferLivePanel(
             border = BorderStroke(1.dp, Red.copy(alpha = 0.4f)),
         ) {
             Text(
-                if (peers.isNotEmpty()) "发送文件 → 所有设备" else if (manualIp.isNotBlank()) "发送文件 → $manualIp" else "选择文件发送",
+                if (peers.isNotEmpty()) stringResource(R.string.det_btn_send_all) else if (manualIp.isNotBlank()) stringResource(R.string.det_btn_send_to, manualIp) else stringResource(R.string.det_btn_choose_file_send),
                 fontFamily = Mono, fontSize = 13.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), textAlign = TextAlign.Center,
             )
         }
-        Text("已发送: $sent 个文件", fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
+        Text(stringResource(R.string.det_fmt_sent_files, sent), fontFamily = Sans, fontSize = 10.sp, color = Gray, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
@@ -3711,7 +3763,7 @@ private fun FileTransferInboxPanel(vm: FileTransferViewModel) {
     val ctx = LocalContext.current
     if (received != null) {
         Spacer(Modifier.height(8.dp))
-        TermPanel("收到文件") {
+        TermPanel(stringResource(R.string.det_panel_received_file)) {
             Text("${received!!.name} (${received!!.length() / 1024}KB)", fontFamily = Mono, fontSize = 11.sp, color = White)
             Spacer(Modifier.height(6.dp))
             Surface(
@@ -3723,7 +3775,7 @@ private fun FileTransferInboxPanel(vm: FileTransferViewModel) {
                 color = Red.copy(alpha = 0.1f),
                 border = BorderStroke(1.dp, Red.copy(alpha = 0.3f)),
             ) {
-                Text("打开文件", fontFamily = Sans, fontSize = 11.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
+                Text(stringResource(R.string.det_btn_open_file), fontFamily = Sans, fontSize = 11.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
             }
         }
     }
@@ -3753,10 +3805,10 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("加密保险箱", back)
+        TerminalHeader(stringResource(R.string.det_title_secure_vault), back)
         PageEnter {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermInput("密码", pwd, placeholder = "加密/解密密码") { vm.setPassphrase(it) }
+                TermInput(stringResource(R.string.det_label_passphrase), pwd, placeholder = stringResource(R.string.det_hint_passphrase)) { vm.setPassphrase(it) }
 
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -3767,7 +3819,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
                         } else vm.createPhotoIntent()?.let { photoLauncher.launch(it) }
                     }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
-                        Text("拍照", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text(stringResource(R.string.det_btn_photo), fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
                         haptic.hud()
@@ -3776,7 +3828,7 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             camPermLauncher.launch(android.Manifest.permission.CAMERA)
                         } else vm.createVideoIntent()?.let { videoLauncher.launch(it) }
                     }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = 0.4f))) {
-                        Text("摄像", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text(stringResource(R.string.det_btn_video), fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                     Surface(modifier = Modifier.weight(1f).clickable {
                         haptic.hud()
@@ -3786,36 +3838,36 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                             micPermLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
                         } else vm.startRecording()
                     }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = if (recording) Red else Red.copy(alpha = 0.12f), border = BorderStroke(1.dp, Red.copy(alpha = if (recording) 0.8f else 0.4f))) {
-                        Text(if (recording) "停止" else "录音", fontFamily = Mono, fontSize = 12.sp, color = if (recording) White else Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                        Text(if (recording) stringResource(R.string.det_btn_stop) else stringResource(R.string.det_btn_record), fontFamily = Mono, fontSize = 12.sp, color = if (recording) White else Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
                 Surface(modifier = Modifier.fillMaxWidth().clickable { filePicker.launch(arrayOf("*/*")) }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red.copy(alpha = 0.08f), border = BorderStroke(1.dp, Red.copy(alpha = 0.25f))) {
-                    Text("导入文件加密", fontFamily = Sans, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.det_btn_import_encrypt), fontFamily = Sans, fontSize = 11.sp, color = RedDim, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), textAlign = TextAlign.Center)
                 }
 
                 error?.let { ErrorBanner(it) }
                 Spacer(Modifier.height(8.dp))
-                Text("保险库文件 · ${entries.size} 个", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text(stringResource(R.string.det_fmt_vault_files, entries.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
 
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(entries) { e ->
                         Row(Modifier.fillMaxWidth().clickable { vm.decrypt(e) }.padding(vertical = 5.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(if (e.type == "photo") "[图片]" else if (e.type == "video") "[视频]" else "[音频]", fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.width(52.dp))
+                            Text(if (e.type == "photo") stringResource(R.string.det_tag_photo) else if (e.type == "video") stringResource(R.string.det_tag_video) else stringResource(R.string.det_tag_audio), fontFamily = Mono, fontSize = 10.sp, color = RedDim, modifier = Modifier.width(52.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(e.fileName, fontFamily = Mono, fontSize = 11.sp, color = White)
                                 Text("${e.sizeBytes / 1024}KB", fontFamily = Mono, fontSize = 9.sp, color = Gray)
                             }
-                            GhostButton("删除") { vm.delete(e) }
+                            GhostButton(stringResource(R.string.det_btn_delete)) { vm.delete(e) }
                         }
                     }
                 }
 
                 if (decrypted != null) {
                     Spacer(Modifier.height(6.dp))
-                    TermPanel("解密成功") {
+                    TermPanel(stringResource(R.string.det_panel_decrypted)) {
                         Text("${decrypted!!.name} (${decrypted!!.length() / 1024}KB)", fontFamily = Mono, fontSize = 12.sp, color = White)
                         Spacer(Modifier.height(6.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -3823,10 +3875,10 @@ fun SecureVaultScreen(vm: SecureMediaViewModel, back: () -> Unit) {
                                 val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", decrypted!!)
                                 ctx.startActivity(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, "*/*"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) })
                             }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Red, border = BorderStroke(1.dp, Red)) {
-                                Text("打开", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                                Text(stringResource(R.string.det_btn_open), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                             }
                             Surface(modifier = Modifier.weight(1f).clickable { vm.clearDecrypted() }, shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp), color = Color.Transparent, border = BorderStroke(1.dp, Red.copy(alpha = 0.3f))) {
-                                Text("清除", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                                Text(stringResource(R.string.det_btn_clear), fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(), textAlign = TextAlign.Center)
                             }
                         }
                     }
@@ -3848,19 +3900,19 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("反弹 Shell", back)
+        TerminalHeader(stringResource(R.string.det_title_rev_shell), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermInput("监听端口", port, placeholder = "例如 4444") { vm.setPort(it) }
+                TermInput(stringResource(R.string.det_label_listen_port), port, placeholder = stringResource(R.string.det_hint_port_example)) { vm.setPort(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行监听", "停止监听") {
+                ActionButton(running, stringResource(R.string.det_btn_run_listen), stringResource(R.string.det_btn_stop_listen)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
                 if (running) {
                     Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(Modifier.fillMaxWidth(), color = if (connected) RedDim else Red, trackColor = Track)
-                    Text("监听 0.0.0.0:$port · ${if (connected) "已连接" else "等待连接"}", fontFamily = Mono, fontSize = 11.sp, color = if (connected) Red else White, modifier = Modifier.padding(top = 3.dp))
+                    Text(stringResource(R.string.det_fmt_listening, port, if (connected) stringResource(R.string.det_state_connected) else stringResource(R.string.det_state_waiting)), fontFamily = Mono, fontSize = 11.sp, color = if (connected) Red else White, modifier = Modifier.padding(top = 3.dp))
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -3868,7 +3920,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
                 RevShellLogPanel(vm, modifier = Modifier.weight(1f))
                 Spacer(Modifier.height(6.dp))
                 if (connected) {
-                    TermInput("命令", cmd, placeholder = "whoami / id / ls -la") { vm.setCmd(it) }
+                    TermInput(stringResource(R.string.det_label_command), cmd, placeholder = "whoami / id / ls -la") { vm.setCmd(it) }
                     Spacer(Modifier.height(6.dp))
                     Surface(
                         modifier = Modifier.fillMaxWidth().clickable { vm.send() },
@@ -3876,7 +3928,7 @@ fun RevShellScreen(vm: RevShellViewModel, back: () -> Unit) {
                         color = Red.copy(alpha = 0.15f),
                         border = BorderStroke(1.dp, Red.copy(alpha = 0.4f)),
                     ) {
-                        Text("发送命令", fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp), textAlign = TextAlign.Center)
+                        Text(stringResource(R.string.det_btn_send_command), fontFamily = Sans, fontSize = 12.sp, color = Red, modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp), textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -3890,13 +3942,13 @@ private fun RevShellLogPanel(vm: RevShellViewModel, modifier: Modifier = Modifie
     val logs by vm.logs.collectAsState()
     val list = rememberLazyListState()
     LaunchedEffect(logs.size) { if (logs.isNotEmpty()) list.scrollToItem(logs.size - 1) }
-    Text("会话日志", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+    Text(stringResource(R.string.det_panel_session_log), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
     Spacer(Modifier.height(4.dp))
     LazyColumn(state = list, modifier = Modifier.fillMaxWidth().then(modifier)) {
-        if (logs.isEmpty()) item { HintBreathing("等待目标上线，会话内容会显示在这里") }
+        if (logs.isEmpty()) item { HintBreathing(stringResource(R.string.det_hint_revshell_log)) }
         items(logs) { l ->
             LogLine(
-                if (l.direction == "in") "收到" else if (l.direction == "out") "发出" else "系统",
+                if (l.direction == "in") stringResource(R.string.det_dir_received) else if (l.direction == "out") stringResource(R.string.det_dir_sent) else stringResource(R.string.det_dir_system),
                 l.text,
                 when (l.direction) { "in" -> TacGreen; "out" -> Red; else -> Gray },
             )
@@ -3916,21 +3968,21 @@ fun PayloadScreen(vm: PayloadViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("Payload 生成器", back)
+        TerminalHeader(stringResource(R.string.det_title_payload), back)
         PageEnter {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
                 Row(Modifier.fillMaxWidth()) {
-                    TermInput("目标 IP", ip, modifier = Modifier.weight(1f)) { vm.setIp(it) }
+                    TermInput(stringResource(R.string.det_label_target_ip), ip, modifier = Modifier.weight(1f)) { vm.setIp(it) }
                     Spacer(Modifier.width(8.dp))
-                    TermInput("端口", port, modifier = Modifier.weight(1f)) { vm.setPort(it) }
+                    TermInput(stringResource(R.string.det_label_port), port, modifier = Modifier.weight(1f)) { vm.setPort(it) }
                 }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running = false, runLabel = "生成全部载荷", stopLabel = "") {
+                ActionButton(running = false, runLabel = stringResource(R.string.det_btn_generate_payloads), stopLabel = "") {
                     haptic.hud()
                     vm.generate()
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("已生成 ${payloads.size} 个载荷 · 目标 $ip:$port", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text(stringResource(R.string.det_fmt_payloads_generated, payloads.size, ip, port), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(payloads) { p ->
@@ -3939,7 +3991,7 @@ fun PayloadScreen(vm: PayloadViewModel, back: () -> Unit) {
                             SelectionContainer { Text(p.template, fontFamily = Mono, fontSize = 9.sp, color = White) }
                         }
                     }
-                    if (payloads.isEmpty()) item { HintBreathing("填写目标 IP 与端口后点击生成，所有语言的载荷会在这里列出") }
+                    if (payloads.isEmpty()) item { HintBreathing(stringResource(R.string.det_hint_payload_idle)) }
                 }
             }
         }
@@ -3957,12 +4009,12 @@ fun DirBruteScreen(vm: DirBruteViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("目录爆破", back)
+        TerminalHeader(stringResource(R.string.det_title_dir_brute), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermInput("目标 URL", url, placeholder = "http://example.com") { vm.setUrl(it) }
+                TermInput(stringResource(R.string.det_label_target_url), url, placeholder = "http://example.com") { vm.setUrl(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running, "执行枚举", "停止枚举") {
+                ActionButton(running, stringResource(R.string.det_btn_run_enum), stringResource(R.string.det_btn_stop_enum)) {
                     haptic.hud()
                     if (running) vm.stop() else vm.start()
                 }
@@ -3983,14 +4035,14 @@ private fun DirBruteLivePanel(vm: DirBruteViewModel, running: Boolean) {
         if (running) {
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(progress = { done.toFloat() / maxOf(1, total) }, modifier = Modifier.fillMaxWidth(), color = Red, trackColor = Track)
-            Text("已测试 $done/$total 个路径 · 命中 ${results.size}", fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
+            Text(stringResource(R.string.det_fmt_paths_tested, done, total, results.size), fontFamily = Sans, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 3.dp))
         }
         if (!running && results.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            HintBreathing("输入目标 URL 后启动枚举，命中路径会实时列出")
+            HintBreathing(stringResource(R.string.det_hint_dirbrute_idle))
         }
         Spacer(Modifier.height(8.dp))
-        Text("命中路径 · ${results.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+        Text(stringResource(R.string.det_fmt_hit_paths, results.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
         Spacer(Modifier.height(4.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             items(results, key = { it.path }) { r ->
@@ -4016,12 +4068,12 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("CVE 搜索", back)
+        TerminalHeader(stringResource(R.string.det_title_cve), back)
         PageEnter(locked = running) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
-                TermInput("搜索关键词", query, placeholder = "CVE 编号 / 厂商 / 产品名") { vm.setQuery(it) }
+                TermInput(stringResource(R.string.det_label_search_keyword), query, placeholder = stringResource(R.string.det_hint_cve_query)) { vm.setQuery(it) }
                 Spacer(Modifier.height(8.dp))
-                ActionButton(running = running, runLabel = "执行搜索", stopLabel = "搜索中…") {
+                ActionButton(running = running, runLabel = stringResource(R.string.det_btn_run_search), stopLabel = stringResource(R.string.det_btn_searching)) {
                     haptic.hud()
                     vm.search()
                 }
@@ -4032,10 +4084,10 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
                 if (status.isNotBlank()) Text(status, fontFamily = Mono, fontSize = 11.sp, color = White, modifier = Modifier.padding(top = 4.dp))
                 if (!running && results.isEmpty() && status.isBlank()) {
                     Spacer(Modifier.height(8.dp))
-                    HintBreathing("输入 CVE 编号、厂商或产品名后搜索")
+                    HintBreathing(stringResource(R.string.det_hint_cve_idle))
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("搜索结果 · ${results.size}", fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text(stringResource(R.string.det_fmt_search_results, results.size), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(4.dp))
                 LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
                     items(results) { r ->
@@ -4043,7 +4095,7 @@ fun CVEScreen(vm: CVESearchViewModel, back: () -> Unit) {
                         TermPanel("${r.id}  ${if (r.cvss != null) "CVSS ${"%.1f".format(r.cvss)}" else ""}") {
                             Text(r.description, fontFamily = Mono, fontSize = 10.sp, color = White)
                             Spacer(Modifier.height(4.dp))
-                            Text("发布时间: ${r.published}", fontFamily = Sans, fontSize = 9.sp, color = Gray)
+                            Text(stringResource(R.string.det_fmt_published, r.published), fontFamily = Sans, fontSize = 9.sp, color = Gray)
                         }
                     }
                 }

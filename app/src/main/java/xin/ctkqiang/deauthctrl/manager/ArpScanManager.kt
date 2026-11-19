@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.os.SystemClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -178,7 +181,7 @@ class ArpScanManager {
         val localIp = getLocalIp()
         if (localIp == null) {
             _isRunning.value = false
-            _error.value = "未获取到局域网 IPv4 地址 — 请先连接 WiFi 或开启热点"
+            _error.value = L10n.get(R.string.mgr_arp_no_local_ip)
             localIpLabel.value = ""
             subnetLabel.value = ""
             log("ARP", "aborted: no site-local IPv4 address")
@@ -189,7 +192,7 @@ class ArpScanManager {
         val prefix = localIp.substringBeforeLast('.', missingDelimiterValue = "")
         if (prefix.isEmpty()) {
             _isRunning.value = false
-            _error.value = "无法从 $localIp 推导网段前缀"
+            _error.value = L10n.get(R.string.mgr_arp_prefix_failed, localIp)
             log("ARP", "aborted: cannot derive subnet prefix from $localIp")
             publishStats()
             return false
@@ -308,7 +311,7 @@ class ArpScanManager {
             throw e
         } catch (t: Throwable) {
             if (sessionId.get() == session) {
-                _error.value = "扫描失败: ${t.javaClass.simpleName}"
+                _error.value = L10n.get(R.string.mgr_arp_scan_failed, t.javaClass.simpleName)
                 log("ARP", "sweep failed: ${t.javaClass.simpleName}")
             }
         } finally {
@@ -316,7 +319,7 @@ class ArpScanManager {
                 _isRunning.value = false
                 if (sessionStartMs.get() > 0L) sessionEndMs.set(SystemClock.elapsedRealtime())
                 if (_error.value == null && hostsReachable.get() == 0) {
-                    _error.value = "未发现在线设备 — 请确认已连接 WiFi 且与目标处于同一网段"
+                    _error.value = L10n.get(R.string.mgr_arp_no_devices)
                 }
                 publishStats(session)
             }

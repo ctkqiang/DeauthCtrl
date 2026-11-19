@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.os.SystemClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -196,7 +199,7 @@ class HttpClientManager {
     ): HttpResponse? {
         val target = url.trim()
         if (target.isEmpty()) {
-            _error.value = "URL 不能为空"
+            _error.value = L10n.get(R.string.mgr_http_empty_url)
             log(MODULE, "! rejected: empty url")
             return null
         }
@@ -262,7 +265,7 @@ class HttpClientManager {
         val connection = activeConnection.getAndSet(null)
         sessionId.incrementAndGet()
         _isRunning.value = false
-        _error.value = "请求已取消"
+        _error.value = L10n.get(R.string.mgr_http_cancelled)
         log(MODULE, "! cancelled by user")
 
         try {

@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.terminal.TerminalSpecs
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -67,26 +69,26 @@ data class DeviceCapabilities(
     val model: String = Build.MODEL ?: "unknown",
     val hardware: String = Build.HARDWARE ?: "unknown",
     val root: RootStatus = RootStatus.Unknown,
-    val rootDetail: String = "尚未执行 root 探测",
+    val rootDetail: String = L10n.get(R.string.mgr_probe_root_not_probed),
     /** 本机 LocalOnlyHotspot 能否创建（真实 SoftAP） */
     val localOnlyHotspot: CapabilityCheck =
-        CapabilityCheck(CapabilityStatus.Unknown, "尚未探测"),
+        CapabilityCheck(CapabilityStatus.Unknown, L10n.get(R.string.mgr_probe_not_probed)),
     /** 仅本机 SoftAP：能创建热点，但不等于伪造第三方 AP / 帧注入 */
     val pureSoftAp: CapabilityCheck =
-        CapabilityCheck(CapabilityStatus.Unknown, "尚未探测"),
+        CapabilityCheck(CapabilityStatus.Unknown, L10n.get(R.string.mgr_probe_not_probed)),
     /** BLE advertising 是否可用 */
     val bleAdvertising: CapabilityCheck =
-        CapabilityCheck(CapabilityStatus.Unknown, "尚未探测"),
+        CapabilityCheck(CapabilityStatus.Unknown, L10n.get(R.string.mgr_probe_not_probed)),
     /** 是否支持多组 advertising set（受控制器限制，最多 4-5 组） */
     val bleMultipleAdvertisement: Boolean = false,
     /** legacy advertising 最大数据长度（通常 31 字节，含 2 字节 company ID / 头部） */
     val bleMaxAdvertisingDataLength: Int = 0,
     /** 802.11 monitor mode（需要 root + 特定芯片/固件） */
     val wifiMonitorMode: CapabilityCheck =
-        CapabilityCheck(CapabilityStatus.Unsupported, "未检测：需要 root + 特定芯片/固件"),
+        CapabilityCheck(CapabilityStatus.Unsupported, L10n.get(R.string.mgr_probe_not_checked_root)),
     /** 802.11 帧注入 / deauth（需要 root + monitor mode + 用户态工具自检通过） */
     val wifiFrameInjection: CapabilityCheck =
-        CapabilityCheck(CapabilityStatus.Unsupported, "未检测：需要 root + 特定芯片/固件"),
+        CapabilityCheck(CapabilityStatus.Unsupported, L10n.get(R.string.mgr_probe_not_checked_root)),
     /** 系统定位总开关。Android 要求开启定位才能扫描 Wi-Fi */
     val locationServiceEnabled: Boolean = false,
     /** API 30+ 才允许给 LocalOnlyHotspot 指定 SSID */
@@ -201,9 +203,9 @@ class CapabilityProbe private constructor(private val context: Context) {
             rootDetail = rootDetail,
             localOnlyHotspot = hotspot,
             pureSoftAp = hotspot.copy(
-                detail = "仅本机 SoftAP：不会改变目标 AP 的 BSSID/信道/加密，也不会断开任何客户端" +
+                detail = L10n.get(R.string.mgr_probe_softap_detail) +
                     if (hotspot.status == CapabilityStatus.Supported) {
-                        "；启动热点可能中断本机 Wi-Fi"
+                        L10n.get(R.string.mgr_probe_softap_extra)
                     } else ""
             ),
             wifiMonitorMode = monitor,
@@ -215,20 +217,28 @@ class CapabilityProbe private constructor(private val context: Context) {
 
     private suspend fun probeRoot(suPath: String?): Pair<RootStatus, String> {
         if (suPath == null) {
-            return RootStatus.NoRoot to
-                "未找到 su：stock Android 普通应用没有 CAP_NET_RAW，AF_PACKET 被 SELinux 拒绝，不提供 monitor mode / 帧注入"
+            return RootStatus.NoRoot to L10n.get(R.string.mgr_probe_err_no_su)
         }
         val result = runCommand(listOf(suPath, "-c", "id"), ITEM_TIMEOUT_MS)
         if (result.timedOut) {
             return RootStatus.Denied to
-                "su 存在但 ${ITEM_TIMEOUT_MS}ms 内无响应（可能正在等待授权或被策略拒绝）"
+                L10n.get(R.string.mgr_probe_root_timeout, ITEM_TIMEOUT_MS)
         }
         val granted = result.exitCode == 0 &&
             Regex("""\buid=0\b""").containsMatchIn(result.output)
         return if (granted) {
-            RootStatus.Granted to "su 已授权：${result.output.lineSequence().firstOrNull()?.trim().orEmpty()}"
+            RootStatus.Granted to
+                L10n.get(
+                    R.string.mgr_probe_root_granted,
+                    result.output.lineSequence().firstOrNull()?.trim().orEmpty(),
+                )
         } else {
-            RootStatus.Denied to "su 存在但未授权（exit=${result.exitCode}）${result.output.take(80).trim()}"
+            RootStatus.Denied to
+                L10n.get(
+                    R.string.mgr_probe_root_denied,
+                    result.exitCode,
+                    result.output.take(80).trim(),
+                )
         }
     }
 
@@ -241,11 +251,11 @@ class CapabilityProbe private constructor(private val context: Context) {
         if (root != RootStatus.Granted || suPath == null) {
             val reason = when (root) {
                 RootStatus.NoRoot ->
-                    "当前系统没有 root：stock Android 不支持 802.11 monitor mode / 帧注入"
+                    L10n.get(R.string.mgr_probe_no_root)
                 RootStatus.Denied ->
-                    "su 未授权：无法检查 monitor mode / 帧注入"
+                    L10n.get(R.string.mgr_probe_su_denied)
                 else ->
-                    "未完成 root 探测：monitor mode / 帧注入状态未知"
+                    L10n.get(R.string.mgr_probe_root_unknown)
             }
             val check = CapabilityCheck(CapabilityStatus.Unsupported, reason)
             return check to check
@@ -256,7 +266,11 @@ class CapabilityProbe private constructor(private val context: Context) {
         // 1) nexutil 是否存在
         val which = runRoot(suPath, "command -v nexutil")
         val hasNexutil = which.exitCode == 0 && which.output.isNotBlank()
-        details += if (hasNexutil) "nexutil 已安装" else "未找到 nexutil"
+        details += if (hasNexutil) {
+            L10n.get(R.string.mgr_probe_nexutil_installed)
+        } else {
+            L10n.get(R.string.mgr_probe_nexutil_missing)
+        }
 
         // 2) nexutil -m2 返回码（注意：会把 Nexmon 芯片切到 monitor 模式）
         val nexMon = if (hasNexutil) {
@@ -265,32 +279,43 @@ class CapabilityProbe private constructor(private val context: Context) {
             CommandResult(exitCode = -1, output = "", timedOut = false)
         }
         val nexmonSupported = hasNexutil && nexMon.exitCode == 0
-        details += if (hasNexutil) "nexutil -m2 exit=${nexMon.exitCode}" else "跳过 nexutil -m2"
+        details += if (hasNexutil) {
+            L10n.get(R.string.mgr_probe_nexutil_exit, nexMon.exitCode)
+        } else {
+            L10n.get(R.string.mgr_probe_nexutil_skipped)
+        }
 
         // 3) iw dev 是否已有 monitor 接口
         val iw = runRoot(suPath, "iw dev 2>/dev/null")
         val iwMonitor = iw.output.contains("type monitor")
-        details += if (iwMonitor) "iw dev 发现 type monitor" else "iw dev 未发现 monitor 接口"
+        details += if (iwMonitor) {
+            L10n.get(R.string.mgr_probe_iw_monitor)
+        } else {
+            L10n.get(R.string.mgr_probe_iw_no_monitor)
+        }
 
         // 4) QCACLD 的 con_mode
         val conMode = runRoot(suPath, "cat /sys/module/wlan/parameters/con_mode 2>/dev/null")
         val conModeMonitor = conMode.output.trim() == "4"
         details += if (conModeMonitor) {
-            "con_mode=4（QCACLD monitor）"
+            L10n.get(R.string.mgr_probe_con_mode_4)
         } else {
-            "con_mode=${conMode.output.trim().ifBlank { "不可读" }}"
+            L10n.get(
+                R.string.mgr_probe_con_mode,
+                conMode.output.trim().ifBlank { L10n.get(R.string.mgr_probe_unreadable) },
+            )
         }
 
         // 5) aireplay-ng 注入自检
         val aireplay = runRoot(suPath, "aireplay-ng --test wlan0 2>&1")
         val injectionSupported = aireplay.output.contains("Injection is working", ignoreCase = true)
         details += if (injectionSupported) {
-            "aireplay-ng --test：Injection is working"
+            L10n.get(R.string.mgr_probe_aireplay_ok)
         } else {
-            "aireplay-ng --test 未确认注入（工具未安装或芯片/固件不支持）"
+            L10n.get(R.string.mgr_probe_aireplay_fail)
         }
 
-        val summary = details.joinToString("；")
+        val summary = details.joinToString(L10n.get(R.string.mgr_probe_detail_sep))
         val monitorSupported = nexmonSupported || iwMonitor || conModeMonitor
         return CapabilityCheck(
             if (monitorSupported) CapabilityStatus.Supported else CapabilityStatus.Unsupported,
@@ -313,7 +338,7 @@ class CapabilityProbe private constructor(private val context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return@withContext CapabilityCheck(
                 CapabilityStatus.Unsupported,
-                "LocalOnlyHotspot 需要 Android 8.0 (API 26)+",
+                L10n.get(R.string.mgr_probe_lohs_api),
             )
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -322,15 +347,21 @@ class CapabilityProbe private constructor(private val context: Context) {
         ) {
             return@withContext CapabilityCheck(
                 CapabilityStatus.PermissionDenied,
-                "缺少 NEARBY_WIFI_DEVICES（Android 13+ 创建热点必需）",
+                L10n.get(R.string.mgr_probe_lohs_perm),
             )
         }
         val wifiManager = context.applicationContext
             .getSystemService(Context.WIFI_SERVICE) as? WifiManager
-            ?: return@withContext CapabilityCheck(CapabilityStatus.Unsupported, "无 WifiManager")
+            ?: return@withContext CapabilityCheck(
+                CapabilityStatus.Unsupported,
+                L10n.get(R.string.mgr_probe_no_wifi_manager),
+            )
         val wifiEnabled = runCatching { wifiManager.isWifiEnabled }.getOrDefault(false)
         if (!wifiEnabled) {
-            return@withContext CapabilityCheck(CapabilityStatus.Unsupported, "Wi-Fi 未开启")
+            return@withContext CapabilityCheck(
+                CapabilityStatus.Unsupported,
+                L10n.get(R.string.mgr_probe_wifi_off),
+            )
         }
 
         val result = withTimeoutOrNull(HOTSPOT_PROBE_TIMEOUT_MS) {
@@ -342,7 +373,7 @@ class CapabilityProbe private constructor(private val context: Context) {
                             cont.resume(
                                 CapabilityCheck(
                                     CapabilityStatus.Supported,
-                                    "本机热点可创建；同一时刻只允许一个未完成请求",
+                                    L10n.get(R.string.mgr_probe_lohs_ok),
                                 )
                             )
                         }
@@ -353,7 +384,7 @@ class CapabilityProbe private constructor(private val context: Context) {
                             cont.resume(
                                 CapabilityCheck(
                                     CapabilityStatus.Unsupported,
-                                    "启动失败 reason=$reason（渠道占用/模式冲突/策略禁止）",
+                                    L10n.get(R.string.mgr_probe_lohs_failed, reason),
                                 )
                             )
                         }
@@ -366,7 +397,7 @@ class CapabilityProbe private constructor(private val context: Context) {
                         cont.resume(
                             CapabilityCheck(
                                 CapabilityStatus.PermissionDenied,
-                                "SecurityException：缺少权限或厂商 ROM 禁止 LocalOnlyHotspot",
+                                L10n.get(R.string.mgr_probe_lohs_security),
                             )
                         )
                     }
@@ -375,7 +406,11 @@ class CapabilityProbe private constructor(private val context: Context) {
                         cont.resume(
                             CapabilityCheck(
                                 CapabilityStatus.Unsupported,
-                                "启动异常 ${t.javaClass.simpleName}: ${t.message}",
+                                L10n.get(
+                                    R.string.mgr_probe_lohs_exception,
+                                    t.javaClass.simpleName,
+                                    t.message ?: "null",
+                                ),
                             )
                         )
                     }
@@ -384,7 +419,7 @@ class CapabilityProbe private constructor(private val context: Context) {
         }
         result ?: CapabilityCheck(
             CapabilityStatus.Unknown,
-            "热点探测超时（${HOTSPOT_PROBE_TIMEOUT_MS}ms），可能正被其他模块占用",
+            L10n.get(R.string.mgr_probe_lohs_timeout, HOTSPOT_PROBE_TIMEOUT_MS),
         )
     }
 
@@ -394,7 +429,10 @@ class CapabilityProbe private constructor(private val context: Context) {
         val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         val adapter = manager?.adapter
             ?: return base.copy(
-                bleAdvertising = CapabilityCheck(CapabilityStatus.Unsupported, "本机没有蓝牙适配器"),
+                bleAdvertising = CapabilityCheck(
+                    CapabilityStatus.Unsupported,
+                    L10n.get(R.string.mgr_probe_no_bt_adapter),
+                ),
             )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) !=
@@ -403,7 +441,7 @@ class CapabilityProbe private constructor(private val context: Context) {
                 return base.copy(
                     bleAdvertising = CapabilityCheck(
                         CapabilityStatus.PermissionDenied,
-                        "缺少 BLUETOOTH_CONNECT，无法读取蓝牙状态",
+                        L10n.get(R.string.mgr_probe_ble_connect_perm),
                     ),
                 )
             }
@@ -413,7 +451,7 @@ class CapabilityProbe private constructor(private val context: Context) {
                 return base.copy(
                     bleAdvertising = CapabilityCheck(
                         CapabilityStatus.PermissionDenied,
-                        "缺少 BLUETOOTH_ADVERTISE，无法启动 BLE 广播",
+                        L10n.get(R.string.mgr_probe_ble_advertise_perm),
                     ),
                 )
             }
@@ -421,14 +459,17 @@ class CapabilityProbe private constructor(private val context: Context) {
         val enabled = runCatching { adapter.isEnabled }.getOrDefault(false)
         if (!enabled) {
             return base.copy(
-                bleAdvertising = CapabilityCheck(CapabilityStatus.Unsupported, "蓝牙未开启"),
+                bleAdvertising = CapabilityCheck(
+                    CapabilityStatus.Unsupported,
+                    L10n.get(R.string.mgr_probe_bt_off),
+                ),
             )
         }
         val advertiser = runCatching { adapter.bluetoothLeAdvertiser }.getOrNull()
             ?: return base.copy(
                 bleAdvertising = CapabilityCheck(
                     CapabilityStatus.Unsupported,
-                    "控制器不提供 BLE 广播（BluetoothLeAdvertiser=null）",
+                    L10n.get(R.string.mgr_probe_no_ble_advertiser),
                 ),
             )
         @Suppress("UNUSED_VARIABLE")
@@ -442,7 +483,7 @@ class CapabilityProbe private constructor(private val context: Context) {
         return base.copy(
             bleAdvertising = CapabilityCheck(
                 CapabilityStatus.Supported,
-                "可创建 BLE 广播会话；空口间隔最低约 100ms，不能伪造广播 MAC",
+                L10n.get(R.string.mgr_probe_ble_ok),
             ),
             bleMultipleAdvertisement = multiple,
             bleMaxAdvertisingDataLength = maxLength,

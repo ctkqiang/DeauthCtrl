@@ -463,10 +463,10 @@ fun StatusBar() {
 
     Surface(shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp), color = SurfaceBg, border = BorderStroke(1.dp, BorderDim)) {
         Row(Modifier.fillMaxWidth().padding(vertical = 9.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            TelemetryCell("下行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.rxBytesPerSec) else TELEMETRY_PLACEHOLDER)
-            TelemetryCell("上行", if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.txBytesPerSec) else TELEMETRY_PLACEHOLDER)
-            TelemetryCell("内存", SysTelemetry.formatMemory(telemetry.memAvailBytes, telemetry.memTotalBytes))
-            TelemetryCell("网卡", telemetry.iface.ifEmpty { TELEMETRY_PLACEHOLDER })
+            TelemetryCell(stringResource(R.string.main_tel_down), if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.rxBytesPerSec) else TELEMETRY_PLACEHOLDER)
+            TelemetryCell(stringResource(R.string.main_tel_up), if (telemetry.trafficSupported) SysTelemetry.formatRate(telemetry.txBytesPerSec) else TELEMETRY_PLACEHOLDER)
+            TelemetryCell(stringResource(R.string.main_tel_mem), SysTelemetry.formatMemory(telemetry.memAvailBytes, telemetry.memTotalBytes))
+            TelemetryCell(stringResource(R.string.main_tel_iface), telemetry.iface.ifEmpty { TELEMETRY_PLACEHOLDER })
         }
     }
 }
@@ -563,70 +563,70 @@ fun HomeScreen(
 
     // 每次重组都重建：启停闭包捕获的是当帧运行态，缓存成 remember 会读到过期状态
     val entries = listOf(
-        HomeEntry("ARP 扫描", "扫描局域网在线设备", "arp", arpr, { arpVm.scan() }, Icons.Outlined.Router),
-        HomeEntry("BLE 扫描", "嗅探附近低功耗蓝牙设备", "blescan", blesr, { if (blesr) blescanVm.stop() else blescanVm.start() }, Icons.Outlined.BluetoothSearching),
-        HomeEntry("端口扫描", "扫描目标主机开放端口", "portscan", portr, { if (portr) portscanVm.stop() else portscanVm.start() }, Icons.Outlined.GridView),
-        HomeEntry("设备雷达", "雷达图定位附近设备", "radar", radarr, { if (radarr) radarVm.stop() else radarVm.start() }, Icons.Outlined.Radar),
-        HomeEntry("网络测绘", "OSM 地图实时绘制 WiFi/BLE 设备", "netmap", false, null, Icons.Outlined.TravelExplore),
-        HomeEntry("CVE 搜索", "查询公开漏洞数据库", "cve", cver, null, Icons.Outlined.Search),
-        HomeEntry("语音频谱", "麦克风 FFT 实时频谱分析", "sdr", false, null, Icons.Outlined.Equalizer),
-        HomeEntry("战术相机", "最大分辨率拍照 · Base64 局域网传输", "taccam", false, null, Icons.Outlined.CameraAlt),
-        HomeEntry("基站监视", "真实邻区小区信息 · 最近基站", "gsm", false, null, Icons.Outlined.Sensors),
-        HomeEntry("Probe 监视", "被动 WiFi 帧字段 · Hex 查看", "probe", false, null, Icons.Outlined.Router),
-        HomeEntry("数字夜视", "高感光捕获 · 荧光绿增益成像", "nightvision", false, null, Icons.Outlined.Nightlight),
-        HomeEntry("战术地图", "OpenStreetMap 夜战视图 · GPS 标记", "tacmap", false, null, Icons.Outlined.Map),
-        HomeEntry("红外遥控", "小米/三星等机型红外发射器", "irremote", false, null, Icons.Outlined.Sensors),
-        HomeEntry("NFC 工作台", "读卡 · NDEF 读写 · UID 采集", "nfc", false, null, Icons.Outlined.Contactless),
+        HomeEntry(stringResource(R.string.home_arp_name), stringResource(R.string.home_arp_desc), "arp", arpr, { arpVm.scan() }, Icons.Outlined.Router),
+        HomeEntry(stringResource(R.string.home_blescan_name), stringResource(R.string.home_blescan_desc), "blescan", blesr, { if (blesr) blescanVm.stop() else blescanVm.start() }, Icons.Outlined.BluetoothSearching),
+        HomeEntry(stringResource(R.string.home_portscan_name), stringResource(R.string.home_portscan_desc), "portscan", portr, { if (portr) portscanVm.stop() else portscanVm.start() }, Icons.Outlined.GridView),
+        HomeEntry(stringResource(R.string.home_radar_name), stringResource(R.string.home_radar_desc), "radar", radarr, { if (radarr) radarVm.stop() else radarVm.start() }, Icons.Outlined.Radar),
+        HomeEntry(stringResource(R.string.home_netmap_name), stringResource(R.string.home_netmap_desc), "netmap", false, null, Icons.Outlined.TravelExplore),
+        HomeEntry(stringResource(R.string.home_cve_name), stringResource(R.string.home_cve_desc), "cve", cver, null, Icons.Outlined.Search),
+        HomeEntry(stringResource(R.string.home_sdr_name), stringResource(R.string.home_sdr_desc), "sdr", false, null, Icons.Outlined.Equalizer),
+        HomeEntry(stringResource(R.string.home_taccam_name), stringResource(R.string.home_taccam_desc), "taccam", false, null, Icons.Outlined.CameraAlt),
+        HomeEntry(stringResource(R.string.home_gsm_name), stringResource(R.string.home_gsm_desc), "gsm", false, null, Icons.Outlined.Sensors),
+        HomeEntry(stringResource(R.string.home_probe_name), stringResource(R.string.home_probe_desc), "probe", false, null, Icons.Outlined.Router),
+        HomeEntry(stringResource(R.string.home_nightvision_name), stringResource(R.string.home_nightvision_desc), "nightvision", false, null, Icons.Outlined.Nightlight),
+        HomeEntry(stringResource(R.string.home_tacmap_name), stringResource(R.string.home_tacmap_desc), "tacmap", false, null, Icons.Outlined.Map),
+        HomeEntry(stringResource(R.string.home_irremote_name), stringResource(R.string.home_irremote_desc), "irremote", false, null, Icons.Outlined.Sensors),
+        HomeEntry(stringResource(R.string.home_nfc_name), stringResource(R.string.home_nfc_desc), "nfc", false, null, Icons.Outlined.Contactless),
 
-        HomeEntry("WEB 服务", "本机搭建网页服务器", "webserver", wsr, { if (wsr) wsVm.stopServer() else wsVm.startServer() }, Icons.Outlined.Language),
-        HomeEntry("HTTP 请求", "发送自定义 HTTP 请求", "http", httpr, null, Icons.Outlined.Http),
-        HomeEntry("目录爆破", "枚举网站目录结构", "brute", bruter, { if (bruter) bruteVm.stop() else bruteVm.start() }, Icons.Outlined.ManageSearch),
-        HomeEntry("PING 泛洪", "持续探测目标主机", "ping", pingr, { if (pingr) pingVm.stop() else pingVm.start() }, Icons.Outlined.NetworkPing),
+        HomeEntry(stringResource(R.string.home_webserver_name), stringResource(R.string.home_webserver_desc), "webserver", wsr, { if (wsr) wsVm.stopServer() else wsVm.startServer() }, Icons.Outlined.Language),
+        HomeEntry(stringResource(R.string.home_http_name), stringResource(R.string.home_http_desc), "http", httpr, null, Icons.Outlined.Http),
+        HomeEntry(stringResource(R.string.home_brute_name), stringResource(R.string.home_brute_desc), "brute", bruter, { if (bruter) bruteVm.stop() else bruteVm.start() }, Icons.Outlined.ManageSearch),
+        HomeEntry(stringResource(R.string.home_ping_name), stringResource(R.string.home_ping_desc), "ping", pingr, { if (pingr) pingVm.stop() else pingVm.start() }, Icons.Outlined.NetworkPing),
 
-        HomeEntry("BLE 广播", "广播伪造厂商广告 · 不会压制或断开设备", "ble", br, { if (br) bleVm.stopSpam() else bleVm.startSpam() }, Icons.Outlined.Bluetooth),
-        HomeEntry("本机热点", "创建本机 SoftAP · 非 802.11 帧注入", "wifi", wr, { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() }, Icons.Outlined.Wifi),
-        HomeEntry("蓝牙广播与发现", "BLE 广播 + 经典蓝牙本机扫描", "btjam", btr, { if (btr) btVm.stop() else btVm.start() }, Icons.Outlined.BluetoothDisabled),
-        HomeEntry("热点 SSID 轮换", "轮换本机热点 SSID · 不会断开他人", "wifijam", wjr, { if (wjr) wjVm.stop() else wjVm.start() }, Icons.Outlined.WifiOff),
+        HomeEntry(stringResource(R.string.home_ble_name), stringResource(R.string.home_ble_desc), "ble", br, { if (br) bleVm.stopSpam() else bleVm.startSpam() }, Icons.Outlined.Bluetooth),
+        HomeEntry(stringResource(R.string.home_wifi_name), stringResource(R.string.home_wifi_desc), "wifi", wr, { if (wr) wifiVm.stopFlood() else wifiVm.scanNetworks() }, Icons.Outlined.Wifi),
+        HomeEntry(stringResource(R.string.home_btjam_name), stringResource(R.string.home_btjam_desc), "btjam", btr, { if (btr) btVm.stop() else btVm.start() }, Icons.Outlined.BluetoothDisabled),
+        HomeEntry(stringResource(R.string.home_wifijam_name), stringResource(R.string.home_wifijam_desc), "wifijam", wjr, { if (wjr) wjVm.stop() else wjVm.start() }, Icons.Outlined.WifiOff),
 
-        HomeEntry("对讲机", "局域网实时语音通话", "walkie", walkier, { if (walkier) walkieVm.stop() else walkieVm.start() }, Icons.Outlined.Mic),
-        HomeEntry("文件快传", "局域网设备互传文件", "filetransfer", ftr, { if (ftr) ftVm.stop() else ftVm.start() }, Icons.Outlined.SwapHoriz),
-        HomeEntry("屏幕镜像", "远程查看与控制屏幕", "mirroring", mirrorr, null, Icons.Outlined.Cast),
-        HomeEntry("加密保险箱", "加密照片·视频·录音", "vault", false, null, Icons.Outlined.Lock),
-        HomeEntry("Payload 生成", "生成反弹 Shell 载荷", "payload", false, null, Icons.Outlined.Terminal),
-        HomeEntry("反弹 Shell", "监听反弹 Shell 连接", "revshell", revr, { if (revr) revVm.stop() else revVm.start() }, Icons.Outlined.Lan),
-        HomeEntry("SSH 客户端", "远程服务器终端 · 密码认证", "terminal", sshOnline, null, Icons.Outlined.Terminal),
-        HomeEntry("本地终端", "本机 pty shell · Termux 引擎", "localterm", false, null, Icons.Outlined.Terminal),
-        HomeEntry("摩尔斯码", "蜂鸣/闪光灯发报 · 双向翻译", "morse", false, null, Icons.Outlined.Lan),
-        HomeEntry("串口监视", "USB OTG 串口 · Arduino IDE 风格", "serialmon", false, null, Icons.Outlined.Cast),
-        HomeEntry("有线探测", "OTG 网卡/串口识别 · 引导对应工具", "otgprobe", false, null, Icons.Outlined.SwapHoriz),
-        HomeEntry("卫星天图", "GNSS 星座实时天顶图 · 真实解算", "gnss", false, null, Icons.Outlined.TravelExplore),
-        HomeEntry("步测归航", "无 GPS 死推算 · 面包屑回航", "pdr", false, null, Icons.Outlined.Navigation),
-        HomeEntry("电线探测", "工频电磁特征 · 墙内带电线路粗测", "mains", false, null, Icons.Outlined.Sensors),
-        HomeEntry("硬件自检", "电池/热区/负载/传感器体检", "selfcheck", false, null, Icons.Outlined.Storage),
-        HomeEntry("声波传讯", "DTMF 声波数据链 · 离线传字", "sonic", false, null, Icons.Outlined.Equalizer),
-        HomeEntry("网格聊天", "BLE 逐跳中继消息 · 无网无基站", "mesh", false, null, Icons.Outlined.Hub),
-        HomeEntry("声呐测距", "chirp 回波测距 · FFT 匹配滤波", "sonar", false, null, Icons.Outlined.GraphicEq),
-        HomeEntry("信道占用", "被动扫描信道拥堵热力图", "chansurvey", false, null, Icons.Outlined.Wifi),
-        HomeEntry("震动监视", "加速度计波形 · 事件记录", "seismo", false, null, Icons.Outlined.ShowChart),
-        HomeEntry("流量监视", "VpnService 本机抓包 · Wireshark 式解析", "packetmon", false, null, Icons.Outlined.Router),
-        HomeEntry("逻辑示波", "BLE/WiFi/蜂窝/音频多通道波形", "logicscope", false, null, Icons.Outlined.GraphicEq),
-        HomeEntry("万能遥控", "Flipper tv.ir 泛洪遥控 · 按键克隆库", "flippertv", false, null, Icons.Outlined.Sensors),
-        HomeEntry("NetBIOS 扫描", "Windows 主机名/用户/MAC 资产清点", "netbios", false, null, Icons.Outlined.Router),
-        HomeEntry("BLE GATT", "服务枚举 · 特征读写 · 通知订阅", "blegatt", false, null, Icons.Outlined.Bluetooth),
-        HomeEntry("SNMP 扫描", "社区串探测 · 设备型号识别", "snmp", false, null, Icons.Outlined.Lan),
-        HomeEntry("局域网工具", "WOL 唤醒 · fling 裸流管道", "lantools", false, null, Icons.Outlined.SwapHoriz),
-        HomeEntry("Nordic 工作台", "AD 解码 · NUS 终端 · 绑定管理", "nordicbench", false, null, Icons.Outlined.Bluetooth),
-        HomeEntry("数据库", "SQLite 信号情报库 · 刷新注入", "dbview", false, null, Icons.Outlined.Storage),
-        HomeEntry("局域网会议", "多方视频 · 屏幕/摄像头 · PTT 语音", "conference", false, null, Icons.Outlined.VideoCall),
+        HomeEntry(stringResource(R.string.home_walkie_name), stringResource(R.string.home_walkie_desc), "walkie", walkier, { if (walkier) walkieVm.stop() else walkieVm.start() }, Icons.Outlined.Mic),
+        HomeEntry(stringResource(R.string.home_filetransfer_name), stringResource(R.string.home_filetransfer_desc), "filetransfer", ftr, { if (ftr) ftVm.stop() else ftVm.start() }, Icons.Outlined.SwapHoriz),
+        HomeEntry(stringResource(R.string.home_mirroring_name), stringResource(R.string.home_mirroring_desc), "mirroring", mirrorr, null, Icons.Outlined.Cast),
+        HomeEntry(stringResource(R.string.home_vault_name), stringResource(R.string.home_vault_desc), "vault", false, null, Icons.Outlined.Lock),
+        HomeEntry(stringResource(R.string.home_payload_name), stringResource(R.string.home_payload_desc), "payload", false, null, Icons.Outlined.Terminal),
+        HomeEntry(stringResource(R.string.home_revshell_name), stringResource(R.string.home_revshell_desc), "revshell", revr, { if (revr) revVm.stop() else revVm.start() }, Icons.Outlined.Lan),
+        HomeEntry(stringResource(R.string.home_terminal_name), stringResource(R.string.home_terminal_desc), "terminal", sshOnline, null, Icons.Outlined.Terminal),
+        HomeEntry(stringResource(R.string.home_localterm_name), stringResource(R.string.home_localterm_desc), "localterm", false, null, Icons.Outlined.Terminal),
+        HomeEntry(stringResource(R.string.home_morse_name), stringResource(R.string.home_morse_desc), "morse", false, null, Icons.Outlined.Lan),
+        HomeEntry(stringResource(R.string.home_serialmon_name), stringResource(R.string.home_serialmon_desc), "serialmon", false, null, Icons.Outlined.Cast),
+        HomeEntry(stringResource(R.string.home_otgprobe_name), stringResource(R.string.home_otgprobe_desc), "otgprobe", false, null, Icons.Outlined.SwapHoriz),
+        HomeEntry(stringResource(R.string.home_gnss_name), stringResource(R.string.home_gnss_desc), "gnss", false, null, Icons.Outlined.TravelExplore),
+        HomeEntry(stringResource(R.string.home_pdr_name), stringResource(R.string.home_pdr_desc), "pdr", false, null, Icons.Outlined.Navigation),
+        HomeEntry(stringResource(R.string.home_mains_name), stringResource(R.string.home_mains_desc), "mains", false, null, Icons.Outlined.Sensors),
+        HomeEntry(stringResource(R.string.home_selfcheck_name), stringResource(R.string.home_selfcheck_desc), "selfcheck", false, null, Icons.Outlined.Storage),
+        HomeEntry(stringResource(R.string.home_sonic_name), stringResource(R.string.home_sonic_desc), "sonic", false, null, Icons.Outlined.Equalizer),
+        HomeEntry(stringResource(R.string.home_mesh_name), stringResource(R.string.home_mesh_desc), "mesh", false, null, Icons.Outlined.Hub),
+        HomeEntry(stringResource(R.string.home_sonar_name), stringResource(R.string.home_sonar_desc), "sonar", false, null, Icons.Outlined.GraphicEq),
+        HomeEntry(stringResource(R.string.home_chansurvey_name), stringResource(R.string.home_chansurvey_desc), "chansurvey", false, null, Icons.Outlined.Wifi),
+        HomeEntry(stringResource(R.string.home_seismo_name), stringResource(R.string.home_seismo_desc), "seismo", false, null, Icons.Outlined.ShowChart),
+        HomeEntry(stringResource(R.string.home_packetmon_name), stringResource(R.string.home_packetmon_desc), "packetmon", false, null, Icons.Outlined.Router),
+        HomeEntry(stringResource(R.string.home_logicscope_name), stringResource(R.string.home_logicscope_desc), "logicscope", false, null, Icons.Outlined.GraphicEq),
+        HomeEntry(stringResource(R.string.home_flippertv_name), stringResource(R.string.home_flippertv_desc), "flippertv", false, null, Icons.Outlined.Sensors),
+        HomeEntry(stringResource(R.string.home_netbios_name), stringResource(R.string.home_netbios_desc), "netbios", false, null, Icons.Outlined.Router),
+        HomeEntry(stringResource(R.string.home_blegatt_name), stringResource(R.string.home_blegatt_desc), "blegatt", false, null, Icons.Outlined.Bluetooth),
+        HomeEntry(stringResource(R.string.home_snmp_name), stringResource(R.string.home_snmp_desc), "snmp", false, null, Icons.Outlined.Lan),
+        HomeEntry(stringResource(R.string.home_lantools_name), stringResource(R.string.home_lantools_desc), "lantools", false, null, Icons.Outlined.SwapHoriz),
+        HomeEntry(stringResource(R.string.home_nordicbench_name), stringResource(R.string.home_nordicbench_desc), "nordicbench", false, null, Icons.Outlined.Bluetooth),
+        HomeEntry(stringResource(R.string.home_dbview_name), stringResource(R.string.home_dbview_desc), "dbview", false, null, Icons.Outlined.Storage),
+        HomeEntry(stringResource(R.string.home_conference_name), stringResource(R.string.home_conference_desc), "conference", false, null, Icons.Outlined.VideoCall),
     )
 
     val groups = listOf(
-        HomeGroup("侦察", listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "sdr", "taccam", "gsm")),
-        HomeGroup("无线", listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
-        HomeGroup("工具", listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview")),
-        HomeGroup("态势", listOf("gnss", "pdr", "mains", "sonic", "selfcheck")),
-        HomeGroup("实验室", listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools")),
-        HomeGroup("网络", listOf("webserver", "http", "brute", "ping", "packetmon")),
+        HomeGroup(stringResource(R.string.home_group_recon), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "sdr", "taccam", "gsm")),
+        HomeGroup(stringResource(R.string.home_group_wireless), listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
+        HomeGroup(stringResource(R.string.home_group_tools), listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview")),
+        HomeGroup(stringResource(R.string.home_group_situational), listOf("gnss", "pdr", "mains", "sonic", "selfcheck")),
+        HomeGroup(stringResource(R.string.home_group_lab), listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools")),
+        HomeGroup(stringResource(R.string.home_group_network), listOf("webserver", "http", "brute", "ping", "packetmon")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }
@@ -648,7 +648,7 @@ fun HomeScreen(
                 StarBadge(68.dp)
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "哪吒网络安全终端",
+                    stringResource(R.string.app_name),
                     fontFamily = Sans,
                     fontSize = 27.sp,
                     fontWeight = FontWeight.Black,
@@ -656,10 +656,10 @@ fun HomeScreen(
                     color = White,
                 )
                 Spacer(Modifier.height(2.dp))
-                GlitchText("全息战术终端", glitchIntervalMs = 3200, style = TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
+                GlitchText(stringResource(R.string.main_home_glitch), glitchIntervalMs = 3200, style = TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "操作员: $username · ${squad.teamName} · 全息终端 · 加密信道: AES-256",
+                    stringResource(R.string.main_home_operator_line, username, squad.teamName),
                     fontFamily = Mono,
                     fontSize = 9.sp,
                     color = Gray,
@@ -675,7 +675,7 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                     PulseStar(active = true, size = 7.dp)
                     Spacer(Modifier.width(8.dp))
-                    Text("执行中 · ${activeEntries.size} 项任务", fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TacGreen)
+                    Text(stringResource(R.string.main_running_header, activeEntries.size), fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TacGreen)
                 }
             }
             items(
@@ -712,15 +712,15 @@ fun HomeScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Star(Gold, 7.dp)
                     Spacer(Modifier.width(7.dp))
-                    Text("中国红客", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    Text(stringResource(R.string.main_footer_red_hacker), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                     Spacer(Modifier.width(10.dp))
                     Star(Gold, 7.dp)
                     Spacer(Modifier.width(7.dp))
-                    Text("国产自主", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    Text(stringResource(R.string.main_footer_homegrown), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                     Spacer(Modifier.width(10.dp))
                     Star(Gold, 7.dp)
                     Spacer(Modifier.width(7.dp))
-                    Text("安全可控", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+                    Text(stringResource(R.string.main_footer_secure), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                 }
                 Spacer(Modifier.height(12.dp))
                 Surface(
@@ -730,7 +730,7 @@ fun HomeScreen(
                     border = BorderStroke(1.dp, Gold.copy(alpha = 0.45f)),
                 ) {
                     Text(
-                        "设置 · 关于",
+                        stringResource(R.string.main_settings_about),
                         fontFamily = Sans,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -851,7 +851,7 @@ private fun HomeGridCard(
                             border = BorderStroke(1.dp, BorderDim),
                         ) {
                             Text(
-                                "进入",
+                                stringResource(R.string.main_enter),
                                 fontFamily = Sans,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -875,7 +875,7 @@ private fun HomeGridCard(
                         ) {
                             Box {
                                 Text(
-                                    if (running) "中止" else "执行",
+                                    if (running) stringResource(R.string.main_abort) else stringResource(R.string.main_execute),
                                     fontFamily = Sans,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,

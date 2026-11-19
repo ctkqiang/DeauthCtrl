@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipInputStream
@@ -11,6 +14,10 @@ import java.util.zip.ZipInputStream
  * 重建符号链接(格式 "link←target")→ 校验 bin/sh → 写 apt 镜像说明。
  */
 object BootstrapInstaller {
+
+    /** 测试环境未初始化 L10n 时降级为空串,保持纯 Kotlin 可单测 */
+    private fun tr(resId: Int, vararg args: Any): String =
+        runCatching { L10n.get(resId, *args) }.getOrElse { "" }
 
     fun install(stream: InputStream, dest: File, onProgress: (Float, String) -> Unit = { _, _ -> }): Boolean {
         return try {
@@ -31,19 +38,19 @@ object BootstrapInstaller {
                         }
                     }
                     total++
-                    if (total % 200 == 0) onProgress((total / 7000f).coerceIn(0f, 0.9f), "解压 $total 项")
+                    if (total % 200 == 0) onProgress((total / 7000f).coerceIn(0f, 0.9f), tr(R.string.mgr_bootinst_extracting, total))
                     zip.closeEntry()
                     entry = zip.nextEntry
                 }
             }
-            rebuildSymlinks(dest) { p -> onProgress(0.92f + p * 0.03f, "重建链接") }
-            onProgress(0.97f, "校验环境")
+            rebuildSymlinks(dest) { p -> onProgress(0.92f + p * 0.03f, tr(R.string.mgr_bootinst_rebuilding_links)) }
+            onProgress(0.97f, tr(R.string.mgr_bootinst_verifying))
             val ok = File(dest, "bin/sh").exists()
             if (ok) ensureMirrorNote(dest)
-            onProgress(1f, if (ok) "环境就绪" else "校验失败")
+            onProgress(1f, if (ok) tr(R.string.mgr_bootinst_ready) else tr(R.string.mgr_bootinst_verify_failed))
             ok
         } catch (t: Throwable) {
-            onProgress(1f, "失败: ${t.message}")
+            onProgress(1f, tr(R.string.mgr_bootinst_failed, t.message.toString()))
             false
         }
     }

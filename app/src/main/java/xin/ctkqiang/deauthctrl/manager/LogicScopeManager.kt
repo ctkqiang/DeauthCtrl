@@ -8,7 +8,10 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.net.wifi.WifiManager
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.ArrayDeque
@@ -23,21 +26,21 @@ import kotlin.math.sqrt
  * 每条通道独立线程采集，独立环形缓冲；UI 层按 [id] 与 [label] 取用。
  * 颜色不属于管理器（管理器不依赖 Compose），由界面层映射。
  */
-enum class ScopeChannel(val id: String, val label: String) {
+enum class ScopeChannel(val id: String, @StringRes val labelRes: Int) {
     /** BLE 广播事件脉冲：幅度 = (RSSI + 100) / 80 */
-    BLE("ble", "BLE 脉冲"),
+    BLE("ble", R.string.mgr_lscope_channel_ble),
 
     /** Wi-Fi 扫描事件脉冲：每 2s 一轮，取最强 AP 的 RSSI */
-    WIFI("wifi", "WiFi 脉冲"),
+    WIFI("wifi", R.string.mgr_lscope_channel_wifi),
 
     /** 蜂窝注册小区电平：每 2s 轮询一次 RSRP */
-    CELL("cell", "蜂窝"),
+    CELL("cell", R.string.mgr_lscope_channel_cell),
 
     /** 麦克风 16kHz 单声道 RMS 包络 */
-    AUDIO("audio", "音频"),
+    AUDIO("audio", R.string.mgr_lscope_channel_audio),
 
     /** 红外发射脉冲图案（由调用方通过 submitIrPattern 注入） */
-    IR("ir", "红外"),
+    IR("ir", R.string.mgr_lscope_channel_ir),
 }
 
 /**
@@ -182,7 +185,7 @@ class LogicScopeManager(private val context: Context) {
     fun start(selected: Set<String>) {
         val channels = ScopeChannel.values().filter { it.id in selected }
         if (channels.isEmpty()) {
-            synchronized(lock) { fatalError = "至少选择一个通道后再启动采集" }
+            synchronized(lock) { fatalError = L10n.get(R.string.mgr_lscope_no_channel_selected) }
             publishNow()
             return
         }
@@ -263,12 +266,15 @@ class LogicScopeManager(private val context: Context) {
      *
      * 主线程后续可在 IrRemoteManager 发射成功后调用本方法，把真实发射的 pattern 喂进来。
      */
-    fun submitIrPattern(patternUs: List<Int>, label: String = "红外发射") {
+    fun submitIrPattern(
+        patternUs: List<Int>,
+        label: String = L10n.get(R.string.mgr_lscope_ir_default_label),
+    ) {
         val cleaned = patternUs.map { it.coerceAtLeast(0) }
         if (cleaned.isEmpty() || cleaned.all { it == 0 }) return
         val accepting = synchronized(lock) { running && ScopeChannel.IR.id in active }
         if (!accepting) return
-        irQueue.offer(IrBurst(cleaned, label.ifBlank { "红外发射" }))
+        irQueue.offer(IrBurst(cleaned, label.ifBlank { L10n.get(R.string.mgr_lscope_ir_default_label) }))
     }
 
     // ── 线程管理 ────────────────────────────────────────────────────────────
@@ -319,7 +325,14 @@ class LogicScopeManager(private val context: Context) {
         } catch (_: InterruptedException) {
             // stop() 主动打断，正常退出
         } catch (t: Throwable) {
-            setNote(gen, channel.id, "通道异常: ${t.message ?: t.javaClass.simpleName}")
+            setNote(
+                gen,
+                channel.id,
+                L10n.get(
+                    R.string.mgr_lscope_channel_error,
+                    t.message ?: t.javaClass.simpleName,
+                ),
+            )
         } finally {
             synchronized(lock) {
                 // 只有当前代数的线程才有权清理共享表，避免旧线程误删新一轮的状态
@@ -344,7 +357,7 @@ class LogicScopeManager(private val context: Context) {
      */
     private fun runBleChannel(gen: Int, scanner: BleScannerManager?) {
         if (scanner == null) {
-            setNote(gen, ScopeChannel.BLE.id, "BLE 通道未创建扫描器")
+            setNote(gen, ScopeChannel.BLE.id, L10n.get(R.string.mgr_lscope_ble_no_scanner))
             return
         }
         if (!isAlive(gen)) return
@@ -395,11 +408,11 @@ class LogicScopeManager(private val context: Context) {
     private fun runWifiChannel(gen: Int) {
         val wm = appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
         if (wm == null) {
-            setNote(gen, ScopeChannel.WIFI.id, "设备未提供 Wi-Fi 服务")
+            setNote(gen, ScopeChannel.WIFI.id, L10n.get(R.string.mgr_lscope_wifi_no_service))
             return
         }
         if (!hasWifiScanPermission()) {
-            setNote(gen, ScopeChannel.WIFI.id, "缺少「附近设备」/「位置信息」权限 —— Wi-Fi 扫描不可用")
+            setNote(gen, ScopeChannel.WIFI.id, L10n.get(R.string.mgr_lscope_wifi_no_permission))
             return
         }
         while (isAlive(gen)) {
@@ -411,13 +424,19 @@ class LogicScopeManager(private val context: Context) {
             val results = runCatching { wm.scanResults }.getOrNull()
             val strongest = results?.filter { it.level in -127..0 }?.maxByOrNull { it.level }
             if (results.isNullOrEmpty()) {
-                setNote(gen, ScopeChannel.WIFI.id, "本轮未读取到扫描结果（Wi-Fi 关闭或扫描被系统节流）")
+                setNote(gen, ScopeChannel.WIFI.id, L10n.get(R.string.mgr_lscope_wifi_no_results))
             } else if (strongest == null) {
-                setNote(gen, ScopeChannel.WIFI.id, "扫描结果中没有有效的 RSSI")
+                setNote(gen, ScopeChannel.WIFI.id, L10n.get(R.string.mgr_lscope_wifi_no_rssi))
             } else {
                 val amplitude = ((strongest.level + 100f) / 80f).coerceIn(0f, 1f)
-                val ssid = strongest.SSID.takeIf { it.isNotBlank() } ?: strongest.BSSID ?: "(隐藏 SSID)"
-                val label = if (scanAccepted) ssid else "$ssid · 节流缓存"
+                val ssid = strongest.SSID.takeIf { it.isNotBlank() }
+                    ?: strongest.BSSID
+                    ?: L10n.get(R.string.mgr_lscope_hidden_ssid)
+                val label = if (scanAccepted) {
+                    ssid
+                } else {
+                    L10n.get(R.string.mgr_lscope_throttled_cache, ssid)
+                }
                 record(
                     gen,
                     ScopeChannel.WIFI.id,
@@ -426,7 +445,7 @@ class LogicScopeManager(private val context: Context) {
                 if (scanAccepted) {
                     clearNote(gen, ScopeChannel.WIFI.id)
                 } else {
-                    setNote(gen, ScopeChannel.WIFI.id, "系统节流 startScan，本轮读的是缓存结果（RSSI 仍为真实值）")
+                    setNote(gen, ScopeChannel.WIFI.id, L10n.get(R.string.mgr_lscope_throttled_note))
                 }
             }
 
@@ -464,7 +483,7 @@ class LogicScopeManager(private val context: Context) {
     private fun runCellChannel(gen: Int) {
         val tower = gsmTower ?: GsmTowerManager(appContext).also { gsmTower = it }
         if (!tower.hasPermission) {
-            setNote(gen, ScopeChannel.CELL.id, "缺少「位置信息」/「电话状态」权限 —— 蜂窝通道不可用")
+            setNote(gen, ScopeChannel.CELL.id, L10n.get(R.string.mgr_lscope_cell_no_permission))
             return
         }
         while (isAlive(gen)) {
@@ -476,9 +495,13 @@ class LogicScopeManager(private val context: Context) {
             if (snapshot.error != null) {
                 setNote(gen, ScopeChannel.CELL.id, snapshot.error!!)
             } else if (registered == null) {
-                setNote(gen, ScopeChannel.CELL.id, "系统未返回注册小区（飞行模式或无 SIM）")
+                setNote(gen, ScopeChannel.CELL.id, L10n.get(R.string.mgr_lscope_cell_no_registered))
             } else if (levelDbm == null) {
-                setNote(gen, ScopeChannel.CELL.id, "注册小区 ${registered.type} 未提供 RSRP / 信号值")
+                setNote(
+                    gen,
+                    ScopeChannel.CELL.id,
+                    L10n.get(R.string.mgr_lscope_cell_no_signal, registered.type),
+                )
             } else {
                 val amplitude = ((levelDbm + 140f) / 100f).coerceIn(0f, 1f)
                 val label = buildString {
@@ -512,7 +535,7 @@ class LogicScopeManager(private val context: Context) {
      */
     private fun runAudioChannel(gen: Int) {
         if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            setNote(gen, ScopeChannel.AUDIO.id, "缺少录音权限 —— 音频通道不可用")
+            setNote(gen, ScopeChannel.AUDIO.id, L10n.get(R.string.mgr_lscope_audio_no_permission))
             return
         }
         val minBuffer = runCatching {
@@ -523,7 +546,7 @@ class LogicScopeManager(private val context: Context) {
             )
         }.getOrDefault(-1)
         if (minBuffer <= 0) {
-            setNote(gen, ScopeChannel.AUDIO.id, "设备不支持 16kHz 单声道录音")
+            setNote(gen, ScopeChannel.AUDIO.id, L10n.get(R.string.mgr_lscope_audio_unsupported))
             return
         }
         val bufferBytes = maxOf(minBuffer, SCOPE_AUDIO_FRAME_SAMPLES * 2 * 4)
@@ -537,19 +560,19 @@ class LogicScopeManager(private val context: Context) {
             )
         }.getOrNull()
         if (record == null) {
-            setNote(gen, ScopeChannel.AUDIO.id, "AudioRecord 创建失败")
+            setNote(gen, ScopeChannel.AUDIO.id, L10n.get(R.string.mgr_lscope_audio_create_failed))
             return
         }
         if (record.state != AudioRecord.STATE_INITIALIZED) {
             runCatching { record.release() }
-            setNote(gen, ScopeChannel.AUDIO.id, "AudioRecord 初始化失败（麦克风可能被占用）")
+            setNote(gen, ScopeChannel.AUDIO.id, L10n.get(R.string.mgr_lscope_audio_init_failed))
             return
         }
         audioRecord = record
         try {
             runCatching { record.startRecording() }
             if (record.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-                setNote(gen, ScopeChannel.AUDIO.id, "麦克风启动失败（可能被其它应用占用）")
+                setNote(gen, ScopeChannel.AUDIO.id, L10n.get(R.string.mgr_lscope_audio_start_failed))
                 return
             }
             clearNote(gen, ScopeChannel.AUDIO.id)
@@ -559,7 +582,11 @@ class LogicScopeManager(private val context: Context) {
                 if (read <= 0) {
                     if (!isAlive(gen)) break
                     if (read < 0) {
-                        setNote(gen, ScopeChannel.AUDIO.id, "音频读取失败（错误码 $read）")
+                        setNote(
+                            gen,
+                            ScopeChannel.AUDIO.id,
+                            L10n.get(R.string.mgr_lscope_audio_read_failed, read),
+                        )
                         break
                     }
                     continue

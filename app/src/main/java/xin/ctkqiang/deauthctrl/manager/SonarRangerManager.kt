@@ -15,6 +15,8 @@ import android.media.audiofx.NoiseSuppressor
 import android.os.Build
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -169,19 +171,19 @@ class SonarRangerManager(private val context: Context) {
         if (_state.value.running) return
         if (!hasRecordPermission) {
             _state.update {
-                it.copy(error = "缺少录音权限(RECORD_AUDIO),请在应用网关授权后重试")
+                it.copy(error = L10n.get(R.string.mgr_sonar_error_no_record_permission))
             }
             return
         }
         if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)) {
-            _state.update { it.copy(error = "此设备没有麦克风,无法进行声呐测距") }
+            _state.update { it.copy(error = L10n.get(R.string.mgr_sonar_error_no_mic)) }
             return
         }
         val volume = mediaVolumePercent()
         if (volume == 0) {
             _state.update {
                 it.copy(
-                    error = "媒体音量为 0 —— 请先调高媒体音量,扬声器需要发出 3-8kHz chirp",
+                    error = L10n.get(R.string.mgr_sonar_error_volume_zero),
                     mediaVolumePercent = 0,
                 )
             }
@@ -251,7 +253,7 @@ class SonarRangerManager(private val context: Context) {
             trackRef = trk
 
             val rec = createRecord()
-                ?: throw IllegalStateException("麦克风初始化失败(可能被其他应用占用,或设备不支持 44100Hz 采集)")
+                ?: throw IllegalStateException(L10n.get(R.string.mgr_sonar_error_record_init))
             record = rec
             recordRef = rec
 
@@ -286,7 +288,7 @@ class SonarRangerManager(private val context: Context) {
                 // 每轮重新开始录音:清空上一轮残留在缓冲里的回声与静音
                 rec.startRecording()
                 if (rec.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-                    throw IllegalStateException("麦克风无法开始录音(可能被其他应用占用)")
+                    throw IllegalStateException(L10n.get(R.string.mgr_sonar_error_record_start))
                 }
                 // 先录一小段本底,再打 chirp;直达声与回波都落在随后的 0.5s 窗内
                 Thread.sleep(RECORD_PREROLL_MS)
@@ -295,20 +297,26 @@ class SonarRangerManager(private val context: Context) {
                 runCatching { trk.play() }
                 val written = trk.write(chirpPcm, 0, chirpPcm.size, AudioTrack.WRITE_BLOCKING)
                 if (written <= 0) {
-                    throw IllegalStateException("扬声器写入失败($written),可能被其他应用独占")
+                    throw IllegalStateException(
+                        L10n.get(R.string.mgr_sonar_error_speaker_write, written),
+                    )
                 }
 
                 var read = 0
                 while (read < RECORD_SAMPLES && !stopFlag && myGen == generation.get()) {
                     val n = rec.read(samples, read, RECORD_SAMPLES - read)
-                    if (n < 0) throw IllegalStateException("麦克风读取失败($n)")
+                    if (n < 0) {
+                        throw IllegalStateException(L10n.get(R.string.mgr_sonar_error_mic_read, n))
+                    }
                     if (n == 0) break
                     read += n
                 }
                 runCatching { rec.stop() }
                 if (stopFlag || myGen != generation.get()) break
                 if (read < RECORD_SAMPLES) {
-                    throw IllegalStateException("麦克风读取不完整($read / $RECORD_SAMPLES),可能被其他应用占用")
+                    throw IllegalStateException(
+                        L10n.get(R.string.mgr_sonar_error_mic_read_short, read, RECORD_SAMPLES),
+                    )
                 }
 
                 val measurement = analyze(samples, recRe, recIm, corrRe, corrIm)
@@ -333,7 +341,7 @@ class SonarRangerManager(private val context: Context) {
                                 lastRawDistanceM = null,
                                 mediaVolumePercent = volume,
                                 lastMeasuredAtMs = now,
-                                error = "未捕获直达声 —— 请调高媒体音量,断开蓝牙音频,并让扬声器/麦克风朝向被测面后重试",
+                                error = L10n.get(R.string.mgr_sonar_error_direct_missing),
                             )
                         }
                     }
@@ -424,7 +432,7 @@ class SonarRangerManager(private val context: Context) {
                         confidence = 0f,
                         noEcho = false,
                         outOfRange = false,
-                        error = "缺少录音权限(RECORD_AUDIO),请在应用网关授权后重试",
+                        error = L10n.get(R.string.mgr_sonar_error_no_record_permission),
                     )
                 }
             }
@@ -619,7 +627,7 @@ class SonarRangerManager(private val context: Context) {
             AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
         )
-        if (minBuf <= 0) throw IllegalStateException("设备不支持 44100Hz 单声道 PCM 输出")
+        if (minBuf <= 0) throw IllegalStateException(L10n.get(R.string.mgr_sonar_error_no_pcm_output))
         val track = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -639,7 +647,7 @@ class SonarRangerManager(private val context: Context) {
             .build()
         if (track.state != AudioTrack.STATE_INITIALIZED) {
             runCatching { track.release() }
-            throw IllegalStateException("扬声器初始化失败(可能被其他应用占用)")
+            throw IllegalStateException(L10n.get(R.string.mgr_sonar_error_speaker_init))
         }
         // 只拉满音轨增益,不改系统媒体音量:后者由用户自己控制并在 UI 中显示
         runCatching { track.setVolume(AudioTrack.getMaxVolume()) }

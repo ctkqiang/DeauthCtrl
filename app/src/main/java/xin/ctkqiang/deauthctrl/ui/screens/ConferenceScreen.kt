@@ -44,12 +44,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.ConfMember
 import xin.ctkqiang.deauthctrl.manager.ConfStreamType
 import xin.ctkqiang.deauthctrl.manager.ConferenceHostService
@@ -86,7 +88,8 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    manager.deviceName = operatorName.ifBlank { "operator" }
+    val fallbackOperatorName = stringResource(R.string.conf_default_operator_name)
+    manager.deviceName = operatorName.ifBlank { fallbackOperatorName }
 
     val running by manager.running.collectAsState()
     val members by manager.members.collectAsState()
@@ -150,7 +153,7 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("局域网会议", back)
+        TerminalHeader(stringResource(R.string.conf_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             // 状态条
             Surface(
@@ -159,14 +162,21 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                 border = BorderStroke(1.dp, BorderDim),
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("在线 ${members.size} 人", fontFamily = Mono, fontSize = 10.sp, color = TacGreen)
+                    Text(stringResource(R.string.conf_online_count, members.size), fontFamily = Mono, fontSize = 10.sp, color = TacGreen)
                     Text(stats, fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                    Text(if (running) "● 会议中" else "○ 未入会", fontFamily = Mono, fontSize = 10.sp, color = if (running) TacGreen else Gray)
+                    Text(
+                        stringResource(if (running) R.string.conf_status_in else R.string.conf_status_out),
+                        fontFamily = Mono, fontSize = 10.sp, color = if (running) TacGreen else Gray,
+                    )
                 }
             }
 
             Spacer(Modifier.height(8.dp))
-            ActionButton(running, "进入会议", "退出会议") {
+            ActionButton(
+                running,
+                stringResource(R.string.conf_btn_join),
+                stringResource(R.string.conf_btn_leave),
+            ) {
                 haptic.hud()
                 if (running) {
                     manager.stop()
@@ -183,7 +193,7 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                 Spacer(Modifier.height(8.dp))
 
                 // ── 本机控制面板 ──
-                TermPanelLocal("本机 · 流源与语音") {
+                TermPanelLocal(stringResource(R.string.conf_panel_local)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         ConfStreamType.entries.forEach { type ->
                             val selected = myStream == type
@@ -211,7 +221,7 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                                 color = if (selected) Red.copy(alpha = 0.18f) else SurfaceBg,
                                 border = BorderStroke(1.dp, if (selected) Red.copy(alpha = 0.8f) else BorderDim),
                             ) {
-                                Text(type.label, fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (selected) Red else White, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
+                                Text(stringResource(type.labelRes), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (selected) Red else White, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 8.dp))
                             }
                         }
                     }
@@ -238,7 +248,7 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                         border = BorderStroke(1.5.dp, if (talking) Danger else TacGreen.copy(alpha = 0.6f)),
                     ) {
                         Text(
-                            if (talking) "●●● 发送中 ●●●" else "按住说话 · PTT",
+                            stringResource(if (talking) R.string.conf_ptt_talking else R.string.conf_ptt_idle),
                             fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                             color = if (talking) White else TacGreen,
                             textAlign = TextAlign.Center,
@@ -248,7 +258,10 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                     Spacer(Modifier.height(6.dp))
                     // 发送端真实统计：编码器没出帧时这里保持 0，不再“看起来一切正常”
                     Text(
-                        "TX ${tx.frames}帧/${tx.fragments}片 · 失败 ${tx.failures} · 关键帧 ${tx.keyFrames} · CSD ${tx.configBroadcasts} · 重请求 ${tx.requestedKeyFrames}",
+                        stringResource(
+                            R.string.conf_tx_stats,
+                            tx.frames, tx.fragments, tx.failures, tx.keyFrames, tx.configBroadcasts, tx.requestedKeyFrames,
+                        ),
                         fontFamily = Mono, fontSize = 8.sp, color = Gray,
                     )
                 }
@@ -257,7 +270,7 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
 
                 // ── 成员网格 ──
                 if (members.isEmpty()) {
-                    EmptyHint("等待局域网内其他成员入会…")
+                    EmptyHint(stringResource(R.string.conf_empty_members))
                 } else {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
@@ -278,17 +291,17 @@ fun ConferenceScreen(vm: ConferenceViewModel, operatorName: String, back: () -> 
                 }
             } else {
                 Spacer(Modifier.height(10.dp))
-                TermPanelLocal("会议说明") {
-                    Text("同一 WiFi 内，每台设备广播自己的画面（前置/后置摄像头或屏幕），并同时接收所有成员的视频 —— 无互联网、无中心服务器", fontFamily = Sans, fontSize = 10.sp, color = Gray, lineHeight = 15.sp)
+                TermPanelLocal(stringResource(R.string.conf_panel_brief)) {
+                    Text(stringResource(R.string.conf_brief_body), fontFamily = Sans, fontSize = 10.sp, color = Gray, lineHeight = 15.sp)
                     Spacer(Modifier.height(5.dp))
-                    Text("· 视频: H.264 640×480@15fps UDP 239.1.2.3:10091（组播）", fontFamily = Mono, fontSize = 9.sp, color = White)
-                    Text("· 兜底: 每片同时逐成员单播；CSD 每 2s 重播，缺帧自动请求关键帧", fontFamily = Mono, fontSize = 9.sp, color = White)
-                    Text("· 语音: PTT 半双工 8kHz PCM 单播", fontFamily = Mono, fontSize = 9.sp, color = White)
-                    Text("· 发现: UDP 9998 定向广播/组播，6 秒超时", fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text(stringResource(R.string.conf_brief_video), fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text(stringResource(R.string.conf_brief_fallback), fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text(stringResource(R.string.conf_brief_voice), fontFamily = Mono, fontSize = 9.sp, color = White)
+                    Text(stringResource(R.string.conf_brief_discovery), fontFamily = Mono, fontSize = 9.sp, color = White)
                     Spacer(Modifier.height(5.dp))
-                    Text("· 限制: UDP 不保证送达，丢包会花屏/黑屏；关键帧重请求只能兜底，不能保证弱网流畅", fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
-                    Text("· 限制: AP 开启客户端隔离时广播/组播/单播都无法穿透，应用层没有绕过方法", fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
-                    Text("· 限制: 屏幕共享每次都需要系统授权；Android 14+ 一个授权会话只能创建一次虚拟显示，停止后需重新授权", fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
+                    Text(stringResource(R.string.conf_brief_limit_udp), fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
+                    Text(stringResource(R.string.conf_brief_limit_ap), fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
+                    Text(stringResource(R.string.conf_brief_limit_screen), fontFamily = Sans, fontSize = 9.sp, color = Warn, lineHeight = 13.sp)
                 }
                 Spacer(Modifier.weight(1f))
             }
@@ -325,23 +338,24 @@ private fun MemberTile(
     rx: MemberRxStats?,
 ) {
     val streamTypeLabel = when (member.streamType) {
-        "front" -> "前置"
-        "back" -> "后置"
-        "screen" -> "屏幕"
-        else -> "无画面"
+        "front" -> stringResource(R.string.conf_stream_front)
+        "back" -> stringResource(R.string.conf_stream_back)
+        "screen" -> stringResource(R.string.conf_stream_screen)
+        else -> stringResource(R.string.conf_stream_none)
     }
     val talking = member.talking
     val showVideo = !isMe && member.streamType != "none"
     // 黑屏自诊：区分「没收到包 / 缺参数集 / 解码器未就绪 / 无信号」，
     // 不让一块永远黑的 Tile 看起来像正常播放。
     val rxHint: String? = if (isMe || !showVideo) null else when {
-        rx == null -> "已连接 · 未收到视频数据"
-        !rx.surfaceAttached -> "等待画面绑定"
-        rx.decoderState.contains("失败") || rx.decoderState.contains("错误") -> rx.lastError ?: rx.decoderState
-        rx.decoderState.startsWith("等待") -> rx.decoderState
-        rx.lastFrameAgeMs > 3000 -> "无信号 ${rx.lastFrameAgeMs / 1000}s · 已请求关键帧"
-        rx.rxFrames == 0L -> "已连接 · 未出图（等待关键帧）"
-        rx.decodedFrames == 0L -> "解码器未就绪"
+        rx == null -> stringResource(R.string.conf_rx_connected_no_data)
+        !rx.surfaceAttached -> stringResource(R.string.conf_rx_wait_surface)
+        rx.decoderState.contains("失败") || rx.decoderState.contains("错误") ->
+            rx.lastError ?: decoderStateLabel(rx.decoderState)
+        rx.decoderState.startsWith("等待") -> decoderStateLabel(rx.decoderState)
+        rx.lastFrameAgeMs > 3000 -> stringResource(R.string.conf_rx_no_signal, rx.lastFrameAgeMs / 1000)
+        rx.rxFrames == 0L -> stringResource(R.string.conf_rx_no_frame)
+        rx.decodedFrames == 0L -> stringResource(R.string.conf_rx_decoder_not_ready)
         else -> null
     }
 
@@ -377,12 +391,20 @@ private fun MemberTile(
                 // 占位：自己显示本机源状态
                 Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Text(
-                        if (isMe) (if (myStream != ConfStreamType.NONE) "本机 · ${myStream.label}" else "本机 · 未开流") else "对方未开画面",
+                        if (isMe) {
+                            if (myStream != ConfStreamType.NONE) {
+                                stringResource(R.string.conf_tile_self_stream, stringResource(myStream.labelRes))
+                            } else {
+                                stringResource(R.string.conf_tile_self_no_stream)
+                            }
+                        } else {
+                            stringResource(R.string.conf_tile_peer_no_video)
+                        },
                         fontFamily = Mono, fontSize = 10.sp, color = Gray,
                     )
                     Spacer(Modifier.height(6.dp))
                     if (isMe && myStream != ConfStreamType.NONE) {
-                        Text("● 广播中", fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
+                        Text(stringResource(R.string.conf_tile_broadcasting), fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
                     }
                 }
             }
@@ -406,7 +428,7 @@ private fun MemberTile(
             // 每成员接收统计：收包/解码/缺片，用于区分网络、重组、解码问题
             if (!isMe && showVideo && rx != null) {
                 Text(
-                    "收${rx.rxFrames}/解${rx.decodedFrames} 缺片${rx.missingFragments}",
+                    stringResource(R.string.conf_rx_stats, rx.rxFrames, rx.decodedFrames, rx.missingFragments),
                     fontFamily = Mono, fontSize = 7.sp,
                     color = if (rx.lastFrameAgeMs in 0..2000) TacGreen else Gray,
                     modifier = Modifier.align(Alignment.TopStart)
@@ -438,4 +460,23 @@ private fun MemberTile(
             }
         }
     }
+}
+
+/** 解码器数据值（固定中文，供黑屏判定）→ 当前语言显示文本 */
+@Composable
+private fun decoderStateLabel(raw: String): String = when (raw) {
+    "等待视频数据" -> stringResource(R.string.mgr_conf_decoder_wait_data)
+    "未收到视频数据" -> stringResource(R.string.mgr_conf_decoder_no_data)
+    "画面创建失败" -> stringResource(R.string.mgr_conf_decoder_surface_failed)
+    "画面已绑定，等待参数集" -> stringResource(R.string.mgr_conf_decoder_surface_bound_wait_csd)
+    "画面已解绑" -> stringResource(R.string.mgr_conf_decoder_surface_detached)
+    "已连接，未收到视频数据" -> stringResource(R.string.mgr_conf_decoder_connected_no_data)
+    "参数集变化，重建解码器" -> stringResource(R.string.mgr_conf_decoder_csd_changed)
+    "等待画面绑定" -> stringResource(R.string.mgr_conf_decoder_wait_surface)
+    "等待参数集(SPS/PPS)" -> stringResource(R.string.mgr_conf_decoder_wait_csd)
+    "解码器就绪" -> stringResource(R.string.mgr_conf_decoder_ready)
+    "解码器创建失败" -> stringResource(R.string.mgr_conf_decoder_create_failed)
+    "解码错误" -> stringResource(R.string.mgr_conf_decoder_error)
+    "解码中" -> stringResource(R.string.mgr_conf_decoder_decoding)
+    else -> raw
 }

@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import com.jcraft.jsch.ChannelShell
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
@@ -63,7 +66,7 @@ class SshClientManager {
         val u = username.value.trim()
         val pw = password.value
         if (h.isEmpty() || u.isEmpty()) {
-            _status.value = Status.Failed("请填写主机地址与用户名")
+            _status.value = Status.Failed(L10n.get(R.string.mgr_ssh_missing_fields))
             return
         }
         _status.value = Status.Connecting
@@ -104,7 +107,7 @@ class SshClientManager {
                     } finally {
                         if (!closed) {
                             closed = true
-                            _status.value = Status.Closed("连接已断开")
+                            _status.value = Status.Closed(L10n.get(R.string.mgr_ssh_disconnected))
                             cleanup()
                         }
                     }

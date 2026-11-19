@@ -32,12 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.BatterySnapshot
 import xin.ctkqiang.deauthctrl.manager.NetworkSnapshot
 import xin.ctkqiang.deauthctrl.manager.SelfCheckState
@@ -119,15 +121,16 @@ fun SelfCheckScreen(back: () -> Unit) {
         else -> TacGreen
     }
     val verdict = when {
-        !loaded && state.loading -> "自检读取中…"
-        !loaded -> "等待读取"
-        state.alerts.isNotEmpty() -> "存在告警 · ${state.alerts.size} 项"
-        partial -> "未发现告警 · 部分项不可用"
-        else -> "全部正常"
+        !loaded && state.loading -> stringResource(R.string.selfchk_verdict_reading)
+        !loaded -> stringResource(R.string.selfchk_verdict_waiting)
+        state.alerts.isNotEmpty() ->
+            stringResource(R.string.selfchk_verdict_alerts, state.alerts.size)
+        partial -> stringResource(R.string.selfchk_verdict_partial)
+        else -> stringResource(R.string.selfchk_verdict_ok)
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("硬件自检 · SELF CHECK", back)
+        TerminalHeader(stringResource(R.string.selfchk_title), back)
         Column(
             Modifier.fillMaxSize().navigationBarsPadding()
                 .verticalScroll(rememberScrollState()).padding(12.dp),
@@ -146,10 +149,7 @@ fun SelfCheckScreen(back: () -> Unit) {
             SensorPanel(state.sensors)
             NetworkPanel(state.network)
             Text(
-                "数据说明 · 电池来自 BatteryManager 与 ACTION_BATTERY_CHANGED 粘性广播,温度/电流为系统上报值," +
-                    "厂商采样口径可能不同。CPU 使用率为 /proc/stat 两次采样(窗口 250 ms)的估算值;" +
-                    "内存来自 ActivityManager.MemoryInfo;存储为 /data 的 StatFs。热区读取 /sys/class/thermal," +
-                    "路径与单位因厂商/内核而异,读不到时显示不可用;传感器与 Wi-Fi 均为系统真实返回值,缺失字段显示 --。",
+                stringResource(R.string.selfchk_data_note),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Gray,
@@ -188,18 +188,27 @@ private fun SummaryCard(
                     color = verdictColor,
                     modifier = Modifier.weight(1f),
                 )
-                GhostButton(if (state.loading) "读取中" else "刷新", onClick = onRefresh)
+                GhostButton(
+                    if (state.loading) stringResource(R.string.selfchk_btn_reading)
+                    else stringResource(R.string.selfchk_btn_refresh),
+                    onClick = onRefresh,
+                )
             }
             Spacer(Modifier.height(4.dp))
+            val updatedPrefix = if (loaded) {
+                stringResource(
+                    R.string.selfchk_updated,
+                    SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(state.updatedAtMs)),
+                ) + " · "
+            } else {
+                ""
+            }
             Text(
-                buildString {
-                    if (loaded) {
-                        append("更新 ")
-                        append(SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(state.updatedAtMs)))
-                        append(" · ")
-                    }
-                    append("传感器 ${state.sensors.size} 项 · 热区 ${state.thermal.readableZones} 个")
-                },
+                updatedPrefix + stringResource(
+                    R.string.selfchk_sensor_zone_counts,
+                    state.sensors.size,
+                    state.thermal.readableZones,
+                ),
                 fontFamily = Mono,
                 fontSize = 8.sp,
                 color = Gray,
@@ -221,7 +230,7 @@ private fun SummaryCard(
 
 @Composable
 private fun BatteryPanel(b: BatterySnapshot) {
-    TermPanel("电池") {
+    TermPanel(stringResource(R.string.selfchk_panel_battery)) {
         val capacity = b.capacityPercent
         val capacityColor = when {
             capacity == null -> Gray
@@ -234,7 +243,7 @@ private fun BatteryPanel(b: BatterySnapshot) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("电量", fontFamily = Sans, fontSize = 11.sp, color = Gray)
+            Text(stringResource(R.string.selfchk_label_level), fontFamily = Sans, fontSize = 11.sp, color = Gray)
             Text(
                 capacity?.let { "$it %" } ?: "--",
                 fontFamily = Mono,
@@ -253,33 +262,37 @@ private fun BatteryPanel(b: BatterySnapshot) {
             )
         }
         Spacer(Modifier.height(6.dp))
-        PanelStat("电流", b.currentNowUa?.let(::formatCurrentUa) ?: "--", valueColor = currentColor(b.currentNowUa))
         PanelStat(
-            "温度",
+            stringResource(R.string.selfchk_stat_current),
+            b.currentNowUa?.let(::formatCurrentUa) ?: "--",
+            valueColor = currentColor(b.currentNowUa),
+        )
+        PanelStat(
+            stringResource(R.string.selfchk_stat_temperature),
             b.temperatureC?.let { String.format(Locale.US, "%.1f °C", it) } ?: "--",
             valueColor = temperatureColor(b.temperatureC),
         )
         PanelStat(
-            "健康",
-            b.health,
+            stringResource(R.string.selfchk_stat_health),
+            batteryHealthLabel(b.health),
             valueColor = when {
                 b.healthAlert -> Danger
                 b.health == "良好" -> TacGreen
                 else -> Gray
             },
         )
-        PanelStat("充放电方向", b.direction)
-        PanelStat("电池状态", b.status)
-        PanelStat("供电来源", b.plugged)
-        PanelStat("电压", b.voltageMv?.let { "$it mV" } ?: "--")
+        PanelStat(stringResource(R.string.selfchk_stat_direction), batteryDirectionLabel(b.direction))
+        PanelStat(stringResource(R.string.selfchk_stat_battery_status), batteryStatusLabel(b.status))
+        PanelStat(stringResource(R.string.selfchk_stat_power_source), batteryPluggedLabel(b.plugged))
+        PanelStat(stringResource(R.string.selfchk_stat_voltage), b.voltageMv?.let { "$it mV" } ?: "--")
         PanelStat(
-            "电荷计数器",
+            stringResource(R.string.selfchk_stat_charge_counter),
             b.chargeCounterUah?.let { String.format(Locale.US, "%.0f mAh", it / 1000f) } ?: "--",
         )
-        PanelStat("电池技术", b.technology)
+        PanelStat(stringResource(R.string.selfchk_stat_technology), batteryTechnologyLabel(b.technology))
         if (b.present == false) {
             Text(
-                "[!] 系统上报本机无电池(可能为模拟器或无电池设备)",
+                stringResource(R.string.selfchk_warn_no_battery),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Warn,
@@ -293,10 +306,10 @@ private fun BatteryPanel(b: BatterySnapshot) {
 
 @Composable
 private fun ThermalPanel(t: ThermalSnapshot) {
-    TermPanel("热区") {
+    TermPanel(stringResource(R.string.selfchk_panel_thermal)) {
         if (!t.available) {
             Text(
-                "不可用 —— 本机未暴露 /sys/class/thermal 的 thermal_zone 读数",
+                stringResource(R.string.selfchk_thermal_unavailable),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Gray,
@@ -307,7 +320,11 @@ private fun ThermalPanel(t: ThermalSnapshot) {
             if (t.readableZones > t.topZones.size) {
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "共读取 ${t.readableZones} 个热区,仅显示最高 ${t.topZones.size} 个",
+                    stringResource(
+                        R.string.selfchk_thermal_truncated,
+                        t.readableZones,
+                        t.topZones.size,
+                    ),
                     fontFamily = Mono,
                     fontSize = 8.sp,
                     color = Gray,
@@ -315,7 +332,7 @@ private fun ThermalPanel(t: ThermalSnapshot) {
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                "阈值: > 45 °C 红色 · > 38 °C 金色;温度为内核上报值",
+                stringResource(R.string.selfchk_thermal_threshold),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Gray,
@@ -369,28 +386,32 @@ private fun LoadPanel(state: SelfCheckState) {
     val cpu = state.cpu
     val mem = state.memory
     val storage = state.storage
-    TermPanel("CPU / 内存 / 存储") {
+    TermPanel(stringResource(R.string.selfchk_panel_load)) {
         LoadRow(
-            label = "CPU 使用率",
+            label = stringResource(R.string.selfchk_label_cpu_usage),
             detail = if (cpu.usagePercent == null) {
-                "不可用 —— /proc/stat 读取失败"
+                stringResource(R.string.selfchk_cpu_unavailable)
             } else {
-                "两次 /proc/stat 采样,窗口 ${cpu.sampleWindowMs} ms · ${cpu.coreCount} 核"
+                stringResource(R.string.selfchk_cpu_detail, cpu.sampleWindowMs, cpu.coreCount)
             },
             percent = cpu.usagePercent,
         )
         LoadRow(
-            label = "内存",
+            label = stringResource(R.string.selfchk_label_memory),
             detail = if (mem.totalBytes == null || mem.availBytes == null) {
-                "不可用"
+                stringResource(R.string.selfchk_unavailable)
             } else {
-                "可用 ${formatBytes(mem.availBytes)} / 总 ${formatBytes(mem.totalBytes)}"
+                stringResource(
+                    R.string.selfchk_mem_detail,
+                    formatBytes(mem.availBytes),
+                    formatBytes(mem.totalBytes),
+                )
             },
             percent = mem.usedPercent,
         )
         if (mem.lowMemory) {
             Text(
-                "[!] 系统报告处于低内存状态",
+                stringResource(R.string.selfchk_warn_low_memory),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Danger,
@@ -398,11 +419,15 @@ private fun LoadPanel(state: SelfCheckState) {
             )
         }
         LoadRow(
-            label = "存储 /data",
+            label = stringResource(R.string.selfchk_label_storage),
             detail = if (storage.totalBytes == null || storage.freeBytes == null) {
-                "不可用"
+                stringResource(R.string.selfchk_unavailable)
             } else {
-                "剩余 ${formatBytes(storage.freeBytes)} / 总 ${formatBytes(storage.totalBytes)}"
+                stringResource(
+                    R.string.selfchk_storage_detail,
+                    formatBytes(storage.freeBytes),
+                    formatBytes(storage.totalBytes),
+                )
             },
             percent = storage.usedPercent,
         )
@@ -450,31 +475,37 @@ private fun LoadRow(label: String, detail: String, percent: Int?) {
 
 @Composable
 private fun SensorPanel(sensors: List<SensorEntry>) {
-    TermPanel("传感器清单") {
+    TermPanel(stringResource(R.string.selfchk_panel_sensors)) {
         val shown = sensors.take(MAX_SENSORS_SHOWN)
         val common = shown.filter { it.isCommon }
         val others = shown.filterNot { it.isCommon }
+        val onlyFirst = if (sensors.size > shown.size) {
+            " · " + stringResource(R.string.selfchk_sensor_only_first, shown.size)
+        } else {
+            ""
+        }
         Text(
-            buildString {
-                append("共 ${sensors.size} 项 · 常用 ${sensors.count { it.isCommon }} 项")
-                if (sensors.size > shown.size) append(" · 仅显示前 ${shown.size} 项")
-            },
+            stringResource(
+                R.string.selfchk_sensor_counts,
+                sensors.size,
+                sensors.count { it.isCommon },
+            ) + onlyFirst,
             fontFamily = Mono,
             fontSize = 8.sp,
             color = Gray,
         )
         if (shown.isEmpty()) {
             Spacer(Modifier.height(6.dp))
-            EmptyHint("系统未返回任何传感器 —— 模拟器或无 HAL 时为空")
+            EmptyHint(stringResource(R.string.selfchk_sensors_empty))
         } else {
             Spacer(Modifier.height(4.dp))
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
                 if (common.isNotEmpty()) {
-                    item { SensorGroupLabel("常用传感器", common.size) }
+                    item { SensorGroupLabel(stringResource(R.string.selfchk_sensors_common), common.size) }
                     items(common) { sensor -> SensorRow(sensor) }
                 }
                 if (others.isNotEmpty()) {
-                    item { SensorGroupLabel("其他传感器", others.size) }
+                    item { SensorGroupLabel(stringResource(R.string.selfchk_sensors_other), others.size) }
                     items(others) { sensor -> SensorRow(sensor) }
                 }
             }
@@ -515,7 +546,8 @@ private fun SensorRow(sensor: SensorEntry) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                if (sensor.isCommon) "常用" else "其他",
+                if (sensor.isCommon) stringResource(R.string.selfchk_tag_common)
+                else stringResource(R.string.selfchk_tag_other),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = if (sensor.isCommon) Gold else Gray,
@@ -523,7 +555,12 @@ private fun SensorRow(sensor: SensorEntry) {
         }
         Text(sensor.name, fontFamily = Mono, fontSize = 9.sp, color = Gold)
         Text(
-            "厂商 ${sensor.vendor} · 分辨率 ${formatSensorFloat(sensor.resolution)} · 功耗 ${formatSensorFloat(sensor.powerMa)} mA",
+            stringResource(
+                R.string.selfchk_sensor_detail,
+                sensor.vendor,
+                formatSensorFloat(sensor.resolution),
+                formatSensorFloat(sensor.powerMa),
+            ),
             fontFamily = Mono,
             fontSize = 8.sp,
             color = Gray,
@@ -535,22 +572,22 @@ private fun SensorRow(sensor: SensorEntry) {
 
 @Composable
 private fun NetworkPanel(n: NetworkSnapshot) {
-    TermPanel("Wi-Fi 链路") {
+    TermPanel(stringResource(R.string.selfchk_panel_wifi)) {
         when {
             n.wifiEnabled == false -> Text(
-                "[!] Wi-Fi 已关闭 —— 无链路读数",
+                stringResource(R.string.selfchk_wifi_disabled),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Danger,
             )
             n.wifiEnabled == null -> Text(
-                "Wi-Fi 状态不可用",
+                stringResource(R.string.selfchk_wifi_state_unavailable),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Gray,
             )
             !n.connected -> Text(
-                "Wi-Fi 未连接 —— 链路信息不可用",
+                stringResource(R.string.selfchk_wifi_disconnected),
                 fontFamily = Sans,
                 fontSize = 9.sp,
                 color = Gray,
@@ -559,33 +596,41 @@ private fun NetworkPanel(n: NetworkSnapshot) {
                 PanelStat("SSID", n.ssid ?: "--")
                 PanelStat("BSSID", n.bssid ?: "--")
                 PanelStat(
-                    "信号",
+                    stringResource(R.string.selfchk_stat_signal),
                     n.rssiDbm?.let { dbm ->
                         "$dbm dBm" + (n.signalLevel?.let { level -> " ($level/4)" } ?: "")
                     } ?: "--",
                     valueColor = signalColor(n.rssiDbm),
                 )
-                PanelStat("链路速率", n.linkSpeedMbps?.let { "$it Mbps" } ?: "--")
+                PanelStat(
+                    stringResource(R.string.selfchk_stat_link_speed),
+                    n.linkSpeedMbps?.let { "$it Mbps" } ?: "--",
+                )
                 if (n.txLinkSpeedMbps != null || n.rxLinkSpeedMbps != null) {
                     PanelStat(
-                        "收发速率",
+                        stringResource(R.string.selfchk_stat_tx_rx_speed),
                         "${n.txLinkSpeedMbps ?: "--"} / ${n.rxLinkSpeedMbps ?: "--"} Mbps",
                     )
                 }
                 PanelStat(
-                    "频率 / 信道",
+                    stringResource(R.string.selfchk_stat_freq_channel),
                     n.frequencyMhz?.let { freq ->
-                        "$freq MHz" + (n.channel?.let { ch -> " · 信道 $ch" } ?: "")
+                        "$freq MHz" + (n.channel?.let { ch ->
+                            " · " + stringResource(R.string.selfchk_channel_suffix, ch)
+                        } ?: "")
                     } ?: "--",
                 )
-                PanelStat("本机 IP", n.localIp ?: "--")
-                PanelStat("网关", n.gatewayIp ?: "--")
-                PanelStat("Wi-Fi 标准", n.wifiStandard ?: "--")
+                PanelStat(stringResource(R.string.selfchk_stat_local_ip), n.localIp ?: "--")
+                PanelStat(stringResource(R.string.selfchk_stat_gateway), n.gatewayIp ?: "--")
+                PanelStat(
+                    stringResource(R.string.selfchk_stat_wifi_standard),
+                    n.wifiStandard ?: "--",
+                )
             }
         }
         if (!n.locationGranted) {
             Text(
-                "[!] 未授予定位权限,SSID/BSSID 会被系统隐去",
+                stringResource(R.string.selfchk_warn_no_location),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Warn,
@@ -593,6 +638,74 @@ private fun NetworkPanel(n: NetworkSnapshot) {
             )
         }
     }
+}
+
+// ─── 电池数据值显示映射 ──────────────────────────────────────────────────────
+
+/** 电池健康数据值（固定中文，供结论判定）→ 当前语言显示文本 */
+@Composable
+private fun batteryHealthLabel(raw: String): String = when (raw) {
+    "良好" -> stringResource(R.string.mgr_selfchk_health_good)
+    "过热" -> stringResource(R.string.mgr_selfchk_health_overheat)
+    "失效" -> stringResource(R.string.mgr_selfchk_health_dead)
+    "过压" -> stringResource(R.string.mgr_selfchk_health_over_voltage)
+    "过冷" -> stringResource(R.string.mgr_selfchk_health_cold)
+    "故障(未指明)" -> stringResource(R.string.mgr_selfchk_health_unspecified_failure)
+    "未知" -> stringResource(R.string.mgr_selfchk_unknown)
+    "不可用" -> stringResource(R.string.mgr_selfchk_unavailable)
+    else -> raw
+}
+
+/** 充放电方向数据值 → 当前语言显示文本 */
+@Composable
+private fun batteryDirectionLabel(raw: String): String = when (raw) {
+    "充电中" -> stringResource(R.string.mgr_selfchk_dir_charging)
+    "已充满(外接电源)" -> stringResource(R.string.mgr_selfchk_dir_full_external)
+    "放电中" -> stringResource(R.string.mgr_selfchk_dir_discharging)
+    "未充电" -> stringResource(R.string.mgr_selfchk_dir_not_charging)
+    "充电中(按电流符号)" -> stringResource(R.string.mgr_selfchk_dir_charging_by_current)
+    "放电中(按电流符号)" -> stringResource(R.string.mgr_selfchk_dir_discharging_by_current)
+    "无净电流" -> stringResource(R.string.mgr_selfchk_dir_no_net_current)
+    "不可用" -> stringResource(R.string.mgr_selfchk_unavailable)
+    else -> raw
+}
+
+/** 电池状态数据值 → 当前语言显示文本 */
+@Composable
+private fun batteryStatusLabel(raw: String): String = when (raw) {
+    "充电中" -> stringResource(R.string.mgr_selfchk_status_charging)
+    "放电中" -> stringResource(R.string.mgr_selfchk_status_discharging)
+    "已充满" -> stringResource(R.string.mgr_selfchk_status_full)
+    "未充电" -> stringResource(R.string.mgr_selfchk_status_not_charging)
+    "未知" -> stringResource(R.string.mgr_selfchk_unknown)
+    "不可用" -> stringResource(R.string.mgr_selfchk_unavailable)
+    else -> raw
+}
+
+/** 供电来源数据值（可含多个记号，以 " / " 连接）→ 当前语言显示文本 */
+@Composable
+private fun batteryPluggedLabel(raw: String): String {
+    val parts = raw.split(" / ")
+    val mapped = ArrayList<String>(parts.size)
+    for (token in parts) {
+        mapped.add(
+            when (token) {
+                "无线充电" -> stringResource(R.string.mgr_selfchk_plug_wireless)
+                "底座" -> stringResource(R.string.mgr_selfchk_plug_dock)
+                "未连接电源" -> stringResource(R.string.mgr_selfchk_plug_unplugged)
+                "不可用" -> stringResource(R.string.mgr_selfchk_unavailable)
+                else -> token
+            },
+        )
+    }
+    return mapped.joinToString(" / ")
+}
+
+/** 电池技术数据值 → 当前语言显示文本（技术名保持原样） */
+@Composable
+private fun batteryTechnologyLabel(raw: String): String = when (raw) {
+    "不可用" -> stringResource(R.string.mgr_selfchk_unavailable)
+    else -> raw
 }
 
 // ─── 格式化与配色 ────────────────────────────────────────────────────────────

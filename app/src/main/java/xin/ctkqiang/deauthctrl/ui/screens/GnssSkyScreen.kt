@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.GnssSat
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -98,6 +100,7 @@ fun GnssSkyScreen(back: () -> Unit) {
     val offSky = satellites.filter { !it.isPlottable() }
 
     val timeFmt = remember { SimpleDateFormat("HH:mm:ss", Locale.US) }
+    val weakBadge = stringResource(R.string.gnss_weak_badge)
     val updatedText = if (state.updatedAtMs > 0L) {
         timeFmt.format(Date(state.updatedAtMs))
     } else {
@@ -105,7 +108,7 @@ fun GnssSkyScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("卫星天图 · GNSS SKY", back)
+        TerminalHeader(stringResource(R.string.gnss_title), back)
 
         Column(
             Modifier
@@ -125,7 +128,7 @@ fun GnssSkyScreen(back: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        if (state.gpsEnabled) "定位 开" else "定位 关",
+                        if (state.gpsEnabled) stringResource(R.string.gnss_location_on) else stringResource(R.string.gnss_location_off),
                         fontFamily = Mono,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -135,13 +138,13 @@ fun GnssSkyScreen(back: () -> Unit) {
                     Box(Modifier.width(1.dp).height(11.dp).background(BorderDim))
                     Spacer(Modifier.width(9.dp))
                     Text(
-                        "参与定位 ${state.fixCount} 颗 · 总星 ${satellites.size} 颗",
+                        stringResource(R.string.gnss_fix_summary, state.fixCount, satellites.size),
                         fontFamily = Mono,
                         fontSize = 10.sp,
                         color = Gold,
                         modifier = Modifier.weight(1f),
                     )
-                    Text("更新 $updatedText", fontFamily = Mono, fontSize = 9.sp, color = Gray)
+                    Text(stringResource(R.string.gnss_updated, updatedText), fontFamily = Mono, fontSize = 9.sp, color = Gray)
                 }
             }
 
@@ -154,7 +157,7 @@ fun GnssSkyScreen(back: () -> Unit) {
                     border = BorderStroke(1.dp, Danger.copy(alpha = 0.5f)),
                 ) {
                     Text(
-                        "[!] $err",
+                        stringResource(R.string.gnss_error_line, err),
                         fontFamily = Sans,
                         fontSize = 10.sp,
                         color = Danger,
@@ -165,12 +168,11 @@ fun GnssSkyScreen(back: () -> Unit) {
 
             // ── 天顶投影盘 ──
             Spacer(Modifier.height(8.dp))
-            TermPanel("天顶投影 · 北朝上") {
+            TermPanel(stringResource(R.string.gnss_sky_panel_title)) {
                 SkyPlot(onSky, Modifier.fillMaxWidth().height(280.dp))
                 Spacer(Modifier.height(7.dp))
                 Text(
-                    "投影: r = R × (90° − 仰角) / 90°,方位角自正北顺时针;" +
-                        "外圈 = 地平线(0°),圆心 = 天顶(90°)。实心带白芯为参与定位解算的卫星。",
+                    stringResource(R.string.gnss_projection_note),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -179,7 +181,7 @@ fun GnssSkyScreen(back: () -> Unit) {
                 if (offSky.isNotEmpty()) {
                     Spacer(Modifier.height(7.dp))
                     Text(
-                        "环外卫星(el < 5° 或角度无效,不绘制于盘面)",
+                        stringResource(R.string.gnss_offsky_title),
                         fontFamily = Sans,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -188,8 +190,14 @@ fun GnssSkyScreen(back: () -> Unit) {
                     Spacer(Modifier.height(3.dp))
                     offSky.forEach { sat ->
                         Text(
-                            "${sat.constellationName} ${sat.svid} · EL ${degText(sat.elevationDeg)} · " +
-                                "AZ ${degText(sat.azimuthDeg)} · CN0 ${cn0Text(sat)}",
+                            stringResource(
+                                R.string.gnss_offsky_line,
+                                sat.constellationName,
+                                sat.svid,
+                                degText(sat.elevationDeg),
+                                degText(sat.azimuthDeg),
+                                cn0Text(sat, weakBadge),
+                            ),
                             fontFamily = Mono,
                             fontSize = 8.sp,
                             color = Gray,
@@ -200,21 +208,21 @@ fun GnssSkyScreen(back: () -> Unit) {
 
             // ── 星座图例 ──
             Spacer(Modifier.height(8.dp))
-            TermPanel("星座图例") {
+            TermPanel(stringResource(R.string.gnss_legend_title)) {
                 ConstellationLegend()
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SatDot(TacGreen, filled = true)
                     Spacer(Modifier.width(5.dp))
-                    Text("实心 = 参与定位解算", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                    Text(stringResource(R.string.gnss_legend_filled), fontFamily = Sans, fontSize = 8.sp, color = Gray)
                     Spacer(Modifier.width(14.dp))
                     SatDot(Gray, filled = false)
                     Spacer(Modifier.width(5.dp))
-                    Text("空心 = 已跟踪未参与", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+                    Text(stringResource(R.string.gnss_legend_hollow), fontFamily = Sans, fontSize = 8.sp, color = Gray)
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "CN0 单位 dB-Hz;低于 ${WEAK_CN0_DB_HZ.toInt()} 标为 [弱] 信号",
+                    stringResource(R.string.gnss_cn0_note, WEAK_CN0_DB_HZ.toInt()),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -223,15 +231,15 @@ fun GnssSkyScreen(back: () -> Unit) {
 
             // ── 卫星明细 ──
             Spacer(Modifier.height(8.dp))
-            TermPanel("卫星明细 · ${satellites.size} 颗") {
+            TermPanel(stringResource(R.string.gnss_sat_detail_title, satellites.size)) {
                 if (satellites.isEmpty()) {
                     EmptyHint(
-                        if (state.error != null) "无卫星数据 —— 处理上方告警后自动恢复"
-                        else "等待系统 GNSS 状态回调…",
+                        if (state.error != null) stringResource(R.string.gnss_empty_error)
+                        else stringResource(R.string.gnss_empty_waiting),
                     )
                 } else {
                     Text(
-                        "格式: 星座 SVID · EL 仰角 · AZ 方位角 · CN0 载噪比 · ● 参与定位",
+                        stringResource(R.string.gnss_format_hint),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
@@ -244,10 +252,7 @@ fun GnssSkyScreen(back: () -> Unit) {
             // ── 数据来源与诚实说明 ──
             Spacer(Modifier.height(8.dp))
             Text(
-                "数据说明: 卫星的方位角、仰角、CN0 与是否参与定位解算,均为 Android GnssStatus " +
-                    "回调中系统上报的真实值,非估算、非模拟;天顶图只表达卫星在天空中的几何位置," +
-                    "不表示距离。定位关闭、缺少精确位置权限或设备无 GNSS 硬件时无数据。" +
-                    "CN0 低于 25 dB-Hz 属于弱信号,定位质量可能下降。",
+                stringResource(R.string.gnss_data_note, WEAK_CN0_DB_HZ.toInt()),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Gray,
@@ -271,6 +276,7 @@ fun GnssSkyScreen(back: () -> Unit) {
 @Composable
 private fun SkyPlot(satellites: List<GnssSat>, modifier: Modifier = Modifier) {
     val textMeasurer = rememberTextMeasurer()
+    val ringHint = stringResource(R.string.gnss_ring_hint)
 
     Canvas(modifier) {
         val cx = size.width / 2f
@@ -328,7 +334,7 @@ private fun SkyPlot(satellites: List<GnssSat>, modifier: Modifier = Modifier) {
 
         // 环含义提示(左上角,不遮挡盘面)
         val hint = textMeasurer.measure(
-            "环 0° / 30° / 60° · 圆心 90°",
+            ringHint,
             TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray.copy(alpha = 0.75f)),
         )
         drawText(hint, topLeft = Offset(4.dp.toPx(), 4.dp.toPx()))
@@ -382,7 +388,7 @@ private fun SatelliteRow(sat: GnssSat) {
         SatDot(color, filled = sat.usedInFix)
         Spacer(Modifier.width(7.dp))
         Text(
-            "${sat.constellationName} ${sat.svid}",
+            stringResource(R.string.gnss_sat_name, sat.constellationName, sat.svid),
             fontFamily = Sans,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
@@ -390,21 +396,21 @@ private fun SatelliteRow(sat: GnssSat) {
             modifier = Modifier.weight(1f),
         )
         Text(
-            "EL ${degText(sat.elevationDeg)}",
+            stringResource(R.string.gnss_el, degText(sat.elevationDeg)),
             fontFamily = Mono,
             fontSize = 9.sp,
             color = Gray,
             modifier = Modifier.width(48.dp),
         )
         Text(
-            "AZ ${degText(sat.azimuthDeg)}",
+            stringResource(R.string.gnss_az, degText(sat.azimuthDeg)),
             fontFamily = Mono,
             fontSize = 9.sp,
             color = Gray,
             modifier = Modifier.width(52.dp),
         )
         Text(
-            "CN0 ${cn0ValueText(sat)}",
+            stringResource(R.string.gnss_cn0, cn0ValueText(sat)),
             fontFamily = Mono,
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
@@ -417,7 +423,7 @@ private fun SatelliteRow(sat: GnssSat) {
         )
         Box(Modifier.width(24.dp)) {
             if (weak) {
-                Text("[弱]", fontFamily = Sans, fontSize = 8.sp, color = Warn)
+                Text(stringResource(R.string.gnss_weak_badge), fontFamily = Sans, fontSize = 8.sp, color = Warn)
             }
         }
         Text(
@@ -434,17 +440,17 @@ private fun SatelliteRow(sat: GnssSat) {
 private fun ConstellationLegend() {
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LegendItem("GPS", Gold)
-            LegendItem("伽利略", TacGreen)
-            LegendItem("格洛纳斯", Warn)
-            LegendItem("北斗", Red)
+            LegendItem(stringResource(R.string.gnss_legend_gps), Gold)
+            LegendItem(stringResource(R.string.gnss_legend_galileo), TacGreen)
+            LegendItem(stringResource(R.string.gnss_legend_glonass), Warn)
+            LegendItem(stringResource(R.string.gnss_legend_beidou), Red)
         }
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LegendItem("准天顶", White)
-            LegendItem("星基增强", Gray)
-            LegendItem("印度区域", Gray)
-            LegendItem("未知", Gray)
+            LegendItem(stringResource(R.string.gnss_legend_qzss), White)
+            LegendItem(stringResource(R.string.gnss_legend_sbas), Gray)
+            LegendItem(stringResource(R.string.gnss_legend_irnss), Gray)
+            LegendItem(stringResource(R.string.gnss_legend_unknown), Gray)
         }
     }
 }
@@ -493,7 +499,7 @@ private fun cn0ValueText(sat: GnssSat): String =
     sat.cn0DbHz?.let { "%.1f".format(it) } ?: "--"
 
 /** CN0 文本(含弱信号标记);用于环外小字表 */
-private fun cn0Text(sat: GnssSat): String {
+private fun cn0Text(sat: GnssSat, weakLabel: String): String {
     val cn0 = sat.cn0DbHz ?: return "--"
-    return if (cn0 < WEAK_CN0_DB_HZ) "%.1f [弱]".format(cn0) else "%.1f".format(cn0)
+    return if (cn0 < WEAK_CN0_DB_HZ) "%.1f".format(cn0) + " " + weakLabel else "%.1f".format(cn0)
 }

@@ -31,10 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.BleGattPhase
 import xin.ctkqiang.deauthctrl.manager.GattCharacteristicInfo
 import xin.ctkqiang.deauthctrl.manager.GattServiceInfo
@@ -97,7 +99,7 @@ fun BleGattScreen(back: () -> Unit) {
     val sessionActive = state.phase == BleGattPhase.CONNECTING || state.connected
 
     Column(Modifier.fillMaxSize().background(Dark).navigationBarsPadding().imePadding()) {
-        TerminalHeader("BLE GATT 工作台", back)
+        TerminalHeader(stringResource(R.string.gatt_title), back)
 
         Column(
             Modifier
@@ -107,29 +109,28 @@ fun BleGattScreen(back: () -> Unit) {
                 .padding(12.dp),
         ) {
             // ── 连接控制 ──────────────────────────────────────────────
-            TermPanel("连接 · GATT CLIENT") {
+            TermPanel(stringResource(R.string.gatt_panel_connect)) {
                 TermInput(
-                    "目标 MAC 地址",
+                    stringResource(R.string.gatt_target_mac_label),
                     macInput,
-                    placeholder = "AA:BB:CC:DD:EE:FF",
+                    placeholder = stringResource(R.string.gatt_target_mac_placeholder),
                 ) { macInput = it.take(32) }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(
                     running = sessionActive,
-                    runLabel = "连接",
-                    stopLabel = "断开",
+                    runLabel = stringResource(R.string.gatt_btn_connect),
+                    stopLabel = stringResource(R.string.gatt_btn_disconnect),
                 ) {
                     if (sessionActive) vm.disconnect() else vm.connect(macInput)
                 }
                 Spacer(Modifier.height(8.dp))
-                PanelStat("状态", state.phase.label, phaseColor(state.phase))
-                PanelStat("设备名称", state.deviceName.ifBlank { "--" })
-                PanelStat("设备地址", state.deviceAddress.ifBlank { "--" })
-                PanelStat("服务 / 特征", "${state.services.size} / ${state.characteristicCount}")
+                PanelStat(stringResource(R.string.gatt_stat_status), stringResource(state.phase.labelRes), phaseColor(state.phase))
+                PanelStat(stringResource(R.string.gatt_stat_device_name), state.deviceName.ifBlank { "--" })
+                PanelStat(stringResource(R.string.gatt_stat_device_address), state.deviceAddress.ifBlank { "--" })
+                PanelStat(stringResource(R.string.gatt_stat_services_chars), "${state.services.size} / ${state.characteristicCount}")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "MAC 可从「BLE 扫描」页面获取；目标设备必须处于广播 / 可连接状态，" +
-                        "系统不会替我们探测一个不存在或不可连接的地址。",
+                    stringResource(R.string.gatt_mac_hint),
                     fontFamily = Sans,
                     fontSize = 8.sp,
                     color = Gray,
@@ -159,22 +160,22 @@ fun BleGattScreen(back: () -> Unit) {
 
             // ── GATT 服务表 ───────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("GATT 服务 · SERVICES") {
+            TermPanel(stringResource(R.string.gatt_panel_services)) {
                 if (state.services.isEmpty()) {
                     EmptyHint(
                         when (state.phase) {
                             BleGattPhase.DISCONNECTED ->
-                                "未连接 —— 输入目标 MAC 后点击「连接」；目标需处于广播 / 可连接状态"
+                                stringResource(R.string.gatt_empty_disconnected)
                             BleGattPhase.CONNECTING ->
-                                "连接中 —— 最多等待 10 秒"
+                                stringResource(R.string.gatt_empty_connecting)
                             BleGattPhase.CONNECTED ->
-                                "已连接 —— 正在准备服务发现"
+                                stringResource(R.string.gatt_empty_connected)
                             BleGattPhase.DISCOVERING ->
-                                "正在发现服务 —— 最多等待 10 秒"
+                                stringResource(R.string.gatt_empty_discovering)
                             BleGattPhase.READY ->
-                                "设备未暴露任何可访问的 GATT 服务 —— 尝试在系统蓝牙中配对后重连"
+                                stringResource(R.string.gatt_empty_ready)
                             BleGattPhase.ERROR ->
-                                "服务表不可用 —— 处理上方告警后重新连接"
+                                stringResource(R.string.gatt_empty_error)
                         },
                     )
                 } else {
@@ -196,8 +197,7 @@ fun BleGattScreen(back: () -> Unit) {
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "属性缩写：R 读 · W 有响应写 · WNR 无响应写 · N 通知 · I 指示 · " +
-                            "BC 广播 · SW 签名写 · EP 扩展属性。",
+                        stringResource(R.string.gatt_property_legend),
                         fontFamily = Sans,
                         fontSize = 8.sp,
                         color = Gray,
@@ -208,12 +208,12 @@ fun BleGattScreen(back: () -> Unit) {
 
             // ── 日志 ──────────────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("通知日志 · GATT LOG") {
-                LogHeader("事件流（最新在上）", showClear = true) { vm.clearLog() }
+            TermPanel(stringResource(R.string.gatt_panel_log)) {
+                LogHeader(stringResource(R.string.gatt_log_header), showClear = true) { vm.clearLog() }
                 Spacer(Modifier.height(4.dp))
                 if (state.log.isEmpty()) {
                     Text(
-                        "暂无日志 —— 连接、读取、写入、通知事件都会记录在这里",
+                        stringResource(R.string.gatt_log_empty),
                         fontFamily = Sans,
                         fontSize = 9.sp,
                         color = Gray,
@@ -229,7 +229,7 @@ fun BleGattScreen(back: () -> Unit) {
                     }
                     if (state.log.size > 80) {
                         Text(
-                            "仅显示最近 80 条，共 ${state.log.size} 条",
+                            stringResource(R.string.gatt_log_truncated, state.log.size),
                             fontFamily = Sans,
                             fontSize = 8.sp,
                             color = Gray,
@@ -241,15 +241,15 @@ fun BleGattScreen(back: () -> Unit) {
 
             // ── 操作边界 ──────────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
-            TermPanel("操作边界 · 说明") {
+            TermPanel(stringResource(R.string.gatt_panel_boundaries)) {
                 listOf(
-                    "目标设备必须处于广播 / 可连接状态；已被其他主机保持连接的设备通常会拒绝新的 GATT 连接。",
-                    "部分设备在读取加密特征前要求先在系统蓝牙中完成配对；未配对时可能返回认证不足（status=5）。",
-                    "写操作会真实改变设备状态，可能触发执行机构；本页不提供撤销，确认特征语义后再写入。",
-                    "读取 / 写入 / 订阅共用一条 GATT 请求队列，同一时刻只允许一个请求；上一操作未返回时新请求会被拒绝。",
-                    "特征值全部来自系统回调的原始字节：未读取过显示 \"--\"，读取为空显示 \"(空)\"，文本仅在可解码为 UTF-8 时展示。",
-                    "标准 UUID 之外不做语义推测：日志里的十六进制是设备原样数据，不代表已解析出业务含义。",
-                    "Android 12+ 连接需要「附近的设备」权限（BLUETOOTH_CONNECT），申请由应用权限网关统一处理。",
+                    stringResource(R.string.gatt_boundary_broadcast),
+                    stringResource(R.string.gatt_boundary_pairing),
+                    stringResource(R.string.gatt_boundary_write),
+                    stringResource(R.string.gatt_boundary_queue),
+                    stringResource(R.string.gatt_boundary_raw),
+                    stringResource(R.string.gatt_boundary_uuid),
+                    stringResource(R.string.gatt_boundary_permission),
                 ).forEach { line ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 1.5.dp)) {
                         Text("·", fontFamily = Mono, fontSize = 8.sp, color = Gray)
@@ -310,7 +310,7 @@ private fun ServiceBlock(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "${service.characteristics.size} 特征",
+                stringResource(R.string.gatt_service_char_count, service.characteristics.size),
                 fontFamily = Mono,
                 fontSize = 8.sp,
                 color = Gray,
@@ -355,14 +355,16 @@ private fun CharacteristicBlock(
         Spacer(Modifier.height(2.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "属性 ${characteristic.propertyShort}",
+                stringResource(R.string.gatt_char_props, characteristic.propertyShort),
                 fontFamily = Mono,
                 fontSize = 8.sp,
                 color = Gray,
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                if (characteristic.subscribed) "通知已开启" else "通知未开启",
+                stringResource(
+                    if (characteristic.subscribed) R.string.gatt_notify_on else R.string.gatt_notify_off,
+                ),
                 fontFamily = Mono,
                 fontSize = 8.sp,
                 color = if (characteristic.subscribed) TacGreen else Gray,
@@ -372,11 +374,11 @@ private fun CharacteristicBlock(
         // 值：从未读到显示 "--"，读到空值显示 "(空)"
         val hexValue = when {
             characteristic.valueHex.isNotEmpty() -> characteristic.valueHex
-            characteristic.updatedAtMs > 0L -> "(空)"
+            characteristic.updatedAtMs > 0L -> stringResource(R.string.gatt_value_empty)
             else -> "--"
         }
         Text(
-            "值 $hexValue",
+            stringResource(R.string.gatt_value_hex, hexValue),
             fontFamily = Mono,
             fontSize = 8.sp,
             color = if (characteristic.valueHex.isNotEmpty()) TacGreen else Gray,
@@ -384,7 +386,10 @@ private fun CharacteristicBlock(
             modifier = Modifier.padding(top = 2.dp),
         )
         Text(
-            "文本 ${if (characteristic.valueText.isNotEmpty()) characteristic.valueText else "--"}",
+            stringResource(
+                R.string.gatt_value_text,
+                if (characteristic.valueText.isNotEmpty()) characteristic.valueText else "--",
+            ),
             fontFamily = Mono,
             fontSize = 8.sp,
             color = Gray,
@@ -392,7 +397,7 @@ private fun CharacteristicBlock(
         )
         if (characteristic.descriptors.isNotEmpty()) {
             Text(
-                "描述符 ${characteristic.descriptors.joinToString(", ")}",
+                stringResource(R.string.gatt_value_descriptors, characteristic.descriptors.joinToString(", ")),
                 fontFamily = Mono,
                 fontSize = 8.sp,
                 color = Gray,
@@ -404,10 +409,14 @@ private fun CharacteristicBlock(
             Spacer(Modifier.height(5.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (characteristic.readable) {
-                    GhostButton("读") { vm.read(serviceUuid, characteristic.uuid) }
+                    GhostButton(stringResource(R.string.gatt_btn_read)) { vm.read(serviceUuid, characteristic.uuid) }
                 }
                 if (characteristic.notifiable) {
-                    GhostButton(if (characteristic.subscribed) "取消订阅" else "订阅通知") {
+                    GhostButton(
+                        stringResource(
+                            if (characteristic.subscribed) R.string.gatt_btn_unsubscribe else R.string.gatt_btn_subscribe,
+                        ),
+                    ) {
                         vm.setNotify(serviceUuid, characteristic.uuid, !characteristic.subscribed)
                     }
                 }
@@ -418,20 +427,20 @@ private fun CharacteristicBlock(
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 TermInput(
-                    "写入 (HEX)",
+                    stringResource(R.string.gatt_write_label),
                     writeHex,
-                    placeholder = "例如 01 A0 FF",
+                    placeholder = stringResource(R.string.gatt_write_placeholder),
                     modifier = Modifier.weight(1f),
                 ) { writeHex = it.take(1024) }
                 Spacer(Modifier.width(6.dp))
-                GhostButton("写") {
+                GhostButton(stringResource(R.string.gatt_btn_write)) {
                     if (vm.write(serviceUuid, characteristic.uuid, writeHex)) {
                         writeHex = ""
                     }
                 }
             }
             Text(
-                "[!] 写操作会真实改变目标设备状态，没有撤销；确认特征语义后再写入。",
+                stringResource(R.string.gatt_write_warning),
                 fontFamily = Sans,
                 fontSize = 8.sp,
                 color = Warn,

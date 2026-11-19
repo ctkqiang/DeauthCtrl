@@ -54,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,6 +69,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.TerminalManager
 import xin.ctkqiang.deauthctrl.terminal.ShellMode
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
@@ -255,7 +257,7 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
             .background(Dark)
             .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars)),
     ) {
-        TerminalHeader("本地终端", back)
+        TerminalHeader(stringResource(R.string.lterm_title), back)
         // ── Termux bootstrap 状态条:安装进度 / 环境说明 ──
         if (!bootState.installed) {
             Surface(
@@ -266,8 +268,15 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
             ) {
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 7.dp)) {
                     Text(
-                        if (bootState.installing) "正在安装 Termux 环境 · ${bootState.detail} · ${(bootState.progress * 100).toInt()}%"
-                        else "Termux 环境未安装 —— 启动会话时自动解压官方 bootstrap(约 33MB,一次性)",
+                        if (bootState.installing) {
+                            stringResource(
+                                R.string.lterm_bootstrap_installing,
+                                bootState.detail,
+                                (bootState.progress * 100).toInt(),
+                            )
+                        } else {
+                            stringResource(R.string.lterm_bootstrap_missing)
+                        },
                         fontFamily = Mono, fontSize = 9.sp, color = Gold,
                     )
                     if (bootState.installing) {
@@ -279,7 +288,12 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
                             )
                         }
                     }
-                    bootState.error?.let { Text("[!] $it", fontFamily = Sans, fontSize = 9.sp, color = Danger) }
+                    bootState.error?.let {
+                        Text(
+                            stringResource(R.string.lterm_error_prefix, it),
+                            fontFamily = Sans, fontSize = 9.sp, color = Danger,
+                        )
+                    }
                 }
             }
         }
@@ -294,13 +308,15 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val (ledColor, statusText) = when (val s = status) {
-                is TerminalManager.Status.Idle -> GrayDark to "未连接"
-                is TerminalManager.Status.Starting -> SessionOnlineGreen to "启动中…"
-                is TerminalManager.Status.Running ->
-                    SessionOnlineGreen to (title?.let { "会话在线 · $it" } ?: "会话在线 · PID ${s.pid}")
+                is TerminalManager.Status.Idle -> GrayDark to stringResource(R.string.lterm_status_idle)
+                is TerminalManager.Status.Starting -> SessionOnlineGreen to stringResource(R.string.lterm_status_starting)
+                is TerminalManager.Status.Running -> SessionOnlineGreen to (
+                    title?.let { stringResource(R.string.lterm_status_online_title, it) }
+                        ?: stringResource(R.string.lterm_status_online_pid, s.pid)
+                    )
 
-                is TerminalManager.Status.Finished -> GrayDark to "已退出 · code ${s.exitCode}"
-                is TerminalManager.Status.Failed -> Danger to "启动失败"
+                is TerminalManager.Status.Finished -> GrayDark to stringResource(R.string.lterm_status_finished, s.exitCode)
+                is TerminalManager.Status.Failed -> Danger to stringResource(R.string.lterm_status_failed)
             }
 
             Box(
@@ -328,9 +344,9 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
             Spacer(Modifier.width(4.dp))
             GhostButton("＋") { textSize = (textSize + 1).coerceAtMost(40) }
             Spacer(Modifier.width(4.dp))
-            GhostButton("粘贴") { pasteFromClipboard() }
+            GhostButton(stringResource(R.string.lterm_paste)) { pasteFromClipboard() }
             Spacer(Modifier.width(4.dp))
-            GhostButton("清屏") { vm.clear() }
+            GhostButton(stringResource(R.string.lterm_clear)) { vm.clear() }
             Spacer(Modifier.width(4.dp))
             if (vm.rootAvailable) {
                 GhostButton(if (rootMode) "ROOT" else "LOCAL") { toggleRootMode() }
@@ -338,8 +354,10 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
             }
             GhostButton(
                 when (status) {
-                    is TerminalManager.Status.Running, is TerminalManager.Status.Starting -> "挂断"
-                    else -> "连接"
+                    is TerminalManager.Status.Running, is TerminalManager.Status.Starting ->
+                        stringResource(R.string.lterm_disconnect)
+
+                    else -> stringResource(R.string.lterm_connect)
                 },
             ) {
                 when (status) {
@@ -352,7 +370,10 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
         // 启动失败提示条。
         if (status is TerminalManager.Status.Failed) {
             Text(
-                "! ${(status as TerminalManager.Status.Failed).message}",
+                stringResource(
+                    R.string.lterm_failure_bar,
+                    (status as TerminalManager.Status.Failed).message,
+                ),
                 fontFamily = Mono,
                 fontSize = 9.sp,
                 color = Danger,
@@ -473,11 +494,15 @@ fun TerminalScreen(vm: TerminalViewModel, back: () -> Unit) {
         }
 
         // ── 页脚提示 ───────────────────────────────────────────────────────
+        val footerHint = stringResource(R.string.lterm_footer_hint)
+        val copyModeHint = stringResource(R.string.lterm_footer_copy_mode)
         Text(
             buildString {
-                append("点击屏幕切换软键盘 · 长按拖动选区复制 · 双指缩放字号 · ")
-                append("CTRL/ALT 粘滞（长按锁定） · 长按方向键连发 · 长按 - 输入 |")
-                if (copyMode) append(" · 已进入选择模式")
+                append(footerHint)
+                if (copyMode) {
+                    append(" · ")
+                    append(copyModeHint)
+                }
             },
             fontFamily = Mono,
             fontSize = 9.sp,
@@ -598,7 +623,7 @@ private fun TerminalScreenPreview() {
         // 静态预览里 TerminalView（Android View 渲染）与 JNI 会话都无法工作，
         // 直接降级为提示；真机预览（Preview on device）走完整实现。
         if (LocalInspectionMode.current) {
-            PreviewFallback("本地终端")
+            PreviewFallback(stringResource(R.string.lterm_title))
         } else {
             val app = LocalContext.current.applicationContext
             val vm = if (app is android.app.Application) {
@@ -606,7 +631,7 @@ private fun TerminalScreenPreview() {
             } else {
                 null
             }
-            if (vm == null) PreviewFallback("本地终端") else TerminalScreen(vm, back = {})
+            if (vm == null) PreviewFallback(stringResource(R.string.lterm_title)) else TerminalScreen(vm, back = {})
         }
     }
 }

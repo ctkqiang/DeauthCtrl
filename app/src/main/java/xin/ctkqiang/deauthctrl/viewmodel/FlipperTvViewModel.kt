@@ -9,6 +9,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.FlipperTvLib
 import xin.ctkqiang.deauthctrl.manager.IrRemoteManager
 
@@ -68,7 +70,7 @@ class FlipperTvViewModel(application: Application) : AndroidViewModel(applicatio
         }
         val candidates = tvButtons[buttonName].orEmpty()
         if (candidates.isEmpty()) {
-            _lastTransmit.value = "[!] 该按钮在 tv.ir 库中无候选码"
+            _lastTransmit.value = L10n.get(R.string.vm_flipper_no_candidates)
             return
         }
         floodJob?.cancel()
@@ -77,13 +79,19 @@ class FlipperTvViewModel(application: Application) : AndroidViewModel(applicatio
             candidates.forEachIndexed { i, b ->
                 _flood.value = FloodState(running = true, button = buttonName, index = i + 1, total = candidates.size, protocol = b.protocol, skipped = skipped)
                 if (transmit(b.protocol, b.address, b.command)) {
-                    _lastTransmit.value = "尝试 ${i + 1}/${candidates.size} · ${b.protocol} 0x%04X:%02X".format(b.address and 0xFFFF, b.command and 0xFF)
+                    _lastTransmit.value = L10n.get(
+                        R.string.vm_flipper_attempt,
+                        i + 1,
+                        candidates.size,
+                        b.protocol,
+                        "0x%04X:%02X".format(b.address and 0xFFFF, b.command and 0xFF),
+                    )
                 } else {
                     skipped++
                 }
                 delay(250)
             }
-            _lastTransmit.value = "已轮发完毕 · 若电视未响应可再次点击重试"
+            _lastTransmit.value = L10n.get(R.string.vm_flipper_flood_done)
             _flood.value = FloodState(running = false)
         }
     }

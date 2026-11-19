@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 
 /**
  * 本机热点轮换运行期统计快照。
@@ -146,15 +148,13 @@ class WifiDisruptManager(private val context: Context) {
      */
     fun scanNetworks() {
         if (_isFlooding.value) {
-            _scanState.value = ScanState.Error("热点轮换进行中，无法扫描")
+            _scanState.value = ScanState.Error(L10n.get(R.string.mgr_wifid_err_flood_scan))
             return
         }
         scanJob?.cancel()
 
         if (!isLocationServiceEnabled()) {
-            _scanState.value = ScanState.Error(
-                "系统定位开关已关闭：Android 要求开启定位后才能扫描 Wi-Fi。请打开系统定位后重试。"
-            )
+            _scanState.value = ScanState.Error(L10n.get(R.string.mgr_wifid_err_location_off_scan))
             return
         }
 
@@ -173,7 +173,9 @@ class WifiDisruptManager(private val context: Context) {
                 val success = try {
                     wifiManager.startScan()
                 } catch (_: SecurityException) {
-                    _scanState.value = ScanState.Error(describeWifiSecurityFailure("Wi-Fi 扫描"))
+                    _scanState.value = ScanState.Error(
+                        describeWifiSecurityFailure(L10n.get(R.string.mgr_wifid_action_wifi_scan)),
+                    )
                     return@launch
                 }
 
@@ -184,24 +186,26 @@ class WifiDisruptManager(private val context: Context) {
                         _scanState.value = ScanState.Results(fresh)
                     } else if (cached.isEmpty()) {
                         _scanState.value = if (isLocationServiceEnabled()) {
-                            ScanState.Error("未发现网络：系统扫描被节流或附近没有可用网络，请稍后重试。")
+                            ScanState.Error(L10n.get(R.string.mgr_wifid_err_no_networks))
                         } else {
-                            ScanState.Error("系统定位开关已关闭，请打开系统定位后重试。")
+                            ScanState.Error(L10n.get(R.string.mgr_wifid_err_location_off_retry))
                         }
                     }
                 } else if (cached.isEmpty()) {
                     _scanState.value = if (isLocationServiceEnabled()) {
-                        ScanState.Error("系统扫描被节流（startScan 返回 false），请稍后重试。")
+                        ScanState.Error(L10n.get(R.string.mgr_wifid_err_scan_throttled))
                     } else {
-                        ScanState.Error("系统定位开关已关闭，请打开系统定位后重试。")
+                        ScanState.Error(L10n.get(R.string.mgr_wifid_err_location_off_retry))
                     }
                 }
             } catch (ce: CancellationException) {
                 throw ce
             } catch (_: SecurityException) {
-                _scanState.value = ScanState.Error(describeWifiSecurityFailure("Wi-Fi 扫描"))
+                _scanState.value = ScanState.Error(
+                    describeWifiSecurityFailure(L10n.get(R.string.mgr_wifid_action_wifi_scan)),
+                )
             } catch (e: Throwable) {
-                _scanState.value = ScanState.Error("扫描错误: ${e.message}")
+                _scanState.value = ScanState.Error(L10n.get(R.string.mgr_wifid_err_scan, e.message ?: e.javaClass.simpleName))
             }
         }
     }
@@ -238,28 +242,24 @@ class WifiDisruptManager(private val context: Context) {
         toggleIntervalMs: Long = DEFAULT_HOLD_MS,
     ) {
         if (_isFlooding.value) {
-            _hotspotResult.value = HotspotResult.Error("本机热点轮换已在进行中")
+            _hotspotResult.value = HotspotResult.Error(L10n.get(R.string.mgr_wifid_err_flood_running))
             return
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            _hotspotResult.value = HotspotResult.Error(
-                "LocalOnlyHotspot 需要 Android 8.0 (API 26) 及以上；当前系统不支持本机热点轮换"
-            )
+            _hotspotResult.value = HotspotResult.Error(L10n.get(R.string.mgr_wifid_err_api_level))
             return
         }
         if (!wifiManager.isWifiEnabled) {
-            _hotspotResult.value = HotspotResult.Error("请先开启 Wi-Fi 以创建本机热点")
+            _hotspotResult.value = HotspotResult.Error(L10n.get(R.string.mgr_wifid_err_wifi_off))
             return
         }
         if (targetSsid.isBlank()) {
-            _hotspotResult.value = HotspotResult.Error("SSID 不能为空")
+            _hotspotResult.value = HotspotResult.Error(L10n.get(R.string.mgr_wifid_err_ssid_empty))
             return
         }
         if (!isLocationServiceEnabled()) {
             // LOHS 本身不强制定位，但 Wi-Fi 栈在定位关闭时常拒绝扫描/热点；先给出可操作提示
-            _hotspotResult.value = HotspotResult.Error(
-                "系统定位开关已关闭：部分机型在定位关闭时会拒绝本机热点，请先打开系统定位。"
-            )
+            _hotspotResult.value = HotspotResult.Error(L10n.get(R.string.mgr_wifid_err_location_off_hotspot))
             return
         }
 
@@ -320,9 +320,7 @@ class WifiDisruptManager(private val context: Context) {
         try {
             // API 26-29 无法指定 SSID：先如实告知，避免用户以为在伪造目标 AP
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                lastErrorRef.set(
-                    "Android 11 及以下无法指定热点 SSID：系统只会创建随机 SSID 的本机热点（真实 SoftAP，非帧注入）"
-                )
+                lastErrorRef.set(L10n.get(R.string.mgr_wifid_err_no_ssid_api))
                 _hotspotResult.value = HotspotResult.Error(lastErrorRef.get()!!)
             }
 
@@ -334,7 +332,7 @@ class WifiDisruptManager(private val context: Context) {
                         startCount.set(succeeded)
                         actualSsidRef.set(outcome.actualSsid)
                         _hotspotResult.value =
-                            HotspotResult.Created(outcome.actualSsid ?: "系统随机 SSID")
+                            HotspotResult.Created(outcome.actualSsid ?: L10n.get(R.string.mgr_wifid_random_ssid))
                         publishStats(
                             attempted = attempted,
                             total = totalCycles,
@@ -375,15 +373,14 @@ class WifiDisruptManager(private val context: Context) {
                 HotspotResult.Completed
             } else {
                 HotspotResult.Error(
-                    lastErrorRef.get()
-                        ?: "未能成功创建任何本机热点（没有收到 onStarted，未产生真实 SoftAP）"
+                    lastErrorRef.get() ?: L10n.get(R.string.mgr_wifid_err_no_hotspot),
                 )
             }
         } catch (ce: CancellationException) {
             throw ce
         } catch (e: Throwable) {
-            lastErrorRef.set("热点轮换错误: ${e.message}")
-            _hotspotResult.value = HotspotResult.Error("热点轮换错误: ${e.message}")
+            lastErrorRef.set(L10n.get(R.string.mgr_wifid_err_rotation, e.message ?: e.javaClass.simpleName))
+            _hotspotResult.value = HotspotResult.Error(L10n.get(R.string.mgr_wifid_err_rotation, e.message ?: e.javaClass.simpleName))
         } finally {
             stopReservation()
             _hotspotPhase.value = HotspotPhase.IDLE
@@ -433,7 +430,7 @@ class WifiDisruptManager(private val context: Context) {
                             _hotspotPhase.value = HotspotPhase.IDLE
                             if (cont.isActive) {
                                 cont.resume(
-                                    StartOutcome.Failed("热点回执已过期（会话已停止），句柄已立即释放")
+                                    StartOutcome.Failed(L10n.get(R.string.mgr_wifid_err_stale_callback)),
                                 )
                             }
                             return
@@ -469,9 +466,7 @@ class WifiDisruptManager(private val context: Context) {
                     if (!configured) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             // 如实记录：本次没能应用目标 SSID，系统会创建随机 SSID 热点
-                            lastErrorRef.set(
-                                "本机 SoftApConfiguration 接口不可用，已退回系统随机 SSID"
-                            )
+                            lastErrorRef.set(L10n.get(R.string.mgr_wifid_err_softap_unavailable))
                         }
                         @Suppress("DEPRECATION")
                         wifiManager.startLocalOnlyHotspot(callback, Handler(Looper.getMainLooper()))
@@ -479,15 +474,19 @@ class WifiDisruptManager(private val context: Context) {
                 } catch (_: SecurityException) {
                     _hotspotPhase.value = HotspotPhase.IDLE
                     if (cont.isActive) {
-                        cont.resume(StartOutcome.Failed(describeWifiSecurityFailure("启动本机热点")))
+                        cont.resume(StartOutcome.Failed(describeWifiSecurityFailure(L10n.get(R.string.mgr_wifid_action_start_hotspot))))
                     }
                 } catch (t: Throwable) {
                     _hotspotPhase.value = HotspotPhase.IDLE
                     if (cont.isActive) {
                         cont.resume(
                             StartOutcome.Failed(
-                                "启动本机热点失败：${t.javaClass.simpleName}: ${t.message}"
-                            )
+                                L10n.get(
+                                    R.string.mgr_wifid_err_start_failed,
+                                    t.javaClass.simpleName,
+                                    t.message ?: "",
+                                ),
+                            ),
                         )
                     }
                 }
@@ -499,7 +498,7 @@ class WifiDisruptManager(private val context: Context) {
             generation.incrementAndGet()
             _hotspotPhase.value = HotspotPhase.IDLE
             return StartOutcome.Failed(
-                "启动本机热点超时（${START_TIMEOUT_MS}ms 未收到系统回调）"
+                L10n.get(R.string.mgr_wifid_err_start_timeout, START_TIMEOUT_MS),
             )
         }
         return result
@@ -624,14 +623,14 @@ class WifiDisruptManager(private val context: Context) {
 
     private fun hotspotFailureMessage(reason: Int): String = when (reason) {
         WifiManager.LocalOnlyHotspotCallback.ERROR_NO_CHANNEL ->
-            "没有可用信道（reason=$reason）"
+            L10n.get(R.string.mgr_wifid_hotspot_no_channel, reason)
         WifiManager.LocalOnlyHotspotCallback.ERROR_INCOMPATIBLE_MODE ->
-            "模式冲突：请先断开当前 Wi-Fi 连接（reason=$reason）"
+            L10n.get(R.string.mgr_wifid_hotspot_incompatible, reason)
         WifiManager.LocalOnlyHotspotCallback.ERROR_TETHERING_DISALLOWED ->
-            "设备策略禁止共享热点（reason=$reason）"
+            L10n.get(R.string.mgr_wifid_hotspot_tethering, reason)
         WifiManager.LocalOnlyHotspotCallback.ERROR_GENERIC ->
-            "系统返回通用失败（reason=$reason）"
-        else -> "未知失败（reason=$reason）"
+            L10n.get(R.string.mgr_wifid_hotspot_generic, reason)
+        else -> L10n.get(R.string.mgr_wifid_hotspot_unknown, reason)
     }
 
     // ─── 权限 / 定位 ────────────────────────────────────────────────────────────
@@ -681,9 +680,9 @@ class WifiDisruptManager(private val context: Context) {
             }
         }
         return if (missing.isEmpty()) {
-            "$action 被系统拒绝：未定位到缺失权限（可能是厂商 ROM 的策略限制）"
+            L10n.get(R.string.mgr_wifid_security_no_missing, action)
         } else {
-            "$action 被拒绝：缺少 ${missing.joinToString(" / ")}"
+            L10n.get(R.string.mgr_wifid_security_missing, action, missing.joinToString(" / "))
         }
     }
 

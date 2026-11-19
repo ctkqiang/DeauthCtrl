@@ -1,6 +1,7 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
 import android.app.Activity
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.NamedCount
 import xin.ctkqiang.deauthctrl.manager.PacketEntry
 import xin.ctkqiang.deauthctrl.manager.PacketMonitorState
@@ -136,7 +139,7 @@ fun PacketMonitorScreen(back: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
-        TerminalHeader("流量监视 · PACKET MONITOR", back)
+        TerminalHeader(stringResource(R.string.pkt_title), back)
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 10.dp),
@@ -148,8 +151,8 @@ fun PacketMonitorScreen(back: () -> Unit) {
             item {
                 ActionButton(
                     running = state.running,
-                    runLabel = "启动监视",
-                    stopLabel = "停止监视",
+                    runLabel = stringResource(R.string.pkt_btn_start),
+                    stopLabel = stringResource(R.string.pkt_btn_stop),
                 ) {
                     if (state.running) {
                         vm.stopService(context)
@@ -166,7 +169,7 @@ fun PacketMonitorScreen(back: () -> Unit) {
                 }
             }
 
-            val warnings = buildWarningMessages(state, uiError, prepareDenied)
+            val warnings = buildWarningMessages(context, state, uiError, prepareDenied)
             if (warnings.isNotEmpty()) {
                 item {
                     Spacer(Modifier.height(6.dp))
@@ -196,7 +199,7 @@ fun PacketMonitorScreen(back: () -> Unit) {
 
             item { Spacer(Modifier.height(8.dp)) }
             item {
-                LogHeader("数据包 · PACKETS", showClear = true) { vm.clearPackets() }
+                LogHeader(stringResource(R.string.pkt_log_title), showClear = true) { vm.clearPackets() }
             }
             item { Spacer(Modifier.height(2.dp)) }
 
@@ -204,19 +207,19 @@ fun PacketMonitorScreen(back: () -> Unit) {
                 state.packets.isEmpty() -> item {
                     EmptyHint(
                         if (state.running) {
-                            "正在监听 TUN,等待第一个 IPv4 数据包 ..."
+                            stringResource(R.string.pkt_empty_listening)
                         } else {
-                            "尚未开始监视 —— 点击「启动监视」并确认系统 VPN 授权"
+                            stringResource(R.string.pkt_empty_not_started)
                         },
                     )
                 }
                 visiblePackets.isEmpty() -> item {
-                    EmptyHint("当前过滤条件下没有匹配的数据包 —— 调整协议 / 文本过滤,或关闭「隐藏背景噪声」")
+                    EmptyHint(stringResource(R.string.pkt_empty_no_match))
                 }
                 else -> {
                     item {
                         Text(
-                            "显示 ${visiblePackets.size} / ${state.packets.size} 条 · 列表仅保留最近 500 包,汇总与会话为全会话统计",
+                            stringResource(R.string.pkt_list_count_notice, visiblePackets.size, state.packets.size),
                             fontFamily = Sans,
                             fontSize = 8.sp,
                             color = Gray,
@@ -241,13 +244,13 @@ fun PacketMonitorScreen(back: () -> Unit) {
 // ══════════════════════════════════════════════════════════════════════════
 
 /** 协议过滤 chips —— 与页面约定一致:[全部][DNS][TLS][HTTP][TCP][UDP] */
-private enum class ProtoFilter(val label: String) {
-    ALL("全部"),
-    DNS("DNS"),
-    TLS("TLS"),
-    HTTP("HTTP"),
-    TCP("TCP"),
-    UDP("UDP"),
+private enum class ProtoFilter(val labelRes: Int?) {
+    ALL(R.string.pkt_filter_all),
+    DNS(null),
+    TLS(null),
+    HTTP(null),
+    TCP(null),
+    UDP(null),
 }
 
 private fun matchesFilter(entry: PacketEntry, filter: ProtoFilter): Boolean {
@@ -298,17 +301,17 @@ private fun isBackgroundNoise(entry: PacketEntry): Boolean {
 /** 运行状态面板 —— 服务态 / TUN 地址 / 转发模式 */
 @Composable
 private fun StatusPanel(state: PacketMonitorState) {
-    TermPanel("监视状态 · STATUS") {
+    TermPanel(stringResource(R.string.pkt_panel_status)) {
         PanelStat(
-            "VPN 服务",
-            if (state.running) "运行中" else "已停止",
+            stringResource(R.string.pkt_label_vpn_service),
+            if (state.running) stringResource(R.string.pkt_state_running) else stringResource(R.string.pkt_state_stopped),
             if (state.running) TacGreen else Gray,
         )
-        PanelStat("本机 TUN", "10.8.0.1/32 · MTU 1500", Gold)
-        PanelStat("路由", "0.0.0.0/0(仅 IPv4)", White)
+        PanelStat(stringResource(R.string.pkt_label_local_tun), "10.8.0.1/32 · MTU 1500", Gold)
+        PanelStat(stringResource(R.string.pkt_label_route), stringResource(R.string.pkt_value_route), White)
         PanelStat(
-            "转发",
-            if (state.running) "UDP / TCP 用户态转发" else "--",
+            stringResource(R.string.pkt_label_forwarding),
+            if (state.running) stringResource(R.string.pkt_value_forwarding) else "--",
             if (state.running) TacGreen else Gray,
         )
     }
@@ -322,17 +325,17 @@ private fun StatusPanel(state: PacketMonitorState) {
  */
 @Composable
 private fun SummaryPanel(state: PacketMonitorState) {
-    TermPanel("汇总 · SUMMARY") {
+    TermPanel(stringResource(R.string.pkt_panel_summary)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            StatChip("数据包", "${state.totalPackets}")
-            StatChip("字节", formatBytes(state.totalBytes))
-            StatChip("会话", "${state.sessionCount}")
-            StatChip("唯一域名", "${state.domains.size}")
+            StatChip(stringResource(R.string.pkt_stat_packets), "${state.totalPackets}")
+            StatChip(stringResource(R.string.pkt_stat_bytes), formatBytes(state.totalBytes))
+            StatChip(stringResource(R.string.pkt_stat_sessions), "${state.sessionCount}")
+            StatChip(stringResource(R.string.pkt_stat_unique_domains), "${state.domains.size}")
         }
         Spacer(Modifier.height(9.dp))
 
         Text(
-            "协议分布 · PROTOCOL",
+            stringResource(R.string.pkt_section_protocol),
             fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Red,
         )
         Spacer(Modifier.height(3.dp))
@@ -348,29 +351,29 @@ private fun SummaryPanel(state: PacketMonitorState) {
 
         Spacer(Modifier.height(9.dp))
         Text(
-            "Top 域名 · TOP DOMAINS",
+            stringResource(R.string.pkt_section_top_domains),
             fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Red,
         )
         Spacer(Modifier.height(3.dp))
         if (state.domainCounts.isEmpty()) {
             Text(
-                "-- 尚无解析到的域名(DNS QNAME / TLS SNI / HTTP Host)",
+                stringResource(R.string.pkt_empty_no_domains),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray,
             )
         } else {
-            state.domainCounts.forEach { item -> CountRow(item, "包") }
+            state.domainCounts.forEach { item -> CountRow(item, stringResource(R.string.pkt_unit_packets)) }
         }
 
         Spacer(Modifier.height(9.dp))
         Text(
-            "Top 对端 · TOP PEERS",
+            stringResource(R.string.pkt_section_top_peers),
             fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Red,
         )
         Spacer(Modifier.height(3.dp))
         if (state.peerCounts.isEmpty()) {
-            Text("-- 尚无对端地址", fontFamily = Sans, fontSize = 8.sp, color = Gray)
+            Text(stringResource(R.string.pkt_empty_no_peers), fontFamily = Sans, fontSize = 8.sp, color = Gray)
         } else {
-            state.peerCounts.forEach { item -> CountRow(item, "包") }
+            state.peerCounts.forEach { item -> CountRow(item, stringResource(R.string.pkt_unit_packets)) }
         }
     }
 }
@@ -424,7 +427,7 @@ private fun CountRow(item: NamedCount, unit: String) {
             modifier = Modifier.weight(1f),
         )
         Text(
-            "${item.count} $unit",
+            stringResource(R.string.pkt_count_with_unit, item.count, unit),
             fontFamily = Mono, fontSize = 8.sp, color = Gold,
         )
     }
@@ -443,15 +446,19 @@ private fun CountRow(item: NamedCount, unit: String) {
 @Composable
 private fun SessionsPanel(state: PacketMonitorState, clock: SimpleDateFormat) {
     var showAll by remember { mutableStateOf(false) }
-    TermPanel("会话 · SESSIONS") {
+    TermPanel(stringResource(R.string.pkt_panel_sessions)) {
         if (state.sessions.isEmpty()) {
             Text(
-                "-- 尚无会话 —— 抓到的每个 IPv4 包都会按源/目的地址归并",
+                stringResource(R.string.pkt_empty_no_sessions),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray,
             )
         } else {
             Text(
-                "双向聚合 · 共 ${state.sessionCount} 个会话(展示 ${if (showAll) state.sessions.size else minOf(8, state.sessions.size)} 个)",
+                stringResource(
+                    R.string.pkt_sessions_summary,
+                    state.sessionCount,
+                    if (showAll) state.sessions.size else minOf(8, state.sessions.size),
+                ),
                 fontFamily = Sans, fontSize = 8.sp, color = Gray,
             )
             val rows = if (showAll) state.sessions else state.sessions.take(8)
@@ -463,7 +470,7 @@ private fun SessionsPanel(state: PacketMonitorState, clock: SimpleDateFormat) {
                 Spacer(Modifier.height(6.dp))
                 SelectChip(
                     selected = showAll,
-                    text = if (showAll) "收起会话" else "展开全部会话(${state.sessions.size})",
+                    text = if (showAll) stringResource(R.string.pkt_sessions_collapse) else stringResource(R.string.pkt_sessions_expand, state.sessions.size),
                 ) { showAll = !showAll }
             }
         }
@@ -486,7 +493,7 @@ private fun SessionRow(session: SessionSummary, clock: SimpleDateFormat) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "${session.packets} 包 · ${formatBytes(session.bytes)}",
+                stringResource(R.string.pkt_session_packets_bytes, session.packets, formatBytes(session.bytes)),
                 fontFamily = Mono, fontSize = 8.sp, color = Gold,
             )
         }
@@ -499,14 +506,14 @@ private fun SessionRow(session: SessionSummary, clock: SimpleDateFormat) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "最近 ${clock.format(Date(session.lastActiveMs))}",
+                stringResource(R.string.pkt_session_last_active, clock.format(Date(session.lastActiveMs))),
                 fontFamily = Mono, fontSize = 8.sp, color = Gray,
             )
         }
         if (session.domains.isNotEmpty()) {
             Spacer(Modifier.height(2.dp))
             Text(
-                "域名 ${session.domains.joinToString(", ")}",
+                stringResource(R.string.pkt_session_domains, session.domains.joinToString(", ")),
                 fontFamily = Mono, fontSize = 8.sp, color = Gray,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
@@ -539,22 +546,24 @@ private fun FiltersPanel(
     shownCount: Int,
     totalCount: Int,
 ) {
-    TermPanel("过滤 · FILTER") {
+    val hiddenSuffix = if (hideNoise) " · " + stringResource(R.string.pkt_shown_hidden_suffix, hiddenNoiseCount) else ""
+    val shownLine = stringResource(R.string.pkt_shown_count, shownCount, totalCount) + hiddenSuffix
+    TermPanel(stringResource(R.string.pkt_panel_filter)) {
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ProtoFilter.entries.forEach { filter ->
-                SelectChip(selected = protoFilter == filter, text = filter.label) {
+                SelectChip(selected = protoFilter == filter, text = filter.labelRes?.let { stringResource(it) } ?: filter.name) {
                     onProto(filter)
                 }
             }
         }
         Spacer(Modifier.height(7.dp))
         TermInput(
-            label = "文本过滤 · 域名 / IP 子串",
+            label = stringResource(R.string.pkt_input_label),
             value = query,
-            placeholder = "example.com 或 93.184.216",
+            placeholder = stringResource(R.string.pkt_input_placeholder),
             onValue = onQuery,
         )
         Spacer(Modifier.height(7.dp))
@@ -565,25 +574,21 @@ private fun FiltersPanel(
         ) {
             SelectChip(
                 selected = hideNoise,
-                text = if (hideNoise) "隐藏背景噪声:开" else "隐藏背景噪声:关",
+                text = if (hideNoise) stringResource(R.string.pkt_noise_on) else stringResource(R.string.pkt_noise_off),
             ) { onToggleNoise() }
-            GhostButton("清空过滤") {
+            GhostButton(stringResource(R.string.pkt_clear_filters)) {
                 onQuery("")
                 onProto(ProtoFilter.ALL)
             }
         }
         Spacer(Modifier.height(5.dp))
         Text(
-            buildString {
-                append("显示 $shownCount / $totalCount 包")
-                if (hideNoise) append(" · 已隐藏 $hiddenNoiseCount 条背景噪声")
-            },
+            shownLine,
             fontFamily = Sans, fontSize = 8.sp, color = Gray,
         )
         Spacer(Modifier.height(2.dp))
         Text(
-            "背景噪声 = mDNS 224.0.0.251:5353 / SSDP 239.255.255.250:1900 / "
-                + "DHCP 67-68 / IGMP / NTP 123。",
+            stringResource(R.string.pkt_noise_legend),
             fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 11.sp,
         )
     }
@@ -594,6 +599,7 @@ private fun FiltersPanel(
 // ══════════════════════════════════════════════════════════════════════════
 
 private fun buildWarningMessages(
+    context: Context,
     state: PacketMonitorState,
     uiError: String?,
     prepareDenied: Boolean,
@@ -605,7 +611,7 @@ private fun buildWarningMessages(
     if (localError.isNotEmpty() && localError != serviceError) messages.add(Danger to localError)
     if (prepareDenied) {
         messages.add(
-            Warn to "未授予 VPN 授权 —— 无法启动流量监视(VpnService 必须由系统弹窗确认)",
+            Warn to context.getString(R.string.pkt_warn_vpn_denied),
         )
     }
     return messages
@@ -721,17 +727,17 @@ private fun PacketDetail(entry: PacketEntry) {
     val p = entry.parsed
 
     TreeSection("Internet Protocol") {
-        TreeLine("版本", "${p.version}")
+        TreeLine(stringResource(R.string.pkt_field_version), "${p.version}")
         TreeLine("IHL", "${p.ihl / 4} · ${p.ihl} B")
-        TreeLine("总长度", "${p.ipTotalLen} B")
+        TreeLine(stringResource(R.string.pkt_field_total_length), "${p.ipTotalLen} B")
         TreeLine("TTL", "${p.ttl}")
-        TreeLine("协议", "${p.protocol} (${p.protocolNumber})")
-        TreeLine("地址", "${p.srcIp} → ${p.dstIp}")
+        TreeLine(stringResource(R.string.pkt_field_protocol), "${p.protocol} (${p.protocolNumber})")
+        TreeLine(stringResource(R.string.pkt_field_address), "${p.srcIp} → ${p.dstIp}")
     }
 
     if (p.protocol == "TCP") {
         TreeSection("Transmission Control Protocol") {
-            TreeLine("端口", "${p.srcPort} → ${p.dstPort}")
+            TreeLine(stringResource(R.string.pkt_field_port), "${p.srcPort} → ${p.dstPort}")
             TreeLine("Seq", "${p.tcpSeq}")
             TreeLine("Ack", "${p.tcpAck}")
             TreeLine("Flags", p.tcpFlags.ifBlank { "--" })
@@ -739,29 +745,29 @@ private fun PacketDetail(entry: PacketEntry) {
         }
     } else if (p.protocol == "UDP") {
         TreeSection("User Datagram Protocol") {
-            TreeLine("端口", "${p.srcPort} → ${p.dstPort}")
+            TreeLine(stringResource(R.string.pkt_field_port), "${p.srcPort} → ${p.dstPort}")
             TreeLine("Length", "${p.udpLength}")
         }
     }
 
     if (p.dnsName != null) {
         TreeSection("Domain Name System") {
-            TreeLine("查询名", p.dnsName)
-            TreeLine("类型", p.dnsType ?: "--")
-            TreeLine("类", p.dnsClass ?: "--")
+            TreeLine(stringResource(R.string.pkt_field_query_name), p.dnsName)
+            TreeLine(stringResource(R.string.pkt_field_type), p.dnsType ?: "--")
+            TreeLine(stringResource(R.string.pkt_field_class), p.dnsClass ?: "--")
         }
     }
 
-    TreeSection("信息 · INFO") {
+    TreeSection(stringResource(R.string.pkt_section_info)) {
         Text(p.info, fontFamily = Mono, fontSize = 8.sp, color = White, lineHeight = 11.sp)
     }
 
-    TreeSection("HEX 转储 · 前 ${p.hexBytes.size} B / 共 ${p.ipTotalLen} B") {
+    TreeSection(stringResource(R.string.pkt_section_hex_dump, p.hexBytes.size, p.ipTotalLen)) {
         Text(
             hexDump(p.hexBytes),
             fontFamily = Mono, fontSize = 8.sp, color = Gold, lineHeight = 11.sp,
         )
-        TreeLine("载荷偏移", if (p.payloadOffset >= 0) "${p.payloadOffset} B" else "--")
+        TreeLine(stringResource(R.string.pkt_field_payload_offset), if (p.payloadOffset >= 0) "${p.payloadOffset} B" else "--")
     }
 }
 
@@ -847,40 +853,29 @@ private fun hexDump(bytes: ByteArray): String {
 
 @Composable
 private fun HonestyPanel() {
-    TermPanel("能力边界 · HONESTY") {
+    TermPanel(stringResource(R.string.pkt_panel_honesty)) {
         Text(
-            "本页只监视本机流量:VpnService 在本机建立 TUN(10.8.0.1/32),系统把本机"
-                + " IPv4 流量交给它。同一 Wi-Fi 下其他设备的流量看不到 —— 那需要 root + "
-                + "ARP 欺骗或网卡混杂模式,普通 Android 应用没有这个权限。",
+            stringResource(R.string.pkt_honesty_local_only),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "HTTPS 内容端到端加密,只能看到 TLS SNI 域名与目标 IP(TLS 1.3 ECH 会隐藏 SNI);"
-                + "HTTP 明文才能看到 Host 与路径;DNS 查询可见,除非使用 DoH / DoT。"
-                + "HEX 转储只保留每包前 64 字节,不保存完整载荷;统计数字只来自真实报文。",
+            stringResource(R.string.pkt_honesty_encryption),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "会话按 (源 IP, 目的 IP) 双向聚合,协议组成与域名均为全会话累计;包列表只保留"
-                + "最近 500 包,因此列表条数可能少于汇总的总包数。Top 域名与对端按包数排序,"
-                + "相同计数按名称排序。",
+            stringResource(R.string.pkt_honesty_sessions),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "为保持网络不断,服务按流做用户态转发:UDP / TCP 各自建立受 protect 保护的"
-                + "上游 socket,回包重新封装后写回 TUN,因此会有轻微延迟;ICMP 不转发"
-                + "(ping 不通是预期行为),IPv6 不经过本隧道。空闲流 60 秒回收,"
-                + "长时间静默的 TCP 连接可能被断开。",
+            stringResource(R.string.pkt_honesty_forwarding),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "停止监视会先写停机自管道唤醒读线程,再关闭 TUN fd,系统随即摘掉状态栏的"
-                + " VPN 图标并恢复直连;读线程、清理线程与转发线程均为 daemon 且带 join "
-                + "超时,不会阻塞服务销毁。",
+            stringResource(R.string.pkt_honesty_shutdown),
             fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp,
         )
     }

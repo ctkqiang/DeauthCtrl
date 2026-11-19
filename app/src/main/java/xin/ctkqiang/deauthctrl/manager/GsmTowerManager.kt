@@ -1,5 +1,8 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -70,13 +73,13 @@ class GsmTowerManager(private val context: Context) {
     @Suppress("MissingPermission")
     fun refresh() {
         if (!hasPermission) {
-            _state.value = GsmTowerState(error = "缺少权限:需要「位置信息」与「电话状态」授权")
+            _state.value = GsmTowerState(error = L10n.get(R.string.mgr_gsm_permission_missing))
             return
         }
         try {
             val cells = telephony.allCellInfo
             if (cells.isNullOrEmpty()) {
-                _state.value = GsmTowerState(error = "系统未返回小区信息 —— 飞行模式下无蜂窝信号", operator = operatorName(), networkType = networkTypeName())
+                _state.value = GsmTowerState(error = L10n.get(R.string.mgr_gsm_no_cells), operator = operatorName(), networkType = networkTypeName())
                 return
             }
             val towers = cells.mapNotNull { c -> parse(c) }.sortedWith(
@@ -89,7 +92,7 @@ class GsmTowerManager(private val context: Context) {
                 updatedAtMs = System.currentTimeMillis(),
             )
         } catch (t: Throwable) {
-            _state.value = GsmTowerState(error = "读取小区信息失败: ${t.message}", operator = operatorName(), networkType = networkTypeName())
+            _state.value = GsmTowerState(error = L10n.get(R.string.mgr_gsm_read_failed, t.message.toString()), operator = operatorName(), networkType = networkTypeName())
         }
     }
 
@@ -167,7 +170,7 @@ class GsmTowerManager(private val context: Context) {
     }
 
     @Suppress("MissingPermission")
-    private fun operatorName(): String = runCatching { telephony.networkOperatorName ?: "未知运营商" }.getOrDefault("未知运营商")
+    private fun operatorName(): String = runCatching { telephony.networkOperatorName ?: L10n.get(R.string.mgr_gsm_unknown_operator) }.getOrDefault(L10n.get(R.string.mgr_gsm_unknown_operator))
 
     private fun networkTypeName(): String = when (runCatching { telephony.dataNetworkType }.getOrDefault(TelephonyManager.NETWORK_TYPE_UNKNOWN)) {
         TelephonyManager.NETWORK_TYPE_NR -> "5G NR"
@@ -176,6 +179,6 @@ class GsmTowerManager(private val context: Context) {
         TelephonyManager.NETWORK_TYPE_UMTS -> "3G UMTS"
         TelephonyManager.NETWORK_TYPE_EDGE, TelephonyManager.NETWORK_TYPE_GPRS -> "2G EDGE/GPRS"
         TelephonyManager.NETWORK_TYPE_GSM -> "2G GSM"
-        else -> "未知制式"
+        else -> L10n.get(R.string.mgr_gsm_unknown_network)
     }
 }

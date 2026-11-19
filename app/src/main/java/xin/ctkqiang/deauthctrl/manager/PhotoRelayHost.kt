@@ -25,7 +25,9 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import xin.ctkqiang.deauthctrl.L10n
 import xin.ctkqiang.deauthctrl.MainActivity
+import xin.ctkqiang.deauthctrl.R
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
@@ -97,10 +99,10 @@ sealed class DiscoveryState {
 
 /** 每层发现的独立状态(mDNS / UDP / 缓存 / 网段扫描) */
 data class DiscoveryLayers(
-    val mdns: String = "未启动",
-    val udp: String = "未启动",
-    val cacheProbe: String = "未探测",
-    val subnetScan: String = "未开始",
+    val mdns: String = L10n.get(R.string.mgr_relay_layer_not_started),
+    val udp: String = L10n.get(R.string.mgr_relay_layer_not_started),
+    val cacheProbe: String = L10n.get(R.string.mgr_relay_layer_not_probed),
+    val subnetScan: String = L10n.get(R.string.mgr_relay_layer_not_begun),
     val scanned: Int = 0,
     val scanTotal: Int = 0,
 )
@@ -221,7 +223,7 @@ class PhotoRelayHost private constructor(context: Context) {
                     soTimeout = 800
                 }
             } catch (t: Throwable) {
-                scheduleRetry("UDP $BEACON_PORT 绑定失败: ${t.message}")
+                scheduleRetry(L10n.get(R.string.mgr_relay_err_udp_bind, BEACON_PORT, t.message ?: t.javaClass.simpleName))
                 return
             }
 
@@ -234,7 +236,7 @@ class PhotoRelayHost private constructor(context: Context) {
                 }
             } catch (t: Throwable) {
                 runCatching { beacon.close() }
-                scheduleRetry("TCP 接收端口绑定失败: ${t.message}")
+                scheduleRetry(L10n.get(R.string.mgr_relay_err_tcp_bind, t.message ?: t.javaClass.simpleName))
                 return
             }
 
@@ -247,7 +249,7 @@ class PhotoRelayHost private constructor(context: Context) {
             started = true
             startRetryIndex = 0
             updateLayer {
-                it.copy(udp = "UDP $BEACON_PORT 广播运行中 · TCP $port 监听")
+                it.copy(udp = L10n.get(R.string.mgr_relay_udp_running, BEACON_PORT, port))
             }
 
             thread(name = "photo-beacon-send", isDaemon = true) { beaconLoop(beacon) }
@@ -263,7 +265,7 @@ class PhotoRelayHost private constructor(context: Context) {
     /** 启动失败:关闭已创建资源,按 1s/5s/15s 退避重试 */
     private fun scheduleRetry(reason: String) {
         _online.value = false
-        updateLayer { it.copy(udp = "不可用: $reason") }
+        updateLayer { it.copy(udp = L10n.get(R.string.mgr_relay_udp_unavailable, reason)) }
         val delays = longArrayOf(1000L, 5000L, 15000L)
         val delayMs = delays[startRetryIndex.coerceIn(0, delays.lastIndex)]
         if (startRetryIndex < delays.lastIndex) startRetryIndex++
@@ -305,7 +307,12 @@ class PhotoRelayHost private constructor(context: Context) {
         clientPool.shutdownNow()
         peerMap.clear()
         _peers.value = emptyList()
-        updateLayer { DiscoveryLayers(mdns = "已停止", udp = "已停止") }
+        updateLayer {
+            DiscoveryLayers(
+                mdns = L10n.get(R.string.mgr_relay_layer_stopped),
+                udp = L10n.get(R.string.mgr_relay_layer_stopped),
+            )
+        }
         _discovery.value = DiscoveryState.Idle
     }
 
@@ -348,10 +355,10 @@ class PhotoRelayHost private constructor(context: Context) {
         }
         val bytes = payload.toByteArray(StandardCharsets.UTF_8)
         if (bytes.size > MAX_PAYLOAD) {
-            return SendResult(ip, false, "载荷过大: ${bytes.size / 1024}KB > 16MB 上限")
+            return SendResult(ip, false, L10n.get(R.string.mgr_relay_send_too_large, bytes.size / 1024))
         }
 
-        var lastError = "未知错误"
+        var lastError = L10n.get(R.string.mgr_relay_unknown_error)
         repeat(2) { attempt ->
             try {
                 Socket().use { sock ->
@@ -367,24 +374,24 @@ class PhotoRelayHost private constructor(context: Context) {
                     val ack = ByteArray(2)
                     val n = sock.getInputStream().read(ack)
                     if (n != 2 || String(ack, StandardCharsets.US_ASCII) != "OK") {
-                        throw java.io.IOException("未收到对端确认")
+                        throw java.io.IOException(L10n.get(R.string.mgr_relay_err_no_ack))
                     }
                 }
-                return SendResult(ip, true, "已送达 · ${jpeg.size / 1024}KB → $ip")
+                return SendResult(ip, true, L10n.get(R.string.mgr_relay_send_ok, jpeg.size / 1024, ip))
             } catch (t: Throwable) {
                 lastError = t.message ?: t.javaClass.simpleName
                 if (attempt == 0) {
                     try {
                         Thread.sleep(600)
                     } catch (_: InterruptedException) {
-                        return SendResult(ip, false, "发送已取消")
+                        return SendResult(ip, false, L10n.get(R.string.mgr_relay_send_cancelled))
                     }
                 }
             }
         }
         // 失败目标立即单播重探,便于对方下一次出现在在线列表
         sendQuery(ip)
-        return SendResult(ip, false, "发送失败: $lastError")
+        return SendResult(ip, false, L10n.get(R.string.mgr_relay_send_failed, lastError))
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -404,8 +411,11 @@ class PhotoRelayHost private constructor(context: Context) {
         beaconNow = true
         updateLayer {
             it.copy(
-                udp = if (started) "UDP $BEACON_PORT 广播运行中 · TCP ${_serverPort.value} 监听"
-                else "UDP 广播不可用(端口绑定失败,自动重试中)",
+                udp = if (started) {
+                    L10n.get(R.string.mgr_relay_udp_running, BEACON_PORT, _serverPort.value)
+                } else {
+                    L10n.get(R.string.mgr_relay_udp_unavailable_retrying)
+                },
             )
         }
         publishDiscovery(SystemClock.elapsedRealtime())
@@ -426,7 +436,12 @@ class PhotoRelayHost private constructor(context: Context) {
         lastScanAttemptAt = 0L
         scanRunning = false
         cancelSubnetScan()
-        updateLayer { it.copy(cacheProbe = "重新探测缓存…", subnetScan = "准备重新扫描") }
+        updateLayer {
+            it.copy(
+                cacheProbe = L10n.get(R.string.mgr_relay_cache_probing),
+                subnetScan = L10n.get(R.string.mgr_relay_scan_preparing),
+            )
+        }
         probeCachedPeers()
         maybeStartSubnetScan(SystemClock.elapsedRealtime(), force = true)
     }
@@ -485,7 +500,14 @@ class PhotoRelayHost private constructor(context: Context) {
             if (runCatching { sock.send(packet) }.isSuccess) ok++
         }
         updateLayer {
-            it.copy(udp = "UDP $BEACON_PORT 广播运行中 · 定向 $ok 个网段 · TCP ${_serverPort.value} 监听")
+            it.copy(
+                udp = L10n.get(
+                    R.string.mgr_relay_udp_running_directed,
+                    BEACON_PORT,
+                    ok,
+                    _serverPort.value,
+                ),
+            )
         }
     }
 
@@ -527,7 +549,7 @@ class PhotoRelayHost private constructor(context: Context) {
         if (parts.size < 3) return
         val id = parts[1].trim()
         if (id.isEmpty() || id == deviceId) return
-        val name = parts[2].trim().take(32).ifBlank { "接收台" }
+        val name = parts[2].trim().take(32).ifBlank { L10n.get(R.string.mgr_relay_peer_default_name) }
         val port = parts.getOrNull(3)?.toIntOrNull()?.takeIf { it in 1..65535 } ?: TCP_PORT
         val ip = address?.hostAddress ?: return
         val isNew = peerMap[id] == null
@@ -677,7 +699,7 @@ class PhotoRelayHost private constructor(context: Context) {
         _discovery.value = if (elapsed >= EXHAUSTED_AFTER_MS) {
             DiscoveryState.Exhausted(
                 System.currentTimeMillis(),
-                "8 秒内未发现接收台:确认同一 Wi-Fi、对方 App 进程存活;路由器 AP 隔离 / VPN 会阻断广播与 mDNS",
+                L10n.get(R.string.mgr_relay_exhausted_reason),
             )
         } else {
             DiscoveryState.Searching(stageOf(), elapsed, 0)
@@ -685,11 +707,11 @@ class PhotoRelayHost private constructor(context: Context) {
     }
 
     private fun stageOf(): String = when {
-        peerMap.isNotEmpty() -> "已发现 ${peerMap.size} 台"
-        scanRunning -> "网段扫描中"
-        cachedPeerCount > 0 -> "缓存探测"
-        nsdDiscovering -> "mDNS 搜索"
-        else -> "UDP 广播"
+        peerMap.isNotEmpty() -> L10n.get(R.string.mgr_relay_stage_found, peerMap.size)
+        scanRunning -> L10n.get(R.string.mgr_relay_stage_subnet_scan)
+        cachedPeerCount > 0 -> L10n.get(R.string.mgr_relay_stage_cache_probe)
+        nsdDiscovering -> L10n.get(R.string.mgr_relay_stage_mdns)
+        else -> L10n.get(R.string.mgr_relay_stage_udp)
     }
 
     private fun updateLayer(block: (DiscoveryLayers) -> DiscoveryLayers) {
@@ -706,7 +728,7 @@ class PhotoRelayHost private constructor(context: Context) {
 
     private fun registerNsd(port: Int) {
         val manager = nsdManager ?: run {
-            updateLayer { it.copy(mdns = "mDNS 不可用: 系统无 NSD 服务") }
+            updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_no_nsd)) }
             return
         }
         runCatching {
@@ -721,11 +743,11 @@ class PhotoRelayHost private constructor(context: Context) {
             }
             val listener = object : NsdManager.RegistrationListener {
                 override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
-                    updateLayer { it.copy(mdns = "mDNS 已注册: ${serviceInfo.serviceName}") }
+                    updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_registered, serviceInfo.serviceName)) }
                 }
 
                 override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                    updateLayer { it.copy(mdns = "mDNS 注册失败 (code $errorCode)") }
+                    updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_register_failed, errorCode)) }
                 }
 
                 override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {}
@@ -734,9 +756,9 @@ class PhotoRelayHost private constructor(context: Context) {
             }
             registrationListener = listener
             manager.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener)
-            updateLayer { it.copy(mdns = "mDNS 注册中…") }
+            updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_registering)) }
         }.onFailure { e ->
-            updateLayer { it.copy(mdns = "mDNS 不可用: ${e.message ?: e.javaClass.simpleName}") }
+            updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_unavailable, e.message ?: e.javaClass.simpleName)) }
         }
     }
 
@@ -747,7 +769,7 @@ class PhotoRelayHost private constructor(context: Context) {
             val listener = object : NsdManager.DiscoveryListener {
                 override fun onDiscoveryStarted(serviceType: String) {
                     nsdDiscovering = true
-                    updateLayer { it.copy(mdns = "mDNS 搜索中") }
+                    updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_searching)) }
                 }
 
                 override fun onServiceFound(serviceInfo: NsdServiceInfo) {
@@ -761,12 +783,12 @@ class PhotoRelayHost private constructor(context: Context) {
 
                 override fun onDiscoveryStopped(serviceType: String) {
                     nsdDiscovering = false
-                    updateLayer { it.copy(mdns = "mDNS 已停止") }
+                    updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_stopped)) }
                 }
 
                 override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
                     nsdDiscovering = false
-                    updateLayer { it.copy(mdns = "mDNS 不可用 (code $errorCode)") }
+                    updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_unavailable_code, errorCode)) }
                     runCatching { manager.stopServiceDiscovery(this) }
                 }
 
@@ -776,10 +798,10 @@ class PhotoRelayHost private constructor(context: Context) {
             }
             discoveryListener = listener
             manager.discoverServices(NSD_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
-            updateLayer { it.copy(mdns = "mDNS 启动中…") }
+            updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_starting)) }
         }.onFailure { e ->
             nsdDiscovering = false
-            updateLayer { it.copy(mdns = "mDNS 启动失败: ${e.message ?: e.javaClass.simpleName}") }
+            updateLayer { it.copy(mdns = L10n.get(R.string.mgr_relay_mdns_start_failed, e.message ?: e.javaClass.simpleName)) }
         }
     }
 
@@ -851,7 +873,7 @@ class PhotoRelayHost private constructor(context: Context) {
         val peerId = id.ifBlank { "nsd-$ip-${info.port}" }
         val port = info.port.takeIf { it > 0 } ?: TCP_PORT
         servicePeerIds[info.serviceName] = peerId
-        upsertPeer(peerId, name.ifBlank { "接收台" }, ip, port)
+        upsertPeer(peerId, name.ifBlank { L10n.get(R.string.mgr_relay_peer_default_name) }, ip, port)
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -863,8 +885,11 @@ class PhotoRelayHost private constructor(context: Context) {
         cachedPeerCount = cached.size
         updateLayer {
             it.copy(
-                cacheProbe = if (cached.isEmpty()) "缓存探测 · 无历史接收台"
-                else "缓存探测 · ${cached.size} 台历史接收台",
+                cacheProbe = if (cached.isEmpty()) {
+                    L10n.get(R.string.mgr_relay_cache_none)
+                } else {
+                    L10n.get(R.string.mgr_relay_cache_count, cached.size)
+                },
             )
         }
         cached.forEach { p ->
@@ -881,12 +906,12 @@ class PhotoRelayHost private constructor(context: Context) {
         if (!force && nowElapsed - discoveryStartedAt < SCAN_DELAY_MS) return
         if (!force && nowElapsed - lastScanAttemptAt < SCAN_REPEAT_MS) return
         if (vpnActive()) {
-            updateLayer { it.copy(subnetScan = "VPN 激活:跳过网段扫描(会误扫隧道网段)") }
+            updateLayer { it.copy(subnetScan = L10n.get(R.string.mgr_relay_scan_vpn_skip)) }
             return
         }
         val subnets = localSubnets()
         if (subnets.isEmpty()) {
-            updateLayer { it.copy(subnetScan = "当前非 Wi-Fi/以太网或无 IPv4:跳过网段扫描") }
+            updateLayer { it.copy(subnetScan = L10n.get(R.string.mgr_relay_scan_no_network)) }
             return
         }
         val hosts = subnets.take(2)
@@ -899,9 +924,9 @@ class PhotoRelayHost private constructor(context: Context) {
         scanCancelled = false
         lastScanAttemptAt = nowElapsed
         scannedCount.set(0)
-        updateLayer { it.copy(subnetScan = "扫描 0/${hosts.size}…", scanned = 0, scanTotal = hosts.size) }
+        updateLayer { it.copy(subnetScan = L10n.get(R.string.mgr_relay_scan_progress_start, hosts.size), scanned = 0, scanTotal = hosts.size) }
         _discovery.value = DiscoveryState.Searching(
-            "网段扫描 0/${hosts.size}",
+            L10n.get(R.string.mgr_relay_stage_scan_progress, hosts.size),
             (nowElapsed - discoveryStartedAt).coerceAtLeast(0),
             0,
         )
@@ -922,7 +947,7 @@ class PhotoRelayHost private constructor(context: Context) {
                 val done = scannedCount.incrementAndGet()
                 if (done % 16 == 0 || done == hosts.size) {
                     updateLayer {
-                        it.copy(scanned = done, subnetScan = "扫描 $done/${hosts.size} · 候选需 PHOTO 回应")
+                        it.copy(scanned = done, subnetScan = L10n.get(R.string.mgr_relay_scan_progress, done, hosts.size))
                     }
                 }
             }
@@ -933,7 +958,7 @@ class PhotoRelayHost private constructor(context: Context) {
             scanRunning = false
             updateLayer {
                 it.copy(
-                    subnetScan = "扫描完成:${scannedCount.get()}/${hosts.size} · 仅 PHOTO 回应计入在线",
+                    subnetScan = L10n.get(R.string.mgr_relay_scan_done, scannedCount.get(), hosts.size),
                 )
             }
         }
@@ -1038,7 +1063,7 @@ class PhotoRelayHost private constructor(context: Context) {
         val jpeg = runCatching { Base64.decode(b64, Base64.DEFAULT) }.getOrNull() ?: return false
         val photo = ReceivedPhoto(
             id = System.currentTimeMillis(),
-            from = field("from").ifBlank { "未知" },
+            from = field("from").ifBlank { L10n.get(R.string.mgr_relay_unknown_sender) },
             width = intField("w"),
             height = intField("h"),
             jpeg = jpeg,
@@ -1077,8 +1102,15 @@ class PhotoRelayHost private constructor(context: Context) {
             val bmp = runCatching { BitmapFactory.decodeByteArray(photo.jpeg, 0, photo.jpeg.size) }.getOrNull()
             val builder = NotificationCompat.Builder(appContext, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_menu_camera)
-                .setContentTitle("战术照片 · 来自 ${photo.from}")
-                .setContentText("${photo.width}×${photo.height} · ${photo.jpeg.size / 1024}KB · 点击查看")
+                .setContentTitle(L10n.get(R.string.mgr_relay_notif_title, photo.from))
+                .setContentText(
+                    L10n.get(
+                        R.string.mgr_relay_notif_text,
+                        photo.width,
+                        photo.height,
+                        photo.jpeg.size / 1024,
+                    ),
+                )
                 .setAutoCancel(true)
                 .setContentIntent(pi)
             if (bmp != null) {
@@ -1099,7 +1131,11 @@ class PhotoRelayHost private constructor(context: Context) {
         // minSdk 23:NotificationChannel 是 API 26 类,必须做版本保护
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         runCatching {
-            val ch = NotificationChannel(CHANNEL_ID, "战术照片", NotificationManager.IMPORTANCE_DEFAULT)
+            val ch = NotificationChannel(
+                CHANNEL_ID,
+                L10n.get(R.string.mgr_relay_notif_channel),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
             getNotificationManager().createNotificationChannel(ch)
         }
     }
@@ -1117,7 +1153,7 @@ class PhotoRelayHost private constructor(context: Context) {
                 acquire()
             }
         }.onFailure { e ->
-            updateLayer { it.copy(udp = "UDP 广播运行中 · MulticastLock 不可用: ${e.message}") }
+            updateLayer { it.copy(udp = L10n.get(R.string.mgr_relay_udp_multicast_unavailable, e.message ?: e.javaClass.simpleName)) }
         }
     }
 

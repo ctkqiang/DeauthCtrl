@@ -1,5 +1,7 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import xin.ctkqiang.deauthctrl.L10n
+import xin.ctkqiang.deauthctrl.R
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 
@@ -87,7 +89,7 @@ data class SnmpResponse(
             16 -> "authorizationError"
             17 -> "notWritable"
             18 -> "inconsistentName"
-            else -> "未知错误码 $errorStatus"
+            else -> L10n.get(R.string.mgr_ber_unknown_error_code, errorStatus)
         }
 }
 

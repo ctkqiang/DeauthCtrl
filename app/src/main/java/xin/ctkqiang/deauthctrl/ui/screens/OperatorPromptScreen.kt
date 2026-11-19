@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
 import xin.ctkqiang.deauthctrl.ui.components.Dark
@@ -66,10 +68,10 @@ fun OperatorPromptScreen(
         Spacer(Modifier.height(48.dp))
         Star(Gold, 30.dp)
         Spacer(Modifier.height(14.dp))
-        Text("操作员注册", fontFamily = Sans, fontSize = 22.sp, fontWeight = FontWeight.Black, color = White)
+        Text(stringResource(R.string.op_register_title), fontFamily = Sans, fontSize = 22.sp, fontWeight = FontWeight.Black, color = White)
         Spacer(Modifier.height(6.dp))
         Text(
-            "首次启动 · 请设置你的呼号\n用于相机署名、对讲与终端识别",
+            stringResource(R.string.op_register_desc),
             fontFamily = Sans, fontSize = 11.sp, color = Gray, textAlign = TextAlign.Center, lineHeight = 17.sp,
         )
 
@@ -81,7 +83,7 @@ fun OperatorPromptScreen(
             border = BorderStroke(1.dp, Gold.copy(alpha = 0.6f)),
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("呼号 CALLSIGN", fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Red)
+                Text(stringResource(R.string.op_callsign_label), fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Red)
                 Spacer(Modifier.height(8.dp))
                 Box(
                     Modifier.fillMaxWidth()
@@ -98,7 +100,7 @@ fun OperatorPromptScreen(
                         modifier = Modifier.fillMaxWidth(),
                         decorationBox = { inner ->
                             if (name.isEmpty()) {
-                                Text("输入呼号(如 007)", fontFamily = Sans, fontSize = 12.sp, color = Gray.copy(alpha = 0.6f))
+                                Text(stringResource(R.string.op_callsign_placeholder), fontFamily = Sans, fontSize = 12.sp, color = Gray.copy(alpha = 0.6f))
                             }
                             inner()
                         },
@@ -115,7 +117,7 @@ fun OperatorPromptScreen(
                     border = BorderStroke(1.dp, if (name.isNotBlank()) Danger.copy(alpha = 0.8f) else BorderDim),
                 ) {
                     Text(
-                        "确 认 加 入",
+                        stringResource(R.string.op_confirm),
                         fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Black,
                         color = if (name.isNotBlank()) White else Gray,
                         textAlign = TextAlign.Center,
@@ -124,7 +126,7 @@ fun OperatorPromptScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "暂不设置 · 使用默认呼号 ▸",
+                    stringResource(R.string.op_skip),
                     fontFamily = Sans, fontSize = 10.sp, color = Gray,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); onSkip() }.padding(vertical = 6.dp),
@@ -133,7 +135,7 @@ fun OperatorPromptScreen(
         }
 
         Spacer(Modifier.weight(1f))
-        Text("DeauthCtrl · 战术终端", fontFamily = Mono, fontSize = 8.sp, color = Gray.copy(alpha = 0.6f))
+        Text(stringResource(R.string.op_footer), fontFamily = Mono, fontSize = 8.sp, color = Gray.copy(alpha = 0.6f))
         Spacer(Modifier.height(10.dp))
     }
 }
