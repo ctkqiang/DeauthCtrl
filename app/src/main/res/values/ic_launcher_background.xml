@@ -2,4 +2,16 @@
 <resources>
     <!-- 应用图标背景：深海军蓝，与应用全局背景一致 -->
     <color name="ic_launcher_background">#060B14</color>
+    <color name="ic_launcher_background_red">#0E0505</color>
+    <color name="ic_launcher_background_orange">#0E0805</color>
+    <color name="ic_launcher_background_amber">#0E0B05</color>
+    <color name="ic_launcher_background_lime">#0B0E05</color>
+    <color name="ic_launcher_background_green">#050E07</color>
+    <color name="ic_launcher_background_teal">#050E0C</color>
+    <color name="ic_launcher_background_blue">#05080E</color>
+    <color name="ic_launcher_background_indigo">#08050E</color>
+    <color name="ic_launcher_background_purple">#0A050E</color>
+    <color name="ic_launcher_background_magenta">#0E050B</color>
+    <color name="ic_launcher_background_pink">#0E0508</color>
+    <color name="ic_launcher_background_gray">#0A0D12</color>
 </resources>

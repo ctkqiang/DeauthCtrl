@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -48,6 +49,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -73,6 +76,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -354,7 +358,12 @@ fun TerminalHeader(title: String, back: () -> Unit) {
             Text(stringResource(R.string.common_back), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp))
         }
         Spacer(Modifier.width(12.dp))
-        Text(title, fontFamily = Sans, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
+        // 标题带菱形标记:与左侧返回按钮、右侧终端提示符形成三段节奏
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Star(Gold, 7.dp)
+            Spacer(Modifier.width(7.dp))
+            Text(title, fontFamily = Sans, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
         Text("root@deauth:~#", fontFamily = Mono, fontSize = 10.sp, color = Gray)
         Text("▊", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold.copy(alpha = cursorAlpha))
     }
@@ -363,7 +372,8 @@ fun TerminalHeader(title: String, back: () -> Unit) {
 /**
  * 区域标签
  *
- * `▸ 侦察 ────`：前导箭头 + 白色粗体标题 + 延伸至右边缘的青色细线。
+ * `▸ 侦察 ──── ◆`：前导箭头 + 白色粗体标题 + 延伸至右缘的青色细线 +
+ * 线尾菱形端点。主页分区与详情页面板共用，整支应用的分区视觉锚点。
  */
 @Composable
 fun SectionLabel(text: String) {
@@ -372,22 +382,33 @@ fun SectionLabel(text: String) {
         Text(text, fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
         Spacer(Modifier.width(9.dp))
         Box(Modifier.weight(1f).height(1.dp).background(Red.copy(alpha = 0.35f)))
+        Spacer(Modifier.width(7.dp))
+        Star(Gold.copy(alpha = 0.8f), 6.dp)
     }
 }
 
 /**
  * 终端面板
  *
- * 标题条：菱形标记 + 青字标题；内容区：深蓝玻璃底。面板是作战地图上的区块。
+ * 标题条：菱形标记 + 青字标题；内容区：深蓝玻璃底。左缘一条 3dp 主色护板条，
+ * 面板在页面里就有了明确的 HUD 模块身份。护板条画在绘制层，不参与布局。
  */
 @Composable
 fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
     Column(
         modifier
             .fillMaxWidth()
-            .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+            .clip(shape)
             .background(SurfaceBg)
-            .border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
+            .border(1.dp, BorderDim, shape)
+            // 左缘主色护板条 —— 绘制层叠加,不参与布局;随上方 clip 一起切角
+            .drawWithCache {
+                val w = 3.dp.toPx()
+                onDrawBehind {
+                    drawRect(Red.copy(alpha = 0.55f), size = Size(w, size.height))
+                }
+            },
     ) {
         Row(
             Modifier.fillMaxWidth().background(Red.copy(alpha = 0.07f)).padding(horizontal = 12.dp, vertical = 7.dp),
@@ -407,21 +428,27 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
  * 终端风格输入框
  *
  * 顶部中文标签 + 斜切角输入框。输入内容用等宽字体，光标淡青。
+ * 聚焦时边框与标签同步点亮为主色 —— 键盘弹起时输入目标一眼可辨。
  */
 @Composable
 fun TermInput(label: String, value: String, placeholder: String = "", modifier: Modifier = Modifier, onValue: (String) -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val borderColor by animateColorAsState(if (focused) Gold.copy(alpha = 0.85f) else BorderDim, tween(180))
+    val labelColor by animateColorAsState(if (focused) Gold else Red, tween(180))
     Column(modifier) {
-        Text(label, fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(bottom = 4.dp))
+        Text(label, fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = labelColor, modifier = Modifier.padding(bottom = 4.dp))
         BasicTextField(
             value = value,
             onValueChange = onValue,
             textStyle = TextStyle(fontFamily = Mono, fontSize = 13.sp, color = White),
             cursorBrush = SolidColor(Gold),
+            interactionSource = interaction,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                 .background(SurfaceAlt)
-                .border(1.dp, BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+                .border(1.dp, borderColor, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             decorationBox = { inner ->
                 if (value.isEmpty() && placeholder.isNotEmpty()) {
@@ -437,7 +464,7 @@ fun TermInput(label: String, value: String, placeholder: String = "", modifier: 
  * 主操作按钮（二态）
  *
  * - 空闲：全息青底 + 亮青边 + 白字「▶ 启动」
- * - 运行中：青色微光底 + 呼吸亮边 + 菱形脉冲 + 青字「■ 停止」
+ * - 运行中：青色微光底 + 呼吸亮边 + 四角锁定框 + 菱形脉冲 + 青字「■ 停止」
  */
 @Composable
 fun ActionButton(
@@ -469,17 +496,23 @@ fun ActionButton(
         color = if (running) TacGreen.copy(alpha = 0.08f) else Red,
         border = BorderStroke(1.5.dp, if (running) TacGreen.copy(alpha = borderAlpha) else Gold.copy(alpha = 0.9f)),
     ) {
-        Row(
-            Modifier.padding(vertical = 13.dp).graphicsLayer { translationY = textShift.dp.toPx() },
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Box {
+            Row(
+                Modifier.padding(vertical = 13.dp).graphicsLayer { translationY = textShift.dp.toPx() },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (running) {
+                    PulseStar(active = true, size = 6.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("■ $stopLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TacGreen)
+                } else {
+                    Text("▶ $runLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White)
+                }
+            }
+            // 运行中 = 已被锁定:四角锁定框与呼吸边共用同一相位
             if (running) {
-                PulseStar(active = true, size = 6.dp)
-                Spacer(Modifier.width(8.dp))
-                Text("■ $stopLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TacGreen)
-            } else {
-                Text("▶ $runLabel", fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White)
+                TacticalCorners(TacGreen.copy(alpha = borderAlpha), Modifier.matchParentSize(), len = 7.dp, stroke = 1.3.dp)
             }
         }
     }
@@ -509,7 +542,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
 /**
  * 选项芯片
  *
- * 选中态：青底白字；未选中：透明底灰字暗框。
+ * 选中态：青底白字 + 前置菱形标记；未选中：透明底灰字暗框。
  */
 @Composable
 fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
@@ -527,7 +560,16 @@ fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
         color = containerColor,
         border = BorderStroke(1.dp, borderColor),
     ) {
-        Text(text, fontFamily = Sans, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = contentColor, modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp))
+        Row(
+            Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (selected) {
+                Star(White, 5.dp)
+                Spacer(Modifier.width(5.dp))
+            }
+            Text(text, fontFamily = Sans, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, color = contentColor)
+        }
     }
 }
 
@@ -627,7 +669,7 @@ private fun iconBreathScale(running: Boolean): Float {
  * - 入场：delayMs 延迟后 fade + 上滑（级联节奏）
  * - 按压：spring 弹性缩放，卡片与右侧按钮使用独立交互源
  * - 状态切换：边框 / 背景 / 文字颜色 350ms 平滑过渡
- * - 运行态：图标 1.2 秒呼吸缩放，四角锁定框呼吸闪烁
+ * - 运行态：图标 1.2 秒呼吸缩放，呼吸边框 + 四角锁定框（同一相位，仅绘制层）
  */
 @Composable
 fun ModuleCard(
@@ -650,12 +692,22 @@ fun ModuleCard(
     val actionPressed by actionInteraction.collectIsPressedAsState()
     val actionScale by animateFloatAsState(if (actionPressed) 0.92f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
 
+    // 运行态的呼吸节奏 —— 只在 graphicsLayer 绘制块内读取 value，避免逐帧重组
+    val breathAlpha: State<Float>? = if (running) {
+        rememberInfiniteTransition().animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        )
+    } else null
+
     AnimatedVisibility(visible = visible, enter = fadeIn(tween(350)) + slideInVertically(tween(400)) { it / 4 }) {
         val border by animateColorAsState(if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, tween(350))
         val bg by animateColorAsState(if (running) TacGreen.copy(alpha = 0.05f) else SurfaceBg, tween(350))
         val descColor by animateColorAsState(if (running) TacGreenDim else Gray, tween(350))
         val iconTint by animateColorAsState(if (running) TacGreen else Gray, tween(350))
         val iconBreath = iconBreathScale(running)
+        val cardShape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
 
         Surface(
             modifier = Modifier
@@ -666,65 +718,73 @@ fun ModuleCard(
                     onClick()
                 }
                 .padding(vertical = 5.dp),
-            shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
+            shape = cardShape,
             color = bg,
             border = BorderStroke(1.dp, border),
         ) {
             Box {
-            Row(Modifier.padding(horizontal = 13.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(40.dp).clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
-                        .background(if (running) TacGreen.copy(alpha = 0.14f) else SurfaceAlt)
-                        .border(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(20.dp).graphicsLayer { scaleX = iconBreath; scaleY = iconBreath })
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(name, fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White)
-                        if (running) {
-                            Spacer(Modifier.width(7.dp))
-                            PulseStar(active = true, size = 6.dp)
+                Row(Modifier.padding(horizontal = 13.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(40.dp).clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+                            .background(if (running) TacGreen.copy(alpha = 0.14f) else SurfaceAlt)
+                            .border(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(20.dp).graphicsLayer { scaleX = iconBreath; scaleY = iconBreath })
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(name, fontFamily = Sans, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = White, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            if (running) {
+                                Spacer(Modifier.width(7.dp))
+                                PulseStar(active = true, size = 6.dp)
+                            }
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        Text(desc, fontFamily = Sans, fontSize = 11.sp, color = descColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    if (onToggle == null) {
+                        Surface(
+                            modifier = Modifier.scale(actionScale).clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
+                                haptic.hud()
+                                onClick()
+                            },
+                            shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, BorderDim),
+                        ) {
+                            Text(stringResource(R.string.common_enter_arrow), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+                        }
+                    } else {
+                        Surface(
+                            modifier = Modifier.scale(actionScale).clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
+                                haptic.hud()
+                                onToggle()
+                            },
+                            shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                            color = if (running) Color.Transparent else Red,
+                            border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.6f) else Gold.copy(alpha = 0.9f)),
+                        ) {
+                            Text(if (running) stringResource(R.string.main_abort) else stringResource(R.string.main_execute), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) TacGreen else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
                         }
                     }
-                    Spacer(Modifier.height(2.dp))
-                    Text(desc, fontFamily = Sans, fontSize = 11.sp, color = descColor)
                 }
-                Spacer(Modifier.width(10.dp))
-                if (onToggle == null) {
-                    Surface(
-                        modifier = Modifier.scale(actionScale).clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
-                            haptic.hud()
-                            onClick()
-                        },
-                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                        color = Color.Transparent,
-                        border = BorderStroke(1.dp, BorderDim),
-                    ) {
-                        Text(stringResource(R.string.common_enter_arrow), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gray, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
-                    }
-                } else {
-                    Surface(
-                        modifier = Modifier.scale(actionScale).clickable(interactionSource = actionInteraction, indication = LocalIndication.current) {
-                            haptic.hud()
-                            onToggle()
-                        },
-                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                        color = if (running) Color.Transparent else Red,
-                        border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.6f) else Gold.copy(alpha = 0.9f)),
-                    ) {
-                        Text(if (running) stringResource(R.string.main_abort) else stringResource(R.string.main_execute), fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (running) TacGreen else White, modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp))
-                    }
+                // 运行中的模块 = 被锁定的目标:呼吸边框与四角锁定框共用同一相位
+                if (running) {
+                    Box(
+                        Modifier.matchParentSize()
+                            .graphicsLayer { alpha = breathAlpha?.value ?: 1f }
+                            .border(1.2.dp, TacGreen, cardShape),
+                    )
+                    TacticalCorners(
+                        color = TacGreen,
+                        modifier = Modifier.matchParentSize().graphicsLayer { alpha = breathAlpha?.value ?: 1f },
+                        len = 8.dp,
+                        stroke = 1.4.dp,
+                    )
                 }
-            }
-            // 目标锁定框：运行中的模块 = 被锁定的目标
-            if (running) {
-                val lock = rememberInfiniteTransition()
-                val lockAlpha by lock.animateFloat(0.35f, 0.95f, infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse))
-                TacticalCorners(TacGreen.copy(alpha = lockAlpha), Modifier.matchParentSize(), len = 8.dp, stroke = 1.4.dp)
-            }
             }
         }
     }

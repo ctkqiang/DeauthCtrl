@@ -78,6 +78,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
@@ -2902,6 +2903,71 @@ private fun RadarScope(
             .background(Dark)
             .border(1.dp, BorderDim, CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
     ) {
+        // ═══ 静态盘面层:背景辉光 / 距离环 / 网格 / 距离标签 ═══
+        // drawWithCache 缓存几何与 Path —— 扫描帧循环不再重绘这些元素
+        Canvas(
+            Modifier.fillMaxSize().drawWithCache {
+                val g = TacGreen
+                // 状态带高度用占位文本测量(行高与内容无关),盘面几何与动态层一致
+                val statusStyle = TextStyle(fontFamily = Mono, fontSize = 8.5.sp, color = g.copy(alpha = 0.86f))
+                val maxW = (size.width - 12.dp.toPx()).toInt().coerceAtLeast(1)
+                val bandH = textMeasurer.measure(
+                    String.format(scopeStatus2Fmt, 0, 0, 0, 0),
+                    statusStyle,
+                    constraints = Constraints(maxWidth = maxW),
+                ).size.height * 2 + 3.dp.toPx() * 2
+                val fieldH = (size.height - bandH).coerceAtLeast(1f)
+                val cx = size.width / 2f
+                val cy = fieldH / 2f
+                val r = minOf(cx, cy) * 0.90f
+
+                // 磷光管面:中心微亮、向边缘渐暗的径向辉光
+                val glowBrush = Brush.radialGradient(
+                    listOf(g.copy(alpha = 0.060f), g.copy(alpha = 0.018f), Color.Transparent),
+                    center = Offset(cx, cy),
+                    radius = r * 1.4f,
+                )
+                // 网格 Path 一次构建,重绘只走 drawPath
+                val gridPath = Path()
+                val gridStep = r / 4f
+                var gx = cx
+                while (gx <= cx + r) {
+                    gridPath.moveTo(gx, cy - r); gridPath.lineTo(gx, cy + r)
+                    gridPath.moveTo(cx - (gx - cx), cy - r); gridPath.lineTo(cx - (gx - cx), cy + r)
+                    gx += gridStep
+                }
+                var gy = cy
+                while (gy <= cy + r) {
+                    gridPath.moveTo(cx - r, gy); gridPath.lineTo(cx + r, gy)
+                    gridPath.moveTo(cx - r, cy - (gy - cy)); gridPath.lineTo(cx + r, cy - (gy - cy))
+                    gy += gridStep
+                }
+                val clipOval = Path().apply { addOval(Rect(Offset(cx - r, cy - r), Size(r * 2f, r * 2f))) }
+                val gridTags = listOf(25f, 50f, 75f).map { m ->
+                    val tr = r * m / 100f
+                    cachedMeasure("grid", "${m.toInt()}", TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = g.copy(alpha = 0.5f))) to tr
+                }
+
+                onDrawBehind {
+                    drawRect(glowBrush)
+                    // 距离环:外环最亮,层次向外递增
+                    listOf(0.25f, 0.5f, 0.75f, 1f).forEachIndexed { i, s ->
+                        drawCircle(g.copy(alpha = 0.15f + i * 0.06f), r * s, Offset(cx, cy), style = Stroke(if (i == 3) 1.8f else 0.7f))
+                    }
+                    // 十字基线(极淡,不抢光束)
+                    drawLine(g.copy(alpha = 0.11f), Offset(cx - r, cy), Offset(cx + r, cy), 0.7f)
+                    drawLine(g.copy(alpha = 0.11f), Offset(cx, cy - r), Offset(cx, cy + r), 0.7f)
+                    clipPath(clipOval) {
+                        drawPath(gridPath, g.copy(alpha = 0.10f), style = Stroke(0.6f))
+                        gridTags.forEach { (tag, tr) ->
+                            drawText(tag, topLeft = Offset(cx + tr - tag.size.width / 2f, cy + 2.dp.toPx()))
+                        }
+                    }
+                }
+            },
+        ) {}
+
+        // ═══ 动态帧层:扫描光束 / 目标 / 罗盘 / 状态带 —— 每帧重绘 ═══
         Canvas(Modifier.fillMaxSize()) {
             val g = TacGreen
             // draw 阶段读取:任何高频更新只触发重绘,绝不重组组合树
@@ -2941,41 +3007,10 @@ private fun RadarScope(
             val cy = fieldH / 2f
             val r = minOf(cx, cy) * 0.90f
 
-            // ── 噪点闪烁 ──
+            // ── 噪点闪烁(更细更淡:底盘噪感,不抢目标) ──
             noise.forEachIndexed { i, (nx, ny) ->
-                val a = ((sin(i * 1.7f + sweepDeg * 0.35f) + 1f) / 2f) * 0.09f
-                drawCircle(g.copy(alpha = a), 1f, Offset(nx * size.width, ny * size.height))
-            }
-
-            // ── 距离环 + 十字基线 ──
-            listOf(0.25f, 0.5f, 0.75f, 1f).forEachIndexed { i, s ->
-                drawCircle(g.copy(alpha = 0.26f), r * s, Offset(cx, cy), style = Stroke(if (i == 3) 1.6f else 0.7f))
-            }
-            drawLine(g.copy(alpha = 0.15f), Offset(cx - r, cy), Offset(cx + r, cy), 0.7f)
-            drawLine(g.copy(alpha = 0.15f), Offset(cx, cy - r), Offset(cx, cy + r), 0.7f)
-
-            // ── 垫子坐标网格:25m 方格,裁剪进圆内 —— 屏幕基准的协调垫,方便报位 ──
-            // 格距 = r/4(量程 100m → 每格 25m);网格固定于盘面,目标随罗盘在其上旋转
-            val gridStep = r / 4f
-            clipPath(Path().apply { addOval(Rect(Offset(cx - r, cy - r), Size(r * 2f, r * 2f))) }) {
-                var gx = cx
-                while (gx <= cx + r) {
-                    drawLine(g.copy(alpha = 0.10f), Offset(gx, cy - r), Offset(gx, cy + r), 0.6f)
-                    drawLine(g.copy(alpha = 0.10f), Offset(cx - (gx - cx), cy - r), Offset(cx - (gx - cx), cy + r), 0.6f)
-                    gx += gridStep
-                }
-                var gy = cy
-                while (gy <= cy + r) {
-                    drawLine(g.copy(alpha = 0.10f), Offset(cx - r, gy), Offset(cx + r, gy), 0.6f)
-                    drawLine(g.copy(alpha = 0.10f), Offset(cx - r, cy - (gy - cy)), Offset(cx + r, cy - (gy - cy)), 0.6f)
-                    gy += gridStep
-                }
-                // 环距标签(沿 +E 轴):25m/50m/75m
-                for (m in listOf(25f, 50f, 75f)) {
-                    val tr = r * m / 100f
-                    val tag = cachedMeasure("grid", "${m.toInt()}", TextStyle(fontFamily = Mono, fontSize = 7.sp, color = g.copy(alpha = 0.45f)))
-                    drawText(tag, topLeft = Offset(cx + tr - tag.size.width / 2f, cy + 2.dp.toPx()))
-                }
+                val a = ((sin(i * 1.7f + sweepDeg * 0.35f) + 1f) / 2f) * 0.045f
+                drawCircle(g.copy(alpha = a), 0.7f, Offset(nx * size.width, ny * size.height))
             }
 
             // ── 方位刻度：随真实罗盘航向旋转，刻度永远指向真实方位 ──
@@ -2985,18 +3020,24 @@ private fun RadarScope(
                 val major = deg % 30 == 0
                 val inner = r * (if (major) 0.93f else 0.965f)
                 drawLine(
-                    g.copy(alpha = if (major) 0.5f else 0.2f),
+                    g.copy(alpha = if (major) 0.55f else 0.22f),
                     Offset(cx + inner * cos(a), cy + inner * sin(a)),
                     Offset(cx + r * cos(a), cy + r * sin(a)),
-                    if (major) 1.2f else 0.5f,
+                    if (major) 1.4f else 0.5f,
                 )
             }
-            // 罗盘方位字：北东南西固定在真实方位，随陀螺仪反向旋转
+            // 罗盘方位字:北东南西固定在真实方位,随陀螺仪反向旋转(带辉光描边,更醒目)
             cardinalLabels.forEach { (ch, deg) ->
                 val a = Math.toRadians((deg - heading - 90.0).toDouble()).toFloat()
                 val lr = r * 0.83f
-                val m = cachedMeasure("cardinal", ch, TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = g.copy(alpha = 0.9f)))
-                drawText(m, topLeft = Offset(cx + lr * cos(a) - m.size.width / 2f, cy + lr * sin(a) - m.size.height / 2f))
+                val m = cachedMeasure("cardinal", ch, TextStyle(fontFamily = Sans, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = g.copy(alpha = 0.92f)))
+                val mg = cachedMeasure("cardinal_glow", ch, TextStyle(fontFamily = Sans, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = g.copy(alpha = 0.22f)))
+                val base = Offset(cx + lr * cos(a) - m.size.width / 2f, cy + lr * sin(a) - m.size.height / 2f)
+                drawText(mg, topLeft = base + Offset(-1.dp.toPx(), 0f))
+                drawText(mg, topLeft = base + Offset(1.dp.toPx(), 0f))
+                drawText(mg, topLeft = base + Offset(0f, -1.dp.toPx()))
+                drawText(mg, topLeft = base + Offset(0f, 1.dp.toPx()))
+                drawText(m, topLeft = base)
             }
 
             // ── 机头航向指针：固定在屏幕顶部，指向设备当前朝向 ──
@@ -3007,42 +3048,49 @@ private fun RadarScope(
                 close()
             }
             drawPath(bow, Gold.copy(alpha = 0.95f))
+            drawPath(bow, White.copy(alpha = 0.65f), style = Stroke(1f))
 
-            // 磁北参考细线：从中心指向当前航向的反向（即北向方位）
+            // 磁北参考虚线：从中心指向当前航向的反向（即北向方位）
             val northRad = Math.toRadians((-heading - 90.0).toDouble()).toFloat()
-            drawLine(g.copy(alpha = 0.18f), Offset(cx, cy), Offset(cx + r * 0.35f * cos(northRad), cy + r * 0.35f * sin(northRad)), 0.9f)
+            drawLine(
+                g.copy(alpha = 0.22f),
+                Offset(cx, cy),
+                Offset(cx + r * 0.35f * cos(northRad), cy + r * 0.35f * sin(northRad)),
+                1f,
+                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 6f)),
+            )
 
             val sweepRad = Math.toRadians(sweepDeg.toDouble()).toFloat()
 
-            // ── 磷光尾迹：8 层扇形 ──
-            for (i in 0 until 8) {
-                val startDeg = sweepDeg - (i + 1) * 7f
+            // ── 磷光尾迹:14 层窄扇形(4° 间隔),余晖清晰可见 ──
+            for (i in 0 until 14) {
+                val startDeg = sweepDeg - (i + 1) * 4f
                 drawArc(
-                    g.copy(alpha = (0.09f - i * 0.01f).coerceAtLeast(0.015f)),
+                    g.copy(alpha = (0.16f - i * 0.011f).coerceAtLeast(0.02f)),
                     startAngle = startDeg,
-                    sweepAngle = 5.5f,
+                    sweepAngle = 3.2f,
                     useCenter = true,
                     topLeft = Offset(cx - r, cy - r),
                     size = Size(r * 2f, r * 2f),
                 )
             }
 
-            // ── 主光束：渐变扇形（中心透亮、边缘衰减） ──
-            val beam = Brush.sweepGradient(
-                0f to g.copy(alpha = 0f),
-                0.35f to g.copy(alpha = 0.10f),
-                0.65f to g.copy(alpha = 0.30f),
-                1f to g.copy(alpha = 0f),
-                center = Offset(cx, cy),
-            )
-            drawArc(
-                brush = beam,
-                startAngle = sweepDeg - 30f,
-                sweepAngle = 60f,
-                useCenter = true,
-                topLeft = Offset(cx - r, cy - r),
-                size = Size(r * 2f, r * 2f),
-            )
+            // ── 主光束:多层窄扇形逼近指数衰减 —— 前缘锐利亮核,后缘快速衰减 ──
+            listOf(
+                Triple(2.0f, 0.38f, 0f),
+                Triple(5.0f, 0.20f, 2f),
+                Triple(9.0f, 0.10f, 7f),
+                Triple(16f, 0.04f, 16f),
+            ).forEach { (width, alpha, back) ->
+                drawArc(
+                    g.copy(alpha = alpha),
+                    startAngle = sweepDeg - back - width,
+                    sweepAngle = width,
+                    useCenter = true,
+                    topLeft = Offset(cx - r, cy - r),
+                    size = Size(r * 2f, r * 2f),
+                )
+            }
 
             // ── 目标-中心连线（数据链）：随罗盘航向同步旋转 ──
             if (running || targets.isNotEmpty()) {
@@ -3058,22 +3106,22 @@ private fun RadarScope(
                 }
             }
 
-            // ── 扫描针：光晕针 + 细亮针 + 针尾拖影 + 针尖光点 ──
+            // ── 扫描针:8 层拖影 + 细亮针 + 针尖辉光 ──
             val tipX = cx + r * cos(sweepRad)
             val tipY = cy + r * sin(sweepRad)
-            for (i in 1..5) {
-                val backRad = sweepRad - i * 0.035f
+            for (i in 1..8) {
+                val backRad = sweepRad - i * 0.028f
                 drawLine(
-                    g.copy(alpha = (0.5f - i * 0.09f).coerceAtLeast(0.05f)),
+                    g.copy(alpha = (0.55f - i * 0.062f).coerceAtLeast(0.05f)),
                     Offset(cx, cy),
                     Offset(cx + r * cos(backRad), cy + r * sin(backRad)),
-                    (3f - i * 0.5f).coerceAtLeast(0.6f),
+                    (3.4f - i * 0.35f).coerceAtLeast(0.5f),
                 )
             }
-            drawLine(g.copy(alpha = 0.35f), Offset(cx, cy), Offset(tipX, tipY), 4f)
-            drawLine(g.copy(alpha = 0.95f), Offset(cx, cy), Offset(tipX, tipY), 1.6f)
-            drawCircle(g.copy(alpha = 0.55f), 4.dp.toPx(), Offset(tipX, tipY))
-            drawCircle(Color(0xFFE8F4FF).copy(alpha = 0.95f), 1.8.dp.toPx(), Offset(tipX, tipY))
+            drawLine(g.copy(alpha = 0.30f), Offset(cx, cy), Offset(tipX, tipY), 4.5f)
+            drawLine(g.copy(alpha = 0.95f), Offset(cx, cy), Offset(tipX, tipY), 1.5f)
+            drawCircle(g.copy(alpha = 0.60f), 5.dp.toPx(), Offset(tipX, tipY))
+            drawCircle(Color(0xFFE8F4FF).copy(alpha = 0.95f), 2.dp.toPx(), Offset(tipX, tipY))
 
             // ── 全局声呐 ping：每 1.8 秒一发扩散环 ──
             val ping = ((sweepDeg / 360f) * 2f) % 1f
@@ -3100,8 +3148,8 @@ private fun RadarScope(
                     val x = cx + tr * cos(ta)
                     val y = cy + tr * sin(ta)
 
-                    // 光束扫过窗口 ±50° 内最亮，扫过后磷光余晖
-                    var d = sweepDeg - t.angleDeg
+                    // 光束扫过窗口 ±50° 内最亮,扫过后磷光余晖 —— 用目标屏幕角比较,航向旋转时点亮时机仍精确
+                    var d = sweepDeg - (t.angleDeg - heading - 90f)
                     while (d > 180f) d -= 360f
                     while (d < -180f) d += 360f
                     val isFocused = t.id == focusedId
@@ -3117,16 +3165,16 @@ private fun RadarScope(
                         drawCircle(blip.copy(alpha = (0.05f + k * 0.045f) * (if (isFocused || focusedId == null) 1f else 0.16f)), 1.6.dp.toPx(), Offset(pxa, pya))
                     }
 
-                    // 醒目的红色 blip：大光晕 + 双脉动扩散环 + 亮核
-                    drawCircle(blip.copy(alpha = bright * 0.30f), 14.dp.toPx(), Offset(x, y))
-                    drawCircle(blip.copy(alpha = bright * 0.55f), 7.dp.toPx(), Offset(x, y))
+                    // 醒目的 blip:紧凑光晕 + 双脉动扩散环 + 亮核(光晕收小,目标更锐)
+                    drawCircle(blip.copy(alpha = bright * 0.26f), 10.dp.toPx(), Offset(x, y))
+                    drawCircle(blip.copy(alpha = bright * 0.55f), 5.5.dp.toPx(), Offset(x, y))
 
                     val rippleBase = ((sweepDeg / 360f) * 2f + i * 0.37f) % 1f
                     listOf(0f, 0.5f).forEach { off ->
                         val ph = (rippleBase + off) % 1f
                         val rr = 3.dp.toPx() + 30.dp.toPx() * ph
-                        drawCircle(blip.copy(alpha = (1f - ph) * 0.30f * bright), rr, Offset(x, y), style = Stroke(6f))
-                        drawCircle(blip.copy(alpha = (1f - ph) * 0.95f * bright), rr, Offset(x, y), style = Stroke(1.8f))
+                        drawCircle(blip.copy(alpha = (1f - ph) * 0.26f * bright), rr, Offset(x, y), style = Stroke(4f))
+                        drawCircle(blip.copy(alpha = (1f - ph) * 0.95f * bright), rr, Offset(x, y), style = Stroke(1.4f))
                     }
 
                     // 核心点 + 白芯 + 十字准星
@@ -3305,8 +3353,9 @@ private fun RadarScope(
                             style = if (p.isTalking) androidx.compose.ui.graphics.drawscope.Fill else Stroke(1.6f),
                         )
                     }
-                    // 节点名标签(仅说话中常显,其余扫过时显示)
-                    val showTag = p.isTalking || abs(((sweepDeg - pa + 540f) % 360f) - 180f) < 40f
+                    // 节点名标签(仅说话中常显,其余扫过时显示)—— 屏幕角比较,航向旋转时不偏移
+                    val paScreen = ((pa - heading - 90f) % 360f + 360f) % 360f
+                    val showTag = p.isTalking || abs(((sweepDeg - paScreen + 540f) % 360f) - 180f) < 40f
                     if (showTag) {
                         val tag = cachedMeasure(
                             "peer",
@@ -3353,7 +3402,8 @@ private fun RadarScope(
                 drawText(satTag, topLeft = Offset(8.dp.toPx(), 20.dp.toPx()))
             }
 
-            // ── 中心原点（呼吸） ──
+            // ── 中心原点:微光环 + 呼吸光点 ──
+            drawCircle(g.copy(alpha = 0.25f), 5.dp.toPx(), Offset(cx, cy))
             drawCircle(g.copy(alpha = 0.45f + 0.35f * sin(sweepDeg * 0.3f)), 2.dp.toPx(), Offset(cx, cy))
 
             // ── 底部 CRT 状态带(盘面下方实测预留区,两行,绝不裁切) ──

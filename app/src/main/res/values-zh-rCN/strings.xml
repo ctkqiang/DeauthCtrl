@@ -57,6 +57,9 @@
     <string name="main_tel_mem">内存</string>
     <string name="main_tel_iface">网卡</string>
     <string name="main_home_glitch">全息战术终端</string>
+    <string name="main_home_operator_prefix">操作员: </string>
+    <string name="main_home_holo_terminal">全息终端</string>
+    <string name="main_home_encryption">加密信道: AES-256</string>
     <string name="main_home_operator_line">操作员: %1$s · %2$s · 全息终端 · 加密信道: AES-256</string>
     <string name="main_running_header">执行中 · %1$d 项任务</string>
     <string name="main_footer_red_hacker">中国红客</string>
@@ -278,4 +281,22 @@
     <!-- ─── 预览降级提示 ─── -->
     <string name="preview_needs_services">%1$s 需要系统服务</string>
     <string name="preview_switch_to_device">请切换到真机预览（Preview on device）\n即可查看完整界面</string>
+    <string name="home_dns_name">DNS 工坊</string>
+    <string name="home_dns_desc">手写报文查询 A/AAAA/MX/TXT/NS/SOA/PTR</string>
+    <string name="home_mdns_name">mDNS 发现</string>
+    <string name="home_mdns_desc">浏览局域网 Bonjour 服务</string>
+    <string name="home_tlscert_name">TLS 证书检查</string>
+    <string name="home_tlscert_desc">证书链 · 指纹 · 有效期体检</string>
+    <string name="home_whois_name">Whois 查询</string>
+    <string name="home_whois_desc">TCP 43 直查注册局数据</string>
+    <string name="home_hash_name">哈希工坊</string>
+    <string name="home_hash_desc">文本与文件的 SHA-256 · SHA-1 · MD5</string>
+    <string name="home_qr_name">二维码工坊</string>
+    <string name="home_qr_desc">文本 · URL · WiFi · 名片二维码</string>
+    <string name="home_keygen_name">密码生成器</string>
+    <string name="home_keygen_desc">SecureRandom 高熵密码</string>
+    <string name="home_level_name">全息水平仪</string>
+    <string name="home_level_desc">重力传感气泡水平仪</string>
+    <string name="home_ai_name">离线 AI 终端</string>
+    <string name="home_ai_desc">本地 Gemma3-1B 大模型 · 完全离线对话</string>
 </resources>

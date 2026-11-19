@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import xin.ctkqiang.deauthctrl.ui.theme.HudThemeState
+import xin.ctkqiang.deauthctrl.ui.theme.LauncherIcon
 import xin.ctkqiang.deauthctrl.ui.theme.TEAM_THEMES
 
 /** 操作员偏好键 —— 与免责声明共用 deauthctrl_prefs 文件 */
@@ -48,11 +49,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         prefs.edit().putString(KEY_OPERATOR_NAME, name).apply()
     }
 
-    /** 切换队伍 —— 写入偏好并立即应用全应用色板 */
+    /** 切换队伍 —— 写入偏好、应用全应用色板,并同步桌面图标变体 */
     fun setTeam(id: String) {
         _teamId.value = id
         prefs.edit().putString(KEY_TEAM_ID, id).apply()
-        HudThemeState.applyTeam(id)
+        val palette = HudThemeState.applyTeam(id)
+        LauncherIcon.apply(getApplication(), palette)
     }
 
     /** 全局触觉主开关 */

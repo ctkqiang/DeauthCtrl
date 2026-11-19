@@ -7,3 +7,5 @@
 #   但为稳定起见整体保留两个库包，与上游库自身不混淆的发布形态一致。
 -keep class com.termux.terminal.** { *; }
 -keep class com.termux.view.** { *; }
+# 离线 AI 终端 —— LiteRT-LM JNI 反射入口
+-keep class com.google.ai.edge.litertlm.** { *; }

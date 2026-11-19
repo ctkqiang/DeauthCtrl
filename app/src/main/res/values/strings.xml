@@ -6,7 +6,7 @@
   技术缩写(BSSID/RSSI/SNR/TAC/LAC/PCI/PSC/协议名/单位)不做翻译。
 -->
 <resources>
-    <string name="app_name">Nezha CyberSecurity Terminal</string>
+    <string name="app_name">Nezha Cyber Terminal</string>
     <string name="ble_tab">BLE Attack</string>
     <string name="wifi_tab">Wi-Fi Attack</string>
     <string name="hce_service_desc">DeauthCtrl tactical card emulation (authorized security research)</string>
@@ -39,7 +39,7 @@
     <string name="settings_sysinfo_section">System Info</string>
     <string name="settings_info_author">Author</string>
     <string name="settings_info_codename">Codename</string>
-    <string name="settings_info_codename_value">Nezha CyberSecurity</string>
+    <string name="settings_info_codename_value">Nezha Cyber</string>
     <string name="settings_info_email">Email</string>
     <string name="settings_info_repo">Repository</string>
     <string name="settings_info_arch">Architecture</string>
@@ -58,6 +58,9 @@
     <string name="main_tel_mem">MEM</string>
     <string name="main_tel_iface">IFACE</string>
     <string name="main_home_glitch">HOLOGRAPHIC TACTICAL TERMINAL</string>
+    <string name="main_home_operator_prefix">OPERATOR: </string>
+    <string name="main_home_holo_terminal">HOLO TERMINAL</string>
+    <string name="main_home_encryption">ENCRYPTION: AES-256</string>
     <string name="main_home_operator_line">OPERATOR: %1$s · %2$s · HOLO TERMINAL · ENCRYPTION: AES-256</string>
     <string name="main_running_header">RUNNING · %1$d ACTIVE</string>
     <string name="main_footer_red_hacker">China Red Hacker</string>
@@ -213,7 +216,7 @@
     <string name="boot_check_storage">RESERVE STORAGE</string>
     <string name="boot_check_free">%1$s FREE</string>
     <string name="boot_preview_mode">PREVIEW MODE</string>
-    <string name="boot_title">Nezha CyberSecurity Terminal · Holo Tactical System</string>
+    <string name="boot_title">Nezha Cyber Terminal · Holo Tactical System</string>
     <string name="boot_auth_line">TACTICAL BOOT SEQUENCE // AUTH: AUTHORIZED SECURITY RESEARCH</string>
     <string name="boot_deploy_warn">&gt; DEPLOY WARNING — %1$d abnormal, %2$d warning</string>
     <string name="boot_deploy_ready">&gt; DEPLOY READY — %1$d warning</string>
@@ -267,7 +270,7 @@
     <string name="perm_btn_grant">[ GRANT PERMISSIONS ]</string>
     <string name="perm_btn_settings">[ OPEN SYSTEM SETTINGS ]</string>
     <string name="perm_btn_skip">[ SKIP — BLUETOOTH &amp; WIFI FEATURES WILL BE UNAVAILABLE ]</string>
-    <string name="perm_footer">Nezha CyberSecurity Terminal · For authorized security research only</string>
+    <string name="perm_footer">Nezha Cyber Terminal · For authorized security research only</string>
 
     <!-- ─── 共享组件 ─── -->
     <string name="common_back">‹ Back</string>
@@ -279,4 +282,22 @@
     <!-- ─── 预览降级提示 ─── -->
     <string name="preview_needs_services">%1$s needs system services</string>
     <string name="preview_switch_to_device">Switch to device preview (Preview on device)\nto see the full UI</string>
+    <string name="home_dns_name">DNS Lab</string>
+    <string name="home_dns_desc">Hand-built A/AAAA/MX/TXT/NS/SOA/PTR queries</string>
+    <string name="home_mdns_name">mDNS Discovery</string>
+    <string name="home_mdns_desc">Browse Bonjour services on the LAN</string>
+    <string name="home_tlscert_name">TLS Inspector</string>
+    <string name="home_tlscert_desc">Certificate chain · fingerprint · validity</string>
+    <string name="home_whois_name">Whois Lookup</string>
+    <string name="home_whois_desc">Registry data over TCP 43</string>
+    <string name="home_hash_name">Hash Lab</string>
+    <string name="home_hash_desc">SHA-256 · SHA-1 · MD5 for text and files</string>
+    <string name="home_qr_name">QR Workshop</string>
+    <string name="home_qr_desc">Text · URL · WiFi · vCard QR codes</string>
+    <string name="home_keygen_name">Key Generator</string>
+    <string name="home_keygen_desc">High-entropy passwords via SecureRandom</string>
+    <string name="home_level_name">Holo Level</string>
+    <string name="home_level_desc">Gravity-sensor spirit level</string>
+    <string name="home_ai_name">Offline AI Terminal</string>
+    <string name="home_ai_desc">On-device Gemma3-1B · private offline chat</string>
 </resources>

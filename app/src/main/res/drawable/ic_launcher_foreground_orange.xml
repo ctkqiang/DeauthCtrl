@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DeauthCtrl 应用图标变体 · 全息菱形核心
+  由 tools 生成:主色 #FF9100,扫描弧 #FFC273,背景 #0E0805
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#0B1522"
+        android:pathData="M54,24 L84,54 L54,84 L24,54 Z" />
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF9100"
+        android:strokeWidth="3"
+        android:pathData="M54,24 L84,54 L54,84 L24,54 Z" />
+
+    <path
+        android:fillColor="#FF9100"
+        android:pathData="M54,37 L71,54 L54,71 L37,54 Z" />
+
+    <path
+        android:fillColor="#0E0805"
+        android:pathData="M54,46 L62,54 L54,62 L46,54 Z" />
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFC273"
+        android:strokeWidth="2.5"
+        android:pathData="M38,38 A22.6,22.6 0 0 1 54,31" />
+
+    <path
+        android:fillColor="#E8F4FF"
+        android:pathData="M54,29 a2,2 0 1 1 -0.01,0 Z" />
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF9100"
+        android:strokeWidth="2.5"
+        android:pathData="M44,75 L64,75" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF9100"
+        android:strokeWidth="1.5"
+        android:pathData="M49,81 L59,81" />
+</vector>

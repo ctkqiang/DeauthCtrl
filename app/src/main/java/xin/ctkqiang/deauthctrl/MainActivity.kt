@@ -22,6 +22,7 @@ import xin.ctkqiang.deauthctrl.ui.screens.MainScreen
 import xin.ctkqiang.deauthctrl.ui.screens.OperatorPromptScreen
 import xin.ctkqiang.deauthctrl.ui.theme.DeauthCtrlTheme
 import xin.ctkqiang.deauthctrl.ui.theme.HudThemeState
+import xin.ctkqiang.deauthctrl.ui.theme.LauncherIcon
 import xin.ctkqiang.deauthctrl.viewmodel.ArpScanViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleScannerViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.BleSpamViewModel
@@ -109,6 +110,8 @@ class MainActivity : ComponentActivity() {
         // 先写入全局色板，再进入 setContent，首帧即是用户所选配色。
         val prefs = getSharedPreferences("deauthctrl_prefs", MODE_PRIVATE)
         HudThemeState.applyTeam(prefs.getString(KEY_TEAM_ID, "") ?: "")
+        // 桌面图标同步换色:按队伍主色启用对应图标变体 alias
+        LauncherIcon.apply(this, HudThemeState.current)
         HudThemeState.hapticsEnabled = prefs.getBoolean(KEY_HAPTICS_ENABLED, true)
         HudThemeState.radarAlertEnabled = prefs.getBoolean(KEY_RADAR_ALERT_ENABLED, true)
 

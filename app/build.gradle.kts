@@ -104,6 +104,9 @@ dependencies {
     // SSH 客户端 —— JSch(mwiede 维护分支,密码/密钥认证 + pty 通道)
     implementation("com.github.mwiede:jsch:0.2.20")
 
+    // 离线 AI 终端 —— LiteRT-LM 本地大模型运行时(Gemma3-1B int4,推理 100% 离线)
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.11.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
