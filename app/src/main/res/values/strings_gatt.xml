@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gatt_title">BLE GATT Workbench</string>
+    <string name="gatt_panel_connect">Connection · GATT CLIENT</string>
+    <string name="gatt_target_mac_label">Target MAC address</string>
+    <string name="gatt_target_mac_placeholder">AA:BB:CC:DD:EE:FF</string>
+    <string name="gatt_btn_connect">CONNECT</string>
+    <string name="gatt_btn_disconnect">DISCONNECT</string>
+    <string name="gatt_stat_status">Status</string>
+    <string name="gatt_stat_device_name">Device name</string>
+    <string name="gatt_stat_device_address">Device address</string>
+    <string name="gatt_stat_services_chars">Services / chars</string>
+    <string name="gatt_mac_hint">Find the MAC on the \'BLE Scan\' page; the target must be advertising / connectable — the system will not probe a nonexistent or unreachable address for us.</string>
+    <string name="gatt_panel_services">GATT Services · SERVICES</string>
+    <string name="gatt_empty_disconnected">Not connected — enter the target MAC and tap \'Connect\'; the target must be advertising / connectable</string>
+    <string name="gatt_empty_connecting">Connecting — wait up to 10 seconds</string>
+    <string name="gatt_empty_connected">Connected — preparing service discovery</string>
+    <string name="gatt_empty_discovering">Discovering services — wait up to 10 seconds</string>
+    <string name="gatt_empty_ready">Device exposed no accessible GATT services — try pairing in system Bluetooth and reconnect</string>
+    <string name="gatt_empty_error">Service table unavailable — resolve the alert above and reconnect</string>
+    <string name="gatt_property_legend">Property acronyms: R read · W write with response · WNR write without response · N notify · I indicate · BC broadcast · SW signed write · EP extended properties.</string>
+    <string name="gatt_panel_log">Notification Log · GATT LOG</string>
+    <string name="gatt_log_header">Event stream (newest first)</string>
+    <string name="gatt_log_empty">No log yet — connect, read, write and notify events will be recorded here</string>
+    <string name="gatt_log_truncated">Showing the latest 80 of %1$d entries</string>
+    <string name="gatt_panel_boundaries">Operational Boundaries · NOTES</string>
+    <string name="gatt_boundary_broadcast">The target must be advertising / connectable; devices already held by another host usually reject a new GATT connection.</string>
+    <string name="gatt_boundary_pairing">Some devices require pairing in system Bluetooth before encrypted characteristics can be read; without pairing they may return insufficient authentication (status=5).</string>
+    <string name="gatt_boundary_write">Writes really change device state and may actuate hardware; this page offers no undo — confirm the characteristic semantics before writing.</string>
+    <string name="gatt_boundary_queue">Read / write / subscribe share one GATT request queue — only one request at a time; a new request is rejected while the previous one is pending.</string>
+    <string name="gatt_boundary_raw">Characteristic values are raw bytes from system callbacks: never read shows \"--\", an empty read shows \"(empty)\", and text is shown only when decodable as UTF-8.</string>
+    <string name="gatt_boundary_uuid">No semantic guessing beyond standard UUIDs: hex in the log is raw device data and does not imply a parsed business meaning.</string>
+    <string name="gatt_boundary_permission">Android 12+ connections need the Nearby Devices permission (BLUETOOTH_CONNECT); the app permission gateway handles the request.</string>
+    <string name="gatt_service_char_count">%1$d chars</string>
+    <string name="gatt_char_props">Props %1$s</string>
+    <string name="gatt_notify_on">Notify on</string>
+    <string name="gatt_notify_off">Notify off</string>
+    <string name="gatt_value_empty">(empty)</string>
+    <string name="gatt_value_hex">Value %1$s</string>
+    <string name="gatt_value_text">Text %1$s</string>
+    <string name="gatt_value_descriptors">Descriptors %1$s</string>
+    <string name="gatt_btn_read">READ</string>
+    <string name="gatt_btn_subscribe">SUBSCRIBE</string>
+    <string name="gatt_btn_unsubscribe">UNSUBSCRIBE</string>
+    <string name="gatt_write_label">Write (HEX)</string>
+    <string name="gatt_write_placeholder">e.g. 01 A0 FF</string>
+    <string name="gatt_btn_write">WRITE</string>
+    <string name="gatt_write_warning">[!] Writes really change target state with no undo; confirm the characteristic semantics before writing.</string>
+</resources>

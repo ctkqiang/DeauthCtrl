@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_ble_tx_low">Low ≈ -15 dBm (relative, not max power)</string>
+    <string name="mgr_ble_tx_medium">Medium ≈ -7 dBm (relative, not max power)</string>
+    <string name="mgr_ble_tx_high">High ≈ +1 dBm (relative, not max power)</string>
+    <string name="mgr_ble_cycle_sequence">SEQUENTIAL</string>
+    <string name="mgr_ble_cycle_random">RANDOM</string>
+    <string name="mgr_ble_cycle_single">SINGLE</string>
+    <string name="mgr_ble_err_permissions">Missing nearby-device permissions: %1$s. Grant them in the permission gateway first.</string>
+    <string name="mgr_ble_err_no_adapter">No Bluetooth adapter on this device</string>
+    <string name="mgr_ble_err_read_state">Failed to read Bluetooth state: %1$s</string>
+    <string name="mgr_ble_err_bt_off">Bluetooth is off; turn it on first</string>
+    <string name="mgr_ble_err_no_advertiser">This controller does not offer BLE advertising (BluetoothLeAdvertiser=null)</string>
+    <string name="mgr_ble_err_data_too_large">Advertising data too large: %1$d &gt; %2$d bytes (profile=%3$s)</string>
+    <string name="mgr_ble_err_slots_exhausted">Bluetooth advertising slots exhausted (code 2 repeated %1$d times): turn Bluetooth off/on and retry</string>
+    <string name="mgr_ble_adv_data_too_large">Advertising data too large (code=1)</string>
+    <string name="mgr_ble_adv_too_many">Advertising slots occupied (code=2): backing off and retrying</string>
+    <string name="mgr_ble_adv_already_started">Advertising session already started (code=3)</string>
+    <string name="mgr_ble_adv_internal">Controller internal error (code=4)</string>
+    <string name="mgr_ble_adv_unsupported">Controller does not support BLE advertising (code=5)</string>
+    <string name="mgr_ble_adv_no_permission">Missing BLUETOOTH_ADVERTISE permission</string>
+    <string name="mgr_ble_adv_unavailable">BLE advertiser unavailable</string>
+    <string name="mgr_ble_adv_exception">startAdvertising threw an exception</string>
+    <string name="mgr_ble_adv_failed_code">Advertising start failed (code=%1$d)</string>
+    <string name="mgr_ble_high_fail_rate">[!] High failure rate %1$d%% (last %2$d cycles) — try reducing interval</string>
+</resources>

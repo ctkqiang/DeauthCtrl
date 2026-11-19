@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PacketParser — English default strings. -->
+<resources>
+    <string name="mgr_pktpar_ipv4_protocol">IPv4 protocol %1$d</string>
+    <string name="mgr_pktpar_dns_query">DNS query</string>
+    <string name="mgr_pktpar_dns_response">DNS response</string>
+    <string name="mgr_pktpar_tls_handshake">TLS handshake</string>
+</resources>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mains_title">WIRING DETECTOR · MAINS FINDER</string>
+    <string name="mains_panel_control">DETECTOR CONTROL</string>
+    <string name="mains_label_status">STATUS</string>
+    <string name="mains_status_running">DETECTING</string>
+    <string name="mains_status_stopped">STOPPED</string>
+    <string name="mains_label_mains_mode">MAINS MODE</string>
+    <string name="mains_mains_mode_value">%1$d Hz · harmonic %2$d Hz</string>
+    <string name="mains_label_capture_params">CAPTURE PARAMS</string>
+    <string name="mains_capture_params_value">%1$d Hz · %2$d samples/frame</string>
+    <string name="mains_chip_50hz">50 Hz MAINS</string>
+    <string name="mains_chip_60hz">60 Hz MAINS</string>
+    <string name="mains_mode_note">Switching mode clears the baseline and recalibrates for 2 s. China / Europe use 50 Hz; North America / parts of Japan use 60 Hz.</string>
+    <string name="mains_start">START DETECTION</string>
+    <string name="mains_stop">STOP DETECTION</string>
+    <string name="mains_calibrating">Calibrating baseline — hold the phone still for 2 s and keep it away from the wall while sampling the current ambient background.</string>
+    <string name="mains_panel_live_level">LIVE LEVEL</string>
+    <string name="mains_label_strength">MAINS SIGNATURE STRENGTH</string>
+    <string name="mains_label_baseline">AMBIENT BASELINE</string>
+    <string name="mains_baseline_calibrating">CALIBRATING</string>
+    <string name="mains_label_frame_rms">FRAME RMS</string>
+    <string name="mains_label_fundamental">%1$d Hz FUNDAMENTAL</string>
+    <string name="mains_label_harmonic">%1$d Hz HARMONIC</string>
+    <string name="mains_strength_note">Signature strength = combined fundamental and harmonic amplitude / frame RMS; the level bar is 20·log10-compressed to 0-100 so weak components stay visible.</string>
+    <string name="mains_alert_live_wire">[!] Strong mains field detected — a live circuit may run behind this wall (detects loaded circuits only)</string>
+    <string name="mains_panel_history">HISTORY · LAST %1$d FRAMES</string>
+    <string name="mains_empty_history">Collecting samples — each frame level will be plotted here after start</string>
+    <string name="mains_current_level">CURRENT %1$d</string>
+    <string name="mains_panel_how_to">HOW TO</string>
+    <string name="mains_bullet_baseline">After start, stay away from the wall for 2 s until baseline calibration finishes; the baseline represents the current ambient background.</string>
+    <string name="mains_bullet_move">Hold the back of the phone / microphone about 2-5 cm from the wall and move slowly along it while watching the level and sparkline.</string>
+    <string name="mains_bullet_load">The circuit under test must carry a load: switch on a light, charger or appliance. An unloaded circuit has no current and produces no measurable mains signature.</string>
+    <string name="mains_bullet_crosscheck">After finding a peak, cross-check at that point in both directions; the line connecting the peaks tracks the wiring path more closely.</string>
+    <string name="mains_bullet_grip">Phone cases, hands and metal objects alter the acoustic and electric field distribution; keep the same grip while measuring.</string>
+    <string name="mains_panel_limits">PRINCIPLES &amp; LIMITS</string>
+    <string name="mains_limit_detects">Detection uses the 50/60 Hz fundamental and harmonics picked up by the microphone (acoustic hum + electromagnetic pickup by the phone\'s analog front end). This is electromagnetic / acoustic signature detection, not X-ray vision — it cannot show the wiring inside a wall.</string>
+    <string name="mains_limit_mic">Phone microphones generally respond poorly to 50 Hz, and system noise reduction / auto gain may weaken this component further; sensitivity varies widely across models. Readings are only suitable for relative comparison on the same device.</string>
+    <string name="mains_limit_no_load">A circuit with no load (idle, switch off, breaker open) produces almost no measurable mains field — failing to detect one does not mean there is no wiring in the wall.</string>
+    <string name="mains_limit_raw">All readings come from live AudioRecord sampling and local Goertzel computation, with no simulation or interpolation; when unavailable, the display shows \"--\".</string>
+</resources>

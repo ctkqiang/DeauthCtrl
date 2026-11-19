@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信道巡检管理器 —— 英文默认资源 -->
+<resources>
+    <!-- ─── 安全类型枚举 ─── -->
+    <string name="mgr_chsurvey_security_open">OPEN</string>
+    <string name="mgr_chsurvey_security_wep">WEP</string>
+    <string name="mgr_chsurvey_security_wpa2">WPA2</string>
+    <string name="mgr_chsurvey_security_wpa3">WPA3</string>
+    <string name="mgr_chsurvey_security_other">OTHER</string>
+
+    <!-- ─── 拥堵等级枚举 ─── -->
+    <string name="mgr_chsurvey_congestion_idle">IDLE</string>
+    <string name="mgr_chsurvey_congestion_crowded">CROWDED</string>
+    <string name="mgr_chsurvey_congestion_severe">SEVERE</string>
+
+    <!-- ─── 状态与错误 ─── -->
+    <string name="mgr_chsurvey_error_permission">Missing Location permission — Android requires precise location (ACCESS_FINE_LOCATION) to read Wi-Fi scan results; grant it and retry</string>
+    <string name="mgr_chsurvey_error_location_off">System location is off — on Android 9+ scan results are empty with location off; enable location and retry</string>
+    <string name="mgr_chsurvey_error_wifi_off">Wi-Fi is off — turn on Wi-Fi before scanning nearby channels</string>
+    <string name="mgr_chsurvey_error_no_service">Device does not provide Wi-Fi service — cannot read scan results</string>
+    <string name="mgr_chsurvey_scan_start_failed">Failed to start scan: %1$s</string>
+    <string name="mgr_chsurvey_read_results_failed">Failed to read scan results: %1$s</string>
+    <string name="mgr_chsurvey_no_results">Scan produced no results</string>
+    <string name="mgr_chsurvey_rejected_unknown">Scan rejected by the system: no missing permission identified (possibly a vendor ROM policy restriction)</string>
+    <string name="mgr_chsurvey_rejected_missing">Scan rejected: missing %1$s</string>
+</resources>

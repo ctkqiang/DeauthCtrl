@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="netmap_title">Network Mapping</string>
+    <string name="netmap_status_scanning">TARGETS %1$d · SCANNING</string>
+    <string name="netmap_status_stopped">TARGETS %1$d · STOPPED</string>
+    <string name="netmap_locating">LOCATING…</string>
+    <string name="netmap_gps_online">GPS ONLINE</string>
+    <string name="netmap_gps_offline">GPS OFFLINE</string>
+    <string name="netmap_issue_location">Location off — cannot estimate device positions</string>
+    <string name="netmap_issue_wifi">WiFi off — cannot scan wireless networks</string>
+    <string name="netmap_issue_bt">Bluetooth off — cannot scan Bluetooth devices</string>
+    <string name="netmap_open_settings">OPEN SETTINGS ▸</string>
+    <string name="netmap_btn_stop_scan">■ STOP SCAN</string>
+    <string name="netmap_btn_start_scan">▶ START SCAN</string>
+    <string name="netmap_osm_note">OSM public tiles · no API key</string>
+    <string name="netmap_btn_locate">◎ LOCATE ME</string>
+    <string name="netmap_estimate_note">Position is a GPS+RSSI estimate (no AoA hardware), for situational awareness only</string>
+    <string name="netmap_open_dossier">OPEN FULL DOSSIER ▸</string>
+    <string name="netmap_marker_self">SELF</string>
+</resources>

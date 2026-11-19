@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hardware self-check manager — English default resources -->
+<resources>
+    <!-- Shared values -->
+    <string name="mgr_selfchk_unavailable">Unavailable</string>
+    <string name="mgr_selfchk_unknown">Unknown</string>
+    <string name="mgr_selfchk_unknown_code">unknown(%1$d)</string>
+
+    <!-- Alerts -->
+    <string name="mgr_selfchk_alert_thermal">Thermal zone %1$s at %2$s °C, above 45 °C</string>
+    <string name="mgr_selfchk_alert_battery_health">Battery health alert: %1$s</string>
+
+    <!-- Battery health names -->
+    <string name="mgr_selfchk_health_good">Good</string>
+    <string name="mgr_selfchk_health_overheat">Overheat</string>
+    <string name="mgr_selfchk_health_dead">Dead</string>
+    <string name="mgr_selfchk_health_over_voltage">Over voltage</string>
+    <string name="mgr_selfchk_health_cold">Cold</string>
+    <string name="mgr_selfchk_health_unspecified_failure">Failure (unspecified)</string>
+
+    <!-- Battery status names -->
+    <string name="mgr_selfchk_status_charging">Charging</string>
+    <string name="mgr_selfchk_status_discharging">Discharging</string>
+    <string name="mgr_selfchk_status_full">Full</string>
+    <string name="mgr_selfchk_status_not_charging">Not charging</string>
+
+    <!-- Charge direction names -->
+    <string name="mgr_selfchk_dir_charging">Charging</string>
+    <string name="mgr_selfchk_dir_full_external">Full (external power)</string>
+    <string name="mgr_selfchk_dir_discharging">Discharging</string>
+    <string name="mgr_selfchk_dir_not_charging">Not charging</string>
+    <string name="mgr_selfchk_dir_charging_by_current">Charging (by current sign)</string>
+    <string name="mgr_selfchk_dir_discharging_by_current">Discharging (by current sign)</string>
+    <string name="mgr_selfchk_dir_no_net_current">No net current</string>
+
+    <!-- Power source tokens -->
+    <string name="mgr_selfchk_plug_wireless">Wireless charging</string>
+    <string name="mgr_selfchk_plug_dock">Dock</string>
+    <string name="mgr_selfchk_plug_unplugged">Not plugged in</string>
+
+    <!-- Sensor fallbacks -->
+    <string name="mgr_selfchk_sensor_unnamed">Unnamed sensor</string>
+    <string name="mgr_selfchk_vendor_unknown">Unknown vendor</string>
+    <string name="mgr_selfchk_unknown_type">Type %1$d</string>
+
+    <!-- Sensor type names -->
+    <string name="mgr_selfchk_sensor_accelerometer">Accelerometer</string>
+    <string name="mgr_selfchk_sensor_gyroscope">Gyroscope</string>
+    <string name="mgr_selfchk_sensor_magnetic_field">Magnetometer</string>
+    <string name="mgr_selfchk_sensor_light">Ambient light</string>
+    <string name="mgr_selfchk_sensor_proximity">Proximity</string>
+    <string name="mgr_selfchk_sensor_pressure">Barometer</string>
+    <string name="mgr_selfchk_sensor_ambient_temperature">Ambient temperature</string>
+    <string name="mgr_selfchk_sensor_relative_humidity">Relative humidity</string>
+    <string name="mgr_selfchk_sensor_gravity">Gravity</string>
+    <string name="mgr_selfchk_sensor_linear_acceleration">Linear acceleration</string>
+    <string name="mgr_selfchk_sensor_rotation_vector">Rotation vector</string>
+    <string name="mgr_selfchk_sensor_game_rotation_vector">Game rotation vector</string>
+    <string name="mgr_selfchk_sensor_geomagnetic_rotation_vector">Geomagnetic rotation vector</string>
+    <string name="mgr_selfchk_sensor_significant_motion">Significant motion</string>
+    <string name="mgr_selfchk_sensor_step_counter">Step counter</string>
+    <string name="mgr_selfchk_sensor_step_detector">Step detector</string>
+    <string name="mgr_selfchk_sensor_heart_rate">Heart rate</string>
+    <string name="mgr_selfchk_sensor_heart_beat">Heartbeat</string>
+    <string name="mgr_selfchk_sensor_pose_6dof">6DoF pose</string>
+    <string name="mgr_selfchk_sensor_stationary_detect">Stationary detect</string>
+    <string name="mgr_selfchk_sensor_motion_detect">Motion detect</string>
+    <string name="mgr_selfchk_sensor_low_latency_offbody_detect">Off-body detect</string>
+    <string name="mgr_selfchk_sensor_accelerometer_uncalibrated">Uncalibrated accelerometer</string>
+    <string name="mgr_selfchk_sensor_gyroscope_uncalibrated">Uncalibrated gyroscope</string>
+    <string name="mgr_selfchk_sensor_magnetic_field_uncalibrated">Uncalibrated magnetometer</string>
+    <string name="mgr_selfchk_sensor_heading">Heading</string>
+    <string name="mgr_selfchk_sensor_hinge_angle">Hinge angle</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TacticalMapManager — English default strings. -->
+<resources>
+    <string name="mgr_tacmap_permission_denied">Location permission not granted</string>
+    <string name="mgr_tacmap_gps_register_failed">GPS location registration failed: %1$s</string>
+    <string name="mgr_tacmap_network_register_failed">Network location registration failed: %1$s</string>
+    <string name="mgr_tacmap_coarse_only">Coarse location only — using network location, lower accuracy</string>
+    <string name="mgr_tacmap_marker_fallback">Marker %1$02d</string>
+    <string name="mgr_tacmap_self_label">SELF</string>
+</resources>

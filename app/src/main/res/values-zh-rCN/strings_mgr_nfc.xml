@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NfcManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_nfc_disabled">NFC 未开启 —— 请在系统设置中启用</string>
+    <string name="mgr_nfc_write_ready">已就绪 —— 将标签贴近手机完成写入</string>
+    <string name="mgr_nfc_write_success">写入成功: %1$s</string>
+    <string name="mgr_nfc_uid_read">已读取 UID %1$s</string>
+</resources>

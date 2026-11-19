@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AdStructureDecoder.kt — 简体中文资源。
+  与 values/strings_mgr_ads.xml 键集完全一致,仅翻译用户可见文案。
+  原文措辞与标点保持逐字不变。
+-->
+<resources>
+
+    <!-- ─── 解析错误 / 状态 ─── -->
+    <string name="mgr_ads_field_length_error">长度字段异常</string>
+    <string name="mgr_ads_err_length_no_type">[!] 偏移 %1$d 处声明长度 %2$dB，但其后没有 AD 类型字节，数据在此截断</string>
+    <string name="mgr_ads_truncated">%1$s；[!] 声明数据 %2$dB，实际仅剩 %3$dB，已截断</string>
+    <string name="mgr_ads_known_unexpanded">该类型已收录但本页未展开字段结构 —— 原始值 %1$s</string>
+    <string name="mgr_ads_unknown_type">未知 AD 类型 0x%1$02X —— 原始值 %2$s</string>
+    <string name="mgr_ads_empty">(空)</string>
+    <string name="mgr_ads_field_unknown_type">未知 AD 类型</string>
+    <string name="mgr_ads_none">无</string>
+
+    <!-- ─── Flags ─── -->
+    <string name="mgr_ads_err_flags_missing">标志字节缺失</string>
+    <string name="mgr_ads_flag_limited">LE 限定发现模式</string>
+    <string name="mgr_ads_flag_general">LE 通用发现模式</string>
+    <string name="mgr_ads_flag_no_br_edr">BR/EDR 不支持（LE 专用）</string>
+    <string name="mgr_ads_flag_br_edr">BR/EDR 可用</string>
+    <string name="mgr_ads_flag_dual_controller">LE 与 BR/EDR 同时支持（控制器）</string>
+    <string name="mgr_ads_flag_dual_host">LE 与 BR/EDR 同时支持（主机）</string>
+    <string name="mgr_ads_reserved_bits">；[!] 保留位 0x%1$02X 非零</string>
+    <string name="mgr_ads_flags_line">0x%1$02X：%2$s%3$s</string>
+
+    <!-- ─── UUID 列表 ─── -->
+    <string name="mgr_ads_err_uuid_empty">UUID 列表为空</string>
+    <string name="mgr_ads_err_len_not2">数据长度 %1$dB 不是 2 的整数倍，末尾 %2$dB 无法解析</string>
+    <string name="mgr_ads_err_len_not4">数据长度 %1$dB 不是 4 的整数倍，末尾 %2$dB 无法解析</string>
+    <string name="mgr_ads_err_len_not16">数据长度 %1$dB 不是 16 的整数倍，末尾 %2$dB 无法解析</string>
+    <string name="mgr_ads_paren">（%1$s）</string>
+    <string name="mgr_ads_alias16">（16-bit 别名：%1$s）</string>
+    <string name="mgr_ads_uuid128_alias_named">%1$s（16-bit 别名 0x%2$s：%3$s）</string>
+    <string name="mgr_ads_uuid128_alias">%1$s（16-bit 别名 0x%2$s）</string>
+
+    <!-- ─── 本地名 / 发射功率 ─── -->
+    <string name="mgr_ads_err_name_empty">名称为空</string>
+    <string name="mgr_ads_bad_utf8">；[!] 含 %1$d 个非 UTF-8 替换字符</string>
+    <string name="mgr_ads_local_name">\"%1$s\"（%2$dB UTF-8）%3$s</string>
+    <string name="mgr_ads_err_tx_power_missing">功率字节缺失</string>
+    <string name="mgr_ads_tx_power">%1$d dBm（有符号 8-bit）</string>
+
+    <!-- ─── Class of Device ─── -->
+    <string name="mgr_ads_err_cod_short">数据不足 3B（Class of Device 为 24-bit）</string>
+    <string name="mgr_ads_cod_service_limited">受限发现</string>
+    <string name="mgr_ads_cod_service_positioning">定位</string>
+    <string name="mgr_ads_cod_service_networking">网络</string>
+    <string name="mgr_ads_cod_service_rendering">渲染</string>
+    <string name="mgr_ads_cod_service_capturing">捕获</string>
+    <string name="mgr_ads_cod_service_object_transfer">对象传输</string>
+    <string name="mgr_ads_cod_service_audio">音频</string>
+    <string name="mgr_ads_cod_service_telephony">电话</string>
+    <string name="mgr_ads_cod_service_information">信息</string>
+    <string name="mgr_ads_err_cod_unknown">未收录设备类</string>
+    <string name="mgr_ads_cod_line">0x%1$06X：主要设备类 %2$s；服务类 %3$s</string>
+
+    <!-- ─── 连接间隔 / 外观 / 广播间隔 ─── -->
+    <string name="mgr_ads_err_conn_short">数据不足 4B（需要最小 / 最大连接间隔各 2B）</string>
+    <string name="mgr_ads_conn_interval">最小 %1$.2f ms（0x%2$04X） · 最大 %3$.2f ms（0x%4$04X） · 单位 1.25 ms</string>
+    <string name="mgr_ads_err_appearance_short">数据不足 2B（Appearance 为 16-bit）</string>
+    <string name="mgr_ads_appearance_unknown">0x%1$04X · 未收录外观码</string>
+    <string name="mgr_ads_err_adv_interval_short">数据不足 2B（Advertising Interval 为 16-bit）</string>
+    <string name="mgr_ads_adv_interval">0x%1$04X · %2$.2f ms（单位 0.625 ms）</string>
+
+    <!-- ─── LE 设备地址 / 角色 ─── -->
+    <string name="mgr_ads_err_le_addr_short">数据不足 6B（LE 设备地址为 6B）</string>
+    <string name="mgr_ads_addr_type_missing">地址类型缺失</string>
+    <string name="mgr_ads_addr_public">公共地址</string>
+    <string name="mgr_ads_addr_random">随机地址</string>
+    <string name="mgr_ads_addr_type_unknown">未知地址类型 %1$d</string>
+    <string name="mgr_ads_err_role_missing">角色字节缺失</string>
+    <string name="mgr_ads_role_peripheral_only">仅 Peripheral（从机）</string>
+    <string name="mgr_ads_role_central_only">仅 Central（主机）</string>
+    <string name="mgr_ads_role_prefer_peripheral">偏好 Peripheral</string>
+    <string name="mgr_ads_role_prefer_central">偏好 Central</string>
+    <string name="mgr_ads_role_unknown">未收录角色值 %1$d</string>
+
+    <!-- ─── 服务数据 / URI / 厂商数据 ─── -->
+    <string name="mgr_ads_err_svcdata16_short">数据不足 2B（缺少 16-bit 服务 UUID）</string>
+    <string name="mgr_ads_err_svcdata32_short">数据不足 4B（缺少 32-bit 服务 UUID）</string>
+    <string name="mgr_ads_err_svcdata128_short">数据不足 16B（缺少 128-bit 服务 UUID）</string>
+    <string name="mgr_ads_svcdata">UUID %1$s · 数据 %2$s%3$s</string>
+    <string name="mgr_ads_err_uri_empty">URI 为空</string>
+    <string name="mgr_ads_uri">\"%1$s\"（%2$dB UTF-8）</string>
+    <string name="mgr_ads_err_manufacturer_short">数据不足 2B（缺少公司 ID）</string>
+    <string name="mgr_ads_err_company_unknown">未收录公司 ID</string>
+    <string name="mgr_ads_manufacturer_line">公司 ID 0x%1$04X · %2$s · 数据 %3$s%4$s</string>
+    <string name="mgr_ads_text_suffix">文本 \"%1$s\"</string>
+
+    <!-- ─── 服务 UUID 名称 ─── -->
+    <string name="mgr_ads_svc_generic_access">Generic Access 通用访问</string>
+    <string name="mgr_ads_svc_generic_attribute">Generic Attribute 通用属性</string>
+    <string name="mgr_ads_svc_immediate_alert">Immediate Alert 即时告警</string>
+    <string name="mgr_ads_svc_link_loss">Link Loss 链路丢失</string>
+    <string name="mgr_ads_svc_tx_power">Tx Power 发射功率</string>
+    <string name="mgr_ads_svc_current_time">Current Time 当前时间</string>
+    <string name="mgr_ads_svc_glucose">Glucose 血糖</string>
+    <string name="mgr_ads_svc_health_thermometer">Health Thermometer 体温计</string>
+    <string name="mgr_ads_svc_device_information">Device Information 设备信息</string>
+    <string name="mgr_ads_svc_heart_rate">Heart Rate 心率</string>
+    <string name="mgr_ads_svc_battery">Battery 电池</string>
+    <string name="mgr_ads_svc_blood_pressure">Blood Pressure 血压</string>
+    <string name="mgr_ads_svc_alert_notification">Alert Notification 告警通知</string>
+    <string name="mgr_ads_svc_hid">HID 人机接口</string>
+    <string name="mgr_ads_svc_running_speed">Running Speed and Cadence 跑步速度与步频</string>
+    <string name="mgr_ads_svc_cycling_speed">Cycling Speed and Cadence 骑行速度与踏频</string>
+    <string name="mgr_ads_svc_cycling_power">Cycling Power 骑行功率</string>
+    <string name="mgr_ads_svc_location_navigation">Location and Navigation 定位与导航</string>
+    <string name="mgr_ads_svc_environmental_sensing">Environmental Sensing 环境传感</string>
+    <string name="mgr_ads_svc_fitness_machine">Fitness Machine 健身器械</string>
+    <string name="mgr_ads_svc_volume_control">Volume Control 音量控制</string>
+    <string name="mgr_ads_svc_coordinated_set">Coordinated Set Identification 协调集合标识</string>
+    <string name="mgr_ads_svc_media_control">Media Control 媒体控制</string>
+    <string name="mgr_ads_svc_vendor_ffe0">厂商自定义串口服务区（常见 FFE0）</string>
+
+    <!-- ─── Appearance 名称 ─── -->
+    <string name="mgr_ads_app_unknown">未知</string>
+    <string name="mgr_ads_app_phone">手机</string>
+    <string name="mgr_ads_app_computer">电脑</string>
+    <string name="mgr_ads_app_watch">手表</string>
+    <string name="mgr_ads_app_clock">时钟</string>
+    <string name="mgr_ads_app_display">显示器</string>
+    <string name="mgr_ads_app_remote">遥控器</string>
+    <string name="mgr_ads_app_eyewear">眼镜</string>
+    <string name="mgr_ads_app_tag">标签</string>
+    <string name="mgr_ads_app_keyring">钥匙扣</string>
+    <string name="mgr_ads_app_media_player">媒体播放器</string>
+    <string name="mgr_ads_app_barcode_scanner">条码扫描器</string>
+    <string name="mgr_ads_app_thermometer">温度计</string>
+    <string name="mgr_ads_app_heart_rate">心率传感器</string>
+    <string name="mgr_ads_app_blood_pressure">血压计</string>
+    <string name="mgr_ads_app_hid">HID 人机接口设备</string>
+    <string name="mgr_ads_app_glucose">血糖仪</string>
+    <string name="mgr_ads_app_running">跑步 / 步行传感器</string>
+    <string name="mgr_ads_app_cycling">骑行传感器</string>
+    <string name="mgr_ads_app_control">控制设备</string>
+    <string name="mgr_ads_app_network">网络设备</string>
+    <string name="mgr_ads_app_sensor">传感器</string>
+    <string name="mgr_ads_app_light_fixture">灯具</string>
+    <string name="mgr_ads_app_fan">风扇</string>
+    <string name="mgr_ads_app_hvac">HVAC 暖通设备</string>
+    <string name="mgr_ads_app_air_conditioning">空调</string>
+    <string name="mgr_ads_app_humidifier">加湿器</string>
+    <string name="mgr_ads_app_heater">加热器</string>
+    <string name="mgr_ads_app_access_control">门禁</string>
+    <string name="mgr_ads_app_motorized">电动设备</string>
+    <string name="mgr_ads_app_power">电源设备</string>
+    <string name="mgr_ads_app_light_source">光源</string>
+    <string name="mgr_ads_app_window_covering">窗帘</string>
+    <string name="mgr_ads_app_audio_sink">音频接收器</string>
+    <string name="mgr_ads_app_headset">耳机</string>
+    <string name="mgr_ads_app_speaker">扬声器</string>
+    <string name="mgr_ads_app_earbuds">耳麦</string>
+    <string name="mgr_ads_app_audio_source">音频源</string>
+    <string name="mgr_ads_app_vehicle">机动车</string>
+    <string name="mgr_ads_app_home_appliance">家用电器</string>
+    <string name="mgr_ads_app_wearable_audio">可穿戴音频设备</string>
+    <string name="mgr_ads_app_aircraft">飞行器</string>
+    <string name="mgr_ads_app_av_equipment">视听设备</string>
+    <string name="mgr_ads_app_gaming">游戏设备</string>
+    <string name="mgr_ads_app_signage">标牌</string>
+
+    <!-- ─── 主要设备类名称 ─── -->
+    <string name="mgr_ads_major_misc">杂项</string>
+    <string name="mgr_ads_major_computer">计算机</string>
+    <string name="mgr_ads_major_phone">手机</string>
+    <string name="mgr_ads_major_lan">局域网 / 网络接入点</string>
+    <string name="mgr_ads_major_av">音频 / 视频</string>
+    <string name="mgr_ads_major_peripheral">外设</string>
+    <string name="mgr_ads_major_imaging">成像</string>
+    <string name="mgr_ads_major_wearable">可穿戴</string>
+    <string name="mgr_ads_major_toy">玩具</string>
+    <string name="mgr_ads_major_health">健康</string>
+    <string name="mgr_ads_major_uncategorized">未分类</string>
+
+</resources>

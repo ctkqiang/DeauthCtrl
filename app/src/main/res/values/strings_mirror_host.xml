@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mirroring host service strings (prefix: mirror_host_). -->
+<resources>
+    <string name="mirror_host_notif_title">Screen mirroring running</string>
+    <string name="mirror_host_notif_text">Sharing the screen</string>
+    <string name="mirror_host_channel_name">Screen mirroring</string>
+</resources>

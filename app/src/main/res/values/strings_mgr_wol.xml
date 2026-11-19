@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WolManager — English default strings. -->
+<resources>
+    <string name="mgr_wol_invalid_mac">[!] Invalid MAC format — use aa:bb:cc:dd:ee:ff, aa-bb-cc-dd-ee-ff, or 12 hex digits</string>
+    <string name="mgr_wol_packet_failed">[!] Failed to build magic packet — MAC address cannot be parsed</string>
+    <string name="mgr_wol_send_failed">[!] Send failed — %1$s</string>
+    <string name="mgr_wol_all_unreachable">no broadcast address reachable</string>
+    <string name="mgr_wol_partial">[!] Partial send failure %1$d/%2$d: %3$s; %4$d succeeded. Port %5$s.</string>
+    <string name="mgr_wol_sent">Sent 102 B magic packet × %1$d to %2$s (%3$d broadcast addresses, port %4$s). UDP has no acknowledgment, so wake status cannot be confirmed.</string>
+    <string name="mgr_wol_failure_separator">;\u0020</string>
+</resources>

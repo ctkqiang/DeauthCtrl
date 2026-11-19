@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TacticalMapManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_tacmap_permission_denied">未授权定位权限</string>
+    <string name="mgr_tacmap_gps_register_failed">GPS 定位注册失败: %1$s</string>
+    <string name="mgr_tacmap_network_register_failed">网络定位注册失败: %1$s</string>
+    <string name="mgr_tacmap_coarse_only">仅授予粗略定位 —— 使用网络定位,精度较低</string>
+    <string name="mgr_tacmap_marker_fallback">标记 %1$02d</string>
+    <string name="mgr_tacmap_self_label">本机</string>
+</resources>

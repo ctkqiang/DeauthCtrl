@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ─── 震动监视 ─── -->
+    <string name="seismo_title">震动监视 · SEISMOGRAPH</string>
+    <string name="seismo_waveform_title">波形 · WAVEFORM</string>
+    <string name="seismo_full_scale">满幅 ±%1$.1f m/s²</string>
+    <string name="seismo_threshold_value">阈值 %1$.1f m/s²</string>
+    <string name="seismo_sample_count">%1$d / %2$d 样本</string>
+    <string name="seismo_waiting_sample">等待加速度计首个样本 ...</string>
+    <string name="seismo_not_running">监视未启动 —— 点击下方「启动监视」</string>
+
+    <!-- 当前读数 -->
+    <string name="seismo_peak_panel_title">当前读数 · PEAK</string>
+    <string name="seismo_recent_peak_label">最近 50 样本峰值</string>
+    <string name="seismo_peak_display">%1$.2f m/s²</string>
+    <string name="seismo_instant_value">瞬时 %1$+.2f m/s²</string>
+    <string name="seismo_instant_none">瞬时 --</string>
+    <string name="seismo_alarm_threshold_label">告警阈值</string>
+    <string name="seismo_threshold_display">%1$.1f m/s²</string>
+    <string name="seismo_event_active_peak">事件中 · 峰值 %1$.2f</string>
+    <string name="seismo_no_active_event">无进行中事件</string>
+    <string name="seismo_step_label">0.1 m/s² 步进</string>
+    <string name="seismo_threshold_help">阈值 %1$.1f m/s² 为默认值,可按环境噪声调整;阈值以内视为环境噪声,不产生事件。</string>
+    <string name="seismo_gravity_sensor">重力基准 %1$.2f m/s²(EMA 估计) · 传感器 %2$s</string>
+    <string name="seismo_gravity_sensor_none">重力基准 -- · 传感器 %1$s</string>
+
+    <!-- 事件日志 -->
+    <string name="seismo_events_title">事件日志 · EVENTS</string>
+    <string name="seismo_events_recorded">已记录 %1$d / %2$d · 最新在上</string>
+    <string name="seismo_clear">清空</string>
+    <string name="seismo_event_banner">[!] 事件进行中 · 当前峰值 %1$.2f m/s²</string>
+    <string name="seismo_events_empty">暂无震动事件 —— 峰值超过阈值的震动会在这里留下时间、峰值与持续时长</string>
+    <string name="seismo_event_peak">峰值 %1$.2f m/s²</string>
+    <string name="seismo_event_duration">持续 %1$s</string>
+
+    <!-- 告警条 -->
+    <string name="seismo_no_accelerometer">本机未提供加速度计(TYPE_ACCELEROMETER) —— 震动监视不可用</string>
+    <string name="seismo_error_line">[!] %1$s</string>
+
+    <!-- 操作按钮 -->
+    <string name="seismo_start_monitoring">启动监视</string>
+    <string name="seismo_stop_monitoring">停止监视</string>
+
+    <!-- 精度声明 -->
+    <string name="seismo_honesty_title">精度声明 · HONESTY</string>
+    <string name="seismo_honesty_p1">手机加速度计是消费级 16 位 MEMS 传感器,采样请求为 SENSOR_DELAY_GAME(系统通常约 50Hz),噪声本底、带宽与动态范围都远不如专业地震仪。本页只能可靠捕捉明显震动 —— 敲门、脚步、桌面被碰、机械振动;对远距离地震不敏感。</string>
+    <string name="seismo_honesty_p2">净加速度 = 三轴合加速度 - 重力基准。重力基准用 alpha 0.01 的指数滑动平均跟踪,缓慢倾斜会被当作零震动,这是去重力算法的固有盲区;合加速度与手机朝向无关。</string>
+    <string name="seismo_honesty_p3">事件峰值、发生时间与持续时长全部来自传感器真实样本;持续时长为首次与末次越阈样本之差,单样本事件显示「&lt; 50 ms」。事件需连续 400ms 低于阈值才判定结束,避免一次震动被切碎。</string>
+    <string name="seismo_honesty_p4">把手机刚性固定在硬桌面或地面灵敏度最高;放在软垫、衣物上会吸收高频振动。读数不足时页面显示「--」,绝不编造;阈值 0.5 m/s² 只是默认值,嘈杂环境应上调。</string>
+</resources>

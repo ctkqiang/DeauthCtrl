@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SeismographManager — English default strings. -->
+<resources>
+    <string name="mgr_seismo_no_accelerometer">[!] No accelerometer (TYPE_ACCELEROMETER) on this device — vibration monitoring unavailable</string>
+    <string name="mgr_seismo_register_failed">[!] Accelerometer registration failed — the system may be restricting sensor access</string>
+</resources>

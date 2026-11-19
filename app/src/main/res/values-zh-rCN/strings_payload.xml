@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BLE 广播载荷协议显示名与描述 -->
+    <string name="payload_name_apple_continuity">苹果连续性</string>
+    <string name="payload_desc_apple_continuity">伪造 AirDrop/Handoff/AirPods 近距离广播</string>
+    <string name="payload_name_airpods">AirPods 弹窗</string>
+    <string name="payload_desc_airpods">伪造 AirPods 配对弹窗广播</string>
+    <string name="payload_name_ios_lock_screen">iOS 锁屏弹窗</string>
+    <string name="payload_desc_ios_lock_screen">AppleTV 名称前缀伪装,附近 iPhone 弹设备窗口</string>
+    <string name="payload_name_apple_action">苹果动作消息</string>
+    <string name="payload_desc_apple_action">伪装 Apple 快捷动作,附近 iPhone 弹通知横幅</string>
+    <string name="payload_name_crash_safari">Safari 历史崩溃包</string>
+    <string name="payload_desc_crash_safari">历史 iOS Safari 崩溃广播(现代 iOS 已修复,仅协议研究)</string>
+    <string name="payload_name_android_device">Android 设备伪装</string>
+    <string name="payload_desc_android_device">Fast Pair 变体,伪装安卓设备广播</string>
+    <string name="payload_name_swift_pair">微软 Swift Pair</string>
+    <string name="payload_desc_swift_pair">伪造 Windows 外设配对广播</string>
+    <string name="payload_name_fast_pair">谷歌 Fast Pair</string>
+    <string name="payload_desc_fast_pair">伪造 Fast Pair 设备广播</string>
+    <string name="payload_name_smartthings">三星 SmartThings</string>
+    <string name="payload_desc_smartthings">伪造三星配件广播</string>
+    <string name="payload_name_generic_random">通用随机压力</string>
+    <string name="payload_desc_generic_random">测试厂商 ID 下的全随机载荷(协议压力测试)</string>
+    <string name="payload_name_flipper_style">Flipper 风格泛洪</string>
+    <string name="payload_desc_flipper_style">轮换多种伪造厂商广播模式</string>
+    <string name="payload_name_all_rotate">全部协议 (轮换)</string>
+    <string name="payload_desc_all_rotate">依次轮换所有可用协议</string>
+</resources>

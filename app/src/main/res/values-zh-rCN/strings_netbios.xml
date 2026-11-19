@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="netbios_title">NetBIOS 扫描 · NBTSCAN</string>
+    <string name="netbios_panel_target">扫描目标 · TARGET</string>
+    <string name="netbios_target_label">目标 IP / 网段</string>
+    <string name="netbios_target_placeholder">例如 192.168.1.0/24 或 192.168.1.10</string>
+    <string name="netbios_start">启动扫描</string>
+    <string name="netbios_stop">停止扫描</string>
+    <string name="netbios_status_scanning">扫描中</string>
+    <string name="netbios_status_idle">待命</string>
+    <string name="netbios_status_done">已完成</string>
+    <string name="netbios_status_stopped">已停止</string>
+    <string name="netbios_panel_progress">扫描进度 · PROGRESS</string>
+    <string name="netbios_target_count">目标 %1$s</string>
+    <string name="netbios_responders">响应 %1$d 台</string>
+    <string name="netbios_range">本轮范围: %1$s</string>
+    <string name="netbios_scan_params">单目标 UDP 137 · 超时 200 ms · 8 路并发</string>
+    <string name="netbios_panel_hosts">扫描结果 · HOSTS (%1$d)</string>
+    <string name="netbios_empty_scanning">正在逐个查询目标,响应的 NetBIOS 主机会实时出现在这里</string>
+    <string name="netbios_empty_none">本轮没有主机响应 NBSTAT —— 见下方说明,这是常见结果</string>
+    <string name="netbios_empty_idle">输入 IP / 网段后点「启动扫描」</string>
+    <string name="netbios_panel_notes">说明与边界 · NOTES</string>
+    <string name="netbios_note_windows">[!] 只有运行 Windows 且启用 NetBIOS over TCP/IP 的设备会响应 UDP 137;Windows 10/11 默认可能关闭该功能,结果少甚至为零属于正常现象,不代表网段内没有设备。</string>
+    <string name="netbios_note_names">响应中的 &lt;00&gt; 是工作站名,&lt;03&gt; 是信使/登录用户,&lt;20&gt; 是文件服务,&lt;1D&gt; 是主浏览器;其余名称类型已过滤。</string>
+    <string name="netbios_note_mac">MAC 优先取自响应统计区的 Unit ID;没有统计区时尝试系统 ARP 缓存(Android 10+ 通常不可读),都拿不到时显示 --,不做任何推测。</string>
+    <string name="netbios_note_vendor">厂商来自内置的常用 OUI 前 3 字节表,未收录地址显示「未知厂商」;该表只是离线小表,不是权威数据库。</string>
+    <string name="netbios_note_scope">/24 及更大网段只扫描输入地址所在的 /24(1-254);/25-/32 按实际主机范围枚举。</string>
+    <string name="netbios_note_raw">所有结果均来自真实 NBSTAT 响应,原始报文完整保存在 rawHex 中,可导出后用 Wireshark 复核。</string>
+    <string name="netbios_name_count">%1$d 个名称</string>
+    <string name="netbios_field_hostname">主机名 &lt;00&gt;</string>
+    <string name="netbios_field_user">用户 &lt;03&gt;</string>
+    <string name="netbios_field_file_service">文件服务 &lt;20&gt;</string>
+    <string name="netbios_field_master_browser">主浏览器 &lt;1D&gt;</string>
+</resources>

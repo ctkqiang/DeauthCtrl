@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DeviceIntel.kt — 简体中文资源。
+  与 values/strings_mgr_intel.xml 键集完全一致,仅翻译用户可见文案。
+  原文措辞与标点保持逐字不变。
+-->
+<resources>
+
+    <!-- ─── 指纹标签 ─── -->
+    <string name="mgr_intel_label_apple_watch">Apple Watch</string>
+    <string name="mgr_intel_label_galaxy_watch">Samsung Galaxy Watch</string>
+    <string name="mgr_intel_label_mi_band">小米手环 / Mi Band</string>
+    <string name="mgr_intel_label_amazfit">Amazfit</string>
+    <string name="mgr_intel_label_huawei_watch">Huawei Watch</string>
+    <string name="mgr_intel_label_airpods">Apple AirPods</string>
+    <string name="mgr_intel_label_galaxy_buds">Samsung Galaxy Buds</string>
+    <string name="mgr_intel_label_redmi_buds">Redmi Buds</string>
+    <string name="mgr_intel_label_sonoff">Sonoff 智能设备</string>
+    <string name="mgr_intel_label_tuya">涂鸦智能设备</string>
+    <string name="mgr_intel_label_yeelight">Yeelight 智能灯</string>
+    <string name="mgr_intel_label_aqara">Aqara 智能设备</string>
+    <string name="mgr_intel_label_switchbot">SwitchBot 设备</string>
+    <string name="mgr_intel_label_tp_link">TP-Link 设备</string>
+    <string name="mgr_intel_label_ring">Ring 智能门铃</string>
+    <string name="mgr_intel_label_tile">Tile 追踪器</string>
+    <string name="mgr_intel_label_apple_device">苹果设备</string>
+
+    <!-- ─── 名称规则说明(嵌入判定依据行) ─── -->
+    <string name="mgr_intel_note_apple_watch">Apple Watch 默认广播名</string>
+    <string name="mgr_intel_note_galaxy_watch">三星 Galaxy Watch 默认广播名</string>
+    <string name="mgr_intel_note_mi_band">小米手环默认广播名</string>
+    <string name="mgr_intel_note_miband">小米手环默认广播名变体</string>
+    <string name="mgr_intel_note_amazfit">Amazfit 手表默认广播名</string>
+    <string name="mgr_intel_note_huawei_watch">华为手表默认广播名</string>
+    <string name="mgr_intel_note_airpods">AirPods 默认广播名</string>
+    <string name="mgr_intel_note_galaxy_buds">Galaxy Buds 默认广播名</string>
+    <string name="mgr_intel_note_redmi_buds">Redmi Buds 默认广播名</string>
+    <string name="mgr_intel_note_sonoff">Sonoff 设备常见命名</string>
+    <string name="mgr_intel_note_tuya">Tuya 设备常见命名</string>
+    <string name="mgr_intel_note_yeelight">Yeelight 设备常见命名</string>
+    <string name="mgr_intel_note_aqara">Aqara 设备常见命名</string>
+    <string name="mgr_intel_note_switchbot">SwitchBot 设备常见命名</string>
+    <string name="mgr_intel_note_tp_link">TP-Link 设备常见命名</string>
+    <string name="mgr_intel_note_ring">Ring 设备常见命名(按整词匹配,避免 Springfield 之类普通单词误报)</string>
+    <string name="mgr_intel_note_tile">Tile 追踪器常见命名(按整词匹配)</string>
+
+    <!-- ─── 判定依据行 ─── -->
+    <string name="mgr_intel_basis_keyword">名称含 \"%1$s\":%2$s</string>
+    <string name="mgr_intel_basis_flipper">名称含 \"Flipper\":与 Flipper Zero 默认 BLE 广播名一致</string>
+    <string name="mgr_intel_basis_pwned">名称含 \"pwned\":Deauther Watch / DSTIKE 等 WiFi 攻击设备默认热点 SSID</string>
+    <string name="mgr_intel_basis_pineapple">SSID 前缀为 \"Pineapple_\" / \"Hak5\":Hak5 WiFi Pineapple 默认热点命名</string>
+    <string name="mgr_intel_basis_omg">BLE 广播名含 \"OMG\":与 O.MG Cable 命名特征相符,低置信,可能误报</string>
+    <string name="mgr_intel_basis_espressif">厂商 ID 0x02E5 = Espressif Systems:仅说明采用 ESP 芯片,整机品牌可能不同</string>
+    <string name="mgr_intel_basis_esp_name">名称含 ESP32 / ESP8266 / ESP_ 关键字</string>
+    <string name="mgr_intel_basis_nordic">厂商 ID 0x0059 = Nordic Semiconductor:仅说明采用 nRF 芯片,整机品牌可能不同</string>
+    <string name="mgr_intel_basis_nordic_name">名称含 nRF / Nordic_ 关键字</string>
+    <string name="mgr_intel_basis_arduino">名称含 \"Arduino\":Arduino 开发板默认广播/热点命名</string>
+    <string name="mgr_intel_basis_raspberry">名称含 \"Raspberry\":树莓派主机名/热点默认命名</string>
+    <string name="mgr_intel_basis_apple">厂商 ID 0x004C = Apple Inc.:无法区分 iPhone / iPad / Mac / 配件</string>
+
+</resources>

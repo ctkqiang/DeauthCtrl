@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 逻辑示波管理器 —— 英文默认资源 -->
+<resources>
+    <!-- ─── 通道枚举标签 ─── -->
+    <string name="mgr_lscope_channel_ble">BLE PULSE</string>
+    <string name="mgr_lscope_channel_wifi">WiFi PULSE</string>
+    <string name="mgr_lscope_channel_cell">CELLULAR</string>
+    <string name="mgr_lscope_channel_audio">AUDIO</string>
+    <string name="mgr_lscope_channel_ir">IR</string>
+
+    <!-- ─── 状态与提示 ─── -->
+    <string name="mgr_lscope_no_channel_selected">Select at least one channel before starting capture</string>
+    <string name="mgr_lscope_ir_default_label">IR transmit</string>
+    <string name="mgr_lscope_channel_error">Channel error: %1$s</string>
+    <string name="mgr_lscope_ble_no_scanner">BLE channel could not create a scanner</string>
+    <string name="mgr_lscope_wifi_no_service">Device does not provide Wi-Fi service</string>
+    <string name="mgr_lscope_wifi_no_permission">Missing Nearby devices / Location permission — Wi-Fi scan unavailable</string>
+    <string name="mgr_lscope_wifi_no_results">No scan results this round (Wi-Fi off or scan throttled)</string>
+    <string name="mgr_lscope_wifi_no_rssi">No valid RSSI in scan results</string>
+    <string name="mgr_lscope_hidden_ssid">(Hidden SSID)</string>
+    <string name="mgr_lscope_throttled_cache">%1$s · throttled cache</string>
+    <string name="mgr_lscope_throttled_note">System throttled startScan — this round reads cached results (RSSI is still real)</string>
+    <string name="mgr_lscope_cell_no_permission">Missing Location / Phone state permission — cellular channel unavailable</string>
+    <string name="mgr_lscope_cell_no_registered">System returned no registered cell (airplane mode or no SIM)</string>
+    <string name="mgr_lscope_cell_no_signal">Registered cell %1$s provides no RSRP / signal value</string>
+    <string name="mgr_lscope_audio_no_permission">Missing recording permission — audio channel unavailable</string>
+    <string name="mgr_lscope_audio_unsupported">Device does not support 16kHz mono recording</string>
+    <string name="mgr_lscope_audio_create_failed">AudioRecord creation failed</string>
+    <string name="mgr_lscope_audio_init_failed">AudioRecord initialization failed (microphone may be in use)</string>
+    <string name="mgr_lscope_audio_start_failed">Microphone failed to start (may be in use by another app)</string>
+    <string name="mgr_lscope_audio_read_failed">Audio read failed (error code %1$d)</string>
+</resources>

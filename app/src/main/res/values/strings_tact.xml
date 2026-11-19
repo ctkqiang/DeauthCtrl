@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TacticalModules.kt — English default strings (tact_*). -->
+<resources>
+    <!-- ─── Tactical camera ─── -->
+    <string name="tact_camera_title">Tactical Camera</string>
+    <string name="tact_lens_select">Lens Select · Max Resolution</string>
+    <string name="tact_no_camera">No camera detected</string>
+    <string name="tact_capture_photo">CAPTURE PHOTO</string>
+    <string name="tact_manual_prefix">Manual %1$s</string>
+    <string name="tact_target_offline">TARGET OFFLINE</string>
+    <string name="tact_waiting_receiver">Waiting for receiver…</string>
+    <string name="tact_all_online">All online (%1$d)</string>
+    <string name="tact_captured_pending">Captured · Pending</string>
+    <string name="tact_cd_captured_photo">Captured photo</string>
+    <string name="tact_send_target_auto">Send target · Auto-discovery</string>
+    <string name="tact_all_count">ALL (%1$d)</string>
+    <string name="tact_manual_dot">MANUAL · %1$s</string>
+    <string name="tact_temp_target_cancel">TEMP TARGET · TAP TO CANCEL</string>
+    <string name="tact_no_auto_targets">No auto-discovered targets</string>
+    <string name="tact_peer_hint">Peer must keep the app process alive and stay on the same Wi-Fi.</string>
+    <string name="tact_send_photo_to">SEND PHOTO → %1$s</string>
+    <string name="tact_delivery_ack_hint">Delivery is counted per target ACK; no OK ACK means no success is shown.</string>
+    <string name="tact_discard_photo">DISCARD PHOTO</string>
+    <string name="tact_receiver_panel">Online Receivers · Auto-discovery · mDNS + Broadcast + Port Probe</string>
+    <string name="tact_port_listening">● Receive port %1$d listening</string>
+    <string name="tact_receiver_not_ready">Receiver not ready (port bind failed, retrying)</string>
+    <string name="tact_online_count">%1$d online</string>
+    <string name="tact_process_alive_hint">Available while the app process is alive (stops if killed; no foreground service)</string>
+    <string name="tact_layers_line">mDNS %1$s · UDP %2$s · Cache %3$s · Scan %4$d/%5$d</string>
+    <string name="tact_troubleshoot">Troubleshoot: (1) both devices on same Wi-Fi  (2) peer app process alive  (3) disable AP isolation / VPN  (4) public Wi-Fi often blocks client-to-client</string>
+    <string name="tact_rescan">RESCAN</string>
+    <string name="tact_manual_ip">MANUAL IP</string>
+    <string name="tact_received_photos_panel">Received Photos · Always-on Relay (%1$d)</string>
+    <string name="tact_received_empty">Photos arrive automatically with a system notification after the peer sends.</string>
+    <string name="tact_cd_received_photo">Received photo</string>
+    <string name="tact_saved_to_gallery">SAVED TO GALLERY ✓</string>
+    <string name="tact_save_failed">Save failed, try again</string>
+    <string name="tact_download_save">DOWNLOAD &amp; SAVE ▾</string>
+    <string name="tact_downloaded_kept">Downloaded · Kept permanently</string>
+    <string name="tact_memory_ttl">In memory · auto-delete in %1$d min</string>
+    <string name="tact_cd_fullscreen_photo">Fullscreen photo</string>
+    <string name="tact_from_sender">From %1$s</string>
+    <string name="tact_viewer_meta">%1$d×%2$d · %3$dKB · Tap anywhere to close</string>
+    <string name="tact_manual_ip_advanced">Manual Target IP · Advanced</string>
+    <string name="tact_manual_ip_desc">Used when auto-discovery is blocked by AP isolation / VPN. The IP must be the receiver\'s current LAN address; this target is valid for this page only.</string>
+    <string name="tact_ipv4_address">IPv4 ADDRESS</string>
+    <string name="tact_cancel">CANCEL</string>
+    <string name="tact_use_ip">USE THIS IP</string>
+    <string name="tact_invalid_ipv4">Invalid IPv4: 4 octets 0-255, e.g. 192.168.1.23</string>
+    <string name="tact_manual_name">Manual %1$s</string>
+    <string name="tact_discovery_idle">Discovery not started</string>
+    <string name="tact_discovery_searching">%1$s · %2$ds · %3$d found</string>
+    <string name="tact_discovery_found">%1$d receivers found</string>
+    <string name="tact_discovery_exhausted">No receivers found · %1$s</string>
+
+    <!-- ─── Voice SDR spectrum ─── -->
+    <string name="tact_voice_sdr_title">Voice Spectrum · SDR</string>
+    <string name="tact_band_full">FULL BAND 0-22k</string>
+    <string name="tact_band_ultrasonic">ULTRASONIC FOCUS 15-22k</string>
+    <string name="tact_ultrasonic_alarm">[!] Ultrasonic alert: notable energy in 18-22kHz -- possible coil whine / ultrasonic source nearby (heuristic; consumer mics roll off hard above 20kHz; not a conclusive finding)</string>
+    <string name="tact_start_spectrum">START SPECTRUM</string>
+    <string name="tact_stop_detection">STOP DETECTION</string>
+    <string name="tact_noise_floor">NOISE</string>
+    <string name="tact_peak">PEAK</string>
+    <string name="tact_frames_history">%1$d frames history</string>
+    <string name="tact_sdr_spectrum_header">SPECTRUM · dBFS</string>
+    <string name="tact_sdr_rec">● REC</string>
+    <string name="tact_sdr_stby">○ STBY</string>
+    <string name="tact_sdr_waterfall_header">WATERFALL · HEAT</string>
+    <string name="tact_sdr_center">CENTER</string>
+    <string name="tact_sdr_span">SPAN</string>
+    <string name="tact_sdr_rbw">RBW</string>
+    <string name="tact_sdr_pwr">PWR</string>
+
+    <!-- ─── Cell tower monitor ─── -->
+    <string name="tact_cell_tower_title">Cell Tower Monitor · CELL TOWER</string>
+    <string name="tact_reading_operator">Reading operator…</string>
+    <string name="tact_cell_count">%1$s · %2$d cells</string>
+    <string name="tact_refresh">REFRESH ▸</string>
+    <string name="tact_cell_waiting">Waiting for cell data -- tap Refresh to read real tower info</string>
+    <string name="tact_registered_cell">● REGISTERED</string>
+    <string name="tact_neighbor_cell">○ NEIGHBOR</string>
+    <string name="tact_cell_id">CELL ID</string>
+    <string name="tact_operator">OPERATOR</string>
+    <string name="tact_gsm_band">Band: %1$s</string>
+    <string name="tact_distance_est">" · Est. distance %1$.0fm"</string>
+    <string name="tact_gsm_source">Source: real values from system CellInfo. Distance is a coarse RSRP path-loss estimate (± hundreds of meters), not a measurement; tower azimuth cannot be measured by phone hardware and is not provided. Empty in airplane mode / no signal.</string>
+
+    <!-- ─── Morse code ─── -->
+    <string name="tact_morse_title">Morse Code · MORSE</string>
+    <string name="tact_morse_transmit">Transmit · TRANSMIT</string>
+    <string name="tact_message_content">MESSAGE</string>
+    <string name="tact_message_placeholder">SOS / any text</string>
+    <string name="tact_speed">SPEED</string>
+    <string name="tact_mode_sound">SOUND</string>
+    <string name="tact_mode_silent">SILENT FLASH</string>
+    <string name="tact_mode_both">BOTH</string>
+    <string name="tact_no_torch">[!] No flashlight, or camera unavailable -- silent mode unavailable</string>
+    <string name="tact_sending_progress">Sending · current char %1$s · %2$d%%</string>
+    <string name="tact_start_send">START TX</string>
+    <string name="tact_stop_send">STOP TX</string>
+    <string name="tact_morse_keying">Manual Keying · KEYING</string>
+    <string name="tact_keying_hint">Tap · or — to key Morse; decoded in real time</string>
+    <string name="tact_key_dot">· DOT</string>
+    <string name="tact_key_dash">— DASH</string>
+    <string name="tact_char_end">CHAR END ▸</string>
+    <string name="tact_word_space">WORD SPACE</string>
+    <string name="tact_clear">CLEAR</string>
+    <string name="tact_current_keying">Keying: %1$s</string>
+    <string name="tact_decoded_placeholder">Decoded result will appear here</string>
+    <string name="tact_morse_reference">Reference · REFERENCE</string>
+    <string name="tact_morse_standard">International Morse standard: dot = 1 unit · dash = 3 units · 3 between chars · 7 between words (Paris WPM). Silent mode keys with the camera flash; usable at night.</string>
+
+    <!-- ─── IR remote ─── -->
+    <string name="tact_ir_title">IR Remote</string>
+    <string name="tact_ir_emitter_panel">Emitter Status · IR EMITTER</string>
+    <string name="tact_ir_emitter_found">● IR emitter detected</string>
+    <string name="tact_ir_carrier_range">Carrier range: %1$s Hz</string>
+    <string name="tact_ir_no_emitter">✕ No IR emitter on this device (Xiaomi / Mi Remote series supported)</string>
+    <string name="tact_ir_tv_keys">TV Keys · NEC 38kHz</string>
+    <string name="tact_ir_power">POWER</string>
+    <string name="tact_ir_mute">MUTE</string>
+    <string name="tact_ir_source">SOURCE</string>
+    <string name="tact_ir_vol_up">VOL +</string>
+    <string name="tact_ir_vol_down">VOL -</string>
+    <string name="tact_ir_ch_up">CH +</string>
+    <string name="tact_ir_ch_down">CH -</string>
+    <string name="tact_ir_numeric_note">Numeric keys use the generic NEC 0x00 address map; brands may vary</string>
+    <string name="tact_ir_universal">▸ Universal Remote · Flipper tv.ir flood library + button cloning</string>
+    <string name="tact_ir_candidates">456 candidate codes</string>
+    <string name="tact_ir_protocol_panel">Protocol · PROTOCOL</string>
+    <string name="tact_ir_protocol_hint">Choose IR protocol and parameters; carrier frequency and pulse timing follow the protocol standard</string>
+    <string name="tact_ir_cmd_hex">CMD (hex)</string>
+    <string name="tact_ir_device_hex">DEVICE (hex)</string>
+    <string name="tact_ir_sony_desc">Sony SIRC: 2400µs leader, logic 1 = 1200µs on + 600µs off, 0 = 600µs + 600µs, LSB first · 12bit standard</string>
+    <string name="tact_ir_send_sirc">TRANSMIT SIRC ▸</string>
+    <string name="tact_ir_addr_hex">ADDR (hex)</string>
+    <string name="tact_ir_rc5_desc">RC-5: 889µs Manchester coding, 36kHz carrier · Philips-family devices</string>
+    <string name="tact_ir_send_rc5">TRANSMIT RC-5 ▸</string>
+    <string name="tact_ir_nec_desc">NEC: 9000µs on + 4500µs off leader, 1 = 560+1690µs, 0 = 560+560µs, MSB first · most common protocol</string>
+    <string name="tact_ir_waveform_panel">Waveform · WAVEFORM (standard protocol timing)</string>
+    <string name="tact_ir_custom_panel">Custom Code Transmit</string>
+    <string name="tact_ir_hex_invalid">Invalid HEX address/command!</string>
+    <string name="tact_ir_send_nec">TRANSMIT NEC</string>
+    <string name="tact_ir_raw_label">RAW PULSES (µs, comma separated)</string>
+    <string name="tact_raw_segments">RAW %1$d segments</string>
+    <string name="tact_ir_send_raw">TRANSMIT RAW</string>
+
+    <!-- ─── NFC workbench ─── -->
+    <string name="tact_nfc_title">NFC · RFID Workbench</string>
+    <string name="tact_nfc_adapter_panel">Adapter Status</string>
+    <string name="tact_nfc_no_hardware">✕ No NFC hardware on this device</string>
+    <string name="tact_nfc_disabled">NFC is off</string>
+    <string name="tact_nfc_open_settings">OPEN SYSTEM NFC SETTINGS</string>
+    <string name="tact_nfc_reader_ready">● Reader ready -- hold a tag to the back of the phone</string>
+    <string name="tact_nfc_tab_reader">READER</string>
+    <string name="tact_nfc_tab_emulator">EMULATOR</string>
+    <string name="tact_nfc_tab_writer">WRITER</string>
+    <string name="tact_nfc_tab_identifier">IDENTIFIER</string>
+    <string name="tact_nfc_current_tag">Read Result · CURRENT TAG</string>
+    <string name="tact_nfc_waiting_tag">Waiting for tag…</string>
+    <string name="tact_nfc_tech">TECH</string>
+    <string name="tact_nfc_no_ndef">No NDEF records</string>
+    <string name="tact_nfc_sectors">SECTORS</string>
+    <string name="tact_nfc_writable">WRITABLE</string>
+    <string name="tact_yes">YES</string>
+    <string name="tact_no">NO</string>
+    <string name="tact_nfc_emulator_desc">Phone emulates an NFC card read by a reader -- card contents are managed below</string>
+    <string name="tact_nfc_write_panel">Write NDEF Text</string>
+    <string name="tact_nfc_write_desc">Supports freely writable tags such as NTAG / Ultralight; encrypted cards (Mifare Classic with keys) cannot be cloned -- keys are factory-burned, and unauthorized brute force is neither legal nor feasible</string>
+    <string name="tact_nfc_write_content">WRITE CONTENT</string>
+    <string name="tact_nfc_write_placeholder">Text written after tapping a tag</string>
+    <string name="tact_nfc_prepare_write">PREPARE WRITE</string>
+    <string name="tact_nfc_uid_history">UID Capture History (%1$d)</string>
+    <string name="tact_nfc_uid_history_empty">Tags tapped so far are deduplicated by UID and recorded here</string>
+    <string name="tact_nfc_fingerprint">Tech Fingerprint · FINGERPRINT</string>
+    <string name="tact_nfc_fingerprint_desc">Distinguish card types by UID length and supported techs:</string>
+    <string name="tact_nfc_fp_4byte">· 4-byte UID = Mifare Classic / Ultralight</string>
+    <string name="tact_nfc_fp_7byte">· 7-byte UID = NTAG21x / DESFire</string>
+    <string name="tact_nfc_fp_8_10byte">· 8/10-byte UID = Type 4B / ISO15693 class</string>
+    <string name="tact_nfc_fp_ndef">· NDEF support = NFC Forum tag</string>
+    <string name="tact_nfc_fp_sectors">· Sector count &gt; 0 = Mifare Classic (encrypted sectors keyed at factory)</string>
+    <string name="tact_nfc_fp_note">Identification is heuristic; treat the techs actually read as authoritative</string>
+    <string name="tact_wave_sirc">SIRC: 2400µs leader · 12bit LSB</string>
+    <string name="tact_wave_rc5">RC-5: Manchester · 889µs bit width</string>
+    <string name="tact_wave_nec">NEC: 9000+4500µs leader · 8+8bit MSB</string>
+
+    <!-- ─── Card wallet (HCE) ─── -->
+    <string name="tact_wallet_panel">Card Wallet · HCE EMULATION</string>
+    <string name="tact_wallet_desc">The phone becomes an NFC card: the wallet stores multiple virtual cards; pick one as active, and the system HCE service answers when a reader is held near (ISO 14443-4 APDU)</string>
+    <string name="tact_wallet_empty">No virtual cards yet -- add one below</string>
+    <string name="tact_wallet_active">● ACTIVE</string>
+    <string name="tact_wallet_aid_data">AID F0010203040506 · data %1$s</string>
+    <string name="tact_empty">EMPTY</string>
+    <string name="tact_wallet_set_active">SET ACTIVE</string>
+    <string name="tact_delete">DELETE</string>
+    <string name="tact_wallet_card_name">CARD NAME</string>
+    <string name="tact_wallet_card_name_ph">e.g. Research card A</string>
+    <string name="tact_wallet_card_data">CARD DATA (hex, optional)</string>
+    <string name="tact_wallet_card_data_ph">e.g. DEADBEEF</string>
+    <string name="tact_wallet_add">ADD VIRTUAL CARD</string>
+    <string name="tact_wallet_limitations">Capability limits: HCE only emulates ISO-DEP APDU cards (custom reader / research scenarios); MIFARE Classic access cards and payment cards require a secure element and issuer keys, which regular phones cannot emulate</string>
+
+    <!-- ─── Serial monitor ─── -->
+    <string name="tact_serial_title">Serial Monitor · SERIAL MONITOR</string>
+    <string name="tact_serial_devices_panel">USB Serial Devices (%1$d)</string>
+    <string name="tact_serial_no_devices">No serial devices detected -- connect FTDI/CH340/CP210x or Arduino via OTG</string>
+    <string name="tact_connected">CONNECTED</string>
+    <string name="tact_connect">CONNECT ▸</string>
+    <string name="tact_serial_driver_note">FTDI/CH340 chips need vendor drivers; without a built-in driver they can only enumerate, not communicate. CDC-ACM (native Arduino) has the best compatibility.</string>
+    <string name="tact_serial_line_coding">Line Coding · LINE CODING</string>
+    <string name="tact_serial_baud">BAUD</string>
+    <string name="tact_serial_data_bits">DATA BITS</string>
+    <string name="tact_serial_stop_bits">STOP BITS</string>
+    <string name="tact_parity_none">NONE</string>
+    <string name="tact_parity_odd">ODD</string>
+    <string name="tact_parity_even">EVEN</string>
+    <string name="tact_serial_output">Monitor Output (%1$d)</string>
+    <string name="tact_serial_send">SEND</string>
+    <string name="tact_serial_send_ph">Enter command, CR+LF appended automatically</string>
+    <string name="tact_send_arrow">SEND ▸</string>
+    <string name="tact_serial_not_connected">No device connected -- send unavailable; connect an enumerated serial device above first</string>
+
+    <!-- ─── OTG probe ─── -->
+    <string name="tact_otg_title">Wired Probe · OTG RECON</string>
+    <string name="tact_otg_none">○ No OTG devices</string>
+    <string name="tact_otg_found">● %1$d USB devices detected</string>
+    <string name="tact_auto_refresh">AUTO REFRESH</string>
+    <string name="tact_otg_empty">USB Ethernet adapters or USB serial (FTDI/CH340/CP210x/Arduino) appear here automatically after plugging in</string>
+    <string name="tact_usb_device">USB DEVICE</string>
+    <string name="tact_otg_net">LIKELY NIC → ARP SCAN ▸</string>
+    <string name="tact_otg_serial">LIKELY SERIAL → SERIAL MONITOR ▸</string>
+    <string name="tact_otg_unknown">Unrecognized device class -- purpose unknown</string>
+    <string name="tact_otg_note">Identification is a heuristic based on VID/PID and device class; actual link probing (ARP / serial TX-RX) is performed by the corresponding tool. FTDI/CH340 serial chips on Android without vendor drivers can only enumerate, not communicate.</string>
+
+    <!-- ─── Digital night vision ─── -->
+    <string name="tact_night_title">Digital Night Vision</string>
+    <string name="tact_night_start">NIGHT VISION ON</string>
+    <string name="tact_night_stop">NIGHT VISION OFF</string>
+    <string name="tact_cd_night_frame">Night vision frame</string>
+    <string name="tact_night_enhancing">Generating enhanced frame…</string>
+    <string name="tact_night_hint">Green enhanced view appears after enabling night vision</string>
+    <string name="tact_night_confirmed">[!] TARGET CONFIRMED — FACE %1$d · HUMAN %2$d</string>
+    <string name="tact_detector_unavailable">OpenCV unavailable · enhancement only</string>
+    <string name="tact_detector_loading">Detector loading…</string>
+    <string name="tact_target_locked">TARGET LOCKED · FACE %1$d · HUMAN %2$d</string>
+    <string name="tact_scanning">SCANNING · no confirmed targets</string>
+    <string name="tact_detector_unavailable_reason">Detection unavailable: %1$s</string>
+    <string name="tact_detector_loading_detail">OpenCV detector loading (about 1-2 s on first run)</string>
+    <string name="tact_detector_error">Detection error: %1$s</string>
+    <string name="tact_gain_panel">Gain Control · GAIN</string>
+    <string name="tact_gain_line">Gain %1$dx -- digital amplification, display only; detection uses ungained grayscale</string>
+    <string name="tact_night_principle">Principle: high-ISO capture → digital gain on the luma channel → phosphor-green mapping. Consumer phones have no IR illuminator / thermal imaging, so this is digital enhancement, not true night vision; detection scores are model weights, not probabilities; HOG is a daytime full-body model with limited low-light recall.</string>
+
+    <!-- ─── Tactical map ─── -->
+    <string name="tact_map_title">Tactical Map</string>
+    <string name="tact_no_fix">No position fix</string>
+    <string name="tact_marker_count">MARKERS %1$d</string>
+    <string name="tact_loc_denied">Location not granted -- cannot show own position</string>
+    <string name="tact_loc_services_off">System location is off -- enable it in Settings</string>
+    <string name="tact_loc_waiting_fix">Waiting for first fix -- indoors this can take 10-60 s; move near a window / outdoors</string>
+    <string name="tact_accuracy_unknown">Accuracy unknown</string>
+    <string name="tact_fix_age">" · %1$ds ago"</string>
+    <string name="tact_on">ON</string>
+    <string name="tact_off">OFF</string>
+    <string name="tact_network_label">" · Network "</string>
+    <string name="tact_grant_location">GRANT LOCATION</string>
+    <string name="tact_app_settings">APP SETTINGS</string>
+    <string name="tact_location_settings">LOCATION SETTINGS</string>
+    <string name="tact_map_tiles_line">Tiles: online OSM MAPNIK · %1$s · offline shows cached areas only · uncached areas are blank</string>
+    <string name="tact_tile_online">online</string>
+    <string name="tact_tile_cache_only">cache only</string>
+    <string name="tact_follow">◎ FOLLOW</string>
+    <string name="tact_night_filter">NIGHT FILTER</string>
+    <string name="tact_cache_only_toggle">CACHE ONLY</string>
+    <string name="tact_locate_me">◎ LOCATE ME</string>
+    <string name="tact_grid_on">LAT/LON GRID ON</string>
+    <string name="tact_markers_panel">Tactical Markers · MARKERS</string>
+    <string name="tact_markers_empty">Long-press the map to drop a marker; markers stay on this device only</string>
+    <string name="tact_map_attribution">Tiles © OpenStreetMap contributors · online MAPNIK, no offline pack; viewed areas are cached automatically, uncached areas are blank offline</string>
+</resources>

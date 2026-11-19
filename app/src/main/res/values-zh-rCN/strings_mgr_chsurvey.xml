@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信道巡检管理器 —— 中文资源 -->
+<resources>
+    <!-- ─── 安全类型枚举 ─── -->
+    <string name="mgr_chsurvey_security_open">开放</string>
+    <string name="mgr_chsurvey_security_wep">WEP</string>
+    <string name="mgr_chsurvey_security_wpa2">WPA2</string>
+    <string name="mgr_chsurvey_security_wpa3">WPA3</string>
+    <string name="mgr_chsurvey_security_other">其他</string>
+
+    <!-- ─── 拥堵等级枚举 ─── -->
+    <string name="mgr_chsurvey_congestion_idle">空闲</string>
+    <string name="mgr_chsurvey_congestion_crowded">拥挤</string>
+    <string name="mgr_chsurvey_congestion_severe">严重</string>
+
+    <!-- ─── 状态与错误 ─── -->
+    <string name="mgr_chsurvey_error_permission">缺少「位置信息」权限 —— Android 要求精确定位(ACCESS_FINE_LOCATION)才能读取 Wi-Fi 扫描结果,请授予后重试</string>
+    <string name="mgr_chsurvey_error_location_off">系统定位开关已关闭 —— Android 9+ 关闭定位后扫描结果为空,请开启定位后重试</string>
+    <string name="mgr_chsurvey_error_wifi_off">Wi-Fi 已关闭 —— 请先打开 Wi-Fi 再扫描周围信道</string>
+    <string name="mgr_chsurvey_error_no_service">设备未提供 Wi-Fi 服务 —— 无法读取扫描结果</string>
+    <string name="mgr_chsurvey_scan_start_failed">启动扫描失败: %1$s</string>
+    <string name="mgr_chsurvey_read_results_failed">读取扫描结果失败: %1$s</string>
+    <string name="mgr_chsurvey_no_results">扫描未产生结果</string>
+    <string name="mgr_chsurvey_rejected_unknown">扫描被系统拒绝:未定位到缺失权限(可能是厂商 ROM 的策略限制)</string>
+    <string name="mgr_chsurvey_rejected_missing">扫描被拒绝:缺少 %1$s</string>
+</resources>

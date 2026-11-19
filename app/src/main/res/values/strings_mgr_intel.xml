@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DeviceIntel.kt — English default strings.
+  Key prefix: mgr_intel_.
+  Category constants stay untranslated data values; only displayed labels, notes and basis text live here.
+-->
+<resources>
+
+    <!-- ─── Fingerprint labels ─── -->
+    <string name="mgr_intel_label_apple_watch">Apple Watch</string>
+    <string name="mgr_intel_label_galaxy_watch">Samsung Galaxy Watch</string>
+    <string name="mgr_intel_label_mi_band">Xiaomi Mi Band</string>
+    <string name="mgr_intel_label_amazfit">Amazfit</string>
+    <string name="mgr_intel_label_huawei_watch">Huawei Watch</string>
+    <string name="mgr_intel_label_airpods">Apple AirPods</string>
+    <string name="mgr_intel_label_galaxy_buds">Samsung Galaxy Buds</string>
+    <string name="mgr_intel_label_redmi_buds">Redmi Buds</string>
+    <string name="mgr_intel_label_sonoff">Sonoff smart device</string>
+    <string name="mgr_intel_label_tuya">Tuya smart device</string>
+    <string name="mgr_intel_label_yeelight">Yeelight smart light</string>
+    <string name="mgr_intel_label_aqara">Aqara smart device</string>
+    <string name="mgr_intel_label_switchbot">SwitchBot device</string>
+    <string name="mgr_intel_label_tp_link">TP-Link device</string>
+    <string name="mgr_intel_label_ring">Ring smart doorbell</string>
+    <string name="mgr_intel_label_tile">Tile tracker</string>
+    <string name="mgr_intel_label_apple_device">Apple device</string>
+
+    <!-- ─── Name-rule notes (embedded in the basis line) ─── -->
+    <string name="mgr_intel_note_apple_watch">Default advertising name of Apple Watch</string>
+    <string name="mgr_intel_note_galaxy_watch">Default advertising name of Samsung Galaxy Watch</string>
+    <string name="mgr_intel_note_mi_band">Default advertising name of Mi Band</string>
+    <string name="mgr_intel_note_miband">Variant of the default Mi Band advertising name</string>
+    <string name="mgr_intel_note_amazfit">Default advertising name of Amazfit watches</string>
+    <string name="mgr_intel_note_huawei_watch">Default advertising name of Huawei Watch</string>
+    <string name="mgr_intel_note_airpods">Default advertising name of AirPods</string>
+    <string name="mgr_intel_note_galaxy_buds">Default advertising name of Galaxy Buds</string>
+    <string name="mgr_intel_note_redmi_buds">Default advertising name of Redmi Buds</string>
+    <string name="mgr_intel_note_sonoff">Common naming for Sonoff devices</string>
+    <string name="mgr_intel_note_tuya">Common naming for Tuya devices</string>
+    <string name="mgr_intel_note_yeelight">Common naming for Yeelight devices</string>
+    <string name="mgr_intel_note_aqara">Common naming for Aqara devices</string>
+    <string name="mgr_intel_note_switchbot">Common naming for SwitchBot devices</string>
+    <string name="mgr_intel_note_tp_link">Common naming for TP-Link devices</string>
+    <string name="mgr_intel_note_ring">Common naming for Ring devices (whole-word match to avoid false positives like Springfield)</string>
+    <string name="mgr_intel_note_tile">Common naming for Tile trackers (whole-word match)</string>
+
+    <!-- ─── Basis lines ─── -->
+    <string name="mgr_intel_basis_keyword">Name contains \"%1$s\": %2$s</string>
+    <string name="mgr_intel_basis_flipper">Name contains \"Flipper\": matches the default Flipper Zero BLE advertising name</string>
+    <string name="mgr_intel_basis_pwned">Name contains \"pwned\": default hotspot SSID of WiFi attack devices such as Deauther Watch / DSTIKE</string>
+    <string name="mgr_intel_basis_pineapple">SSID prefix \"Pineapple_\" / \"Hak5\": default hotspot naming for Hak5 WiFi Pineapple</string>
+    <string name="mgr_intel_basis_omg">BLE advertising name contains \"OMG\": consistent with O.MG Cable naming, low confidence, may be a false positive</string>
+    <string name="mgr_intel_basis_espressif">Vendor ID 0x02E5 = Espressif Systems: only indicates an ESP chip, the finished product brand may differ</string>
+    <string name="mgr_intel_basis_esp_name">Name contains ESP32 / ESP8266 / ESP_ keyword</string>
+    <string name="mgr_intel_basis_nordic">Vendor ID 0x0059 = Nordic Semiconductor: only indicates an nRF chip, the finished product brand may differ</string>
+    <string name="mgr_intel_basis_nordic_name">Name contains nRF / Nordic_ keyword</string>
+    <string name="mgr_intel_basis_arduino">Name contains \"Arduino\": default advertising / hotspot naming for Arduino boards</string>
+    <string name="mgr_intel_basis_raspberry">Name contains \"Raspberry\": default hostname / hotspot naming for Raspberry Pi</string>
+    <string name="mgr_intel_basis_apple">Vendor ID 0x004C = Apple Inc.: cannot distinguish iPhone / iPad / Mac / accessories</string>
+
+</resources>

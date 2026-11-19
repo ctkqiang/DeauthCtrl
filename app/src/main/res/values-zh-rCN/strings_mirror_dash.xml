@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 屏幕镜像仪表板中文资源,与 values/strings_mirror_dash.xml 一一对应。 -->
+<resources>
+    <string name="mirror_dash_title">屏幕镜像</string>
+    <string name="mirror_dash_share_host">共享屏幕 (Host)</string>
+    <string name="mirror_dash_stop_sharing">停止共享</string>
+    <string name="mirror_dash_broadcasting">正在广播 — %1$d:10087 · 局域网内可被发现</string>
+    <string name="mirror_dash_devices_found">已发现的设备 · %1$d</string>
+    <string name="mirror_dash_scanning">正在扫描局域网...</string>
+    <string name="mirror_dash_connecting">正在连接...</string>
+    <string name="mirror_dash_empty">未发现设备 —— 点击下方按钮扫描局域网</string>
+    <string name="mirror_dash_stop_scan">停止扫描</string>
+    <string name="mirror_dash_start_scan">扫描局域网</string>
+    <string name="mirror_dash_connect">连接 ▸</string>
+</resources>

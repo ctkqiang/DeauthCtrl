@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_ble_tx_low">低功率 ≈ -15 dBm（相对值，非最大功率）</string>
+    <string name="mgr_ble_tx_medium">中功率 ≈ -7 dBm（相对值，非最大功率）</string>
+    <string name="mgr_ble_tx_high">高功率 ≈ +1 dBm（相对值，非最大功率）</string>
+    <string name="mgr_ble_cycle_sequence">顺序轮换</string>
+    <string name="mgr_ble_cycle_random">随机轮换</string>
+    <string name="mgr_ble_cycle_single">固定单一</string>
+    <string name="mgr_ble_err_permissions">缺少附近设备权限：%1$s。请先在权限网关授予。</string>
+    <string name="mgr_ble_err_no_adapter">本机没有蓝牙适配器</string>
+    <string name="mgr_ble_err_read_state">读取蓝牙状态失败：%1$s</string>
+    <string name="mgr_ble_err_bt_off">蓝牙未开启，请先打开蓝牙</string>
+    <string name="mgr_ble_err_no_advertiser">本机控制器不提供 BLE 广播（BluetoothLeAdvertiser=null）</string>
+    <string name="mgr_ble_err_data_too_large">广播数据超长：%1$d &gt; %2$d 字节（profile=%3$s）</string>
+    <string name="mgr_ble_err_slots_exhausted">蓝牙广播槽位耗尽（code 2 连续 %1$d 次）：请关闭/重启蓝牙后重试</string>
+    <string name="mgr_ble_adv_data_too_large">广播数据超长（code=1）</string>
+    <string name="mgr_ble_adv_too_many">广播槽位被占用（code=2）：正在退避重试</string>
+    <string name="mgr_ble_adv_already_started">广播会话已启动（code=3）</string>
+    <string name="mgr_ble_adv_internal">控制器内部错误（code=4）</string>
+    <string name="mgr_ble_adv_unsupported">控制器不支持 BLE 广播（code=5）</string>
+    <string name="mgr_ble_adv_no_permission">缺少 BLUETOOTH_ADVERTISE 权限</string>
+    <string name="mgr_ble_adv_unavailable">BLE advertiser 不可用</string>
+    <string name="mgr_ble_adv_exception">startAdvertising 抛出异常</string>
+    <string name="mgr_ble_adv_failed_code">广播启动失败（code=%1$d）</string>
+    <string name="mgr_ble_high_fail_rate">[!] 失败率过高 %1$d%%（最近 %2$d 轮）—— 尝试减小间隔</string>
+</resources>

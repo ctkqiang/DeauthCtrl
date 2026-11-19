@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PdrHomingManager — English default strings. -->
+<resources>
+    <string name="mgr_pdr_no_step_sensor">[!] No step sensor on this device (TYPE_STEP_COUNTER / TYPE_STEP_DETECTOR both unavailable) — step tracking unavailable</string>
+    <string name="mgr_pdr_activity_permission">[!] Android 10+ requires the Physical activity permission to read the step sensor; not granted — grant it and reopen this page</string>
+    <string name="mgr_pdr_no_rotation_sensor">[!] No rotation vector sensor — heading unavailable; steps and distance still count, but position cannot be estimated</string>
+    <string name="mgr_pdr_step_register_failed">[!] Step sensor registration failed — the system may be restricting sensor access</string>
+</resources>

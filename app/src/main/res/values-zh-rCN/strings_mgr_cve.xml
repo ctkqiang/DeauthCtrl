@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CVESearchManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_cve_prompt_empty">请输入搜索关键词</string>
+    <string name="mgr_cve_error">错误: %1$s</string>
+    <string name="mgr_cve_looking_up">查询 %1$s ...</string>
+    <string name="mgr_cve_network_unreachable">网络不通 — 请检查 WiFi/数据连接</string>
+    <string name="mgr_cve_searching">搜索 \"%1$s\" ...</string>
+    <string name="mgr_cve_no_results">未找到结果</string>
+    <string name="mgr_cve_found_count">找到 %1$d 条结果</string>
+    <string name="mgr_cve_parse_failed">解析失败: %1$s</string>
+</resources>

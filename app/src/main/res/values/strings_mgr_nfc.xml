@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NfcManager — English default strings. -->
+<resources>
+    <string name="mgr_nfc_disabled">NFC is off — enable it in system settings</string>
+    <string name="mgr_nfc_write_ready">Ready — hold the tag near the phone to write</string>
+    <string name="mgr_nfc_write_success">Write succeeded: %1$s</string>
+    <string name="mgr_nfc_uid_read">UID read: %1$s</string>
+</resources>

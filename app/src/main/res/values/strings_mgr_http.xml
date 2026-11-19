@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HttpClientManager — English default strings. -->
+<resources>
+    <string name="mgr_http_empty_url">URL cannot be empty</string>
+    <string name="mgr_http_cancelled">Request cancelled</string>
+</resources>

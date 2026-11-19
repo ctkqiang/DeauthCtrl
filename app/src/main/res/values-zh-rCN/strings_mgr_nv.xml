@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 数字夜视管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_nv_status_loading">加载中</string>
+    <string name="mgr_nv_status_ready">就绪</string>
+    <string name="mgr_nv_status_stopped">已停止</string>
+    <string name="mgr_nv_lens_front">前置镜头</string>
+    <string name="mgr_nv_lens_back">后置镜头</string>
+    <string name="mgr_nv_lens_external">外部镜头</string>
+    <string name="mgr_nv_error_no_yuv">该镜头不支持 YUV 输出,夜视不可用</string>
+    <string name="mgr_nv_error_session_config">夜视会话配置失败</string>
+    <string name="mgr_nv_error_camera">相机错误 %1$d</string>
+</resources>

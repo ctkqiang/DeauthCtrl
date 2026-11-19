@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ─── Seismograph ─── -->
+    <string name="seismo_title">Seismic Monitor · SEISMOGRAPH</string>
+    <string name="seismo_waveform_title">Waveform · WAVEFORM</string>
+    <string name="seismo_full_scale">Full scale ±%1$.1f m/s²</string>
+    <string name="seismo_threshold_value">Threshold %1$.1f m/s²</string>
+    <string name="seismo_sample_count">%1$d / %2$d samples</string>
+    <string name="seismo_waiting_sample">Waiting for the first accelerometer sample...</string>
+    <string name="seismo_not_running">Monitoring not started — tap START MONITORING below</string>
+
+    <!-- peak panel -->
+    <string name="seismo_peak_panel_title">Current Reading · PEAK</string>
+    <string name="seismo_recent_peak_label">Peak over last 50 samples</string>
+    <string name="seismo_peak_display">%1$.2f m/s²</string>
+    <string name="seismo_instant_value">Instant %1$+.2f m/s²</string>
+    <string name="seismo_instant_none">Instant --</string>
+    <string name="seismo_alarm_threshold_label">Alarm threshold</string>
+    <string name="seismo_threshold_display">%1$.1f m/s²</string>
+    <string name="seismo_event_active_peak">Event active · peak %1$.2f</string>
+    <string name="seismo_no_active_event">No active event</string>
+    <string name="seismo_step_label">0.1 m/s² step</string>
+    <string name="seismo_threshold_help">Threshold %1$.1f m/s² is the default and can be adjusted to ambient noise; anything within the threshold counts as ambient noise and produces no event.</string>
+    <string name="seismo_gravity_sensor">Gravity baseline %1$.2f m/s² (EMA estimate) · Sensor %2$s</string>
+    <string name="seismo_gravity_sensor_none">Gravity baseline -- · Sensor %1$s</string>
+
+    <!-- event log -->
+    <string name="seismo_events_title">Event Log · EVENTS</string>
+    <string name="seismo_events_recorded">Recorded %1$d / %2$d · newest first</string>
+    <string name="seismo_clear">CLEAR</string>
+    <string name="seismo_event_banner">[!] Event in progress · current peak %1$.2f m/s²</string>
+    <string name="seismo_events_empty">No vibration events yet — vibrations above the threshold leave time, peak and duration here</string>
+    <string name="seismo_event_peak">Peak %1$.2f m/s²</string>
+    <string name="seismo_event_duration">Duration %1$s</string>
+
+    <!-- warning strip -->
+    <string name="seismo_no_accelerometer">No accelerometer (TYPE_ACCELEROMETER) on this device — vibration monitoring unavailable</string>
+    <string name="seismo_error_line">[!] %1$s</string>
+
+    <!-- action -->
+    <string name="seismo_start_monitoring">START MONITORING</string>
+    <string name="seismo_stop_monitoring">STOP MONITORING</string>
+
+    <!-- honesty panel -->
+    <string name="seismo_honesty_title">Accuracy Note · HONESTY</string>
+    <string name="seismo_honesty_p1">Phone accelerometers are consumer-grade 16-bit MEMS sensors, sampled at SENSOR_DELAY_GAME (typically about 50 Hz); noise floor, bandwidth and dynamic range fall far short of a professional seismometer. This page reliably captures only obvious vibration — knocks, footsteps, a bumped desk, mechanical vibration; it is not sensitive to distant earthquakes.</string>
+    <string name="seismo_honesty_p2">Net acceleration = combined 3-axis acceleration - gravity baseline. The gravity baseline is tracked with an exponential moving average at alpha 0.01; slow tilts are treated as zero vibration — an inherent blind spot of gravity removal. Combined acceleration is independent of phone orientation.</string>
+    <string name="seismo_honesty_p3">Event peak, occurrence time and duration all come from real sensor samples; duration is the difference between the first and last above-threshold samples, and a single-sample event is shown as under 50 ms. An event ends only after 400 ms continuously below the threshold, so one vibration is not split apart.</string>
+    <string name="seismo_honesty_p4">A phone mounted rigidly on a hard desk or floor has the highest sensitivity; soft pads and clothing absorb high-frequency vibration. When readings are insufficient the page shows \"--\" and never invents data; 0.5 m/s² is only the default threshold — raise it in noisy environments.</string>
+</resources>

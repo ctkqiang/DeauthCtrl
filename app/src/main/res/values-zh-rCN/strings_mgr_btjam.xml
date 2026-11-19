@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_btjam_err_connect_permission">缺少附近设备权限 BLUETOOTH_CONNECT：无法读取蓝牙状态。请先在权限网关授予。</string>
+    <string name="mgr_btjam_err_no_adapter">本机没有蓝牙适配器</string>
+    <string name="mgr_btjam_err_read_denied">读取蓝牙状态被拒绝（BLUETOOTH_CONNECT）：%1$s</string>
+    <string name="mgr_btjam_err_bt_off">蓝牙未开启，请先打开蓝牙</string>
+    <string name="mgr_btjam_err_no_advertise_perm">缺少 BLUETOOTH_ADVERTISE：BLE 广播不可用（经典蓝牙发现仍可运行）</string>
+    <string name="mgr_btjam_err_no_advertiser">本机控制器不提供 BLE 广播（BluetoothLeAdvertiser=null），经典发现仍可运行</string>
+    <string name="mgr_btjam_err_both_unavailable">BLE 广播与经典发现均不可用：请授予 BLUETOOTH_ADVERTISE / BLUETOOTH_SCAN</string>
+    <string name="mgr_btjam_err_adv_unavailable">BLE 广播不可用：本机没有 advertiser 或缺少 BLUETOOTH_ADVERTISE</string>
+    <string name="mgr_btjam_err_data_too_large">广播数据超长：%1$d &gt; %2$d 字节（legacy advertising）</string>
+    <string name="mgr_btjam_err_slots_exhausted">蓝牙广播槽位耗尽（code 2 连续 %1$d 次）：请关闭/重启蓝牙后重试</string>
+    <string name="mgr_btjam_err_scan_permission">缺少 BLUETOOTH_SCAN：无法执行经典蓝牙发现</string>
+    <string name="mgr_btjam_err_start_discovery">startDiscovery 失败：%1$s</string>
+    <string name="mgr_btjam_adv_data_too_large">广播数据超长（code=1）</string>
+    <string name="mgr_btjam_adv_too_many">广播槽位被占用（code=2）：正在退避重试</string>
+    <string name="mgr_btjam_adv_already_started">广播会话已启动（code=3）</string>
+    <string name="mgr_btjam_adv_internal">控制器内部错误（code=4）</string>
+    <string name="mgr_btjam_adv_unsupported">控制器不支持 BLE 广播（code=5）</string>
+    <string name="mgr_btjam_adv_no_permission">缺少 BLUETOOTH_ADVERTISE 权限</string>
+    <string name="mgr_btjam_adv_exception">startAdvertising 抛出异常（详见日志）</string>
+    <string name="mgr_btjam_adv_failed_code">广播启动失败（code=%1$d）</string>
+    <string name="mgr_btjam_log_started">BLE 广播 + 经典蓝牙发现已启动（不会压制或断开他人设备）</string>
+    <string name="mgr_btjam_log_stopped">stopped | 广播会话=%1$d Inquiry轮次=%2$d devices=%3$d</string>
+    <string name="mgr_btjam_log_inquiry_started">经典蓝牙发现已启动（本机扫描，不干扰其他设备）</string>
+</resources>

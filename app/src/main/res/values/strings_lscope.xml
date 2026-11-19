@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LogicScopeScreen — English default strings. -->
+<resources>
+    <string name="lscope_title">LOGIC SCOPE</string>
+    <string name="lscope_ir_pattern_segments">IR %1$d segments</string>
+
+    <!-- ─── 通道选择 ─── -->
+    <string name="lscope_channels_panel">CHANNELS</string>
+    <string name="lscope_channels_locked">Channel selection is locked while running — stop capture first to switch</string>
+    <string name="lscope_channels_multi_hint">Multi-select · up to %1$d on screen · keep at least 1 · defaults to BLE pulse + audio</string>
+    <string name="lscope_start_capture">START CAPTURE</string>
+    <string name="lscope_stop_capture">STOP CAPTURE</string>
+
+    <!-- ─── 波形 ─── -->
+    <string name="lscope_waveform_panel">WAVEFORM</string>
+    <string name="lscope_now">NOW</string>
+    <string name="lscope_window_info">Window %1$ds · 8×6 grid</string>
+    <string name="lscope_capacity_points">%1$d points/channel</string>
+    <string name="lscope_points_cached">%1$d points buffered</string>
+    <string name="lscope_waiting_first_sample">Waiting for the first real sample — the trace starts scrolling once scan events arrive</string>
+
+    <!-- ─── 通道读数 ─── -->
+    <string name="lscope_readout_panel">READOUT</string>
+    <string name="lscope_active_channels">%1$d / %2$d channels active</string>
+    <string name="lscope_clear_trace">CLEAR TRACE</string>
+    <string name="lscope_channel_ble">BLE PULSE</string>
+    <string name="lscope_channel_wifi">WiFi PULSE</string>
+    <string name="lscope_channel_cell">CELLULAR</string>
+    <string name="lscope_channel_audio">AUDIO</string>
+    <string name="lscope_channel_ir">IR</string>
+    <string name="lscope_state_capturing">CAPTURING</string>
+    <string name="lscope_state_idle">NOT STARTED</string>
+    <string name="lscope_state_stopped">STOPPED</string>
+    <string name="lscope_event_count">COUNT %1$d</string>
+    <string name="lscope_readout_value">RAW %1$s · %2$s · %3$s</string>
+    <string name="lscope_no_label">NO TAG</string>
+    <string name="lscope_no_sample_waiting">No samples yet — waiting for %1$s data</string>
+    <string name="lscope_age_just_now">just now</string>
+    <string name="lscope_age_ms_ago">%1$d ms ago</string>
+    <string name="lscope_age_sec_ago">%1$s s ago</string>
+    <string name="lscope_age_min_ago">%1$d min ago</string>
+    <string name="lscope_channel_note">%1$s: %2$s</string>
+    <string name="lscope_warning_prefix">[!] %1$s</string>
+    <string name="lscope_ir_carrier">Carrier pulse</string>
+    <string name="lscope_ir_gap">Gap</string>
+
+    <!-- ─── 映射与边界 ─── -->
+    <string name="lscope_honesty_panel">MAPPING &amp; LIMITS</string>
+    <string name="lscope_honesty_p1">Pulse channels (BLE / WiFi / cellular / IR) draw the scan-event timestamps and signal levels reported by the Android system, held sample-and-hold into square waves; this is not a physical capture of the over-the-air RF waveform and does not represent occupied bandwidth. The cellular channel is discrete samples polled every 2s; the IR channel only gets a trace after a real transmit pattern is injected via submitIrPattern.</string>
+    <string name="lscope_honesty_p2" formatted="false">Amplitude mapping: BLE / WiFi = (RSSI + 100) / 80 (-100 dBm → 0%, -20 dBm → 100%); cellular = (RSRP + 140) / 100 (-140 → 0%, -40 → 100%); audio = (dBFS + 80) / 80 (-80 dBFS → 0%, 0 dBFS → 100%); IR carrier = 100%, gap = 0%.</string>
+    <string name="lscope_honesty_p3">The audio channel uses AudioRecord 16kHz / 16bit / mono with an 8kHz bandwidth cap; every 100ms, 1600 raw samples are compressed into one RMS envelope point (10Hz), drawing an energy envelope rather than the raw audio waveform; 16kHz sampling cannot reproduce detail above 8kHz.</string>
+    <string name="lscope_honesty_p4" formatted="false">Samples beyond a channel\'s range are clamped to the 0% / 100% edges in the plot, and readouts are labelled with the ≤ / ≥ range endpoint instead of faking an exact number; the dBFS value in the audio tag is the real measurement for that frame.</string>
+    <string name="lscope_honesty_p5">All readouts come from real system API return values; with no data the UI shows \"--\" and never interpolates or fabricates. Colors only distinguish channels; this page is an engineering debug visualization, not a spectrum analyzer, and has no direction-finding or positioning capability.</string>
+    <string name="lscope_honesty_p6">Permissions: BLE scan, Wi-Fi scan / location, phone state and recording are requested centrally by the app gateway; when a permission is missing the affected channel shows the exact reason instead of failing silently.</string>
+</resources>

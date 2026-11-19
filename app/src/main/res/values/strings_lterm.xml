@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TerminalScreen — English default strings. -->
+<resources>
+    <string name="lterm_title">LOCAL TERMINAL</string>
+
+    <!-- ─── Termux bootstrap 状态条 ─── -->
+    <string name="lterm_bootstrap_installing">Installing Termux environment · %1$s · %2$d%%</string>
+    <string name="lterm_bootstrap_missing">Termux environment not installed — the official bootstrap (~33MB, one-time) is extracted automatically when a session starts</string>
+    <string name="lterm_error_prefix">[!] %1$s</string>
+
+    <!-- ─── 会话状态 ─── -->
+    <string name="lterm_status_idle">OFFLINE</string>
+    <string name="lterm_status_starting">STARTING…</string>
+    <string name="lterm_status_online_title">SESSION ONLINE · %1$s</string>
+    <string name="lterm_status_online_pid">SESSION ONLINE · PID %1$d</string>
+    <string name="lterm_status_finished">EXITED · code %1$d</string>
+    <string name="lterm_status_failed">START FAILED</string>
+
+    <!-- ─── 工具条按钮 ─── -->
+    <string name="lterm_paste">PASTE</string>
+    <string name="lterm_clear">CLEAR</string>
+    <string name="lterm_connect">CONNECT</string>
+    <string name="lterm_disconnect">HANG UP</string>
+    <string name="lterm_failure_bar">! %1$s</string>
+
+    <!-- ─── 页脚提示 ─── -->
+    <string name="lterm_footer_hint">Tap the screen to toggle the soft keyboard · long-press and drag to select and copy · pinch to zoom text size · CTRL/ALT sticky (long-press to lock) · long-press arrows to repeat · long-press - to type |</string>
+    <string name="lterm_footer_copy_mode">SELECTION MODE</string>
+</resources>

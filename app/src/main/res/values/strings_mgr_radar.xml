@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RadarManager.kt — English default strings.
+  Key prefix: mgr_radar_.
+  Placeholder names keep the leading "(" prefix; effectiveName logic relies on it.
+-->
+<resources>
+
+    <!-- ─── Target placeholders ─── -->
+    <string name="mgr_radar_placeholder_bt">(BT device)</string>
+    <string name="mgr_radar_placeholder_ble">(BLE device)</string>
+    <string name="mgr_radar_hidden_ssid">&lt;Hidden SSID&gt;</string>
+
+    <!-- ─── Pairing popup failures ─── -->
+    <string name="mgr_radar_err_bt_unavailable">Bluetooth unavailable</string>
+    <string name="mgr_radar_err_bad_address">Invalid target address: %1$s</string>
+    <string name="mgr_radar_err_empty_message">Message cannot be empty</string>
+    <string name="mgr_radar_err_rename_failed">Failed to change local Bluetooth name (BLUETOOTH_CONNECT permission required)</string>
+    <string name="mgr_radar_err_pair_failed">Pairing request failed — target may not be in pairable state</string>
+
+    <!-- ─── Bluetooth major device classes ─── -->
+    <string name="mgr_radar_class_computer">Computer</string>
+    <string name="mgr_radar_class_phone">Phone</string>
+    <string name="mgr_radar_class_imaging">Imaging device</string>
+    <string name="mgr_radar_class_audio_video">Audio/video</string>
+    <string name="mgr_radar_class_wearable">Wearable</string>
+    <string name="mgr_radar_class_network">Network device</string>
+    <string name="mgr_radar_class_health">Health device</string>
+    <string name="mgr_radar_class_peripheral">Peripheral</string>
+    <string name="mgr_radar_class_toy">Toy</string>
+    <string name="mgr_radar_class_uncategorized">Uncategorized</string>
+
+    <!-- ─── Bluetooth minor device classes ─── -->
+    <string name="mgr_radar_minor_smartphone">Smartphone</string>
+    <string name="mgr_radar_minor_cellular">Cellular phone</string>
+    <string name="mgr_radar_minor_cordless">Cordless phone</string>
+    <string name="mgr_radar_minor_modem_gateway">Modem/gateway</string>
+    <string name="mgr_radar_minor_desktop">Desktop</string>
+    <string name="mgr_radar_minor_laptop">Laptop</string>
+    <string name="mgr_radar_minor_handheld">Handheld PC/PDA</string>
+    <string name="mgr_radar_minor_wearable_computer">Wearable computer</string>
+    <string name="mgr_radar_minor_headphones">Headphones</string>
+    <string name="mgr_radar_minor_loudspeaker">Loudspeaker</string>
+    <string name="mgr_radar_minor_headset">Headset</string>
+    <string name="mgr_radar_minor_car_audio">Car audio</string>
+    <string name="mgr_radar_minor_wrist_watch">Smartwatch</string>
+    <string name="mgr_radar_minor_glasses">Smart glasses</string>
+
+    <!-- ─── Bond state ─── -->
+    <string name="mgr_radar_bond_bonded">Bonded</string>
+    <string name="mgr_radar_bond_bonding">Bonding</string>
+    <string name="mgr_radar_bond_none">Not bonded</string>
+
+    <!-- ─── Link type ─── -->
+    <string name="mgr_radar_link_classic">BR/EDR classic</string>
+    <string name="mgr_radar_link_le">BLE low energy</string>
+    <string name="mgr_radar_link_dual">Dual mode</string>
+    <string name="mgr_radar_link_unknown">Unknown</string>
+
+    <!-- ─── Vendor ─── -->
+    <string name="mgr_radar_vendor_unknown">Unknown vendor</string>
+
+</resources>

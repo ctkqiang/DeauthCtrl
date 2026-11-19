@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PdrHomingScreen — 简体中文资源。 -->
+<resources>
+    <string name="pdr_title">步测归航 · PDR HOMING</string>
+
+    <!-- ─── 航迹图 ─── -->
+    <string name="pdr_map_panel">航迹图 · DEAD RECKONING</string>
+    <string name="pdr_trail_info">轨迹 %1$d / 2000 点 · 白线为死推算路径 · 金色十字为起点 · 三角为当前位置</string>
+    <string name="pdr_grid_label">网格 %1$dm</string>
+    <string name="pdr_heading_up">机头朝上</string>
+    <string name="pdr_north_up">航向 -- · 北向朝上</string>
+
+    <!-- ─── 步测控制 ─── -->
+    <string name="pdr_start_steps">启动步测</string>
+    <string name="pdr_resume_steps">继续步测</string>
+    <string name="pdr_pause_steps">暂停步测</string>
+    <string name="pdr_reset">重置</string>
+
+    <!-- ─── 归航指示 ─── -->
+    <string name="pdr_homing_panel">归航指示 · HOMING</string>
+    <string name="pdr_home_distance_none">距起点 --</string>
+    <string name="pdr_home_arrived">已回到起点附近</string>
+    <string name="pdr_home_distance">距起点 %1$s m</string>
+    <string name="pdr_distance_bearing">%1$s · 方位 %2$s</string>
+    <string name="pdr_nose_value">机头 %1$s°</string>
+    <string name="pdr_nose_none">机头 --</string>
+    <string name="pdr_rel_none">相对机头 --</string>
+    <string name="pdr_rel_ahead">相对机头 正前</string>
+    <string name="pdr_rel_right">相对机头 右 %1$s°</string>
+    <string name="pdr_rel_left">相对机头 左 %1$s°</string>
+    <string name="pdr_heading_rel">%1$s · %2$s</string>
+    <string name="pdr_arrow_note">箭头指向起点方向;方位以磁北为基准,机头方向以手机顶部朝向为基准</string>
+    <string name="pdr_waiting_first_step">等待第一步 —— 计步传感器只在真实行走时发数</string>
+
+    <!-- ─── 步长标定 ─── -->
+    <string name="pdr_step_panel">步长标定 · STEP LENGTH</string>
+    <string name="pdr_step_length_label">单步步长(距离估算)</string>
+    <string name="pdr_step_increment">0.05 m 步进</string>
+    <string name="pdr_step_hint">默认 0.75m 仅为成人均值。建议在已知 10m 直线上自然走 10 步,用 10 ÷ 步数 反推后再标定;调整只影响之后的步伐,不篡改已走轨迹。</string>
+
+    <!-- ─── 本程读数 ─── -->
+    <string name="pdr_telemetry_panel">本程读数 · TELEMETRY</string>
+    <string name="pdr_stat_steps">步数</string>
+    <string name="pdr_stat_distance">距离</string>
+    <string name="pdr_stat_heading">航向</string>
+    <string name="pdr_stat_home">距起点</string>
+    <string name="pdr_sensor_line">传感器: %1$s · %2$s</string>
+    <string name="pdr_sensor_step_default">计步传感器</string>
+    <string name="pdr_sensor_step_unavailable">计步不可用</string>
+    <string name="pdr_sensor_rotation">旋转矢量(航向)</string>
+    <string name="pdr_sensor_heading_unavailable">航向不可用</string>
+    <string name="pdr_distance_note">距离 = 每步步数 × 当时步长的累加(估算);距起点 = 死推算位置到 (0,0) 的直线距离,非 GPS 测量</string>
+
+    <!-- ─── 告警条 ─── -->
+    <string name="pdr_warn_no_step_sensor">本机未提供计步传感器(TYPE_STEP_COUNTER / TYPE_STEP_DETECTOR) —— 步测不可用</string>
+    <string name="pdr_warn_activity_permission">Android 10+ 读取计步传感器需要「身体活动」权限,当前未授予 —— 授予后重新进入本页</string>
+    <string name="pdr_warn_no_heading_sensor">本机无旋转矢量传感器 —— 航向不可用,轨迹无法推算</string>
+    <string name="pdr_warning_prefix">[!] %1$s</string>
+
+    <!-- ─── 精度声明 ─── -->
+    <string name="pdr_honesty_panel">精度声明 · HONESTY</string>
+    <string name="pdr_honesty_p1" formatted="false">死推算(PDR)只依赖步数与航向,误差会随距离累积:百米级行程通常有 5-10% 漂移;转弯、手持晃动、口袋摆动都会显著放大误差。</string>
+    <string name="pdr_honesty_p2">它只在室内、地下等无 GPS / 无稳定基站定位的场景才有价值;开阔地请以卫星定位为准。</string>
+    <string name="pdr_honesty_p3">步长默认 0.75m 只是成人均值,身高与步态不同差异很大 —— 请在已知距离上自校准;本页所有读数来自硬件计步器与旋转矢量传感器,无传感器或未授权时显示「不可用」,绝不编造。</string>
+</resources>

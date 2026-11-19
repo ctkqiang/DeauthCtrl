@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BER 编解码器 —— 中文资源 -->
+<resources>
+    <string name="mgr_ber_unknown_error_code">未知错误码 %1$d</string>
+</resources>

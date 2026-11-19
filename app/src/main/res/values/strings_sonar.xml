@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sonar_title">Sonar Ranger · SONAR</string>
+    <string name="sonar_status_error_stop">Aborted — see the alert above</string>
+    <string name="sonar_status_stopped">Stopped · tap the button below to start</string>
+    <string name="sonar_status_out_of_range">&gt;8m (out of range) — echo beyond reliable phone-speaker range</string>
+    <string name="sonar_status_no_echo">No echo (absorbing room / wrong angle)</string>
+    <string name="sonar_status_locked">Echo locked · %1$d valid measurements accumulated</string>
+    <string name="sonar_status_measuring">Measuring — first echo in about 1.5 s</string>
+    <string name="sonar_panel_range">Range Readout · RANGE</string>
+    <string name="sonar_distance_label">DISTANCE / m</string>
+    <string name="sonar_confidence_label">Confidence · CONFIDENCE</string>
+    <string name="sonar_btn_start">START RANGING</string>
+    <string name="sonar_btn_stop">STOP RANGING</string>
+    <string name="sonar_intro">Fires a 60ms linear chirp (3-8kHz) every 1.5 s; distance = echo delay relative to direct sound × 343m/s ÷ 2.</string>
+    <string name="sonar_panel_history">Echo History · HISTORY (last %1$d)</string>
+    <string name="sonar_history_empty">Not enough valid echoes — the curve scrolls in with each valid measurement</string>
+    <string name="sonar_history_min">MIN %1$s m</string>
+    <string name="sonar_history_cur">CUR %1$s m</string>
+    <string name="sonar_history_max">MAX %1$s m</string>
+    <string name="sonar_history_desc">Y-axis 0.2-8m; only measurements with a valid echo are plotted. No-echo / out-of-range cycles are not recorded.</string>
+    <string name="sonar_panel_telemetry">Telemetry · TELEMETRY</string>
+    <string name="sonar_telemetry_status">Status</string>
+    <string name="sonar_telemetry_running">Measuring continuously</string>
+    <string name="sonar_telemetry_stopped">Stopped</string>
+    <string name="sonar_telemetry_interval">Measure interval</string>
+    <string name="sonar_telemetry_chirp">Chirp sweep</string>
+    <string name="sonar_telemetry_sampling">Sample / FFT</string>
+    <string name="sonar_telemetry_sampling_value">%1$d Hz · %2$d pts</string>
+    <string name="sonar_telemetry_direct_lag">Direct-path lag</string>
+    <string name="sonar_telemetry_peak_ratio">Peak / mean</string>
+    <string name="sonar_telemetry_cycles">Valid / total cycles</string>
+    <string name="sonar_telemetry_volume">Media volume</string>
+    <string name="sonar_telemetry_sound_speed">Speed of sound</string>
+    <string name="sonar_low_volume">[!] Media volume is low — weak speaker output noticeably shortens the range; raise it above 80%</string>
+    <string name="sonar_panel_honesty">Honest Limits · HONESTY</string>
+    <string name="sonar_honesty_speed">Sound speed is scaled at 343m/s (dry air at 20°C); every 10°C change shifts it by about 6m/s, a ~1.7% distance error.</string>
+    <string name="sonar_honesty_aec">The speaker and mic are extremely close — direct sound is treated as the 0m time base, so only echoes after it are measured. If system echo cancellation (AEC) erases the direct sound, this page reports \'direct sound not captured\' and never invents a distance.</string>
+    <string name="sonar_honesty_multipath">Multipath reflections, soft surfaces (curtains / sofas / acoustic panels) and oblique angles weaken or kill the echo; large flat targets such as walls, doors and tabletops work best.</string>
+    <string name="sonar_honesty_range">Limited by phone speaker power and the 0.5s recording window, the reliable range is about 0.2-8m; beyond 8m it shows \"&gt;8m (out of range)\"; in strongly absorbing rooms it shows \"no echo (absorbing room / wrong angle)\".</string>
+    <string name="sonar_honesty_speaker">Bluetooth headsets / external speakers add hundreds of milliseconds of latency and the mic cannot hear the direct sound — use the phone speaker.</string>
+    <string name="sonar_honesty_estimate">Readings are peak-delay estimates, not laser ranging; good for \'is there an obstacle ahead / roughly how far\', not for precision measurement. All readings come from real sampling and local FFT computation; unavailable values show \'--\'.</string>
+</resources>

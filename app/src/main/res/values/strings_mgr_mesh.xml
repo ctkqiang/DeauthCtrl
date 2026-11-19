@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_mesh_err_permissions">Missing Bluetooth permissions: %1$s — grant them in the app permission gateway first</string>
+    <string name="mgr_mesh_perm_sep">", "</string>
+    <string name="mgr_mesh_perm_scan">scan nearby devices</string>
+    <string name="mgr_mesh_perm_advertise">advertise nearby devices</string>
+    <string name="mgr_mesh_perm_connect">connect / read Bluetooth state</string>
+    <string name="mgr_mesh_perm_location">precise location</string>
+    <string name="mgr_mesh_err_no_adapter">No Bluetooth adapter on this device</string>
+    <string name="mgr_mesh_err_bt_off">Bluetooth is off — turn it on in system settings first</string>
+    <string name="mgr_mesh_err_no_advertiser">This controller does not offer BLE advertising (BluetoothLeAdvertiser=null)</string>
+    <string name="mgr_mesh_err_no_scanner">System provides no BLE scanner — turn Bluetooth off and on, then retry</string>
+    <string name="mgr_mesh_err_not_running">Mesh not started — start advertising and scanning first</string>
+    <string name="mgr_mesh_err_queue_not_ready">Advertising queue not ready — restart the mesh</string>
+    <string name="mgr_mesh_err_empty">Nothing to send (control characters and | are filtered)</string>
+    <string name="mgr_mesh_err_header_budget">Payload too small: protocol header exceeds local budget of %1$dB</string>
+    <string name="mgr_mesh_err_queue_closed">Advertising queue closed — restart the mesh</string>
+    <string name="mgr_mesh_notice_truncated_chars">Input exceeded %1$d characters; truncated</string>
+    <string name="mgr_mesh_notice_truncated_bytes">Payload fits only %1$d characters; truncated by bytes</string>
+    <string name="mgr_mesh_notice_sep">"; "</string>
+    <string name="mgr_mesh_err_broadcast_task">Advertising task error: %1$s</string>
+    <string name="mgr_mesh_err_header_fit">Payload too small: protocol header does not fit local budget of %1$dB</string>
+    <string name="mgr_mesh_err_no_char">Payload too small: not even 1 character fits (header fills %1$dB)</string>
+    <string name="mgr_mesh_notice_budget_tightened">Budget tightened to %1$dB; %2$d characters sent</string>
+    <string name="mgr_mesh_err_data_too_large">Advertising data too large (BLE 31B limit): header fills the payload, cannot shrink further</string>
+    <string name="mgr_mesh_err_no_scanner_generic">System provides no BLE scanner</string>
+    <string name="mgr_mesh_err_scan_permission">Scan permission denied by system: %1$s</string>
+    <string name="mgr_mesh_err_scan_permission_hint">grant the Nearby devices permission</string>
+    <string name="mgr_mesh_err_scan_start">BLE scan start failed: %1$s</string>
+    <string name="mgr_mesh_scan_already_started">Scan already in progress (stop it and retry)</string>
+    <string name="mgr_mesh_scan_reg_failed">Scan callback registration failed; turn Bluetooth off and on</string>
+    <string name="mgr_mesh_scan_internal">System internal error; turn Bluetooth off and on</string>
+    <string name="mgr_mesh_scan_unsupported">This device does not support BLE scanning</string>
+    <string name="mgr_mesh_scan_no_resources">Bluetooth hardware resources exhausted; close other scanning apps</string>
+    <string name="mgr_mesh_scan_too_frequent">Scanning too frequently; retry in about 30 s</string>
+    <string name="mgr_mesh_scan_failed_code">Scan failed (system error code %1$d)</string>
+    <string name="mgr_mesh_adv_data_too_large">Advertising data too large (code=1)</string>
+    <string name="mgr_mesh_adv_too_many">Advertising slots occupied (code=2)</string>
+    <string name="mgr_mesh_adv_already_started">Advertising session already running (code=3)</string>
+    <string name="mgr_mesh_adv_internal">Controller internal error (code=4)</string>
+    <string name="mgr_mesh_adv_unsupported">Controller does not support BLE advertising (code=5)</string>
+    <string name="mgr_mesh_adv_timeout">Timed out waiting for advertising callback (system not responding)</string>
+    <string name="mgr_mesh_adv_no_permission">Missing BLUETOOTH_ADVERTISE permission</string>
+    <string name="mgr_mesh_adv_no_adapter">Bluetooth adapter unavailable</string>
+    <string name="mgr_mesh_adv_no_advertiser">Controller does not offer BLE advertising</string>
+    <string name="mgr_mesh_adv_exception">startAdvertising threw an exception</string>
+    <string name="mgr_mesh_adv_failed_code">Advertising start failed (code=%1$d)</string>
+</resources>

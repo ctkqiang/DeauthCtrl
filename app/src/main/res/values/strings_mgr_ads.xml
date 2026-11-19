@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AdStructureDecoder.kt — English default strings.
+  Key prefix: mgr_ads_.
+  AD field names and company names stay as protocol proper nouns in both languages.
+  Appearance / major device class / service UUID names are localized description text.
+-->
+<resources>
+
+    <!-- ─── Parsing errors / status ─── -->
+    <string name="mgr_ads_field_length_error">Length field error</string>
+    <string name="mgr_ads_err_length_no_type">[!] Offset %1$d declares length %2$dB, but no AD type byte follows — data truncated here</string>
+    <string name="mgr_ads_truncated">%1$s; [!] Declared %2$dB of data, only %3$dB remains — truncated</string>
+    <string name="mgr_ads_known_unexpanded">Type recognized but its field structure is not expanded on this page — raw value %1$s</string>
+    <string name="mgr_ads_unknown_type">Unknown AD type 0x%1$02X — raw value %2$s</string>
+    <string name="mgr_ads_empty">(empty)</string>
+    <string name="mgr_ads_field_unknown_type">Unknown AD type</string>
+    <string name="mgr_ads_none">None</string>
+
+    <!-- ─── Flags ─── -->
+    <string name="mgr_ads_err_flags_missing">Flags byte missing</string>
+    <string name="mgr_ads_flag_limited">LE limited discoverable mode</string>
+    <string name="mgr_ads_flag_general">LE general discoverable mode</string>
+    <string name="mgr_ads_flag_no_br_edr">BR/EDR not supported (LE only)</string>
+    <string name="mgr_ads_flag_br_edr">BR/EDR supported</string>
+    <string name="mgr_ads_flag_dual_controller">LE and BR/EDR supported (controller)</string>
+    <string name="mgr_ads_flag_dual_host">LE and BR/EDR supported (host)</string>
+    <string name="mgr_ads_reserved_bits">; [!] Reserved bits 0x%1$02X are non-zero</string>
+    <string name="mgr_ads_flags_line">0x%1$02X: %2$s%3$s</string>
+
+    <!-- ─── UUID lists ─── -->
+    <string name="mgr_ads_err_uuid_empty">UUID list is empty</string>
+    <string name="mgr_ads_err_len_not2">Data length %1$dB is not a multiple of 2 — trailing %2$dB cannot be parsed</string>
+    <string name="mgr_ads_err_len_not4">Data length %1$dB is not a multiple of 4 — trailing %2$dB cannot be parsed</string>
+    <string name="mgr_ads_err_len_not16">Data length %1$dB is not a multiple of 16 — trailing %2$dB cannot be parsed</string>
+    <string name="mgr_ads_paren">(%1$s)</string>
+    <string name="mgr_ads_alias16">(16-bit alias: %1$s)</string>
+    <string name="mgr_ads_uuid128_alias_named">%1$s (16-bit alias 0x%2$s: %3$s)</string>
+    <string name="mgr_ads_uuid128_alias">%1$s (16-bit alias 0x%2$s)</string>
+
+    <!-- ─── Local name / TX power ─── -->
+    <string name="mgr_ads_err_name_empty">Name is empty</string>
+    <string name="mgr_ads_bad_utf8">; [!] Contains %1$d non-UTF-8 replacement characters</string>
+    <string name="mgr_ads_local_name">\"%1$s\" (%2$dB UTF-8)%3$s</string>
+    <string name="mgr_ads_err_tx_power_missing">TX power byte missing</string>
+    <string name="mgr_ads_tx_power">%1$d dBm (signed 8-bit)</string>
+
+    <!-- ─── Class of Device ─── -->
+    <string name="mgr_ads_err_cod_short">Insufficient data: 3B required (Class of Device is 24-bit)</string>
+    <string name="mgr_ads_cod_service_limited">Limited discoverability</string>
+    <string name="mgr_ads_cod_service_positioning">Positioning</string>
+    <string name="mgr_ads_cod_service_networking">Networking</string>
+    <string name="mgr_ads_cod_service_rendering">Rendering</string>
+    <string name="mgr_ads_cod_service_capturing">Capturing</string>
+    <string name="mgr_ads_cod_service_object_transfer">Object transfer</string>
+    <string name="mgr_ads_cod_service_audio">Audio</string>
+    <string name="mgr_ads_cod_service_telephony">Telephony</string>
+    <string name="mgr_ads_cod_service_information">Information</string>
+    <string name="mgr_ads_err_cod_unknown">Unrecognized device class</string>
+    <string name="mgr_ads_cod_line">0x%1$06X: major class %2$s; service classes %3$s</string>
+
+    <!-- ─── Connection interval / appearance / advertising interval ─── -->
+    <string name="mgr_ads_err_conn_short">Insufficient data: 4B required (min / max connection interval, 2B each)</string>
+    <string name="mgr_ads_conn_interval">Min %1$.2f ms (0x%2$04X) · Max %3$.2f ms (0x%4$04X) · unit 1.25 ms</string>
+    <string name="mgr_ads_err_appearance_short">Insufficient data: 2B required (Appearance is 16-bit)</string>
+    <string name="mgr_ads_appearance_unknown">0x%1$04X · unrecognized appearance code</string>
+    <string name="mgr_ads_err_adv_interval_short">Insufficient data: 2B required (Advertising Interval is 16-bit)</string>
+    <string name="mgr_ads_adv_interval">0x%1$04X · %2$.2f ms (unit 0.625 ms)</string>
+
+    <!-- ─── LE device address / role ─── -->
+    <string name="mgr_ads_err_le_addr_short">Insufficient data: 6B required (LE device address is 6B)</string>
+    <string name="mgr_ads_addr_type_missing">Address type missing</string>
+    <string name="mgr_ads_addr_public">Public address</string>
+    <string name="mgr_ads_addr_random">Random address</string>
+    <string name="mgr_ads_addr_type_unknown">Unknown address type %1$d</string>
+    <string name="mgr_ads_err_role_missing">Role byte missing</string>
+    <string name="mgr_ads_role_peripheral_only">Peripheral only (slave)</string>
+    <string name="mgr_ads_role_central_only">Central only (master)</string>
+    <string name="mgr_ads_role_prefer_peripheral">Prefer Peripheral</string>
+    <string name="mgr_ads_role_prefer_central">Prefer Central</string>
+    <string name="mgr_ads_role_unknown">Unrecognized role value %1$d</string>
+
+    <!-- ─── Service data / URI / manufacturer data ─── -->
+    <string name="mgr_ads_err_svcdata16_short">Insufficient data: 2B required (16-bit service UUID missing)</string>
+    <string name="mgr_ads_err_svcdata32_short">Insufficient data: 4B required (32-bit service UUID missing)</string>
+    <string name="mgr_ads_err_svcdata128_short">Insufficient data: 16B required (128-bit service UUID missing)</string>
+    <string name="mgr_ads_svcdata">UUID %1$s · data %2$s%3$s</string>
+    <string name="mgr_ads_err_uri_empty">URI is empty</string>
+    <string name="mgr_ads_uri">\"%1$s\" (%2$dB UTF-8)</string>
+    <string name="mgr_ads_err_manufacturer_short">Insufficient data: 2B required (company ID missing)</string>
+    <string name="mgr_ads_err_company_unknown">Unrecognized company ID</string>
+    <string name="mgr_ads_manufacturer_line">Company ID 0x%1$04X · %2$s · data %3$s%4$s</string>
+    <string name="mgr_ads_text_suffix">text \"%1$s\"</string>
+
+    <!-- ─── Service UUID names ─── -->
+    <string name="mgr_ads_svc_generic_access">Generic Access</string>
+    <string name="mgr_ads_svc_generic_attribute">Generic Attribute</string>
+    <string name="mgr_ads_svc_immediate_alert">Immediate Alert</string>
+    <string name="mgr_ads_svc_link_loss">Link Loss</string>
+    <string name="mgr_ads_svc_tx_power">Tx Power</string>
+    <string name="mgr_ads_svc_current_time">Current Time</string>
+    <string name="mgr_ads_svc_glucose">Glucose</string>
+    <string name="mgr_ads_svc_health_thermometer">Health Thermometer</string>
+    <string name="mgr_ads_svc_device_information">Device Information</string>
+    <string name="mgr_ads_svc_heart_rate">Heart Rate</string>
+    <string name="mgr_ads_svc_battery">Battery</string>
+    <string name="mgr_ads_svc_blood_pressure">Blood Pressure</string>
+    <string name="mgr_ads_svc_alert_notification">Alert Notification</string>
+    <string name="mgr_ads_svc_hid">HID</string>
+    <string name="mgr_ads_svc_running_speed">Running Speed and Cadence</string>
+    <string name="mgr_ads_svc_cycling_speed">Cycling Speed and Cadence</string>
+    <string name="mgr_ads_svc_cycling_power">Cycling Power</string>
+    <string name="mgr_ads_svc_location_navigation">Location and Navigation</string>
+    <string name="mgr_ads_svc_environmental_sensing">Environmental Sensing</string>
+    <string name="mgr_ads_svc_fitness_machine">Fitness Machine</string>
+    <string name="mgr_ads_svc_volume_control">Volume Control</string>
+    <string name="mgr_ads_svc_coordinated_set">Coordinated Set Identification</string>
+    <string name="mgr_ads_svc_media_control">Media Control</string>
+    <string name="mgr_ads_svc_vendor_ffe0">Vendor-specific serial service area (common FFE0)</string>
+
+    <!-- ─── Appearance names ─── -->
+    <string name="mgr_ads_app_unknown">Unknown</string>
+    <string name="mgr_ads_app_phone">Phone</string>
+    <string name="mgr_ads_app_computer">Computer</string>
+    <string name="mgr_ads_app_watch">Watch</string>
+    <string name="mgr_ads_app_clock">Clock</string>
+    <string name="mgr_ads_app_display">Display</string>
+    <string name="mgr_ads_app_remote">Remote control</string>
+    <string name="mgr_ads_app_eyewear">Eyewear</string>
+    <string name="mgr_ads_app_tag">Tag</string>
+    <string name="mgr_ads_app_keyring">Keyring</string>
+    <string name="mgr_ads_app_media_player">Media player</string>
+    <string name="mgr_ads_app_barcode_scanner">Barcode scanner</string>
+    <string name="mgr_ads_app_thermometer">Thermometer</string>
+    <string name="mgr_ads_app_heart_rate">Heart rate sensor</string>
+    <string name="mgr_ads_app_blood_pressure">Blood pressure monitor</string>
+    <string name="mgr_ads_app_hid">HID device</string>
+    <string name="mgr_ads_app_glucose">Glucose meter</string>
+    <string name="mgr_ads_app_running">Running / walking sensor</string>
+    <string name="mgr_ads_app_cycling">Cycling sensor</string>
+    <string name="mgr_ads_app_control">Control device</string>
+    <string name="mgr_ads_app_network">Network device</string>
+    <string name="mgr_ads_app_sensor">Sensor</string>
+    <string name="mgr_ads_app_light_fixture">Light fixture</string>
+    <string name="mgr_ads_app_fan">Fan</string>
+    <string name="mgr_ads_app_hvac">HVAC</string>
+    <string name="mgr_ads_app_air_conditioning">Air conditioning</string>
+    <string name="mgr_ads_app_humidifier">Humidifier</string>
+    <string name="mgr_ads_app_heater">Heater</string>
+    <string name="mgr_ads_app_access_control">Access control</string>
+    <string name="mgr_ads_app_motorized">Motorized device</string>
+    <string name="mgr_ads_app_power">Power device</string>
+    <string name="mgr_ads_app_light_source">Light source</string>
+    <string name="mgr_ads_app_window_covering">Window covering</string>
+    <string name="mgr_ads_app_audio_sink">Audio receiver</string>
+    <string name="mgr_ads_app_headset">Headset</string>
+    <string name="mgr_ads_app_speaker">Speaker</string>
+    <string name="mgr_ads_app_earbuds">Earbuds</string>
+    <string name="mgr_ads_app_audio_source">Audio source</string>
+    <string name="mgr_ads_app_vehicle">Motor vehicle</string>
+    <string name="mgr_ads_app_home_appliance">Home appliance</string>
+    <string name="mgr_ads_app_wearable_audio">Wearable audio device</string>
+    <string name="mgr_ads_app_aircraft">Aircraft</string>
+    <string name="mgr_ads_app_av_equipment">AV equipment</string>
+    <string name="mgr_ads_app_gaming">Gaming device</string>
+    <string name="mgr_ads_app_signage">Signage</string>
+
+    <!-- ─── Major device class names ─── -->
+    <string name="mgr_ads_major_misc">Miscellaneous</string>
+    <string name="mgr_ads_major_computer">Computer</string>
+    <string name="mgr_ads_major_phone">Phone</string>
+    <string name="mgr_ads_major_lan">LAN / network access point</string>
+    <string name="mgr_ads_major_av">Audio / video</string>
+    <string name="mgr_ads_major_peripheral">Peripheral</string>
+    <string name="mgr_ads_major_imaging">Imaging</string>
+    <string name="mgr_ads_major_wearable">Wearable</string>
+    <string name="mgr_ads_major_toy">Toy</string>
+    <string name="mgr_ads_major_health">Health</string>
+    <string name="mgr_ads_major_uncategorized">Uncategorized</string>
+
+</resources>

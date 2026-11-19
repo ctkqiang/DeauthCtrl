@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SNMP 扫描管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_snmp_error_invalid_target">Invalid target format</string>
+    <string name="mgr_snmp_error_no_communities">Enter at least one community string</string>
+    <string name="mgr_snmp_error_scan_exception">Scan exception: %1$s</string>
+    <string name="mgr_snmp_error_target_required">Enter a target IP or subnet</string>
+    <string name="mgr_snmp_error_bad_ip">Invalid IP format: %1$s</string>
+    <string name="mgr_snmp_error_cidr_format">Subnet must be in a.b.c.d/prefix form</string>
+    <string name="mgr_snmp_error_bad_network">Invalid subnet address: %1$s</string>
+    <string name="mgr_snmp_error_bad_prefix">Invalid prefix length: %1$s</string>
+    <string name="mgr_snmp_error_prefix_range">Prefix length must be within 0..32: %1$d</string>
+    <string name="mgr_snmp_error_subnet_too_large">Subnet too large: %1$d addresses, limit %2$d; use a smaller subnet</string>
+</resources>

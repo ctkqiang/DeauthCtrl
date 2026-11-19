@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WiFi 压制引擎 —— 中文资源 -->
+<resources>
+    <string name="mgr_wifij_busy">热点轮换已在运行</string>
+    <string name="mgr_wifij_location_off">系统定位开关已关闭：Android 要求开启定位后才能扫描 Wi-Fi</string>
+    <string name="mgr_wifij_location_off_detail">系统定位开关已关闭：请打开系统定位后重试（即使已授予位置权限，关闭定位总开关也会导致扫描失败）</string>
+    <string name="mgr_wifij_location_off_retry">系统定位开关已关闭，请打开系统定位后重试</string>
+    <string name="mgr_wifij_scan_rejected_prefix">Wi-Fi 扫描被系统拒绝：%1$s</string>
+    <string name="mgr_wifij_scan_throttled">系统扫描被节流（startScan 返回 false），请稍后重试</string>
+    <string name="mgr_wifij_no_ssid">没有可轮换的 SSID</string>
+    <string name="mgr_wifij_log_random_ssid">started 系统随机 SSID（API&lt;30 公共 API 无法指定）</string>
+    <string name="mgr_wifij_softap_fallback">SoftApConfiguration 不可用，退回系统随机 SSID（目标 \'%1$s\' 未应用）</string>
+    <string name="mgr_wifij_start_timeout">启动本机热点超时（%1$dms 未收到系统回调）</string>
+    <string name="mgr_wifij_action_wifi_scan">Wi-Fi 扫描</string>
+    <string name="mgr_wifij_action_hotspot_start">启动本机热点</string>
+    <string name="mgr_wifij_rejected_unknown">%1$s 被系统拒绝：未定位到缺失权限（可能是厂商 ROM 的策略限制）</string>
+    <string name="mgr_wifij_rejected_missing">%1$s 被拒绝：缺少 %2$s</string>
+</resources>

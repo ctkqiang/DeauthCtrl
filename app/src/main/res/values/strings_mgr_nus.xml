@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NUS terminal manager — English default resources -->
+<resources>
+    <!-- Connection phases -->
+    <string name="mgr_nus_phase_disconnected">DISCONNECTED</string>
+    <string name="mgr_nus_phase_connecting">CONNECTING</string>
+    <string name="mgr_nus_phase_discovering">DISCOVERING</string>
+    <string name="mgr_nus_phase_connected">CONNECTED</string>
+    <string name="mgr_nus_phase_no_nus">NO NUS</string>
+    <string name="mgr_nus_phase_error">ERROR</string>
+
+    <!-- Line endings -->
+    <string name="mgr_nus_ending_crlf">CRLF</string>
+    <string name="mgr_nus_ending_cr">CR</string>
+    <string name="mgr_nus_ending_lf">LF</string>
+    <string name="mgr_nus_ending_raw">RAW</string>
+
+    <!-- Permission labels -->
+    <string name="mgr_nus_perm_separator">, </string>
+    <string name="mgr_nus_perm_connect">Connect devices / read Bluetooth state</string>
+    <string name="mgr_nus_perm_bluetooth">Bluetooth (legacy permission)</string>
+    <string name="mgr_nus_perm_bluetooth_admin">Bluetooth admin (legacy permission)</string>
+
+    <!-- GATT / ATT status hints -->
+    <string name="mgr_nus_hint_unreachable"> — device unreachable / connected by another host / stale pairing cache; unpair in system Bluetooth and retry</string>
+    <string name="mgr_nus_hint_timeout"> — connection timeout</string>
+    <string name="mgr_nus_hint_remote_disconnect"> — remote disconnected</string>
+    <string name="mgr_nus_hint_local_disconnect"> — local disconnect</string>
+    <string name="mgr_nus_hint_auth"> — insufficient authentication; pair in system Bluetooth first</string>
+    <string name="mgr_nus_hint_write_denied"> — write not permitted</string>
+    <string name="mgr_nus_hint_not_supported"> — request not supported</string>
+    <string name="mgr_nus_hint_key_size"> — encryption key size too short</string>
+
+    <!-- connectGatt failure hints -->
+    <string name="mgr_nus_connect_denied">Connection rejected by system: %1$s</string>
+    <string name="mgr_nus_connect_denied_no_perm">Missing BLUETOOTH_CONNECT permission</string>
+    <string name="mgr_nus_mac_invalid_ex">Invalid MAC address: %1$s</string>
+    <string name="mgr_nus_mac_unresolved">System cannot resolve</string>
+    <string name="mgr_nus_connect_failed_ex">Connection failed: %1$s</string>
+
+    <!-- connect() validation -->
+    <string name="mgr_nus_err_mac_invalid">Invalid MAC format — expected AA:BB:CC:DD:EE:FF (12 hex digits)</string>
+    <string name="mgr_nus_err_missing_perm">Missing Bluetooth permissions: %1$s — grant them in the app permission gateway first</string>
+    <string name="mgr_nus_err_no_adapter">No Bluetooth adapter on this device</string>
+    <string name="mgr_nus_err_bt_off">Bluetooth is off — turn it on in system settings first</string>
+    <string name="mgr_nus_err_mac_resolve">System cannot resolve this MAC address</string>
+    <string name="mgr_nus_log_connecting">Connecting to %1$s (%2$s), LE transport, 10 s timeout</string>
+    <string name="mgr_nus_err_connect_timeout">Connection timeout (10 s) — target may be out of range, not connectable, or connected by another host</string>
+    <string name="mgr_nus_err_connect_null">Connection failed — system returned null; toggle Bluetooth off and on, then retry</string>
+    <string name="mgr_nus_log_disconnected">Disconnected</string>
+
+    <!-- send() validation -->
+    <string name="mgr_nus_err_not_connected">Not connected — connect to the device and wait for the NUS terminal to be ready</string>
+    <string name="mgr_nus_err_rx_unavailable">RX characteristic unavailable — disconnect and reconnect</string>
+    <string name="mgr_nus_err_sending_pending">Previous frame still writing — wait before sending again</string>
+    <string name="mgr_nus_err_empty_payload">Send payload is empty — enter text or choose a line ending</string>
+    <string name="mgr_nus_err_payload_too_long">Send size %1$dB exceeds the %3$d B single write allowed by the current MTU %2$d — shorten the content</string>
+    <string name="mgr_nus_err_write_rejected">Write request rejected by system — check connection state and retry</string>
+    <string name="mgr_nus_log_sent">Sent %1$dB → RX %2$s (%3$s)</string>
+
+    <!-- Callback events -->
+    <string name="mgr_nus_err_connect_status">Connection failed (status=%1$d)%2$s</string>
+    <string name="mgr_nus_log_connected">Connected to %1$s, discovering GATT services</string>
+    <string name="mgr_nus_err_discover_start">Service discovery failed to start — discoverServices() returned false</string>
+    <string name="mgr_nus_err_disconnected_status">Connection lost (status=%1$d)%2$s</string>
+    <string name="mgr_nus_log_device_disconnected">Device disconnected</string>
+    <string name="mgr_nus_err_discover_status">Service discovery failed (status=%1$d)%2$s</string>
+    <string name="mgr_nus_err_no_nus_service">Nordic UART Service (6E400001-…) or FFE0 / FFE1 serial service not found — target may not run NUS firmware</string>
+    <string name="mgr_nus_profile_ffe0">FFE0 / FFE1 serial</string>
+    <string name="mgr_nus_profile_nus">NUS 6E400001</string>
+    <string name="mgr_nus_err_no_rx">Found the %1$s service, but no writable RX characteristic</string>
+    <string name="mgr_nus_err_no_tx">Found the %1$s service, but no notifying TX characteristic</string>
+    <string name="mgr_nus_err_rx_unwritable">RX characteristic %1$s does not support write (properties %2$s)</string>
+    <string name="mgr_nus_err_tx_unnotifiable">TX characteristic %1$s does not support notify / indicate (properties %2$s)</string>
+    <string name="mgr_nus_err_local_notify">Local notification registration failed — system rejected setCharacteristicNotification</string>
+    <string name="mgr_nus_err_no_cccd">TX characteristic lacks a CCCD descriptor (0x2902) — cannot enable remote notifications</string>
+    <string name="mgr_nus_err_notify_rejected">Notification subscription rejected by system — retry later</string>
+    <string name="mgr_nus_log_profile_hit">Found %1$s: RX %2$s / TX %3$s, awaiting CCCD write callback</string>
+    <string name="mgr_nus_err_desc_write">Descriptor write failed (status=%1$d)%2$s</string>
+    <string name="mgr_nus_err_notify_failed">Failed to enable notifications (status=%1$d)%2$s</string>
+    <string name="mgr_nus_log_ready">Notifications enabled, NUS terminal ready</string>
+    <string name="mgr_nus_err_send_failed">Send failed (status=%1$d)%2$s</string>
+    <string name="mgr_nus_log_written">Wrote %1$s</string>
+    <string name="mgr_nus_log_mtu">MTU negotiated: %1$d B (payload per write %2$d B)</string>
+    <string name="mgr_nus_err_mtu_failed">MTU negotiation failed (status=%1$d) — keeping default 23 B</string>
+    <string name="mgr_nus_phy_unknown">unknown(%1$d)</string>
+    <string name="mgr_nus_log_phy">PHY read complete: %1$s</string>
+    <string name="mgr_nus_err_phy_failed">PHY read failed (status=%1$d)</string>
+
+    <!-- Timeouts and connection parameters -->
+    <string name="mgr_nus_err_discover_timeout">Service discovery timeout (10 s) — device returned no service table; reconnect or pair in system Bluetooth first</string>
+    <string name="mgr_nus_err_subscribe_timeout">Notification subscription timeout (10 s) — no system callback for the CCCD write</string>
+    <string name="mgr_nus_err_write_timeout">Write timeout (5 s) — no onCharacteristicWrite callback</string>
+    <string name="mgr_nus_log_mtu_requested">Requested MTU %1$d (awaiting onMtuChanged)</string>
+    <string name="mgr_nus_log_mtu_rejected">[!] MTU request rejected by system — keeping default 23 B</string>
+    <string name="mgr_nus_log_phy_request_failed">[!] PHY read request failed — showing --</string>
+    <string name="mgr_nus_phy_api_unsupported">API &lt; 26 not supported</string>
+</resources>

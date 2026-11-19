@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hardware self-check manager — 中文资源 -->
+<resources>
+    <!-- 共用值 -->
+    <string name="mgr_selfchk_unavailable">不可用</string>
+    <string name="mgr_selfchk_unknown">未知</string>
+    <string name="mgr_selfchk_unknown_code">未知(%1$d)</string>
+
+    <!-- 告警 -->
+    <string name="mgr_selfchk_alert_thermal">热区 %1$s 达 %2$s °C,超过 45 °C</string>
+    <string name="mgr_selfchk_alert_battery_health">电池健康异常:%1$s</string>
+
+    <!-- 电池健康 -->
+    <string name="mgr_selfchk_health_good">良好</string>
+    <string name="mgr_selfchk_health_overheat">过热</string>
+    <string name="mgr_selfchk_health_dead">失效</string>
+    <string name="mgr_selfchk_health_over_voltage">过压</string>
+    <string name="mgr_selfchk_health_cold">过冷</string>
+    <string name="mgr_selfchk_health_unspecified_failure">故障(未指明)</string>
+
+    <!-- 电池状态 -->
+    <string name="mgr_selfchk_status_charging">充电中</string>
+    <string name="mgr_selfchk_status_discharging">放电中</string>
+    <string name="mgr_selfchk_status_full">已充满</string>
+    <string name="mgr_selfchk_status_not_charging">未充电</string>
+
+    <!-- 充放电方向 -->
+    <string name="mgr_selfchk_dir_charging">充电中</string>
+    <string name="mgr_selfchk_dir_full_external">已充满(外接电源)</string>
+    <string name="mgr_selfchk_dir_discharging">放电中</string>
+    <string name="mgr_selfchk_dir_not_charging">未充电</string>
+    <string name="mgr_selfchk_dir_charging_by_current">充电中(按电流符号)</string>
+    <string name="mgr_selfchk_dir_discharging_by_current">放电中(按电流符号)</string>
+    <string name="mgr_selfchk_dir_no_net_current">无净电流</string>
+
+    <!-- 供电来源 -->
+    <string name="mgr_selfchk_plug_wireless">无线充电</string>
+    <string name="mgr_selfchk_plug_dock">底座</string>
+    <string name="mgr_selfchk_plug_unplugged">未连接电源</string>
+
+    <!-- 传感器兜底值 -->
+    <string name="mgr_selfchk_sensor_unnamed">未命名传感器</string>
+    <string name="mgr_selfchk_vendor_unknown">未知厂商</string>
+    <string name="mgr_selfchk_unknown_type">类型 %1$d</string>
+
+    <!-- 传感器类型名 -->
+    <string name="mgr_selfchk_sensor_accelerometer">加速度计</string>
+    <string name="mgr_selfchk_sensor_gyroscope">陀螺仪</string>
+    <string name="mgr_selfchk_sensor_magnetic_field">磁力计</string>
+    <string name="mgr_selfchk_sensor_light">环境光</string>
+    <string name="mgr_selfchk_sensor_proximity">距离感应</string>
+    <string name="mgr_selfchk_sensor_pressure">气压计</string>
+    <string name="mgr_selfchk_sensor_ambient_temperature">环境温度</string>
+    <string name="mgr_selfchk_sensor_relative_humidity">相对湿度</string>
+    <string name="mgr_selfchk_sensor_gravity">重力</string>
+    <string name="mgr_selfchk_sensor_linear_acceleration">线性加速度</string>
+    <string name="mgr_selfchk_sensor_rotation_vector">旋转矢量</string>
+    <string name="mgr_selfchk_sensor_game_rotation_vector">游戏旋转矢量</string>
+    <string name="mgr_selfchk_sensor_geomagnetic_rotation_vector">地磁旋转矢量</string>
+    <string name="mgr_selfchk_sensor_significant_motion">显著运动</string>
+    <string name="mgr_selfchk_sensor_step_counter">计步器</string>
+    <string name="mgr_selfchk_sensor_step_detector">步伐检测</string>
+    <string name="mgr_selfchk_sensor_heart_rate">心率</string>
+    <string name="mgr_selfchk_sensor_heart_beat">心跳检测</string>
+    <string name="mgr_selfchk_sensor_pose_6dof">6DoF 姿态</string>
+    <string name="mgr_selfchk_sensor_stationary_detect">静止检测</string>
+    <string name="mgr_selfchk_sensor_motion_detect">运动检测</string>
+    <string name="mgr_selfchk_sensor_low_latency_offbody_detect">离体检测</string>
+    <string name="mgr_selfchk_sensor_accelerometer_uncalibrated">未校准加速度计</string>
+    <string name="mgr_selfchk_sensor_gyroscope_uncalibrated">未校准陀螺仪</string>
+    <string name="mgr_selfchk_sensor_magnetic_field_uncalibrated">未校准磁力计</string>
+    <string name="mgr_selfchk_sensor_heading">朝向</string>
+    <string name="mgr_selfchk_sensor_hinge_angle">铰链角度</string>
+</resources>

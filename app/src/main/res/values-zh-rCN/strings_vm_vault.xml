@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 加密保险箱 ViewModel 中文资源,与 values/strings_vm_vault.xml 一一对应。 -->
+<resources>
+    <string name="vm_vault_camera_error">相机: %1$s</string>
+    <string name="vm_vault_video_error">录像: %1$s</string>
+    <string name="vm_vault_no_capture">未拍摄到内容</string>
+    <string name="vm_vault_encrypt_failed">加密失败</string>
+    <string name="vm_vault_record_failed">录音失败: %1$s</string>
+    <string name="vm_vault_bad_password">密码错误或文件损坏</string>
+</resources>

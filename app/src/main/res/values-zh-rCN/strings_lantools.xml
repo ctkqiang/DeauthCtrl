@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ─── 局域网工具 · WOL / fling ─── -->
+    <string name="lantools_title">局域网工具 · LAN TOOLS</string>
+    <string name="lantools_tab_wol">WOL 唤醒</string>
+    <string name="lantools_tab_fling">fling 管道</string>
+
+    <!-- WOL 标签页 -->
+    <string name="lantools_wol_panel_title">网络唤醒 · WAKE-ON-LAN</string>
+    <string name="lantools_target_mac_label">目标 MAC（留空使用广播 MAC）</string>
+    <string name="lantools_mac_placeholder">aa:bb:cc:dd:ee:ff</string>
+    <string name="lantools_local_ip_label">本机局域网 IP</string>
+    <string name="lantools_broadcast_label">定向广播地址</string>
+    <string name="lantools_magic_packet_label">魔术包</string>
+    <string name="lantools_magic_packet_value">102 B · 0xFF × 6 + MAC × 16</string>
+    <string name="lantools_port_9">端口 9</string>
+    <string name="lantools_port_9_7">端口 9 + 7</string>
+    <string name="lantools_send_magic">发送魔术包</string>
+    <string name="lantools_sending_ellipsis">发送中…</string>
+    <string name="lantools_wol_idle_hint">尚未发送。MAC 留空时使用 ff:ff:ff:ff:ff:ff，唤醒网段内所有支持 WOL 的设备。</string>
+    <string name="lantools_wol_explain">发送时同时面向 255.255.255.255 与当前 Wi-Fi 网段的定向广播；选择「端口 9 + 7」会再向两个地址的端口 7 各发一份。UDP 无回执，发送成功只代表数据包已交给内核，不代表目标已唤醒。</string>
+
+    <!-- fling 标签页 · 工作模式 -->
+    <string name="lantools_fling_mode_title">工作模式 · FLING MODE</string>
+    <string name="lantools_mode_rx">接收</string>
+    <string name="lantools_mode_tx">发送</string>
+    <string name="lantools_busy_mode_warning">[!] 当前有传输任务运行，停止后才能切换模式。</string>
+    <string name="lantools_run_state_label">运行状态</string>
+    <string name="lantools_state_listening">监听中</string>
+    <string name="lantools_state_sending">发送中</string>
+    <string name="lantools_state_idle">空闲</string>
+    <string name="lantools_session_bytes_label">本次字节</string>
+    <string name="lantools_bytes_value">%1$d B</string>
+    <string name="lantools_error_line">[!] %1$s</string>
+
+    <!-- fling 标签页 · 接收端 -->
+    <string name="lantools_rx_panel_title">接收端 · LISTEN</string>
+    <string name="lantools_listen_port_label">监听端口（0 = 内核临时端口）</string>
+    <string name="lantools_save_to_file">写入文件</string>
+    <string name="lantools_private_dir_hint">保存到应用私有目录 fling/</string>
+    <string name="lantools_start_receive">启动接收</string>
+    <string name="lantools_stop_receive">停止接收</string>
+    <string name="lantools_actual_port_label">实际监听端口</string>
+    <string name="lantools_port_source_label">端口来源</string>
+    <string name="lantools_port_source_ephemeral">内核临时分配</string>
+    <string name="lantools_port_source_manual">手动指定</string>
+    <string name="lantools_peer_label">对端地址</string>
+    <string name="lantools_received_label">已接收</string>
+    <string name="lantools_saved_path">落盘：%1$s</string>
+    <string name="lantools_rx_preview_title">接收字节（前 4 KB）</string>
+    <string name="lantools_rx_waiting">监听中 —— 等待发送端连接；收到数据后在此显示前 4 KB。</string>
+    <string name="lantools_rx_idle">尚未接收数据 —— 启动接收后把「实际监听端口」告诉发送方。</string>
+    <string name="lantools_preview_truncated_saved">仅显示前 4 KB；完整字节已写入上面的落盘文件。</string>
+    <string name="lantools_preview_truncated_dropped">仅显示前 4 KB；未开启「写入文件」，其余字节已丢弃。</string>
+
+    <!-- fling 标签页 · 发送端 -->
+    <string name="lantools_tx_panel_title">发送端 · SEND</string>
+    <string name="lantools_rx_host_label">接收端 IP</string>
+    <string name="lantools_rx_host_placeholder">例如 192.168.1.100</string>
+    <string name="lantools_rx_port_label">接收端端口</string>
+    <string name="lantools_text_label">文本内容</string>
+    <string name="lantools_text_placeholder">按 UTF-8 原样写入</string>
+    <string name="lantools_choose_file_send">选择文件发送</string>
+    <string name="lantools_send_text">发送文本</string>
+    <string name="lantools_progress_fraction">%1$d / %2$d B</string>
+    <string name="lantools_tx_explain">发送端连接接收端 IP 与端口，把文本或文件字节原样写入后关闭连接；没有长度前缀、没有校验、没有加密，EOF 即传输结束。</string>
+
+    <!-- fling 日志 -->
+    <string name="lantools_log_title">fling 日志 · LOG</string>
+    <string name="lantools_log_empty">连接、传输与错误日志会按时间显示在这里。</string>
+
+    <!-- 协议边界说明 -->
+    <string name="lantools_honesty_title">协议边界 · 诚实说明</string>
+    <string name="lantools_honesty_line_1">fling 兼容语义（fling 1.1-3）：裸 TCP 字节流，无长度前缀、无校验、无加密；连接关闭（EOF）即传输结束，一次一连接。</string>
+    <string name="lantools_honesty_line_2">接收端端口填 0 时由内核分配临时端口，必须把「实际监听端口」告知发送方；离开本页会停止接收。</string>
+    <string name="lantools_honesty_line_3">AP 客户端隔离（AP isolation）会阻断同一 Wi-Fi 内的设备互连；跨网段、热点客户端之间通常也不可达。</string>
+    <string name="lantools_honesty_line_4">发送端填接收端的局域网 IP 与端口；公网 / NAT 后的地址无法直接建立连接。</string>
+    <string name="lantools_honesty_line_5">WOL 魔术包为 102 字节 UDP 广播，无回执；目标设备需在 BIOS / 固件中开启网络唤醒并保持待机供电。</string>
+    <string name="lantools_honesty_line_6">本页不伪造数据：读不到的地址、端口与字节显示 \"--\"，日志只记录真实发生的连接与传输。</string>
+</resources>

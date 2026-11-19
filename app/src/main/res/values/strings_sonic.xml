@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sonic_title">Sonic Link · SONIC LINK</string>
+    <string name="sonic_panel_tx">Transmit · DTMF TX</string>
+    <string name="sonic_message_label">Message</string>
+    <string name="sonic_message_placeholder">0-9 A-D * # and space (only these are sendable)</string>
+    <string name="sonic_sendable_count">%1$d symbols sendable</string>
+    <string name="sonic_skipped_count">%1$d chars skipped</string>
+    <string name="sonic_no_sendable">[!] Current text has no sendable DTMF symbols</string>
+    <string name="sonic_current_symbol">CURRENT SYMBOL</string>
+    <string name="sonic_sending">SENDING %1$d%%</string>
+    <string name="sonic_standby">STANDBY</string>
+    <string name="sonic_btn_start_send">START TX</string>
+    <string name="sonic_btn_stop_send">STOP TX</string>
+    <string name="sonic_tx_desc">120ms per symbol + 40ms gap, about 5-6 symbols/s; a space is 240ms of silence.</string>
+    <string name="sonic_panel_rx">Receive · DTMF RX</string>
+    <string name="sonic_listen_status">LISTEN STATUS</string>
+    <string name="sonic_listening">LISTENING · last %1$s</string>
+    <string name="sonic_not_listening">NOT LISTENING</string>
+    <string name="sonic_btn_start_rx">START RX</string>
+    <string name="sonic_btn_stop_rx">STOP RX</string>
+    <string name="sonic_log_header">Decoded Text</string>
+    <string name="sonic_rx_waiting">Waiting for DTMF signal — point another device\'s speaker at this mic</string>
+    <string name="sonic_rx_idle">Decoded characters appear line by line here after listening starts</string>
+    <string name="sonic_rx_desc">A symbol is confirmed after 3 frames (~120ms); silence over 160ms inserts a space, 600ms starts a new line. Only sound actually heard by this mic can be demodulated.</string>
+    <string name="sonic_panel_chart">Character Chart · ITU-T DTMF</string>
+    <string name="sonic_chart_axis_corner">ROW \\ COL</string>
+    <string name="sonic_chart_legend">Column freqs 1209 / 1336 / 1477 / 1633 Hz, row freqs 697 / 770 / 852 / 941 Hz. Each symbol is a dual tone: one row + one column.</string>
+    <string name="sonic_chart_charset">TX supports 0-9, A-D, *, # and space; lowercase is uppercased automatically; other letters and punctuation are skipped.</string>
+    <string name="sonic_honesty_title">[!] HONEST LIMITS</string>
+    <string name="sonic_honesty_range">Phone speaker to mic: fairly stable within 1-3 m in quiet rooms; farther or noisy rooms drop symbols.</string>
+    <string name="sonic_honesty_rate">About 5 symbols/s (120ms symbol + 40ms gap); long messages take patience.</string>
+    <string name="sonic_honesty_insecure">Sound is not encrypted: any device that can hear it can decode it — never use for secrets or sensitive data.</string>
+    <string name="sonic_honesty_hardware">Recognition depends on mic and speaker hardware; the level bar maps relative dBFS and is not calibrated.</string>
+</resources>

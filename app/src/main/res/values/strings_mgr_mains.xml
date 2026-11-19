@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MainsWireDetector — English default strings. -->
+<resources>
+    <string name="mgr_mains_missing_permission">Missing microphone permission (RECORD_AUDIO)</string>
+    <string name="mgr_mains_no_microphone">No microphone on this device; mains-frequency detection unavailable</string>
+    <string name="mgr_mains_init_failed">Microphone initialization failed (44100Hz capture unsupported or already in use)</string>
+    <string name="mgr_mains_capture_failed">Capture failed: %1$s</string>
+    <string name="mgr_mains_mic_read_failed">Microphone reads keep failing</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Screen mirroring dashboard strings (prefix: mirror_dash_). -->
+<resources>
+    <string name="mirror_dash_title">Screen Mirroring</string>
+    <string name="mirror_dash_share_host">SHARE SCREEN (HOST)</string>
+    <string name="mirror_dash_stop_sharing">STOP SHARING</string>
+    <string name="mirror_dash_broadcasting">Broadcasting — %1$d:10087 · discoverable on LAN</string>
+    <string name="mirror_dash_devices_found">DEVICES FOUND · %1$d</string>
+    <string name="mirror_dash_scanning">Scanning the LAN...</string>
+    <string name="mirror_dash_connecting">Connecting...</string>
+    <string name="mirror_dash_empty">No devices found — tap the button below to scan the LAN</string>
+    <string name="mirror_dash_stop_scan">STOP SCAN</string>
+    <string name="mirror_dash_start_scan">SCAN LAN</string>
+    <string name="mirror_dash_connect">CONNECT ▸</string>
+</resources>

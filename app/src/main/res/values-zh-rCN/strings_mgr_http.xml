@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HttpClientManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_http_empty_url">URL 不能为空</string>
+    <string name="mgr_http_cancelled">请求已取消</string>
+</resources>

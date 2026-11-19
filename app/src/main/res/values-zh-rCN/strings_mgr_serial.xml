@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SerialMonitorManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_serial_usb_device">USB 设备</string>
+    <string name="mgr_serial_device_removed">设备已拔出</string>
+    <string name="mgr_serial_permission_required">请在系统弹窗中允许 USB 访问,然后重新点连接</string>
+    <string name="mgr_serial_open_failed">打开 USB 设备失败</string>
+    <string name="mgr_serial_no_bulk_endpoint">未找到 bulk 端点(该芯片需厂商驱动,系统未内置)</string>
+    <string name="mgr_serial_connected">已连接 %1$s (%2$s) @ %3$d bps</string>
+    <string name="mgr_serial_chip_generic">USB 串口类设备(需驱动支持)</string>
+</resources>

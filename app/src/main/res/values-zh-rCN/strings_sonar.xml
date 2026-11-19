@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sonar_title">声呐测距 · SONAR</string>
+    <string name="sonar_status_error_stop">异常停止 —— 见上方告警</string>
+    <string name="sonar_status_stopped">已停止 · 点击下方按钮启动</string>
+    <string name="sonar_status_out_of_range">&gt;8m(超量程) —— 回波超出手机扬声器可靠量程</string>
+    <string name="sonar_status_no_echo">无回波(吸音环境/角度不对)</string>
+    <string name="sonar_status_locked">回波锁定 · 已累计 %1$d 次有效测量</string>
+    <string name="sonar_status_measuring">测量中 —— 首轮回波约 1.5 秒</string>
+    <string name="sonar_panel_range">距离读数 · RANGE</string>
+    <string name="sonar_distance_label">DISTANCE / m</string>
+    <string name="sonar_confidence_label">置信度 CONFIDENCE</string>
+    <string name="sonar_btn_start">启动测距</string>
+    <string name="sonar_btn_stop">停止测距</string>
+    <string name="sonar_intro">每 1.5 秒发一次 60ms 线性扫频 chirp(3-8kHz);距离 = 回波相对直达声的时延 × 343m/s ÷ 2。</string>
+    <string name="sonar_panel_history">回波历史 · HISTORY (最近 %1$d 次)</string>
+    <string name="sonar_history_empty">有效回波不足 —— 历史曲线会随每次有效测量滚动绘制</string>
+    <string name="sonar_history_min">MIN %1$s m</string>
+    <string name="sonar_history_cur">CUR %1$s m</string>
+    <string name="sonar_history_max">MAX %1$s m</string>
+    <string name="sonar_history_desc">纵轴 0.2-8m,只绘制得到有效回波的测量;无回波 / 超量程周期不进入历史。</string>
+    <string name="sonar_panel_telemetry">遥测 · TELEMETRY</string>
+    <string name="sonar_telemetry_status">状态</string>
+    <string name="sonar_telemetry_running">连续测量中</string>
+    <string name="sonar_telemetry_stopped">已停止</string>
+    <string name="sonar_telemetry_interval">测量周期</string>
+    <string name="sonar_telemetry_chirp">扫频 chirp</string>
+    <string name="sonar_telemetry_sampling">采样 / FFT</string>
+    <string name="sonar_telemetry_sampling_value">%1$d Hz · %2$d 点</string>
+    <string name="sonar_telemetry_direct_lag">直达声时延</string>
+    <string name="sonar_telemetry_peak_ratio">峰值 / 均值</string>
+    <string name="sonar_telemetry_cycles">有效 / 总周期</string>
+    <string name="sonar_telemetry_volume">媒体音量</string>
+    <string name="sonar_telemetry_sound_speed">声速折算</string>
+    <string name="sonar_low_volume">[!] 媒体音量偏低 —— 扬声器功率不足会明显缩短量程,建议调到 80% 以上</string>
+    <string name="sonar_panel_honesty">诚实局限 · HONESTY</string>
+    <string name="sonar_honesty_speed">声速按 343m/s(20°C 干燥空气)折算;温度每变化 10°C,声速约变 6m/s,距离约有 1.7% 误差。</string>
+    <string name="sonar_honesty_aec">扬声器与麦克风距离极近 —— 直达声被当作 0m 时基,只测直达声之后的回波;系统回声消除(AEC)若把直达声抹掉,本页会报「未捕获直达声」,不会编造距离。</string>
+    <string name="sonar_honesty_multipath">多径反射、软表面(窗帘/沙发/吸音板)与斜角度会让回波变弱甚至消失;测墙、门、桌面等大平面效果最好。</string>
+    <string name="sonar_honesty_range">受手机扬声器功率与 0.5s 录音窗限制,可靠量程约 0.2-8m;超过 8m 显示「&gt;8m(超量程)」,强吸音环境显示「无回波(吸音环境/角度不对)」。</string>
+    <string name="sonar_honesty_speaker">蓝牙耳机 / 外接音箱会引入数百毫秒延迟,且麦克风收不到直达声 —— 请使用本机扬声器。</string>
+    <string name="sonar_honesty_estimate">读数是峰值时延的估计值,不是激光测距;适合判断「前方是否有障碍 / 大概多远」,不适合精密测量。所有读数来自真实采样与本地 FFT 计算,读不到时显示「--」。</string>
+</resources>

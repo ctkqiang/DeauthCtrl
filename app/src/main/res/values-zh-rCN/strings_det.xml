@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DetailScreens.kt — 简体中文资源。
+  与 values/strings_det.xml 键集完全一致,仅翻译用户可见文案。
+  技术缩写(BSSID/RSSI/SNR/dBm/MHz/UUID/OUI/PTT)保持原样。
+-->
+<resources>
+
+    <!-- ─── 页面标题 · TerminalHeader ─── -->
+    <string name="det_title_ble_flood">BLE 泛洪引擎</string>
+    <string name="det_title_bt_jam">蓝牙压制引擎</string>
+    <string name="det_title_wifi_disrupt">WiFi 干扰引擎</string>
+    <string name="det_title_wifi_jam">WiFi 压制引擎</string>
+    <string name="det_title_web_server">WEB 服务器</string>
+    <string name="det_title_arp_scan">ARP 网络扫描</string>
+    <string name="det_title_ble_scanner">BLE 嗅探扫描</string>
+    <string name="det_title_ping">PING 泛洪</string>
+    <string name="det_title_http_client">HTTP 客户端</string>
+    <string name="det_title_port_scan">端口扫描</string>
+    <string name="det_title_walkie">WiFi 对讲机</string>
+    <string name="det_title_radar">设备雷达</string>
+    <string name="det_title_probe_monitor">Probe 监视 · FRAME MONITOR</string>
+    <string name="det_title_file_transfer">文件快传</string>
+    <string name="det_title_secure_vault">加密保险箱</string>
+    <string name="det_title_rev_shell">反弹 Shell</string>
+    <string name="det_title_payload">Payload 生成器</string>
+    <string name="det_title_dir_brute">目录爆破</string>
+    <string name="det_title_cve">CVE 搜索</string>
+
+    <!-- ─── 面板标题 · TermPanel ─── -->
+    <string name="det_panel_run_stats">运行统计</string>
+    <string name="det_panel_adv_payload">广播载荷</string>
+    <string name="det_panel_tx_params">发送参数</string>
+    <string name="det_panel_status">状态</string>
+    <string name="det_panel_nearby_devices">附近设备 (%1$d)</string>
+    <string name="det_panel_flood_params">泛洪参数</string>
+    <string name="det_panel_deauth_injection">真实注入 · DEAUTH INJECTION</string>
+    <string name="det_panel_config">配置</string>
+    <string name="det_panel_web_file">网页文件</string>
+    <string name="det_panel_server_info">服务器信息</string>
+    <string name="det_panel_scan_stats">扫描统计</string>
+    <string name="det_panel_devices_found">发现 %1$d 台设备</string>
+    <string name="det_panel_device_detail">设备详情 · %1$s</string>
+    <string name="det_panel_stats">统计</string>
+    <string name="det_panel_request_stats">请求统计</string>
+    <string name="det_panel_response_headers">响应头 (%1$d)</string>
+    <string name="det_panel_local_link">本机链路 · RF LINK</string>
+    <string name="det_panel_online_nodes">在线节点 (%1$d)</string>
+    <string name="det_panel_metal_detect">金属探测 · MAG</string>
+    <string name="det_panel_mesh_nodes">网格节点</string>
+    <string name="det_panel_peers_found">已发现设备 (%1$d)</string>
+    <string name="det_panel_received_file">收到文件</string>
+    <string name="det_panel_decrypted">解密成功</string>
+    <string name="det_panel_session_log">会话日志</string>
+
+    <!-- ─── 操作按钮 ─── -->
+    <string name="det_btn_run_flood">执行泛洪</string>
+    <string name="det_btn_stop_flood">停止泛洪</string>
+    <string name="det_btn_run_suppress">执行压制</string>
+    <string name="det_btn_stop_suppress">停止压制</string>
+    <string name="det_btn_run_disrupt">执行干扰</string>
+    <string name="det_btn_stop_disrupt">停止干扰</string>
+    <string name="det_btn_scan_networks">扫描附近网络</string>
+    <string name="det_btn_scanning">正在扫描…</string>
+    <string name="det_btn_probe_capability">探测能力</string>
+    <string name="det_btn_stop_injection">■ 停止注入</string>
+    <string name="det_btn_start_injection">开始注入</string>
+    <string name="det_btn_injecting">注入中 · %1$d 帧</string>
+    <string name="det_btn_stop_sniffing">■ 停止嗅探 · %1$d 帧</string>
+    <string name="det_btn_passive_sniff">被动嗅探 · 信标/探测/去认证帧 (capture)</string>
+    <string name="det_btn_run_scan">执行扫描</string>
+    <string name="det_btn_cancel_scan">取消扫描</string>
+    <string name="det_btn_run_sniff">执行嗅探</string>
+    <string name="det_btn_stop_sniff">停止嗅探</string>
+    <string name="det_btn_run_probe">执行探测</string>
+    <string name="det_btn_stop_probe">停止探测</string>
+    <string name="det_btn_send_request">发送请求</string>
+    <string name="det_btn_cancel_request">取消请求</string>
+    <string name="det_btn_run_walkie">执行对讲</string>
+    <string name="det_btn_stop_walkie">停止对讲</string>
+    <string name="det_btn_live_active">直播中 · 自动发送 %1$ds</string>
+    <string name="det_btn_live_mode">直播模式 · 免按自动发送</string>
+    <string name="det_btn_push_to_talk">按住说话</string>
+    <string name="det_btn_run_radar">执行雷达</string>
+    <string name="det_btn_stop_radar">停止雷达</string>
+    <string name="det_btn_network_topology">网络拓扑</string>
+    <string name="det_btn_signal_db">信号库</string>
+    <string name="det_btn_open_settings">打开设置 ▸</string>
+    <string name="det_btn_cancel">取消</string>
+    <string name="det_btn_stop_poisoning">停止投毒</string>
+    <string name="det_btn_start_kick">开始踢人 ▸</string>
+    <string name="det_btn_send_popup">发起弹窗 ▸</string>
+    <string name="det_btn_pair_popup">配对弹窗消息 ▸</string>
+    <string name="det_btn_open_dossier">打开完整档案 ▸</string>
+    <string name="det_btn_unfocus">取消聚焦</string>
+    <string name="det_btn_snapshot">入库</string>
+    <string name="det_btn_tap_to_start">点击启动 ▸</string>
+    <string name="det_btn_choose_file">选择文件</string>
+    <string name="det_btn_run_server">执行服务器</string>
+    <string name="det_btn_stop_server">停止服务器</string>
+    <string name="det_btn_run_transfer">执行快传</string>
+    <string name="det_btn_stop_transfer">停止快传</string>
+    <string name="det_btn_send_all">发送文件 → 所有设备</string>
+    <string name="det_btn_send_to">发送文件 → %1$s</string>
+    <string name="det_btn_choose_file_send">选择文件发送</string>
+    <string name="det_btn_open_file">打开文件</string>
+    <string name="det_btn_photo">拍照</string>
+    <string name="det_btn_video">摄像</string>
+    <string name="det_btn_stop">停止</string>
+    <string name="det_btn_record">录音</string>
+    <string name="det_btn_import_encrypt">导入文件加密</string>
+    <string name="det_btn_delete">删除</string>
+    <string name="det_btn_open">打开</string>
+    <string name="det_btn_clear">清除</string>
+    <string name="det_btn_run_listen">执行监听</string>
+    <string name="det_btn_stop_listen">停止监听</string>
+    <string name="det_btn_send_command">发送命令</string>
+    <string name="det_btn_generate_payloads">生成全部载荷</string>
+    <string name="det_btn_run_enum">执行枚举</string>
+    <string name="det_btn_stop_enum">停止枚举</string>
+    <string name="det_btn_run_search">执行搜索</string>
+    <string name="det_btn_searching">搜索中…</string>
+    <string name="det_btn_kick">踢</string>
+
+    <!-- ─── 输入标签 ─── -->
+    <string name="det_label_forged_profile">伪造协议</string>
+    <string name="det_label_cycle_mode">循环模式</string>
+    <string name="det_label_tx_power">功率档位</string>
+    <string name="det_label_tx_interval">发送间隔</string>
+    <string name="det_label_max_packets">最大发包数</string>
+    <string name="det_label_target_network">目标网络</string>
+    <string name="det_label_disrupt_duration">干扰时长</string>
+    <string name="det_label_toggle_interval">切换间隔</string>
+    <string name="det_label_target_bssid">目标 BSSID</string>
+    <string name="det_label_channel">信道</string>
+    <string name="det_label_client_mac">客户端 MAC(可选)</string>
+    <string name="det_label_frames_per_round">每轮帧数</string>
+    <string name="det_label_channel_switch_interval">信道切换间隔</string>
+    <string name="det_label_listen_address">监听地址</string>
+    <string name="det_label_browser_url">浏览器访问地址</string>
+    <string name="det_label_gateway_ip">网关 IP</string>
+    <string name="det_label_peer_ip">对方 IP</string>
+    <string name="det_label_local_ip_gateway">本机 IP · 网关</string>
+    <string name="det_label_signal_strength">信号强度</string>
+    <string name="det_label_channel_frequency">信道 · 频率</string>
+    <string name="det_label_negotiated_rate">协商速率</string>
+    <string name="det_label_wifi_standard">Wi-Fi 标准</string>
+    <string name="det_label_address">地址</string>
+    <string name="det_label_tx_power_stat">发射功率</string>
+    <string name="det_label_devices_found">已发现设备</string>
+    <string name="det_label_device_type">设备类型</string>
+    <string name="det_label_services">服务</string>
+    <string name="det_label_manufacturer_data">厂商数据</string>
+    <string name="det_label_target_host">目标主机</string>
+    <string name="det_label_request_method">请求方法</string>
+    <string name="det_label_request_headers">请求头</string>
+    <string name="det_label_request_body">请求体</string>
+    <string name="det_label_response_size">响应大小</string>
+    <string name="det_label_charset">字符集</string>
+    <string name="det_label_redirect_target">重定向落点</string>
+    <string name="det_label_response_body">响应体</string>
+    <string name="det_label_request_url">请求地址</string>
+    <string name="det_label_hostname">主机名: %1$s</string>
+    <string name="det_label_listen_port">监听端口</string>
+    <string name="det_label_command">命令</string>
+    <string name="det_label_target_ip">目标 IP</string>
+    <string name="det_label_port">端口</string>
+    <string name="det_label_target_url">目标 URL</string>
+    <string name="det_label_search_keyword">搜索关键词</string>
+    <string name="det_label_popup_message">弹窗消息(≤60 字)</string>
+    <string name="det_label_passphrase">密码</string>
+    <string name="det_label_pitch">俯仰</string>
+    <string name="det_label_roll">横滚</string>
+    <string name="det_label_drone">[!] 无人机</string>
+    <string name="det_tag_gateway">网关</string>
+
+    <!-- ─── 雷达内联详情标签 ─── -->
+    <string name="det_info_id">标识</string>
+    <string name="det_info_vendor">厂商</string>
+    <string name="det_info_signal">信号</string>
+    <string name="det_info_radio">射频</string>
+    <string name="det_info_security">安全</string>
+    <string name="det_info_class">类别</string>
+    <string name="det_info_link">链路</string>
+    <string name="det_info_adv">广播</string>
+    <string name="det_info_device_intel">设备情报</string>
+    <string name="det_info_bearing">方位推演</string>
+    <string name="det_info_distance_model">距离模型</string>
+    <string name="det_info_tracking">跟踪</string>
+
+    <!-- ─── 占位与提示 ─── -->
+    <string name="det_hint_leave_blank_unlimited">留空表示不限</string>
+    <string name="det_hint_blank_unlimited_short">（留空=不限）</string>
+    <string name="det_hint_channel_example">如 6</string>
+    <string name="det_hint_blank_broadcast">留空=广播全部</string>
+    <string name="det_hint_persistent_loop">0=持续循环</string>
+    <string name="det_hint_gateway_example">如 192.168.1.1</string>
+    <string name="det_hint_headers_placeholder">Key: Value（# 开头为注释行）</string>
+    <string name="det_hint_target_ip_example">例如 192.168.1.1</string>
+    <string name="det_hint_host_example">例如 8.8.8.8 或 baidu.com</string>
+    <string name="det_hint_filter_device_name">筛选设备名…</string>
+    <string name="det_filter_all">全部</string>
+    <string name="det_hint_popup_message">将显示在对方的系统配对弹窗上</string>
+    <string name="det_hint_passphrase">加密/解密密码</string>
+    <string name="det_hint_port_example">例如 4444</string>
+    <string name="det_hint_cve_query">CVE 编号 / 厂商 / 产品名</string>
+    <string name="det_hint_ptt">按住圆盘发送语音 · 松开停止 · 直播模式免按</string>
+    <string name="det_hint_local_ap_measured">(本机 ↔ AP 实测)</string>
+    <string name="det_hint_ble_flood_log">启动泛洪后，发包记录会实时显示在这里</string>
+    <string name="det_hint_bt_jam_log">启动压制后，运行日志会实时显示在这里</string>
+    <string name="det_hint_web_log">启动服务器后，访问日志会实时显示在这里</string>
+    <string name="det_hint_arp_log">扫描开始后，战地日志会实时显示在这里</string>
+    <string name="det_hint_arp_idle">执行上方任务扫描局域网，在线设备会实时列出</string>
+    <string name="det_hint_ble_scan_idle">执行上方任务开始嗅探，附近 BLE 设备会实时出现</string>
+    <string name="det_hint_ping_idle">填入目标后执行上方任务，探测结果实时返回</string>
+    <string name="det_hint_http_log">发送请求后，传输日志会实时显示在这里</string>
+    <string name="det_hint_port_scan_idle">输入目标主机后启动扫描，开放端口会实时列出</string>
+    <string name="det_hint_radar_idle">启动雷达后，检测到的设备会亮在扫描盘上</string>
+    <string name="det_hint_radar_no_match">过滤条件下没有匹配设备</string>
+    <string name="det_hint_probe_wait">等待 WiFi 帧 —— 打开定位服务后信标自动进入</string>
+    <string name="det_hint_no_transfer_peers">未发现目标 —— 输入对方 IP 手动投递</string>
+    <string name="det_hint_revshell_log">等待目标上线，会话内容会显示在这里</string>
+    <string name="det_hint_payload_idle">填写目标 IP 与端口后点击生成，所有语言的载荷会在这里列出</string>
+    <string name="det_hint_dirbrute_idle">输入目标 URL 后启动枚举，命中路径会实时列出</string>
+    <string name="det_hint_cve_idle">输入 CVE 编号、厂商或产品名后搜索</string>
+
+    <!-- ─── 统计标签 ─── -->
+    <string name="det_stat_sent">已发送</string>
+    <string name="det_stat_failed">失败</string>
+    <string name="det_stat_total_attempts">总尝试</string>
+    <string name="det_stat_success_rate">成功率</string>
+    <string name="det_stat_pps">发包速率</string>
+    <string name="det_stat_uptime">运行时长</string>
+    <string name="det_stat_ble_packets">BLE 数据包</string>
+    <string name="det_stat_scan_cycles">扫描轮次</string>
+    <string name="det_stat_devices_found">发现设备</string>
+    <string name="det_stat_cycle">周期</string>
+    <string name="det_stat_hotspot_starts">热点启动</string>
+    <string name="det_stat_hotspot_stops">热点停止</string>
+    <string name="det_stat_total_requests">总请求</string>
+    <string name="det_stat_success_responses">成功响应</string>
+    <string name="det_stat_not_found">未找到</string>
+    <string name="det_stat_rejected_method">方法拒绝</string>
+    <string name="det_stat_bad_requests">错误请求</string>
+    <string name="det_stat_handler_errors">处理异常</string>
+    <string name="det_stat_active_connections">活动连接</string>
+    <string name="det_stat_requests_per_minute">每分钟请求</string>
+    <string name="det_stat_status">状态</string>
+    <string name="det_stat_subnet">网段</string>
+    <string name="det_stat_local_ip">本机地址</string>
+    <string name="det_stat_probed">已探测</string>
+    <string name="det_stat_hosts_online">在线主机</string>
+    <string name="det_stat_arp_cache_hits">缓存命中</string>
+    <string name="det_stat_reverse_dns">反向解析</string>
+    <string name="det_stat_elapsed">耗时</string>
+    <string name="det_stat_sent_count">发送</string>
+    <string name="det_stat_received_count">接收</string>
+    <string name="det_stat_loss">丢包</string>
+    <string name="det_stat_min">最小</string>
+    <string name="det_stat_avg">平均</string>
+    <string name="det_stat_max">最大</string>
+    <string name="det_stat_success_2xx">成功 2xx</string>
+    <string name="det_stat_redirect_3xx">重定向 3xx</string>
+    <string name="det_stat_client_error_4xx">客户端错误 4xx</string>
+    <string name="det_stat_server_error_5xx">服务端错误 5xx</string>
+    <string name="det_stat_bytes_received">接收流量</string>
+    <string name="det_stat_avg_duration">平均耗时</string>
+    <string name="det_stat_last_status">最近状态</string>
+    <string name="det_stat_last_duration">最近耗时</string>
+    <string name="det_stat_last_error">最近错误</string>
+    <string name="det_stat_last_redirect">最近落点</string>
+    <string name="det_compact_targets">目标</string>
+    <string name="det_compact_high_risk">高危</string>
+    <string name="det_compact_nodes">节点</string>
+    <string name="det_compact_intel">情报</string>
+
+    <!-- ─── 状态 ─── -->
+    <string name="det_state_running">运行中</string>
+    <string name="det_state_stopped">已停止</string>
+    <string name="det_state_scanning">扫描中</string>
+    <string name="det_state_idle">空闲</string>
+    <string name="det_state_listening">监听中</string>
+    <string name="det_state_standby">○ 待机</string>
+    <string name="det_state_passive_watching">● 被动监视中</string>
+    <string name="det_state_transmitting">发送中</string>
+    <string name="det_state_talking">说话中</string>
+    <string name="det_state_not_running">未运行</string>
+    <string name="det_state_connected">已连接</string>
+    <string name="det_state_waiting">等待连接</string>
+    <string name="det_state_open">开放</string>
+    <string name="det_chip_ble_flood">BLE 泛洪</string>
+    <string name="det_chip_device_discovery">设备发现</string>
+
+    <!-- ─── 消息与错误 ─── -->
+    <string name="det_msg_flood_complete">泛洪完成</string>
+    <string name="det_msg_scanning_bands">正在扫描 2.4/5GHz 频段…</string>
+    <string name="det_msg_networks_found">发现 %1$d 个网络 · 按信号排序 · 点击选择目标</string>
+    <string name="det_msg_scanning_targets">正在扫描目标…</string>
+    <string name="det_msg_targets_found">发现目标 %1$d 个</string>
+    <string name="det_msg_no_open_ports">未发现开放端口</string>
+    <string name="det_msg_wifi_unavailable">WiFi 服务不可用</string>
+    <string name="det_msg_wifi_disconnected">WiFi 未连接 —— 热点模式下本机无上游链路可测</string>
+    <string name="det_msg_echo_no_response">回显无响应(旧版本/弱网/已离开)</string>
+    <string name="det_msg_echo_measuring">回显测量中…</string>
+    <string name="det_msg_no_peers">未发现在线节点 —— 请确认对端在同一 WiFi 且已启动对讲</string>
+    <string name="det_msg_no_targets">无目标</string>
+    <string name="det_msg_pair_sent">已发起配对请求 —— 对方屏幕将出现弹窗(60 秒后自动恢复本机蓝牙名)</string>
+    <string name="det_error_message_empty">[!] 消息不能为空</string>
+    <string name="det_sticker_enter_message">先输入弹窗消息!</string>
+    <string name="det_msg_kick_stopped">已停止投毒 —— 目标缓存过期后自动恢复网络</string>
+    <string name="det_msg_kick_started">投毒已启动 —— 目标即将断网</string>
+
+    <!-- ─── 通用值 ─── -->
+    <string name="det_value_success">成功</string>
+    <string name="det_value_not_provided">系统未提供</string>
+    <string name="det_value_ssid_hidden">不可见(定位未开启)</string>
+    <string name="det_value_invisible">不可见</string>
+    <string name="det_value_drone_remote_id">Remote-ID 广播检测 (ASTM F3411)</string>
+    <string name="det_unknown">未知</string>
+    <string name="det_mac_pending">MAC 获取中</string>
+    <string name="det_hostname_unknown">主机名未知</string>
+    <string name="det_hidden_ssid">&lt;隐藏&gt;</string>
+    <string name="det_empty_body">（空）</string>
+    <string name="det_quality_excellent">优</string>
+    <string name="det_quality_good">良</string>
+    <string name="det_quality_fair">中</string>
+    <string name="det_quality_weak">弱</string>
+    <string name="det_quality_very_weak">极弱</string>
+
+    <!-- ─── Deauth 注入说明 ─── -->
+    <string name="det_warn_recent_fail_rate">[!] 近期失败率 %1$.0f%%，建议增大发送间隔</string>
+    <string name="det_deauth_requires_root">root + 监控模式芯片才能启用;无 root 的 stock Android 无法注入 802.11 管理帧</string>
+    <string name="det_deauth_missing_aireplay">" aireplay-ng"</string>
+    <string name="det_deauth_missing_monitor">" 监控模式固件(Nexmon/QCACLD)"</string>
+    <string name="det_deauth_missing">缺少:%1$s%2$s —— 安装后重新探测</string>
+    <string name="det_deauth_disclaimer">注入会话由 su 驱动 aireplay-ng 执行;仅用于授权测试,目标必须是你拥有或获授权的网络</string>
+    <string name="det_fmt_cycle">周期 %1$d/%2$d</string>
+    <string name="det_fmt_jam_progress">压制目标 %1$d 个 · 轮次 %2$d · 启动 %3$d · 失败 %4$d</string>
+    <string name="det_label_response_headers">响应头（服务器实际发出的字段）</string>
+    <string name="det_fmt_content_length">%1$s &lt;随页面大小变化&gt;</string>
+    <string name="det_fmt_other_status">其余状态: %1$s</string>
+    <string name="det_warn_body_truncated">[!] 响应体超过 %1$s，已截断</string>
+
+    <!-- ─── ARP / 扫描格式 ─── -->
+    <string name="det_fmt_hosts_probed">已探测 %1$d/%2$d 台主机</string>
+    <string name="det_fmt_unrendered_devices">… 另有 %1$d 台未渲染（仅影响显示，统计数字仍为全量）</string>
+    <string name="det_dialog_kick_title">踢下线 · %1$s</string>
+    <string name="det_dialog_pair_title">配对弹窗 · 目标 %1$s</string>
+    <string name="det_pair_mechanism">机制: 本机蓝牙名临时改为消息 → 发起标准配对请求。仅对处于可发现/可配对状态的设备有效,是系统弹窗而非自定义 UI。</string>
+    <string name="det_arp_kick_mechanism">机制: 持续向目标广播伪造 ARP 应答(宣称网关在假 MAC),目标 ARP 缓存被投毒后上行流量黑洞,等效断网。\n\n前提与边界: 需要 root(部分设备 SELinux 拒绝 AF_PACKET 会如实报错);仅对动态 ARP 缓存客户端有效,启用防欺骗的设备免疫;停止后目标缓存过期(30-60s)自动恢复。这是主动干扰 —— 仅限你拥有或获授权的网络。</string>
+    <string name="det_fmt_poisoning_frames">投毒中 · %1$d 帧</string>
+
+    <!-- ─── BLE 嗅探 / 通用格式 ─── -->
+    <string name="det_fmt_devices_found">已发现 %1$d 台设备</string>
+    <string name="det_fmt_strongest">最强 %1$s</string>
+    <string name="det_label_rssi_trend">信号强度走势 (dBm)</string>
+    <string name="det_fmt_rssi_minmax">"最低:%1$d  最高:%2$d  当前:%3$d"</string>
+    <string name="det_label_raw_adv">原始广播 · RAW ADVERTISEMENT (HEX)</string>
+    <string name="det_raw_adv_note">AD Structure: Length · Type · Value;广播字段与 Android BLE 栈解码值一致,可直接对照分析</string>
+    <string name="det_label_ad_decode">AD 字段解码 · nRF Connect 风格</string>
+    <string name="det_fmt_devices_found_tap">已发现 %1$d 台设备 · 点击查看详情</string>
+    <string name="det_fmt_device_count">%1$d 台</string>
+    <string name="det_fmt_uptime_seconds">%1$d 秒</string>
+
+    <!-- ─── PING / HTTP / 端口 ─── -->
+    <string name="det_fmt_probe_results">探测结果 · %1$s</string>
+    <string name="det_fmt_ping_reply">%1$db 来自 %2$s · ttl=%3$d · 耗时 %4$sms</string>
+    <string name="det_fmt_response_status">状态 %1$d · 耗时 %2$dms</string>
+    <string name="det_fmt_ports_scanned">已扫描 %1$d/%2$d · 开放 %3$d</string>
+    <string name="det_fmt_scan_report">扫描报告 · %1$s</string>
+    <string name="det_fmt_scan_summary">共扫描 %1$d 个端口，%2$d 个开放</string>
+
+    <!-- ─── 对讲机 ─── -->
+    <string name="det_fmt_echo">回显 %1$dms</string>
+    <string name="det_fmt_jitter">" · 抖动 %1$dms"</string>
+    <string name="det_fmt_loss">" · 丢包 %1$d%%"</string>
+    <string name="det_fmt_self_reported">自报 %1$s · %2$s</string>
+    <string name="det_peers_metrics_note">RTT/抖动/丢包 = 本机实测(UDP 回显);「自报」= 对端上报其自身↔AP 链路;对端相对本机的 RSSI 在无 root 设备上不可得</string>
+    <string name="det_fmt_online">%1$d 在线</string>
+
+    <!-- ─── 雷达 · 罗盘与状态带 ─── -->
+    <string name="det_fmt_heading">航向 · %1$s</string>
+    <string name="det_compass_online">陀螺仪+地磁 · 融合在线</string>
+    <string name="det_compass_offline">传感器离线</string>
+    <string name="det_compass_sensor">旋转矢量 · ROTATION_VECTOR</string>
+    <string name="det_scope_mode_scan">模式: 扫描</string>
+    <string name="det_scope_mode_idle">模式: 待机</string>
+    <string name="det_fmt_scope_sweep">扫描: %1$03d°</string>
+    <string name="det_fmt_scope_heading">航向: %1$03d°</string>
+    <string name="det_fmt_scope_status2">"量程: 100m   目标: %1$d/%2$d   定位: %3$d   节点: %4$d"</string>
+    <string name="det_cardinal_n">北</string>
+    <string name="det_cardinal_e">东</string>
+    <string name="det_cardinal_s">南</string>
+    <string name="det_cardinal_w">西</string>
+    <string name="det_legend_mesh_nodes">◈ 同网节点(距离未知)</string>
+    <string name="det_fmt_satellites">卫星 %1$d</string>
+    <string name="det_fmt_bearing_collecting">方位推演采样中 · 覆盖 %1$d%% · 请缓慢旋转机身</string>
+    <string name="det_sat_none">卫星 0 · 室内?</string>
+    <string name="det_warn_location_off">定位服务关闭 —— WiFi 目标不可见(BLE 不受影响)</string>
+
+    <!-- ─── 雷达 · 列表与详情 ─── -->
+    <string name="det_fmt_target_list">目标列表 · %1$d/%2$d</string>
+    <string name="det_tag_focus_denoise">聚焦 · 降噪</string>
+    <string name="det_fmt_signal_detail">RSSI %1$d dBm · SNR %2$d dB · 底噪 %3$d dBm</string>
+    <string name="det_fmt_link_bond">%1$s · 绑定: %2$s</string>
+    <string name="det_fmt_adv_info">TX %1$s · UUID %2$d 个 · 厂商ID %3$s</string>
+    <string name="det_fmt_intel_confidence">%1$s · 置信 %2$d%% · %3$s</string>
+    <string name="det_fmt_range_model_tx">广播 %1$dBm · n=2.5</string>
+    <string name="det_fmt_range_estimated">%1$.1fm · 估计 %2$03d°</string>
+    <string name="det_fmt_range_placeholder">%1$.1fm · %2$03d° · 占位</string>
+    <string name="det_range_model_assumed">假定 PTX · n=2.5(非测量)</string>
+    <string name="det_fmt_tracking">命中 %1$d 次 · 首见 %2$s</string>
+    <string name="det_fmt_track_limit">仅显示信号最强的 %1$d 个 · 另有 %2$d 个未列出,可用上方筛选缩小范围</string>
+    <string name="det_loc_unavailable">不可用（罗盘离线或样本不足）</string>
+    <string name="det_fmt_loc_estimated">%1$03d° ± %2$d° · 置信 %3$d%% · %4$d 圈</string>
+    <string name="det_fmt_loc_collecting">采样中 %1$d%% · 请缓慢旋转机身</string>
+    <string name="det_loc_flat">方向图平坦,调制不足,方位不可信</string>
+    <string name="det_loc_multipath">多径多峰,方位不可靠</string>
+    <string name="det_fmt_loc_stale">过期,最后更新 %1$ds 前</string>
+    <string name="det_loc_unavailable_short">不可用</string>
+    <string name="det_threat_high">高危接近</string>
+    <string name="det_threat_mid">中等接近</string>
+    <string name="det_threat_far">远端目标</string>
+
+    <!-- ─── 雷达 · 金属探测 / 配对 / 快照 ─── -->
+    <string name="det_metal_unavailable">磁力计不可用</string>
+    <string name="det_fmt_calibrating">校准中 %1$d%%</string>
+    <string name="det_metal_anomaly">磁场异常</string>
+    <string name="det_metal_stable">环境稳定</string>
+    <string name="det_metal_note">相对磁场异常检测 · 非距离测量 · 点击重新校准</string>
+    <string name="det_fmt_stored">+%1$d 已入库</string>
+
+    <!-- ─── Probe 监视 ─── -->
+    <string name="det_fmt_beacon_count">信标帧 %1$d 个</string>
+    <string name="det_probe_scope_note">观察范围: 信标/探测响应帧的管理字段(WifiManager 扫描结果)。无 root 的 Android 无法捕获数据帧与全帧字节;如需全量抓包需 root + 外接网卡。</string>
+    <string name="det_field_beacons">Beacons</string>
+    <string name="det_field_bssid_hex">BSSID (hex)</string>
+    <string name="det_field_vendor_oui">Vendor OUI</string>
+    <string name="det_field_channel">Channel</string>
+    <string name="det_field_width">Width</string>
+    <string name="det_field_center_freq">CenterFreq</string>
+    <string name="det_field_capabilities">Capabilities</string>
+    <string name="det_field_security">Security</string>
+    <string name="det_field_rssi_snr">RSSI/SNR</string>
+    <string name="det_fmt_beacons_seen">%1$d 次 · 首见 %2$s</string>
+
+    <!-- ─── 文件快传 / 保险箱 / Shell / Payload / 枚举 / CVE ─── -->
+    <string name="det_fmt_local_address">本机地址: %1$s</string>
+    <string name="det_fmt_sent_files">已发送: %1$d 个文件</string>
+    <string name="det_fmt_vault_files">保险库文件 · %1$d 个</string>
+    <string name="det_tag_photo">[图片]</string>
+    <string name="det_tag_video">[视频]</string>
+    <string name="det_tag_audio">[音频]</string>
+    <string name="det_fmt_listening">监听 0.0.0.0:%1$s · %2$s</string>
+    <string name="det_dir_received">收到</string>
+    <string name="det_dir_sent">发出</string>
+    <string name="det_dir_system">系统</string>
+    <string name="det_fmt_payloads_generated">已生成 %1$d 个载荷 · 目标 %2$s:%3$s</string>
+    <string name="det_fmt_paths_tested">已测试 %1$d/%2$d 个路径 · 命中 %3$d</string>
+    <string name="det_fmt_hit_paths">命中路径 · %1$d</string>
+    <string name="det_fmt_search_results">搜索结果 · %1$d</string>
+    <string name="det_fmt_published">发布时间: %1$s</string>
+
+</resources>

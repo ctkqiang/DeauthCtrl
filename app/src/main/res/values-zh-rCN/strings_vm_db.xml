@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信号数据库 ViewModel 中文资源,与 values/strings_vm_db.xml 一一对应。 -->
+<resources>
+    <string name="vm_db_unknown_type">未知类型</string>
+</resources>

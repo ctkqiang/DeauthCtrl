@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BootstrapInstaller — English default strings. -->
+<resources>
+    <string name="mgr_bootinst_extracting">Extracting %1$d entries</string>
+    <string name="mgr_bootinst_rebuilding_links">Rebuilding links</string>
+    <string name="mgr_bootinst_verifying">Verifying environment</string>
+    <string name="mgr_bootinst_ready">Environment ready</string>
+    <string name="mgr_bootinst_verify_failed">Verification failed</string>
+    <string name="mgr_bootinst_failed">Failed: %1$s</string>
+</resources>

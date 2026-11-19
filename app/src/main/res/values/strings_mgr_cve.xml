@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CVESearchManager — English default strings. -->
+<resources>
+    <string name="mgr_cve_prompt_empty">Enter a search keyword</string>
+    <string name="mgr_cve_error">Error: %1$s</string>
+    <string name="mgr_cve_looking_up">Looking up %1$s ...</string>
+    <string name="mgr_cve_network_unreachable">Network unreachable — check WiFi / data connection</string>
+    <string name="mgr_cve_searching">Searching \"%1$s\" ...</string>
+    <string name="mgr_cve_no_results">No results found</string>
+    <string name="mgr_cve_found_count">Found %1$d results</string>
+    <string name="mgr_cve_parse_failed">Parse failed: %1$s</string>
+</resources>

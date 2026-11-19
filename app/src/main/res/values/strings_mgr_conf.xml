@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LAN conference manager — English default resources -->
+<resources>
+    <!-- Stream sources -->
+    <string name="mgr_conf_stream_none">OFF</string>
+    <string name="mgr_conf_stream_front">FRONT</string>
+    <string name="mgr_conf_stream_back">BACK</string>
+    <string name="mgr_conf_stream_screen">SCREEN</string>
+
+    <!-- Encoder labels -->
+    <string name="mgr_conf_encoder_front_camera">Camera front</string>
+    <string name="mgr_conf_encoder_back_camera">Camera rear</string>
+    <string name="mgr_conf_encoder_screen">Screen</string>
+
+    <!-- Video status line -->
+    <string name="mgr_conf_video_idle">Video: idle</string>
+    <string name="mgr_conf_video_preparing">Video: preparing...</string>
+    <string name="mgr_conf_video_no_source">Video: no source selected</string>
+    <string name="mgr_conf_video_off">Video: off</string>
+    <string name="mgr_conf_video_starting_front">Video: starting front camera...</string>
+    <string name="mgr_conf_video_starting_back">Video: starting rear camera...</string>
+    <string name="mgr_conf_video_wait_screen_auth">Video: awaiting screen capture permission... (system confirmation required each time)</string>
+    <string name="mgr_conf_video_creating_screen">Video: creating screen capture...</string>
+    <string name="mgr_conf_video_with_message">Video: %1$s</string>
+    <string name="mgr_conf_video_wait_first_frame">Video: %1$s 640×480@15 · awaiting first frame</string>
+    <string name="mgr_conf_video_camera_disconnected">Video: camera disconnected</string>
+    <string name="mgr_conf_video_screen_ready_join">Video: screen permission ready; choose SCREEN after joining</string>
+    <string name="mgr_conf_video_screen_ready_select">Video: screen permission ready; choose SCREEN to start (system confirmation required each time)</string>
+    <string name="mgr_conf_video_screen_size">Video: screen content %1$d×%2$d; re-authorize to change capture resolution</string>
+    <string name="mgr_conf_video_reauth_needed">Video: re-authorization required</string>
+    <string name="mgr_conf_video_screen_ended">Screen sharing ended</string>
+    <string name="mgr_conf_video_first_frame_sent">Video: %1$s 640×480@15 · first frame sent</string>
+    <string name="mgr_conf_video_frames_sent">Video: %1$s 640×480@15 · %2$d frames sent</string>
+
+    <!-- Errors -->
+    <string name="mgr_conf_err_not_running_stream">Not in a meeting; cannot start a video source</string>
+    <string name="mgr_conf_err_start_failed">Meeting start failed: %1$s</string>
+    <string name="mgr_conf_err_camera_unavailable">Camera service unavailable</string>
+    <string name="mgr_conf_err_no_camera">No camera detected</string>
+    <string name="mgr_conf_err_camera_session">Camera capture session failed to start: %1$s</string>
+    <string name="mgr_conf_err_camera_session_generic">Camera encoding session failed</string>
+    <string name="mgr_conf_err_camera_session_msg">Camera encoding session failed: %1$s</string>
+    <string name="mgr_conf_err_camera_error">Camera error %1$d</string>
+    <string name="mgr_conf_err_camera_start">Camera failed to start: %1$s</string>
+    <string name="mgr_conf_err_encoder_start">Encoder failed to start: %1$s</string>
+    <string name="mgr_conf_err_encoder_error">Encoder error: %1$s</string>
+    <string name="mgr_conf_err_screen_create">Screen capture creation failed</string>
+    <string name="mgr_conf_err_reauth_used">This screen authorization was already used; choose SCREEN again to re-authorize</string>
+    <string name="mgr_conf_err_screen_failed">Screen capture failed: %1$s</string>
+    <string name="mgr_conf_reauth_hint">re-authorization required (%1$s)</string>
+    <string name="mgr_conf_err_frame_too_large">Frame too large: %1$dB (over 255 fragments); dropped</string>
+    <string name="mgr_conf_err_video_send">Video send failed: %1$s</string>
+    <string name="mgr_conf_err_csd">CSD extraction failed: %1$s</string>
+    <string name="mgr_conf_err_wifi_unresolved">No Wi-Fi network interface resolved (fell back to system default): multicast may be unavailable; confirm both devices are on the same Wi-Fi</string>
+    <string name="mgr_conf_err_port_bind">LAN port bind failed: video/discovery channels unavailable (check port usage or Wi-Fi state)</string>
+    <string name="mgr_conf_err_input_buffer">Failed to dequeue input buffer: %1$s</string>
+    <string name="mgr_conf_err_decode">Decode failed: %1$s</string>
+    <string name="mgr_conf_err_decode_output">Decode output failed: %1$s</string>
+    <string name="mgr_conf_err_decoder_create">Decoder creation failed: %1$s</string>
+
+    <!-- Decoder state display values (kept as data values in the manager) -->
+    <string name="mgr_conf_decoder_wait_data">Waiting for video data</string>
+    <string name="mgr_conf_decoder_no_data">No video data received</string>
+    <string name="mgr_conf_decoder_surface_failed">Surface creation failed</string>
+    <string name="mgr_conf_decoder_surface_bound_wait_csd">Surface bound, awaiting parameter sets</string>
+    <string name="mgr_conf_decoder_surface_detached">Surface detached</string>
+    <string name="mgr_conf_decoder_connected_no_data">Connected, no video data received</string>
+    <string name="mgr_conf_decoder_csd_changed">Parameter sets changed, rebuilding decoder</string>
+    <string name="mgr_conf_decoder_wait_surface">Awaiting surface binding</string>
+    <string name="mgr_conf_decoder_wait_csd">Awaiting parameter sets (SPS/PPS)</string>
+    <string name="mgr_conf_decoder_ready">Decoder ready</string>
+    <string name="mgr_conf_decoder_create_failed">Decoder creation failed</string>
+    <string name="mgr_conf_decoder_error">Decode error</string>
+    <string name="mgr_conf_decoder_decoding">Decoding</string>
+</resources>

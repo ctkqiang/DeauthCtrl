@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IrRemoteManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_ir_no_emitter">[!] 无红外发射器</string>
+    <string name="mgr_ir_transmitted">已发射 · %1$s · %2$dHz × %3$d</string>
+    <string name="mgr_ir_transmit_failed">[!] 发射失败: %1$s</string>
+</resources>

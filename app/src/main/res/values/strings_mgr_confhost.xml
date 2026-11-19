@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ConferenceHostService — English default strings. -->
+<resources>
+    <string name="mgr_confhost_notif_title">LAN conference running</string>
+    <string name="mgr_confhost_notif_text">Screen sharing requires user authorization; it must be granted again after stopping</string>
+    <string name="mgr_confhost_channel_name">LAN conference</string>
+</resources>

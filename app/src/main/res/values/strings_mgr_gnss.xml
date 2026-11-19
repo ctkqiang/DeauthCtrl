@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GNSS 星图管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_gnss_error_gps_off">Location services are off — enable Location in system settings for GNSS satellite data</string>
+    <string name="mgr_gnss_error_permission">Missing Location permission — grant Precise location in system settings and retry</string>
+    <string name="mgr_gnss_error_legacy">Android version below 7.0 — no GnssStatus satellite callback; sky chart unavailable</string>
+    <string name="mgr_gnss_no_service">Device does not provide location services — cannot read GNSS status</string>
+    <string name="mgr_gnss_empty_reason">No satellite signal captured — 0 satellites in the callback indoors or with GNSS blocked; test under open sky or by a window</string>
+    <string name="mgr_gnss_register_failed">GNSS status callback registration failed: %1$s</string>
+    <string name="mgr_gnss_register_rejected">System refused GNSS status callback registration — verify location permission and GNSS hardware availability</string>
+</resources>

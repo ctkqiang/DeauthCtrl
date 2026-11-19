@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_title">MESH CHAT · BLE MESH</string>
+    <string name="mesh_stat_peers">PEERS</string>
+    <string name="mesh_stat_received">RECEIVED</string>
+    <string name="mesh_stat_relayed">RELAYED</string>
+    <string name="mesh_my_id">MY ID</string>
+    <string name="mesh_payload_budget">Payload budget %1$dB</string>
+    <string name="mesh_panel_peers">PEERS</string>
+    <string name="mesh_peers_empty_running">Listening — devices nearby running this module will appear here within the 8-second window</string>
+    <string name="mesh_peers_empty_stopped">Mesh not running — nodes heard in the last 8 seconds will show here after start</string>
+    <string name="mesh_peer_direct">%1$d dBm · %2$ds · DIRECT</string>
+    <string name="mesh_peer_hops">%1$d dBm · %2$ds · %3$d hops</string>
+    <string name="mesh_panel_log">MESH LOG</string>
+    <string name="mesh_log_empty_running">Waiting for messages — nearby devices running this module relay each other\'s broadcasts; messages you send also appear here</string>
+    <string name="mesh_log_empty_stopped">Not running — received messages will appear here in reverse chronological order after start</string>
+    <string name="mesh_panel_tx">TRANSMIT · MESH TX</string>
+    <string name="mesh_input_label">MESSAGE</string>
+    <string name="mesh_input_placeholder">Up to 18 chars · plaintext broadcast · no receipt</string>
+    <string name="mesh_char_count">%1$d/%2$d CHARS</string>
+    <string name="mesh_send">SEND</string>
+    <string name="mesh_over_limit">[!] Beyond the %1$d-char limit; the message will be truncated on send</string>
+    <string name="mesh_start">START MESH</string>
+    <string name="mesh_stop">STOP MESH</string>
+    <string name="mesh_note_packet">Each broadcast packet is 31B: the MESH|ID|seq|ttl| header takes 16-19B, leaving about 5-8B for text (about 5-8 ASCII chars, 1-3 Chinese chars). The input limit is 18 chars; sends are truncated by bytes.</string>
+    <string name="mesh_note_distance">Typical range 10-50m (open ground, no obstruction); initial TTL is 2, so a message travels at most 2 more hops, and each device relays a given message only once.</string>
+    <string name="mesh_note_plaintext">Broadcast in plaintext throughout — no encryption, no authentication, no delivery receipt: any BLE scanner in range can read the content.</string>
+    <string name="mesh_note_tx">Sending uses 3 rounds × 1-second broadcast windows at about 3 seconds per message; a relayed message\'s RSSI is the forwarding node\'s signal to this device, not the original sender\'s distance.</string>
+    <string name="mesh_note_offline">A node is considered offline after 8 seconds without broadcasts; the local ID is randomly generated alphanumeric and persisted, not derived from hardware identifiers.</string>
+    <string name="mesh_me">ME</string>
+    <string name="mesh_row_direct">DIRECT</string>
+    <string name="mesh_row_hops">%1$d hops</string>
+    <string name="mesh_mine_message">[ME] %1$s</string>
+    <string name="mesh_peer_message">[%1$s] %2$s</string>
+</resources>

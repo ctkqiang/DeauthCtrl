@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MainsWireDetector — 简体中文资源。 -->
+<resources>
+    <string name="mgr_mains_missing_permission">缺少麦克风权限(RECORD_AUDIO)</string>
+    <string name="mgr_mains_no_microphone">此设备没有麦克风,无法进行工频探测</string>
+    <string name="mgr_mains_init_failed">麦克风初始化失败(设备不支持 44100Hz 采集,或被其他应用占用)</string>
+    <string name="mgr_mains_capture_failed">采集失败: %1$s</string>
+    <string name="mgr_mains_mic_read_failed">麦克风读取持续失败</string>
+</resources>

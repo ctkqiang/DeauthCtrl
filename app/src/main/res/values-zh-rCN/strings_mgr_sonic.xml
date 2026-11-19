@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 声波数据链管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_sonic_error_no_symbols">没有可发送的符号 —— 仅支持 0-9、A-D、*、# 与空格</string>
+    <string name="mgr_sonic_error_track_write">AudioTrack 写入失败(%1$d)</string>
+    <string name="mgr_sonic_symbol_space">空格</string>
+    <string name="mgr_sonic_error_no_pcm_output">设备不支持 44.1kHz PCM 输出</string>
+    <string name="mgr_sonic_error_track_init">AudioTrack 初始化失败（音频输出可能被占用）</string>
+    <string name="mgr_sonic_error_no_mic_capture">设备不支持 44.1kHz 麦克风采集</string>
+    <string name="mgr_sonic_error_mic_init">麦克风初始化失败（可能被其他应用占用）</string>
+    <string name="mgr_sonic_error_mic_read">麦克风读取失败(%1$d)</string>
+    <string name="mgr_sonic_error_no_record_permission">缺少录音权限（RECORD_AUDIO），请在应用网关授权后重试</string>
+</resources>

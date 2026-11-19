@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 流量监视页(pkt_)中文资源,与 values/strings_pkt.xml 一一对应。 -->
+<resources>
+    <!-- ─── 头部与操作 ─── -->
+    <string name="pkt_title">流量监视 · PACKET MONITOR</string>
+    <string name="pkt_btn_start">启动监视</string>
+    <string name="pkt_btn_stop">停止监视</string>
+
+    <!-- ─── 告警与空状态 ─── -->
+    <string name="pkt_warn_vpn_denied">未授予 VPN 授权 —— 无法启动流量监视(VpnService 必须由系统弹窗确认)</string>
+    <string name="pkt_empty_listening">正在监听 TUN,等待第一个 IPv4 数据包 ...</string>
+    <string name="pkt_empty_not_started">尚未开始监视 —— 点击「启动监视」并确认系统 VPN 授权</string>
+    <string name="pkt_empty_no_match">当前过滤条件下没有匹配的数据包 —— 调整协议 / 文本过滤,或关闭「隐藏背景噪声」</string>
+    <string name="pkt_list_count_notice">显示 %1$d / %2$d 条 · 列表仅保留最近 500 包,汇总与会话为全会话统计</string>
+
+    <!-- ─── 状态面板 ─── -->
+    <string name="pkt_panel_status">监视状态 · STATUS</string>
+    <string name="pkt_label_vpn_service">VPN 服务</string>
+    <string name="pkt_state_running">运行中</string>
+    <string name="pkt_state_stopped">已停止</string>
+    <string name="pkt_label_local_tun">本机 TUN</string>
+    <string name="pkt_label_route">路由</string>
+    <string name="pkt_value_route">0.0.0.0/0(仅 IPv4)</string>
+    <string name="pkt_label_forwarding">转发</string>
+    <string name="pkt_value_forwarding">UDP / TCP 用户态转发</string>
+
+    <!-- ─── 汇总面板 ─── -->
+    <string name="pkt_panel_summary">汇总 · SUMMARY</string>
+    <string name="pkt_stat_packets">数据包</string>
+    <string name="pkt_stat_bytes">字节</string>
+    <string name="pkt_stat_sessions">会话</string>
+    <string name="pkt_stat_unique_domains">唯一域名</string>
+    <string name="pkt_section_protocol">协议分布 · PROTOCOL</string>
+    <string name="pkt_section_top_domains">Top 域名 · TOP DOMAINS</string>
+    <string name="pkt_empty_no_domains">-- 尚无解析到的域名(DNS QNAME / TLS SNI / HTTP Host)</string>
+    <string name="pkt_unit_packets">包</string>
+    <string name="pkt_section_top_peers">Top 对端 · TOP PEERS</string>
+    <string name="pkt_empty_no_peers">-- 尚无对端地址</string>
+    <string name="pkt_count_with_unit">%1$d %2$s</string>
+
+    <!-- ─── 会话面板 ─── -->
+    <string name="pkt_panel_sessions">会话 · SESSIONS</string>
+    <string name="pkt_empty_no_sessions">-- 尚无会话 —— 抓到的每个 IPv4 包都会按源/目的地址归并</string>
+    <string name="pkt_sessions_summary">双向聚合 · 共 %1$d 个会话(展示 %2$d 个)</string>
+    <string name="pkt_sessions_collapse">收起会话</string>
+    <string name="pkt_sessions_expand">展开全部会话(%1$d)</string>
+    <string name="pkt_session_packets_bytes">%1$d 包 · %2$s</string>
+    <string name="pkt_session_last_active">最近 %1$s</string>
+    <string name="pkt_session_domains">域名 %1$s</string>
+
+    <!-- ─── 过滤面板 ─── -->
+    <string name="pkt_panel_filter">过滤 · FILTER</string>
+    <string name="pkt_filter_all">全部</string>
+    <string name="pkt_input_label">文本过滤 · 域名 / IP 子串</string>
+    <string name="pkt_input_placeholder">example.com 或 93.184.216</string>
+    <string name="pkt_noise_on">隐藏背景噪声:开</string>
+    <string name="pkt_noise_off">隐藏背景噪声:关</string>
+    <string name="pkt_clear_filters">清空过滤</string>
+    <string name="pkt_shown_count">显示 %1$d / %2$d 包</string>
+    <string name="pkt_shown_hidden_suffix">已隐藏 %1$d 条背景噪声</string>
+    <string name="pkt_noise_legend">背景噪声 = mDNS 224.0.0.251:5353 / SSDP 239.255.255.250:1900 / DHCP 67-68 / IGMP / NTP 123。</string>
+
+    <!-- ─── 数据包列表与详情树 ─── -->
+    <string name="pkt_log_title">数据包 · PACKETS</string>
+    <string name="pkt_field_version">版本</string>
+    <string name="pkt_field_total_length">总长度</string>
+    <string name="pkt_field_protocol">协议</string>
+    <string name="pkt_field_address">地址</string>
+    <string name="pkt_field_port">端口</string>
+    <string name="pkt_field_query_name">查询名</string>
+    <string name="pkt_field_type">类型</string>
+    <string name="pkt_field_class">类</string>
+    <string name="pkt_section_info">信息 · INFO</string>
+    <string name="pkt_section_hex_dump">HEX 转储 · 前 %1$d B / 共 %2$d B</string>
+    <string name="pkt_field_payload_offset">载荷偏移</string>
+
+    <!-- ─── 能力边界 ─── -->
+    <string name="pkt_panel_honesty">能力边界 · HONESTY</string>
+    <string name="pkt_honesty_local_only">本页只监视本机流量:VpnService 在本机建立 TUN(10.8.0.1/32),系统把本机 IPv4 流量交给它。同一 Wi-Fi 下其他设备的流量看不到 —— 那需要 root + ARP 欺骗或网卡混杂模式,普通 Android 应用没有这个权限。</string>
+    <string name="pkt_honesty_encryption">HTTPS 内容端到端加密,只能看到 TLS SNI 域名与目标 IP(TLS 1.3 ECH 会隐藏 SNI);HTTP 明文才能看到 Host 与路径;DNS 查询可见,除非使用 DoH / DoT。HEX 转储只保留每包前 64 字节,不保存完整载荷;统计数字只来自真实报文。</string>
+    <string name="pkt_honesty_sessions">会话按 (源 IP, 目的 IP) 双向聚合,协议组成与域名均为全会话累计;包列表只保留最近 500 包,因此列表条数可能少于汇总的总包数。Top 域名与对端按包数排序,相同计数按名称排序。</string>
+    <string name="pkt_honesty_forwarding">为保持网络不断,服务按流做用户态转发:UDP / TCP 各自建立受 protect 保护的上游 socket,回包重新封装后写回 TUN,因此会有轻微延迟;ICMP 不转发(ping 不通是预期行为),IPv6 不经过本隧道。空闲流 60 秒回收,长时间静默的 TCP 连接可能被断开。</string>
+    <string name="pkt_honesty_shutdown">停止监视会先写停机自管道唤醒读线程,再关闭 TUN fd,系统随即摘掉状态栏的 VPN 图标并恢复直连;读线程、清理线程与转发线程均为 daemon 且带 join 超时,不会阻塞服务销毁。</string>
+</resources>

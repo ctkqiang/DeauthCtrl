@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ssh_title">SSH CLIENT</string>
+    <string name="ssh_remote_connection">REMOTE CONNECTION</string>
+    <string name="ssh_local_terminal">▸ LOCAL TERMINAL · LOCALHOST</string>
+    <string name="ssh_local_terminal_desc">Local pty shell · no server required</string>
+    <string name="ssh_host_label">HOST</string>
+    <string name="ssh_port_label">PORT</string>
+    <string name="ssh_username_label">USERNAME</string>
+    <string name="ssh_password_label">PASSWORD</string>
+    <string name="ssh_fill_host_first">Enter host address first!</string>
+    <string name="ssh_connecting">CONNECTING…</string>
+    <string name="ssh_establish_connection">ESTABLISH CONNECTION</string>
+    <string name="ssh_strict_host_key_warning">Host fingerprint check is skipped on first connect (StrictHostKeyChecking=no) — use only on authorized targets</string>
+    <string name="ssh_online_status">ONLINE · %1$s:%2$s</string>
+    <string name="ssh_paste">PASTE</string>
+    <string name="ssh_clear">CLEAR</string>
+    <string name="ssh_disconnect">DISCONNECT</string>
+    <string name="ssh_input_hint">Type a command · tap the terminal above to raise the keyboard</string>
+</resources>

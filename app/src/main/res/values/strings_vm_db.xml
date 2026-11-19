@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Signal database ViewModel strings (prefix: vm_db_). -->
+<resources>
+    <string name="vm_db_unknown_type">UNKNOWN TYPE</string>
+</resources>

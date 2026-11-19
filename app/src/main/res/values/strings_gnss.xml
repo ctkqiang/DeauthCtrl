@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ─── GNSS sky plot ─── -->
+    <string name="gnss_title">Satellite Sky · GNSS SKY</string>
+    <string name="gnss_location_on">FIX ON</string>
+    <string name="gnss_location_off">FIX OFF</string>
+    <string name="gnss_fix_summary">In fix %1$d · Total %2$d</string>
+    <string name="gnss_updated">Updated %1$s</string>
+    <string name="gnss_error_line">[!] %1$s</string>
+
+    <!-- zenith plot -->
+    <string name="gnss_sky_panel_title">Zenith Plot · NORTH UP</string>
+    <string name="gnss_projection_note">Projection: r = R × (90° − elevation) / 90°, azimuth clockwise from true north; outer ring = horizon (0°), center = zenith (90°). Filled with a white core = satellite used in the fix.</string>
+    <string name="gnss_offsky_title">Off-sky satellites (el &lt; 5° or invalid angle; not plotted)</string>
+    <string name="gnss_offsky_line">%1$s %2$d · EL %3$s · AZ %4$s · CN0 %5$s</string>
+    <string name="gnss_ring_hint">Rings 0° / 30° / 60° · Center 90°</string>
+
+    <!-- constellation legend -->
+    <string name="gnss_legend_title">Constellation Legend</string>
+    <string name="gnss_legend_filled">Filled = used in fix</string>
+    <string name="gnss_legend_hollow">Hollow = tracked, not used</string>
+    <string name="gnss_cn0_note">CN0 in dB-Hz; below %1$d marked [WEAK]</string>
+    <string name="gnss_legend_gps">GPS</string>
+    <string name="gnss_legend_galileo">Galileo</string>
+    <string name="gnss_legend_glonass">GLONASS</string>
+    <string name="gnss_legend_beidou">BEIDOU</string>
+    <string name="gnss_legend_qzss">QZSS</string>
+    <string name="gnss_legend_sbas">SBAS</string>
+    <string name="gnss_legend_irnss">IRNSS</string>
+    <string name="gnss_legend_unknown">Unknown</string>
+
+    <!-- satellite detail -->
+    <string name="gnss_sat_detail_title">Satellite Detail · %1$d</string>
+    <string name="gnss_empty_error">No satellite data — recovers automatically after the warning above is resolved</string>
+    <string name="gnss_empty_waiting">Waiting for the system GNSS status callback…</string>
+    <string name="gnss_format_hint">Format: constellation SVID · EL elevation · AZ azimuth · CN0 C/N0 · ● used in fix</string>
+    <string name="gnss_sat_name">%1$s %2$d</string>
+    <string name="gnss_el">EL %1$s</string>
+    <string name="gnss_az">AZ %1$s</string>
+    <string name="gnss_cn0">CN0 %1$s</string>
+    <string name="gnss_weak_badge">[WEAK]</string>
+
+    <!-- data source note -->
+    <string name="gnss_data_note">Data note: satellite azimuth, elevation, CN0 and fix participation are actual values reported by the Android GnssStatus callback — not estimated, not simulated. The zenith plot expresses only the geometric position of satellites in the sky, not distance. There is no data when location is off, precise-location permission is missing, or the device has no GNSS hardware. CN0 below %1$d dB-Hz is a weak signal and fix quality may degrade.</string>
+</resources>

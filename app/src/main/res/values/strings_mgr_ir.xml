@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IrRemoteManager — English default strings. -->
+<resources>
+    <string name="mgr_ir_no_emitter">[!] No IR emitter</string>
+    <string name="mgr_ir_transmitted">Transmitted · %1$s · %2$dHz × %3$d</string>
+    <string name="mgr_ir_transmit_failed">[!] Transmit failed: %1$s</string>
+</resources>

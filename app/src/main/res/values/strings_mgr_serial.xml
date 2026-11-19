@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SerialMonitorManager — English default strings. -->
+<resources>
+    <string name="mgr_serial_usb_device">USB device</string>
+    <string name="mgr_serial_device_removed">Device removed</string>
+    <string name="mgr_serial_permission_required">Allow USB access in the system dialog, then tap connect again</string>
+    <string name="mgr_serial_open_failed">Failed to open USB device</string>
+    <string name="mgr_serial_no_bulk_endpoint">No bulk endpoint found (this chip needs a vendor driver that the system does not include)</string>
+    <string name="mgr_serial_connected">Connected %1$s (%2$s) @ %3$d bps</string>
+    <string name="mgr_serial_chip_generic">USB serial-class device (driver support required)</string>
+</resources>

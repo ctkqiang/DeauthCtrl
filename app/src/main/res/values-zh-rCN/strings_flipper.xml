@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flipper_title">万能遥控 · FLIPPER TV</string>
+    <string name="flipper_tab_tv">TV 万能遥控</string>
+    <string name="flipper_tab_clone">按键克隆库</string>
+    <string name="flipper_panel_candidates">候选库 · tv.ir (Flipper Zero 开源固件)</string>
+    <string name="flipper_candidate_counts">按钮组 %1$d 组 · 共 %2$d 条候选码</string>
+    <string name="flipper_supported_protocols">支持协议: NEC/NECext/Samsung32/RC5/RC5X/RC6/SIRC/SIRC20;Kaseikyo/Pioneer/RCA/NEC42 候选将被跳过(如实计数)</string>
+    <string name="flipper_btn_power">电源</string>
+    <string name="flipper_btn_vol_up">音量 +</string>
+    <string name="flipper_btn_vol_down">音量 -</string>
+    <string name="flipper_btn_ch_next">频道 +</string>
+    <string name="flipper_btn_ch_prev">频道 -</string>
+    <string name="flipper_btn_mute">静音</string>
+    <string name="flipper_candidate_count">%1$d 候选</string>
+    <string name="flipper_flood_status">泛洪中 · %1$s %2$d/%3$d · %4$s · 跳过 %5$d</string>
+    <string name="flipper_stop_flood">■ 停止轮发</string>
+    <string name="flipper_usage">用法: 对准电视按「电源」,遥控器会像 Flipper 一样逐个尝试 317 个品牌的电源码(250ms/个),电视亮起时再次点击停止。全程约 80 秒。</string>
+    <string name="flipper_clone_warning">[!] 手机没有红外接收器,无法像 Flipper 那样空中学习 —— 本库为手动录入键码的克隆库:从 tv.ir 查到候选码、从资料里抄录,或输入 RAW 脉冲(µs 逗号分隔)后永久保存并回放。</string>
+    <string name="flipper_panel_new_key">新建按键</string>
+    <string name="flipper_remote_name_label">遥控名</string>
+    <string name="flipper_remote_name_placeholder">如 客厅电视</string>
+    <string name="flipper_key_name_label">按键名</string>
+    <string name="flipper_key_name_placeholder">如 电源</string>
+    <string name="flipper_address_label">地址(hex)</string>
+    <string name="flipper_command_label">命令(hex)</string>
+    <string name="flipper_raw_label">RAW 脉冲(可选,µs)</string>
+    <string name="flipper_raw_placeholder">9000,4500,560,1690,…(留空用协议生成)</string>
+    <string name="flipper_save_key">保存按键 ▸</string>
+    <string name="flipper_panel_my_remotes">我的遥控 (%1$d)</string>
+    <string name="flipper_empty_remotes">保存的按键会按遥控分组显示在这里</string>
+    <string name="flipper_default_remote_name">我的遥控</string>
+    <string name="flipper_default_key_name">按键 %1$d</string>
+</resources>

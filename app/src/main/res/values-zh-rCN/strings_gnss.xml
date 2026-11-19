@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ─── GNSS 星座天图 ─── -->
+    <string name="gnss_title">卫星天图 · GNSS SKY</string>
+    <string name="gnss_location_on">定位 开</string>
+    <string name="gnss_location_off">定位 关</string>
+    <string name="gnss_fix_summary">参与定位 %1$d 颗 · 总星 %2$d 颗</string>
+    <string name="gnss_updated">更新 %1$s</string>
+    <string name="gnss_error_line">[!] %1$s</string>
+
+    <!-- 天顶投影盘 -->
+    <string name="gnss_sky_panel_title">天顶投影 · 北朝上</string>
+    <string name="gnss_projection_note">投影: r = R × (90° − 仰角) / 90°,方位角自正北顺时针;外圈 = 地平线(0°),圆心 = 天顶(90°)。实心带白芯为参与定位解算的卫星。</string>
+    <string name="gnss_offsky_title">环外卫星(el &lt; 5° 或角度无效,不绘制于盘面)</string>
+    <string name="gnss_offsky_line">%1$s %2$d · EL %3$s · AZ %4$s · CN0 %5$s</string>
+    <string name="gnss_ring_hint">环 0° / 30° / 60° · 圆心 90°</string>
+
+    <!-- 星座图例 -->
+    <string name="gnss_legend_title">星座图例</string>
+    <string name="gnss_legend_filled">实心 = 参与定位解算</string>
+    <string name="gnss_legend_hollow">空心 = 已跟踪未参与</string>
+    <string name="gnss_cn0_note">CN0 单位 dB-Hz;低于 %1$d 标为 [弱] 信号</string>
+    <string name="gnss_legend_gps">GPS</string>
+    <string name="gnss_legend_galileo">伽利略</string>
+    <string name="gnss_legend_glonass">格洛纳斯</string>
+    <string name="gnss_legend_beidou">北斗</string>
+    <string name="gnss_legend_qzss">准天顶</string>
+    <string name="gnss_legend_sbas">星基增强</string>
+    <string name="gnss_legend_irnss">印度区域</string>
+    <string name="gnss_legend_unknown">未知</string>
+
+    <!-- 卫星明细 -->
+    <string name="gnss_sat_detail_title">卫星明细 · %1$d 颗</string>
+    <string name="gnss_empty_error">无卫星数据 —— 处理上方告警后自动恢复</string>
+    <string name="gnss_empty_waiting">等待系统 GNSS 状态回调…</string>
+    <string name="gnss_format_hint">格式: 星座 SVID · EL 仰角 · AZ 方位角 · CN0 载噪比 · ● 参与定位</string>
+    <string name="gnss_sat_name">%1$s %2$d</string>
+    <string name="gnss_el">EL %1$s</string>
+    <string name="gnss_az">AZ %1$s</string>
+    <string name="gnss_cn0">CN0 %1$s</string>
+    <string name="gnss_weak_badge">[弱]</string>
+
+    <!-- 数据来源说明 -->
+    <string name="gnss_data_note">数据说明: 卫星的方位角、仰角、CN0 与是否参与定位解算,均为 Android GnssStatus 回调中系统上报的真实值,非估算、非模拟;天顶图只表达卫星在天空中的几何位置,不表示距离。定位关闭、缺少精确位置权限或设备无 GNSS 硬件时无数据。CN0 低于 %1$d dB-Hz 属于弱信号,定位质量可能下降。</string>
+</resources>

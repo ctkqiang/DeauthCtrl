@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ArpScanManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_arp_no_local_ip">未获取到局域网 IPv4 地址 — 请先连接 WiFi 或开启热点</string>
+    <string name="mgr_arp_prefix_failed">无法从 %1$s 推导网段前缀</string>
+    <string name="mgr_arp_scan_failed">扫描失败: %1$s</string>
+    <string name="mgr_arp_no_devices">未发现在线设备 — 请确认已连接 WiFi 且与目标处于同一网段</string>
+</resources>

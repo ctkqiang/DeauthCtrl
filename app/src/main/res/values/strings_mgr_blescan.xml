@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BLE 扫描管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_blescan_drone_remote_id">Drone Remote-ID</string>
+    <string name="mgr_blescan_error_no_adapter">This device has no Bluetooth adapter</string>
+    <string name="mgr_blescan_error_bluetooth_off">Bluetooth is off — enable it in system settings first</string>
+    <string name="mgr_blescan_error_no_scan_permission">Missing Bluetooth scan permission — grant Nearby devices in system settings</string>
+    <string name="mgr_blescan_error_no_scanner">System did not provide a BLE scanner — turn Bluetooth off and on, then retry</string>
+    <string name="mgr_blescan_error_permission_denied">Scan permission denied by the system: %1$s</string>
+    <string name="mgr_blescan_permission_hint">grant Nearby devices in system settings</string>
+    <string name="mgr_blescan_scan_already_started">A scan is already running — stop it before retrying</string>
+    <string name="mgr_blescan_scan_registration_failed">Failed to register the scan callback — turn Bluetooth off and on</string>
+    <string name="mgr_blescan_scan_internal_error">System internal error — turn Bluetooth off and on</string>
+    <string name="mgr_blescan_scan_feature_unsupported">This device does not support BLE scanning</string>
+    <string name="mgr_blescan_scan_out_of_resources">Bluetooth hardware resources exhausted — close other scanning apps and retry</string>
+    <string name="mgr_blescan_scan_too_frequently">Scanning too frequently — wait about 30 seconds and retry</string>
+    <string name="mgr_blescan_scan_failed">Scan failed (system error code %1$d)</string>
+</resources>

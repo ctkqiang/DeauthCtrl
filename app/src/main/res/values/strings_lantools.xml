@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ─── LAN Tools · WOL / fling ─── -->
+    <string name="lantools_title">LAN Tools · LAN TOOLS</string>
+    <string name="lantools_tab_wol">WOL WAKE</string>
+    <string name="lantools_tab_fling">FLING PIPE</string>
+
+    <!-- WOL tab -->
+    <string name="lantools_wol_panel_title">Network Wake · WAKE-ON-LAN</string>
+    <string name="lantools_target_mac_label">Target MAC (blank = broadcast MAC)</string>
+    <string name="lantools_mac_placeholder">aa:bb:cc:dd:ee:ff</string>
+    <string name="lantools_local_ip_label">Local LAN IP</string>
+    <string name="lantools_broadcast_label">Directed broadcast address</string>
+    <string name="lantools_magic_packet_label">Magic packet</string>
+    <string name="lantools_magic_packet_value">102 B · 0xFF × 6 + MAC × 16</string>
+    <string name="lantools_port_9">PORT 9</string>
+    <string name="lantools_port_9_7">PORT 9 + 7</string>
+    <string name="lantools_send_magic">SEND MAGIC PACKET</string>
+    <string name="lantools_sending_ellipsis">SENDING…</string>
+    <string name="lantools_wol_idle_hint">Not sent yet. With MAC blank, ff:ff:ff:ff:ff:ff is used to wake all WOL-capable devices on the subnet.</string>
+    <string name="lantools_wol_explain">Sends to 255.255.255.255 and the current Wi-Fi subnet directed broadcast at the same time; PORT 9 + 7 also sends a copy to port 7 on both addresses. UDP has no acknowledgement — success means the packet reached the kernel, not that the target woke.</string>
+
+    <!-- fling tab · mode -->
+    <string name="lantools_fling_mode_title">Mode · FLING MODE</string>
+    <string name="lantools_mode_rx">RECEIVE</string>
+    <string name="lantools_mode_tx">SEND</string>
+    <string name="lantools_busy_mode_warning">[!] A transfer is running. Stop it before switching modes.</string>
+    <string name="lantools_run_state_label">Run status</string>
+    <string name="lantools_state_listening">LISTENING</string>
+    <string name="lantools_state_sending">SENDING</string>
+    <string name="lantools_state_idle">IDLE</string>
+    <string name="lantools_session_bytes_label">Session bytes</string>
+    <string name="lantools_bytes_value">%1$d B</string>
+    <string name="lantools_error_line">[!] %1$s</string>
+
+    <!-- fling tab · receiver -->
+    <string name="lantools_rx_panel_title">Receiver · LISTEN</string>
+    <string name="lantools_listen_port_label">Listen port (0 = kernel ephemeral port)</string>
+    <string name="lantools_save_to_file">SAVE TO FILE</string>
+    <string name="lantools_private_dir_hint">Saved to app-private fling/</string>
+    <string name="lantools_start_receive">START RECEIVE</string>
+    <string name="lantools_stop_receive">STOP RECEIVE</string>
+    <string name="lantools_actual_port_label">Actual listen port</string>
+    <string name="lantools_port_source_label">Port source</string>
+    <string name="lantools_port_source_ephemeral">Kernel ephemeral</string>
+    <string name="lantools_port_source_manual">Manual</string>
+    <string name="lantools_peer_label">Peer address</string>
+    <string name="lantools_received_label">Received</string>
+    <string name="lantools_saved_path">Saved: %1$s</string>
+    <string name="lantools_rx_preview_title">Received bytes (first 4 KB)</string>
+    <string name="lantools_rx_waiting">LISTENING — waiting for a sender; the first 4 KB appear here once data arrives.</string>
+    <string name="lantools_rx_idle">No data yet — start receiving, then give the ACTUAL LISTEN PORT to the sender.</string>
+    <string name="lantools_preview_truncated_saved">Showing only the first 4 KB; the full bytes were written to the file above.</string>
+    <string name="lantools_preview_truncated_dropped">Showing only the first 4 KB; SAVE TO FILE is off, so the rest was dropped.</string>
+
+    <!-- fling tab · sender -->
+    <string name="lantools_tx_panel_title">Sender · SEND</string>
+    <string name="lantools_rx_host_label">Receiver IP</string>
+    <string name="lantools_rx_host_placeholder">e.g. 192.168.1.100</string>
+    <string name="lantools_rx_port_label">Receiver port</string>
+    <string name="lantools_text_label">Text content</string>
+    <string name="lantools_text_placeholder">Written as raw UTF-8</string>
+    <string name="lantools_choose_file_send">CHOOSE FILE TO SEND</string>
+    <string name="lantools_send_text">SEND TEXT</string>
+    <string name="lantools_progress_fraction">%1$d / %2$d B</string>
+    <string name="lantools_tx_explain">The sender connects to the receiver IP and port, writes text or file bytes as-is, then closes; no length prefix, no checksum, no encryption — EOF ends the transfer.</string>
+
+    <!-- fling log -->
+    <string name="lantools_log_title">fling Log · LOG</string>
+    <string name="lantools_log_empty">Connection, transfer and error logs appear here in time order.</string>
+
+    <!-- honesty panel -->
+    <string name="lantools_honesty_title">Protocol Boundaries · HONESTY</string>
+    <string name="lantools_honesty_line_1">fling-compatible semantics (fling 1.1-3): raw TCP byte stream — no length prefix, no checksum, no encryption; connection close (EOF) ends the transfer, one connection per transfer.</string>
+    <string name="lantools_honesty_line_2">With port 0 the kernel assigns an ephemeral port; the ACTUAL LISTEN PORT must be given to the sender. Leaving this page stops receiving.</string>
+    <string name="lantools_honesty_line_3">AP client isolation blocks devices on the same Wi-Fi from reaching each other; cross-subnet and hotspot-client traffic is usually unreachable too.</string>
+    <string name="lantools_honesty_line_4">The sender targets the receiver LAN IP and port; public / NAT-ed addresses cannot connect directly.</string>
+    <string name="lantools_honesty_line_5">The WOL magic packet is a 102-byte UDP broadcast with no acknowledgement; the target must have wake-on-LAN enabled in BIOS / firmware and stay on standby power.</string>
+    <string name="lantools_honesty_line_6">This page fabricates nothing: unknown addresses, ports and byte counts show \"--\"; the log records only connections and transfers that actually happened.</string>
+</resources>

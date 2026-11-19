@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 目标档案页(dossier_)中文资源,与 values/strings_dossier.xml 一一对应。 -->
+<resources>
+    <!-- ─── 头部与空状态 ─── -->
+    <string name="dossier_title">目标档案 · TARGET DOSSIER</string>
+    <string name="dossier_target_lost">目标已丢失 —— 设备离开探测范围或雷达已停止</string>
+
+    <!-- ─── 身份块 ─── -->
+    <string name="dossier_vendor_line">厂商: %1$s · OUI %2$s</string>
+    <string name="dossier_intel_line">设备情报: %1$s · 置信 %2$d%%</string>
+    <string name="dossier_intel_basis">依据: %1$s</string>
+    <string name="dossier_alias">别名: %1$s</string>
+
+    <!-- ─── 快照横幅 ─── -->
+    <string name="dossier_live_line">● 实时 · 最后更新 %1$s</string>
+    <string name="dossier_stopped_line">◌ 雷达已停止 · 以下为 %1$s 快照;返回雷达页可继续采集</string>
+
+    <!-- ─── 实时遥测 ─── -->
+    <string name="dossier_panel_telemetry">实时遥测 · LIVE TELEMETRY</string>
+    <string name="dossier_trend_near">接近 ↑ %1$+.1f dB/s</string>
+    <string name="dossier_trend_away">远离 ↓ %1$+.1f dB/s</string>
+    <string name="dossier_trend_stable">稳定 → ±0.5 dB/s</string>
+    <string name="dossier_cell_distance">距离(估)</string>
+    <string name="dossier_cell_bearing">方位(估)</string>
+    <string name="dossier_cell_noise">底噪(估)</string>
+    <string name="dossier_cell_hits">命中</string>
+    <string name="dossier_value_distance">~%1$.1f m</string>
+    <string name="dossier_value_bearing">~%1$03d°</string>
+    <string name="dossier_value_noise">%1$ddBm</string>
+    <string name="dossier_value_hits">%1$d 次</string>
+    <string name="dossier_ptx_broadcast">广播 PTX %1$ddBm</string>
+    <string name="dossier_ptx_assumed">假定 PTX</string>
+    <string name="dossier_telemetry_note">~ 为路径损耗估算(%1$s)· 方位为 MAC 哈希估计 · 底噪为 -92dBm 常量假设</string>
+
+    <!-- ─── 图表 ─── -->
+    <string name="dossier_chart_rssi_title">信号历史 · RSSI TREND (%1$d 样本)</string>
+    <string name="dossier_chart_distance_title">距离趋势 · DISTANCE TREND</string>
+    <string name="dossier_chart_accumulating_rssi">样本积累中 —— 每个扫描周期追加一个采样点</string>
+    <string name="dossier_panel_hits_chart">命中频率 · HITS PER MINUTE (最近 10 分钟)</string>
+    <string name="dossier_chart_accumulating_hits">样本积累中 —— 每次扫描命中计入当前分钟桶</string>
+    <string name="dossier_hits_per_min">%1$d 次/分</string>
+
+    <!-- ─── 定位推演 ─── -->
+    <string name="dossier_panel_bearing">定位推演 · BEARING INFERENCE</string>
+    <string name="dossier_loc_estimated">估计</string>
+    <string name="dossier_loc_collecting">采样中</string>
+    <string name="dossier_loc_ambiguous">多径歧义</string>
+    <string name="dossier_loc_stale">过期</string>
+    <string name="dossier_loc_unavailable">不可用</string>
+    <string name="dossier_compass_offline">罗盘离线</string>
+    <string name="dossier_rotational_only">旋转寻向 · 非 AoA</string>
+    <string name="dossier_bearing_empty">尚未进行方位推演 —— 在雷达页聚焦该目标并缓慢旋转机身一整圈以上</string>
+    <string name="dossier_wifi_throttle_note">WiFi 扫描受系统节流,样本率低,可能长期处于采样中;BLE 设备更适合推演</string>
+    <string name="dossier_coverage_status">已覆盖 %1$d/36 方位格 · 已旋转 %2$.1f 圈 · 至少 0.75 圈且覆盖 45%%</string>
+    <string name="dossier_info_samples">样本</string>
+    <string name="dossier_info_samples_value">%1$d · 覆盖 %2$d/36 · 圈 %3$.1f</string>
+    <string name="dossier_info_peak_shape">峰形</string>
+    <string name="dossier_info_peak_value">对比 %1$.1f dB · FWHM %2$d° · 双瓣比 %3$.2f · 置信 %4$.2f</string>
+    <string name="dossier_info_distance_est">距离估计</string>
+    <string name="dossier_info_distance_value">%1$.1f m · 1σ ±%2$.1f m</string>
+    <string name="dossier_info_distance_model">距离模型</string>
+    <string name="dossier_distance_model_assumed">假定 PTX · n=2.5(非测量)</string>
+    <string name="dossier_distance_model_broadcast">广播 PTX · n=2.5</string>
+    <string name="dossier_info_position_fusion">位置融合</string>
+    <string name="dossier_info_position_value">东 %1$.1f m · 北 %2$.1f m · %3$d 圈样本</string>
+    <string name="dossier_info_confidence_ellipse">置信椭圆</string>
+    <string name="dossier_info_ellipse_value">50%% %1$.1f×%2$.1f m · 90%% %3$.1f×%4$.1f m</string>
+    <string name="dossier_info_last_sample">最后采样</string>
+    <string name="dossier_info_last_sample_value">%1$ds 前</string>
+    <string name="dossier_method_note">方法:旋转机身,记录航向×RSSI 方向图并取功率峰 —— 属天线方向性推演,不是 AoA/测向;距离由 RSSI 路径损耗模型给出;多径反射会造成双峰歧义。所有输出均为估计,误差随样本增多收敛。</string>
+
+    <!-- ─── 图表内文字 ─── -->
+    <string name="dossier_dir_north">北</string>
+    <string name="dossier_dir_east">东</string>
+    <string name="dossier_dir_south">南</string>
+    <string name="dossier_dir_west">西</string>
+    <string name="dossier_bearing_tag">θ̂ %1$03d° ± %2$d°</string>
+    <string name="dossier_rose_note">径向 = 平滑 RSSI(相对)· 世界方位,北朝上</string>
+    <string name="dossier_heading_profile_note">航向×RSSI 调制谱 · 平滑后</string>
+    <string name="dossier_fusion_not_ready">多圈融合未就绪 —— 至少完整旋转一圈</string>
+    <string name="dossier_position_note">格距 25m · 椭圆为估计误差,非测量精度</string>
+
+    <!-- ─── BLE 广播详情 ─── -->
+    <string name="dossier_panel_ble_adv">BLE 广播详情 · ADVERTISING DATA</string>
+    <string name="dossier_ble_no_adv">未捕获到广播包 —— 目标可能由经典蓝牙发现上报</string>
+    <string name="dossier_info_observed_via">观测方式</string>
+    <string name="dossier_observed_ble_scan">BLE 扫描</string>
+    <string name="dossier_observed_classic_merged">经典发现(合并)</string>
+    <string name="dossier_info_tx_power">发射功率 TX</string>
+    <string name="dossier_value_not_broadcast">未广播</string>
+    <string name="dossier_info_adv_flags">广播标志</string>
+    <string name="dossier_info_manufacturer_id">厂商 ID</string>
+    <string name="dossier_info_service_uuid">服务 UUID</string>
+    <string name="dossier_value_uuid_count">%1$d 个</string>
+    <string name="dossier_uuid_more">… 另有 %1$d 个</string>
+    <string name="dossier_info_manufacturer_data">厂商数据</string>
+    <string name="dossier_info_service_data">服务数据</string>
+    <string name="dossier_ble_adv_footnote">广播字段为原始捕获值;字段缺失表示该广播包未携带</string>
+
+    <!-- ─── 射频与安全 ─── -->
+    <string name="dossier_panel_rf">射频参数 · RF PARAMETERS</string>
+    <string name="dossier_info_frequency">频率</string>
+    <string name="dossier_info_channel">信道</string>
+    <string name="dossier_info_bandwidth">带宽</string>
+    <string name="dossier_info_center_freq0">中心频率0</string>
+    <string name="dossier_info_center_freq1">中心频率1</string>
+    <string name="dossier_panel_security">安全协议 · SECURITY</string>
+    <string name="dossier_info_encryption">加密</string>
+    <string name="dossier_sec_open">开放</string>
+
+    <!-- ─── 蓝牙参数 ─── -->
+    <string name="dossier_panel_bt">蓝牙参数 · BLUETOOTH PARAMETERS</string>
+    <string name="dossier_info_mac_address">MAC 地址</string>
+    <string name="dossier_info_device_class_major">设备大类</string>
+    <string name="dossier_info_device_class_detail">设备小类</string>
+    <string name="dossier_info_link_type">链路类型</string>
+    <string name="dossier_info_bond_state">绑定状态</string>
+    <string name="dossier_info_band">频段</string>
+
+    <!-- ─── 时间轴 ─── -->
+    <string name="dossier_panel_timeline">时间轴 · TIMELINE</string>
+    <string name="dossier_info_first_seen">首次发现</string>
+    <string name="dossier_info_last_seen">最后发现</string>
+    <string name="dossier_info_duration">存活时长</string>
+    <string name="dossier_duration_under_sec">不足 1 秒</string>
+    <string name="dossier_duration_seconds">%1$d 秒</string>
+    <string name="dossier_duration_minutes">%1$d 分 %2$d 秒</string>
+
+    <!-- ─── 战术评估 ─── -->
+    <string name="dossier_panel_threat">战术评估 · THREAT ASSESSMENT</string>
+    <string name="dossier_warn_weak_encryption">[!] 该网络加密等级过低（%1$s），流量可被明文嗅探</string>
+
+    <!-- ─── 数据来源 ─── -->
+    <string name="dossier_panel_provenance">数据来源 · PROVENANCE</string>
+    <string name="dossier_provenance_wifi">SSID/BSSID/频率/信道/带宽/安全: WifiManager ScanResult 原始返回值。距离: RSSI 路径损耗模型估计(假定 PTX -40dBm, n=2.5),非测量。方位: MAC 哈希占位估计,手机无 AoA 硬件;旋转寻向推演见定位面板。底噪: -92dBm 常量假设。厂商: 内置 OUI 表,未命中显示未知。</string>
+    <string name="dossier_provenance_bt">MAC/名称/类别/绑定/链路: BluetoothDevice 原始返回值。广播数据: ScanRecord 原始捕获(未携带字段显示「—」)。距离: RSSI 路径损耗模型估计(广播 PTX 或假定 -59dBm, n=2.5),非测量。方位: MAC 哈希占位估计;旋转寻向推演见定位面板。</string>
+</resources>

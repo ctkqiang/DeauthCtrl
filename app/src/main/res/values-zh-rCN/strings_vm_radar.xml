@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 设备雷达 ViewModel 中文资源,与 values/strings_vm_radar.xml 一一对应。 -->
+<resources>
+    <string name="vm_radar_north_magnetic">磁北</string>
+    <string name="vm_radar_north_true">真北</string>
+</resources>

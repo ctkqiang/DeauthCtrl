@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="netmap_title">网络测绘地图</string>
+    <string name="netmap_status_scanning">目标 %1$d · 扫描中</string>
+    <string name="netmap_status_stopped">目标 %1$d · 扫描停</string>
+    <string name="netmap_locating">定位中…</string>
+    <string name="netmap_gps_online">GPS 在线</string>
+    <string name="netmap_gps_offline">GPS 离线</string>
+    <string name="netmap_issue_location">定位关闭 —— 无法估算设备位置</string>
+    <string name="netmap_issue_wifi">WiFi 关闭 —— 无法扫描无线网络</string>
+    <string name="netmap_issue_bt">蓝牙关闭 —— 无法扫描蓝牙设备</string>
+    <string name="netmap_open_settings">打开设置 ▸</string>
+    <string name="netmap_btn_stop_scan">■ 停止扫描</string>
+    <string name="netmap_btn_start_scan">▶ 启动扫描</string>
+    <string name="netmap_osm_note">OSM 公共瓦片 · 无需 API Key</string>
+    <string name="netmap_btn_locate">◎ 定位我</string>
+    <string name="netmap_estimate_note">位置为 GPS+RSSI 估算值(无 AoA 硬件),仅作态势参考</string>
+    <string name="netmap_open_dossier">打开完整档案 ▸</string>
+    <string name="netmap_marker_self">本机</string>
+</resources>

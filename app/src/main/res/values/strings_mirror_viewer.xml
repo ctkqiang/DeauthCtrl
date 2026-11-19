@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Remote viewer screen strings (prefix: mirror_viewer_). -->
+<resources>
+    <string name="mirror_viewer_conn_failed">Connection failed\n%1$s</string>
+    <string name="mirror_viewer_waiting">Waiting for connection...</string>
+    <string name="mirror_viewer_connected">● CONNECTED</string>
+    <string name="mirror_viewer_connecting">○ CONNECTING</string>
+    <string name="mirror_viewer_hint_tap">TAP ↦ UI</string>
+    <string name="mirror_viewer_hint_drag">DRAG ↦ CONTROL</string>
+    <string name="mirror_viewer_hint_double">DOUBLE-TAP ↦ DISCONNECT</string>
+    <string name="mirror_viewer_connecting_to">Connecting to %1$s...</string>
+</resources>

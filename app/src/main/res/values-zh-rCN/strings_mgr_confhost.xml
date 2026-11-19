@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ConferenceHostService — 简体中文资源。 -->
+<resources>
+    <string name="mgr_confhost_notif_title">局域网会议运行中</string>
+    <string name="mgr_confhost_notif_text">屏幕共享需用户授权，停止后需重新授权</string>
+    <string name="mgr_confhost_channel_name">局域网会议</string>
+</resources>

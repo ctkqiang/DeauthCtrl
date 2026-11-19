@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WebServerManager — English default strings. -->
+<resources>
+    <string name="mgr_web_bind_failed">bind failed on port %1$s (%2$s)</string>
+    <string name="mgr_web_accept_loop_error">accept loop error: %1$s</string>
+    <string name="mgr_web_request_failed">request handling failed: %1$s</string>
+</resources>

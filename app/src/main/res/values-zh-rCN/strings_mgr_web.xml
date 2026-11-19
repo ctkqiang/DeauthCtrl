@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WebServerManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_web_bind_failed">端口 %1$s 绑定失败（%2$s）</string>
+    <string name="mgr_web_accept_loop_error">接收循环错误: %1$s</string>
+    <string name="mgr_web_request_failed">请求处理失败: %1$s</string>
+</resources>

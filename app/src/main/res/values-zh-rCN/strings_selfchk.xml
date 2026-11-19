@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 硬件自检台 —— 中文资源 -->
+<resources>
+    <string name="selfchk_title">硬件自检 · SELF CHECK</string>
+    <string name="selfchk_verdict_reading">自检读取中…</string>
+    <string name="selfchk_verdict_waiting">等待读取</string>
+    <string name="selfchk_verdict_alerts">存在告警 · %1$d 项</string>
+    <string name="selfchk_verdict_partial">未发现告警 · 部分项不可用</string>
+    <string name="selfchk_verdict_ok">全部正常</string>
+    <string name="selfchk_data_note">数据说明 · 电池来自 BatteryManager 与 ACTION_BATTERY_CHANGED 粘性广播,温度/电流为系统上报值,厂商采样口径可能不同。CPU 使用率为 /proc/stat 两次采样(窗口 250 ms)的估算值;内存来自 ActivityManager.MemoryInfo;存储为 /data 的 StatFs。热区读取 /sys/class/thermal,路径与单位因厂商/内核而异,读不到时显示不可用;传感器与 Wi-Fi 均为系统真实返回值,缺失字段显示 --。</string>
+
+    <!-- ─── 结论卡片 ─── -->
+    <string name="selfchk_btn_reading">读取中</string>
+    <string name="selfchk_btn_refresh">刷新</string>
+    <string name="selfchk_updated">更新 %1$s</string>
+    <string name="selfchk_sensor_zone_counts">传感器 %1$d 项 · 热区 %2$d 个</string>
+
+    <!-- ─── 电池 ─── -->
+    <string name="selfchk_panel_battery">电池</string>
+    <string name="selfchk_label_level">电量</string>
+    <string name="selfchk_stat_current">电流</string>
+    <string name="selfchk_stat_temperature">温度</string>
+    <string name="selfchk_stat_health">健康</string>
+    <string name="selfchk_stat_direction">充放电方向</string>
+    <string name="selfchk_stat_battery_status">电池状态</string>
+    <string name="selfchk_stat_power_source">供电来源</string>
+    <string name="selfchk_stat_voltage">电压</string>
+    <string name="selfchk_stat_charge_counter">电荷计数器</string>
+    <string name="selfchk_stat_technology">电池技术</string>
+    <string name="selfchk_warn_no_battery">[!] 系统上报本机无电池(可能为模拟器或无电池设备)</string>
+
+    <!-- ─── 热区 ─── -->
+    <string name="selfchk_panel_thermal">热区</string>
+    <string name="selfchk_thermal_unavailable">不可用 —— 本机未暴露 /sys/class/thermal 的 thermal_zone 读数</string>
+    <string name="selfchk_thermal_truncated">共读取 %1$d 个热区,仅显示最高 %2$d 个</string>
+    <string name="selfchk_thermal_threshold">阈值: &gt; 45 °C 红色 · &gt; 38 °C 金色;温度为内核上报值</string>
+
+    <!-- ─── 负载 ─── -->
+    <string name="selfchk_panel_load">CPU / 内存 / 存储</string>
+    <string name="selfchk_label_cpu_usage">CPU 使用率</string>
+    <string name="selfchk_cpu_unavailable">不可用 —— /proc/stat 读取失败</string>
+    <string name="selfchk_cpu_detail">两次 /proc/stat 采样,窗口 %1$d ms · %2$d 核</string>
+    <string name="selfchk_label_memory">内存</string>
+    <string name="selfchk_unavailable">不可用</string>
+    <string name="selfchk_mem_detail">可用 %1$s / 总 %2$s</string>
+    <string name="selfchk_warn_low_memory">[!] 系统报告处于低内存状态</string>
+    <string name="selfchk_label_storage">存储 /data</string>
+    <string name="selfchk_storage_detail">剩余 %1$s / 总 %2$s</string>
+
+    <!-- ─── 传感器 ─── -->
+    <string name="selfchk_panel_sensors">传感器清单</string>
+    <string name="selfchk_sensor_counts">共 %1$d 项 · 常用 %2$d 项</string>
+    <string name="selfchk_sensor_only_first">仅显示前 %1$d 项</string>
+    <string name="selfchk_sensors_empty">系统未返回任何传感器 —— 模拟器或无 HAL 时为空</string>
+    <string name="selfchk_sensors_common">常用传感器</string>
+    <string name="selfchk_sensors_other">其他传感器</string>
+    <string name="selfchk_tag_common">常用</string>
+    <string name="selfchk_tag_other">其他</string>
+    <string name="selfchk_sensor_detail">厂商 %1$s · 分辨率 %2$s · 功耗 %3$s mA</string>
+
+    <!-- ─── 网络 ─── -->
+    <string name="selfchk_panel_wifi">Wi-Fi 链路</string>
+    <string name="selfchk_wifi_disabled">[!] Wi-Fi 已关闭 —— 无链路读数</string>
+    <string name="selfchk_wifi_state_unavailable">Wi-Fi 状态不可用</string>
+    <string name="selfchk_wifi_disconnected">Wi-Fi 未连接 —— 链路信息不可用</string>
+    <string name="selfchk_stat_signal">信号</string>
+    <string name="selfchk_stat_link_speed">链路速率</string>
+    <string name="selfchk_stat_tx_rx_speed">收发速率</string>
+    <string name="selfchk_stat_freq_channel">频率 / 信道</string>
+    <string name="selfchk_channel_suffix">信道 %1$d</string>
+    <string name="selfchk_stat_local_ip">本机 IP</string>
+    <string name="selfchk_stat_gateway">网关</string>
+    <string name="selfchk_stat_wifi_standard">Wi-Fi 标准</string>
+    <string name="selfchk_warn_no_location">[!] 未授予定位权限,SSID/BSSID 会被系统隐去</string>
+</resources>

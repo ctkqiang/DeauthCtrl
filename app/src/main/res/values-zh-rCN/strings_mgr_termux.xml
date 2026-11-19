@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TermuxBootstrap — 简体中文资源。 -->
+<resources>
+    <string name="mgr_termux_asset_missing">内置 bootstrap 缺失(%1$s) —— 请在联网状态下由终端页触发在线安装</string>
+    <string name="mgr_termux_reading_asset">读取内置 bootstrap 包</string>
+    <string name="mgr_termux_extract_incomplete">解压完成但缺少 bin/sh 或 bin/bash —— bootstrap 包损坏,请清除应用数据重试</string>
+    <string name="mgr_termux_ready">环境就绪</string>
+    <string name="mgr_termux_ready_no_proot">环境就绪(proot/loader 缺失,基础命令可用,apt 需 proot)</string>
+    <string name="mgr_termux_install_failed">bootstrap 安装失败: %1$s</string>
+</resources>

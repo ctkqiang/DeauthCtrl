@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信道占用热力图 —— 中文资源 -->
+<resources>
+    <string name="chsurvey_title">信道占用 · CHANNEL SURVEY</string>
+    <string name="chsurvey_status_scanning">扫描中</string>
+    <string name="chsurvey_status_stopped">已停止</string>
+    <string name="chsurvey_running">巡检中</string>
+    <string name="chsurvey_visible_aps">可见 AP %1$d</string>
+    <string name="chsurvey_updated">更新 %1$s</string>
+    <string name="chsurvey_throttled">[!] 系统未接受本轮扫描 —— 读取缓存快照,数据可能滞后数秒</string>
+
+    <!-- ─── 扫描控制 ─── -->
+    <string name="chsurvey_panel_control">扫描控制 · PASSIVE SURVEY</string>
+    <string name="chsurvey_stat_state">运行状态</string>
+    <string name="chsurvey_stat_interval">扫描节拍</string>
+    <string name="chsurvey_stat_last_update">最近更新</string>
+    <string name="chsurvey_btn_start">启动扫描</string>
+    <string name="chsurvey_btn_stop">停止扫描</string>
+    <string name="chsurvey_passive_note">被动聚合系统扫描结果(Beacon / Probe Response),不发送任何帧;系统节流下约 3-5 秒才有一轮新数据。</string>
+
+    <!-- ─── 2.4 GHz ─── -->
+    <string name="chsurvey_panel_24">2.4 GHz · 信道 1-14</string>
+    <string name="chsurvey_empty_no_data">无扫描数据 —— 处理上方告警后自动恢复</string>
+    <string name="chsurvey_empty_stopped">扫描已停止 —— 点击上方「启动扫描」开始巡检</string>
+    <string name="chsurvey_empty_waiting">等待第一轮扫描结果…</string>
+    <string name="chsurvey_legend_idle">空闲 0-2</string>
+    <string name="chsurvey_legend_crowded">拥挤 3-5</string>
+    <string name="chsurvey_legend_severe">严重 6+</string>
+    <string name="chsurvey_chart_note">条高 = 可见 AP 数;柱顶数字为 AP 数,下方为最强 RSSI(dBm)。金色信道号 1 / 6 / 11 为 20 MHz 下互不重叠信道。</string>
+    <string name="chsurvey_click_hint">点击柱条展开该信道 AP 明细。</string>
+
+    <!-- ─── 5 GHz ─── -->
+    <string name="chsurvey_panel_5">5 GHz · 信道 36-165</string>
+    <string name="chsurvey_5_empty_stopped">扫描已停止 —— 启动扫描后显示 5 GHz 信道</string>
+    <string name="chsurvey_5_empty_none">本次扫描未发现 5 GHz AP —— 附近无 5G 网络或设备不支持 5 GHz</string>
+    <string name="chsurvey_5_note">只列出本次扫描出现过的 5 GHz 常用信道;信道号按 5000 + 5 × N MHz 换算。点击行查看该信道 AP 明细。</string>
+
+    <!-- ─── 数据说明 ─── -->
+    <string name="chsurvey_panel_data_notes">数据说明 · 诚实边界</string>
+    <string name="chsurvey_note1">所有数值来自 WifiManager.scanResults 的真实扫描快照,不做插值、模拟或美化;无数据处显示 \"--\"。</string>
+    <string name="chsurvey_note2">只能看到主动广播 Beacon 的 AP:隐藏 SSID 的 AP 不出现在 scanResults 中,不计入统计。</string>
+    <string name="chsurvey_note3">信道占用 = 可见 AP 数量,不是实时频谱或空口利用率;AP 很少但流量很大的信道也可能拥堵。</string>
+    <string name="chsurvey_note4">扫描受系统节流,约 3-5 秒一轮;表中数值是最近一次扫描的快照,不是实时频谱。</string>
+    <string name="chsurvey_note5">RSSI 为手机天线处的接收强度(dBm),受距离、墙体、朝向影响,不代表 AP 发射功率。</string>
+    <string name="chsurvey_note6">Android 9+ 需要开启系统定位且授予精确定位权限,否则扫描结果为空。</string>
+    <string name="chsurvey_note7">安全类型按 Beacon capabilities 分类:WPA2/WPA3 混合模式记为 WPA3;6 GHz 与非常用信道不统计。</string>
+
+    <!-- ─── 信道明细 ─── -->
+    <string name="chsurvey_channel_title">信道 %1$d · %2$d MHz</string>
+    <string name="chsurvey_stat_visible_aps">可见 AP 数</string>
+    <string name="chsurvey_stat_strongest_rssi">最强 RSSI</string>
+    <string name="chsurvey_stat_avg_rssi">平均 RSSI</string>
+    <string name="chsurvey_security_dist">安全分布 · 开放 %1$d / WEP %2$d / WPA2 %3$d / WPA3 %4$d / 其他 %5$d</string>
+    <string name="chsurvey_ap_details">AP 明细(%1$d)</string>
+    <string name="chsurvey_no_visible_ap">该信道当前没有可见 AP</string>
+</resources>

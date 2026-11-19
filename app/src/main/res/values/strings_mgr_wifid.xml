@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_wifid_action_wifi_scan">Wi-Fi scan</string>
+    <string name="mgr_wifid_action_start_hotspot">Start local hotspot</string>
+    <string name="mgr_wifid_err_flood_scan">Hotspot rotation in progress; cannot scan</string>
+    <string name="mgr_wifid_err_location_off_scan">Location services are off: Android requires location enabled to scan Wi-Fi. Enable location and retry.</string>
+    <string name="mgr_wifid_err_no_networks">No networks found: system scan throttled or nothing nearby; retry later.</string>
+    <string name="mgr_wifid_err_location_off_retry">Location services are off; enable location and retry.</string>
+    <string name="mgr_wifid_err_scan_throttled">System scan throttled (startScan returned false); retry later.</string>
+    <string name="mgr_wifid_err_scan">Scan error: %1$s</string>
+    <string name="mgr_wifid_security_no_missing">%1$s was rejected by the system: no missing permission identified (possibly a vendor ROM policy restriction)</string>
+    <string name="mgr_wifid_security_missing">%1$s was rejected: missing %2$s</string>
+    <string name="mgr_wifid_err_flood_running">Local hotspot rotation already in progress</string>
+    <string name="mgr_wifid_err_api_level">LocalOnlyHotspot requires Android 8.0 (API 26) or later; this system does not support local hotspot rotation</string>
+    <string name="mgr_wifid_err_wifi_off">Turn on Wi-Fi to create a local hotspot</string>
+    <string name="mgr_wifid_err_ssid_empty">SSID cannot be empty</string>
+    <string name="mgr_wifid_err_location_off_hotspot">Location services are off: some devices reject local hotspots with location disabled; enable location first.</string>
+    <string name="mgr_wifid_err_no_ssid_api">Android 11 and below cannot set a hotspot SSID: the system only creates a random-SSID local hotspot (a real SoftAP, not frame injection)</string>
+    <string name="mgr_wifid_random_ssid">system random SSID</string>
+    <string name="mgr_wifid_err_no_hotspot">Could not create any local hotspot (no onStarted, no real SoftAP)</string>
+    <string name="mgr_wifid_err_rotation">Hotspot rotation error: %1$s</string>
+    <string name="mgr_wifid_err_stale_callback">Hotspot callback expired (session stopped); handle released immediately</string>
+    <string name="mgr_wifid_err_softap_unavailable">SoftApConfiguration interface unavailable; fell back to system random SSID</string>
+    <string name="mgr_wifid_err_start_failed">Local hotspot start failed: %1$s: %2$s</string>
+    <string name="mgr_wifid_err_start_timeout">Local hotspot start timed out (%1$d ms without a system callback)</string>
+    <string name="mgr_wifid_hotspot_no_channel">No channel available (reason=%1$d)</string>
+    <string name="mgr_wifid_hotspot_incompatible">Mode conflict: disconnect the current Wi-Fi first (reason=%1$d)</string>
+    <string name="mgr_wifid_hotspot_tethering">Device policy disallows hotspot sharing (reason=%1$d)</string>
+    <string name="mgr_wifid_hotspot_generic">System returned a generic failure (reason=%1$d)</string>
+    <string name="mgr_wifid_hotspot_unknown">Unknown failure (reason=%1$d)</string>
+</resources>

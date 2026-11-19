@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="netbios_title">NETBIOS SCAN · NBTSCAN</string>
+    <string name="netbios_panel_target">SCAN TARGET</string>
+    <string name="netbios_target_label">TARGET IP / SUBNET</string>
+    <string name="netbios_target_placeholder">e.g. 192.168.1.0/24 or 192.168.1.10</string>
+    <string name="netbios_start">START SCAN</string>
+    <string name="netbios_stop">STOP SCAN</string>
+    <string name="netbios_status_scanning">SCANNING</string>
+    <string name="netbios_status_idle">IDLE</string>
+    <string name="netbios_status_done">DONE</string>
+    <string name="netbios_status_stopped">STOPPED</string>
+    <string name="netbios_panel_progress">SCAN PROGRESS</string>
+    <string name="netbios_target_count">TARGETS %1$s</string>
+    <string name="netbios_responders">RESPONDERS %1$d</string>
+    <string name="netbios_range">Scope this run: %1$s</string>
+    <string name="netbios_scan_params">Per-target UDP 137 · timeout 200 ms · 8 concurrent workers</string>
+    <string name="netbios_panel_hosts">RESULTS · HOSTS (%1$d)</string>
+    <string name="netbios_empty_scanning">Querying targets one by one — responding NetBIOS hosts will appear here in real time</string>
+    <string name="netbios_empty_none">No host responded to NBSTAT this run — see the notes below; this is a common result</string>
+    <string name="netbios_empty_idle">Enter an IP / subnet, then tap START SCAN</string>
+    <string name="netbios_panel_notes">NOTES &amp; LIMITS</string>
+    <string name="netbios_note_windows">[!] Only devices running Windows with NetBIOS over TCP/IP enabled respond on UDP 137; Windows 10/11 may disable it by default, so few or zero results are normal and do not mean the subnet has no devices.</string>
+    <string name="netbios_note_names">In responses, &lt;00&gt; is the workstation name, &lt;03&gt; the messenger / logged-in user, &lt;20&gt; the file service and &lt;1D&gt; the master browser; other name types are filtered out.</string>
+    <string name="netbios_note_mac">MAC is taken from the Unit ID in the response statistics; without statistics the system ARP cache is tried (usually unreadable on Android 10+). When neither is available it shows -- and makes no guesses.</string>
+    <string name="netbios_note_vendor">Vendor names come from a built-in table of common OUI first-3-byte prefixes; unlisted addresses show \"unknown vendor\". The table is a small offline list, not an authoritative database.</string>
+    <string name="netbios_note_scope">/24 and larger subnets scan only the /24 containing the entered address (1-254); /25-/32 is enumerated over the actual host range.</string>
+    <string name="netbios_note_raw">All results come from real NBSTAT responses; full raw packets are kept in rawHex and can be exported for Wireshark review.</string>
+    <string name="netbios_name_count">%1$d NAMES</string>
+    <string name="netbios_field_hostname">HOSTNAME &lt;00&gt;</string>
+    <string name="netbios_field_user">USER &lt;03&gt;</string>
+    <string name="netbios_field_file_service">FILE SERVICE &lt;20&gt;</string>
+    <string name="netbios_field_master_browser">MASTER BROWSER &lt;1D&gt;</string>
+</resources>

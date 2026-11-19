@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NUS terminal manager — 中文资源 -->
+<resources>
+    <!-- 连接阶段 -->
+    <string name="mgr_nus_phase_disconnected">断开</string>
+    <string name="mgr_nus_phase_connecting">连接中</string>
+    <string name="mgr_nus_phase_discovering">发现服务</string>
+    <string name="mgr_nus_phase_connected">已连接</string>
+    <string name="mgr_nus_phase_no_nus">无 NUS 服务</string>
+    <string name="mgr_nus_phase_error">错误</string>
+
+    <!-- 行尾 -->
+    <string name="mgr_nus_ending_crlf">CRLF</string>
+    <string name="mgr_nus_ending_cr">CR</string>
+    <string name="mgr_nus_ending_lf">LF</string>
+    <string name="mgr_nus_ending_raw">RAW</string>
+
+    <!-- 权限标签 -->
+    <string name="mgr_nus_perm_separator">、</string>
+    <string name="mgr_nus_perm_connect">连接设备 / 读取蓝牙状态</string>
+    <string name="mgr_nus_perm_bluetooth">蓝牙（旧版权限）</string>
+    <string name="mgr_nus_perm_bluetooth_admin">蓝牙管理（旧版权限）</string>
+
+    <!-- GATT / ATT 状态提示 -->
+    <string name="mgr_nus_hint_unreachable"> —— 设备不可达 / 已被其他主机连接 / 配对缓存异常；可在系统蓝牙中取消配对后重试</string>
+    <string name="mgr_nus_hint_timeout"> —— 连接超时</string>
+    <string name="mgr_nus_hint_remote_disconnect"> —— 远端主动断开</string>
+    <string name="mgr_nus_hint_local_disconnect"> —— 本机主动断开</string>
+    <string name="mgr_nus_hint_auth"> —— 认证不足，可能需要先在系统蓝牙中配对</string>
+    <string name="mgr_nus_hint_write_denied"> —— 写入不被允许</string>
+    <string name="mgr_nus_hint_not_supported"> —— 请求不被支持</string>
+    <string name="mgr_nus_hint_key_size"> —— 加密密钥长度不足</string>
+
+    <!-- connectGatt 失败提示 -->
+    <string name="mgr_nus_connect_denied">连接被系统拒绝：%1$s</string>
+    <string name="mgr_nus_connect_denied_no_perm">缺少 BLUETOOTH_CONNECT 权限</string>
+    <string name="mgr_nus_mac_invalid_ex">MAC 地址无效：%1$s</string>
+    <string name="mgr_nus_mac_unresolved">系统无法解析</string>
+    <string name="mgr_nus_connect_failed_ex">连接失败：%1$s</string>
+
+    <!-- connect() 校验 -->
+    <string name="mgr_nus_err_mac_invalid">MAC 格式无效 —— 应为 AA:BB:CC:DD:EE:FF（12 位十六进制）</string>
+    <string name="mgr_nus_err_missing_perm">缺少蓝牙权限：%1$s —— 请先在应用权限网关授予</string>
+    <string name="mgr_nus_err_no_adapter">本机没有蓝牙适配器</string>
+    <string name="mgr_nus_err_bt_off">蓝牙未开启 —— 请先在系统设置中打开蓝牙</string>
+    <string name="mgr_nus_err_mac_resolve">系统无法解析该 MAC 地址</string>
+    <string name="mgr_nus_log_connecting">开始连接 %1$s（%2$s），LE 传输，10 秒超时</string>
+    <string name="mgr_nus_err_connect_timeout">连接超时（10 秒）—— 目标可能不在范围内、未处于可连接状态，或已被其他主机连接</string>
+    <string name="mgr_nus_err_connect_null">连接失败 —— 系统返回 null，请关闭蓝牙后重新打开再试</string>
+    <string name="mgr_nus_log_disconnected">已主动断开连接</string>
+
+    <!-- send() 校验 -->
+    <string name="mgr_nus_err_not_connected">未连接 —— 请先连接设备并等待 NUS 终端就绪</string>
+    <string name="mgr_nus_err_rx_unavailable">RX 特征不可用 —— 请断开后重新连接</string>
+    <string name="mgr_nus_err_sending_pending">上一帧尚未写入完成 —— 请稍候再发送</string>
+    <string name="mgr_nus_err_empty_payload">发送内容为空 —— 请输入文本或选择行尾</string>
+    <string name="mgr_nus_err_payload_too_long">发送 %1$dB 超过当前 MTU %2$d 允许的单次写入 %3$d B —— 请缩短内容</string>
+    <string name="mgr_nus_err_write_rejected">写入请求被系统拒绝 —— 检查连接状态后重试</string>
+    <string name="mgr_nus_log_sent">已发送 %1$dB → RX %2$s（%3$s）</string>
+
+    <!-- 回调事件 -->
+    <string name="mgr_nus_err_connect_status">连接失败（status=%1$d）%2$s</string>
+    <string name="mgr_nus_log_connected">已连接 %1$s，开始发现 GATT 服务</string>
+    <string name="mgr_nus_err_discover_start">服务发现启动失败 —— discoverServices() 返回 false</string>
+    <string name="mgr_nus_err_disconnected_status">连接已断开（status=%1$d）%2$s</string>
+    <string name="mgr_nus_log_device_disconnected">设备已断开连接</string>
+    <string name="mgr_nus_err_discover_status">服务发现失败（status=%1$d）%2$s</string>
+    <string name="mgr_nus_err_no_nus_service">未发现 Nordic UART Service（6E400001-…）或 FFE0 / FFE1 串口服务 —— 目标设备可能未烧录 NUS 固件</string>
+    <string name="mgr_nus_profile_ffe0">FFE0 / FFE1 串口</string>
+    <string name="mgr_nus_profile_nus">NUS 6E400001</string>
+    <string name="mgr_nus_err_no_rx">找到 %1$s 服务，但缺少可写 RX 特征</string>
+    <string name="mgr_nus_err_no_tx">找到 %1$s 服务，但缺少通知 TX 特征</string>
+    <string name="mgr_nus_err_rx_unwritable">RX 特征 %1$s 不支持写入（属性 %2$s）</string>
+    <string name="mgr_nus_err_tx_unnotifiable">TX 特征 %1$s 不支持通知 / 指示（属性 %2$s）</string>
+    <string name="mgr_nus_err_local_notify">本地通知注册失败 —— 系统拒绝了 setCharacteristicNotification</string>
+    <string name="mgr_nus_err_no_cccd">TX 特征缺少 CCCD 描述符（0x2902）—— 无法开启远端通知</string>
+    <string name="mgr_nus_err_notify_rejected">通知订阅请求被系统拒绝 —— 请稍后重试</string>
+    <string name="mgr_nus_log_profile_hit">已找到 %1$s：RX %2$s / TX %3$s，等待 CCCD 写入回调</string>
+    <string name="mgr_nus_err_desc_write">描述符写入失败（status=%1$d）%2$s</string>
+    <string name="mgr_nus_err_notify_failed">开启通知失败（status=%1$d）%2$s</string>
+    <string name="mgr_nus_log_ready">通知已开启，NUS 终端就绪</string>
+    <string name="mgr_nus_err_send_failed">发送失败（status=%1$d）%2$s</string>
+    <string name="mgr_nus_log_written">已写入 %1$s</string>
+    <string name="mgr_nus_log_mtu">MTU 协商完成：%1$d B（单次可写负载 %2$d B）</string>
+    <string name="mgr_nus_err_mtu_failed">MTU 协商失败（status=%1$d）—— 继续使用默认 23 B</string>
+    <string name="mgr_nus_phy_unknown">未知(%1$d)</string>
+    <string name="mgr_nus_log_phy">PHY 读取完成：%1$s</string>
+    <string name="mgr_nus_err_phy_failed">PHY 读取失败（status=%1$d）</string>
+
+    <!-- 超时与连接参数 -->
+    <string name="mgr_nus_err_discover_timeout">服务发现超时（10 秒）—— 设备未返回服务表；可重新连接，或先在系统蓝牙中配对</string>
+    <string name="mgr_nus_err_subscribe_timeout">通知订阅超时（10 秒）—— CCCD 写入未收到系统回调</string>
+    <string name="mgr_nus_err_write_timeout">写入超时（5 秒）—— 未收到 onCharacteristicWrite 回调</string>
+    <string name="mgr_nus_log_mtu_requested">已请求 MTU %1$d（等待 onMtuChanged）</string>
+    <string name="mgr_nus_log_mtu_rejected">[!] MTU 请求未被系统接受 —— 继续使用默认 23 B</string>
+    <string name="mgr_nus_log_phy_request_failed">[!] PHY 读取请求失败 —— 显示 --</string>
+    <string name="mgr_nus_phy_api_unsupported">API &lt; 26 不支持</string>
+</resources>

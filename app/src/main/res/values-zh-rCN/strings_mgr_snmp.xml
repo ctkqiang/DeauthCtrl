@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SNMP 扫描管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_snmp_error_invalid_target">目标格式无效</string>
+    <string name="mgr_snmp_error_no_communities">至少输入一个社区串</string>
+    <string name="mgr_snmp_error_scan_exception">扫描异常: %1$s</string>
+    <string name="mgr_snmp_error_target_required">请输入目标 IP 或网段</string>
+    <string name="mgr_snmp_error_bad_ip">IP 格式无效: %1$s</string>
+    <string name="mgr_snmp_error_cidr_format">网段格式应为 a.b.c.d/前缀</string>
+    <string name="mgr_snmp_error_bad_network">网段地址无效: %1$s</string>
+    <string name="mgr_snmp_error_bad_prefix">前缀长度无效: %1$s</string>
+    <string name="mgr_snmp_error_prefix_range">前缀长度应在 0..32: %1$d</string>
+    <string name="mgr_snmp_error_subnet_too_large">网段过大: %1$d 个地址，上限 %2$d；请使用更小的网段</string>
+</resources>

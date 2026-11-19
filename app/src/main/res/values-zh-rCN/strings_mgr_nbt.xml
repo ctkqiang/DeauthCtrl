@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NetBIOS 名称扫描管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_nbt_error_invalid_target">目标格式无效 —— 请输入单个 IPv4(如 192.168.1.10)或 CIDR 网段(如 192.168.1.0/24)</string>
+    <string name="mgr_nbt_error_no_lan_address">未检测到局域网 IPv4 地址 —— 请先连接 Wi-Fi 或热点后重试</string>
+    <string name="mgr_nbt_error_scan_failed">扫描失败: %1$s</string>
+    <string name="mgr_nbt_note_converged">输入前缀为 /%1$d,已按 /24 收敛,只扫描 %2$s.1-254</string>
+    <string name="mgr_nbt_unknown_vendor">未知厂商</string>
+    <string name="mgr_nbt_name_workstation">&lt;00&gt; 工作站</string>
+    <string name="mgr_nbt_name_messenger">&lt;03&gt; 信使/用户</string>
+    <string name="mgr_nbt_name_file_service">&lt;20&gt; 文件服务</string>
+    <string name="mgr_nbt_name_master_browser">&lt;1D&gt; 主浏览器</string>
+</resources>

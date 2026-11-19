@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NetBIOS 名称扫描管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_nbt_error_invalid_target">Invalid target format — enter a single IPv4 address (e.g. 192.168.1.10) or a CIDR subnet (e.g. 192.168.1.0/24)</string>
+    <string name="mgr_nbt_error_no_lan_address">No LAN IPv4 address detected — connect to Wi-Fi or a hotspot and retry</string>
+    <string name="mgr_nbt_error_scan_failed">Scan failed: %1$s</string>
+    <string name="mgr_nbt_note_converged">Prefix /%1$d was narrowed to /24; scanning only %2$s.1-254</string>
+    <string name="mgr_nbt_unknown_vendor">Unknown vendor</string>
+    <string name="mgr_nbt_name_workstation">&lt;00&gt; WORKSTATION</string>
+    <string name="mgr_nbt_name_messenger">&lt;03&gt; MESSENGER/USER</string>
+    <string name="mgr_nbt_name_file_service">&lt;20&gt; FILE SERVICE</string>
+    <string name="mgr_nbt_name_master_browser">&lt;1D&gt; MASTER BROWSER</string>
+</resources>

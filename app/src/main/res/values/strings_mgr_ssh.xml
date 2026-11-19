@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SshClientManager — English default strings. -->
+<resources>
+    <string name="mgr_ssh_missing_fields">Enter the host address and username</string>
+    <string name="mgr_ssh_disconnected">Connection closed</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Secure vault ViewModel strings (prefix: vm_vault_). -->
+<resources>
+    <string name="vm_vault_camera_error">Camera: %1$s</string>
+    <string name="vm_vault_video_error">Video: %1$s</string>
+    <string name="vm_vault_no_capture">Nothing was captured</string>
+    <string name="vm_vault_encrypt_failed">Encryption failed</string>
+    <string name="vm_vault_record_failed">Recording failed: %1$s</string>
+    <string name="vm_vault_bad_password">Wrong passphrase or file corrupted</string>
+</resources>

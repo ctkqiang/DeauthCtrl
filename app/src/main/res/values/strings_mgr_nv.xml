@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 数字夜视管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_nv_status_loading">LOADING</string>
+    <string name="mgr_nv_status_ready">READY</string>
+    <string name="mgr_nv_status_stopped">STOPPED</string>
+    <string name="mgr_nv_lens_front">Front lens</string>
+    <string name="mgr_nv_lens_back">Back lens</string>
+    <string name="mgr_nv_lens_external">External lens</string>
+    <string name="mgr_nv_error_no_yuv">This lens does not support YUV output; night vision unavailable</string>
+    <string name="mgr_nv_error_session_config">Night vision session configuration failed</string>
+    <string name="mgr_nv_error_camera">Camera error %1$d</string>
+</resources>

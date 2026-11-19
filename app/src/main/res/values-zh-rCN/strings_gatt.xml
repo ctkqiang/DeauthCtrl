@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gatt_title">BLE GATT 工作台</string>
+    <string name="gatt_panel_connect">连接 · GATT CLIENT</string>
+    <string name="gatt_target_mac_label">目标 MAC 地址</string>
+    <string name="gatt_target_mac_placeholder">AA:BB:CC:DD:EE:FF</string>
+    <string name="gatt_btn_connect">连接</string>
+    <string name="gatt_btn_disconnect">断开</string>
+    <string name="gatt_stat_status">状态</string>
+    <string name="gatt_stat_device_name">设备名称</string>
+    <string name="gatt_stat_device_address">设备地址</string>
+    <string name="gatt_stat_services_chars">服务 / 特征</string>
+    <string name="gatt_mac_hint">MAC 可从「BLE 扫描」页面获取；目标设备必须处于广播 / 可连接状态，系统不会替我们探测一个不存在或不可连接的地址。</string>
+    <string name="gatt_panel_services">GATT 服务 · SERVICES</string>
+    <string name="gatt_empty_disconnected">未连接 —— 输入目标 MAC 后点击「连接」；目标需处于广播 / 可连接状态</string>
+    <string name="gatt_empty_connecting">连接中 —— 最多等待 10 秒</string>
+    <string name="gatt_empty_connected">已连接 —— 正在准备服务发现</string>
+    <string name="gatt_empty_discovering">正在发现服务 —— 最多等待 10 秒</string>
+    <string name="gatt_empty_ready">设备未暴露任何可访问的 GATT 服务 —— 尝试在系统蓝牙中配对后重连</string>
+    <string name="gatt_empty_error">服务表不可用 —— 处理上方告警后重新连接</string>
+    <string name="gatt_property_legend">属性缩写：R 读 · W 有响应写 · WNR 无响应写 · N 通知 · I 指示 · BC 广播 · SW 签名写 · EP 扩展属性。</string>
+    <string name="gatt_panel_log">通知日志 · GATT LOG</string>
+    <string name="gatt_log_header">事件流（最新在上）</string>
+    <string name="gatt_log_empty">暂无日志 —— 连接、读取、写入、通知事件都会记录在这里</string>
+    <string name="gatt_log_truncated">仅显示最近 80 条，共 %1$d 条</string>
+    <string name="gatt_panel_boundaries">操作边界 · 说明</string>
+    <string name="gatt_boundary_broadcast">目标设备必须处于广播 / 可连接状态；已被其他主机保持连接的设备通常会拒绝新的 GATT 连接。</string>
+    <string name="gatt_boundary_pairing">部分设备在读取加密特征前要求先在系统蓝牙中完成配对；未配对时可能返回认证不足（status=5）。</string>
+    <string name="gatt_boundary_write">写操作会真实改变设备状态，可能触发执行机构；本页不提供撤销，确认特征语义后再写入。</string>
+    <string name="gatt_boundary_queue">读取 / 写入 / 订阅共用一条 GATT 请求队列，同一时刻只允许一个请求；上一操作未返回时新请求会被拒绝。</string>
+    <string name="gatt_boundary_raw">特征值全部来自系统回调的原始字节：未读取过显示 \"--\"，读取为空显示 \"(空)\"，文本仅在可解码为 UTF-8 时展示。</string>
+    <string name="gatt_boundary_uuid">标准 UUID 之外不做语义推测：日志里的十六进制是设备原样数据，不代表已解析出业务含义。</string>
+    <string name="gatt_boundary_permission">Android 12+ 连接需要「附近的设备」权限（BLUETOOTH_CONNECT），申请由应用权限网关统一处理。</string>
+    <string name="gatt_service_char_count">%1$d 特征</string>
+    <string name="gatt_char_props">属性 %1$s</string>
+    <string name="gatt_notify_on">通知已开启</string>
+    <string name="gatt_notify_off">通知未开启</string>
+    <string name="gatt_value_empty">(空)</string>
+    <string name="gatt_value_hex">值 %1$s</string>
+    <string name="gatt_value_text">文本 %1$s</string>
+    <string name="gatt_value_descriptors">描述符 %1$s</string>
+    <string name="gatt_btn_read">读</string>
+    <string name="gatt_btn_subscribe">订阅通知</string>
+    <string name="gatt_btn_unsubscribe">取消订阅</string>
+    <string name="gatt_write_label">写入 (HEX)</string>
+    <string name="gatt_write_placeholder">例如 01 A0 FF</string>
+    <string name="gatt_btn_write">写</string>
+    <string name="gatt_write_warning">[!] 写操作会真实改变目标设备状态，没有撤销；确认特征语义后再写入。</string>
+</resources>

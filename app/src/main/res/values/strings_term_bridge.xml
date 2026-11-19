@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TerminalClientBridge — English default strings. -->
+<resources>
+    <string name="term_bridge_clip_label">DeauthCtrl terminal</string>
+</resources>

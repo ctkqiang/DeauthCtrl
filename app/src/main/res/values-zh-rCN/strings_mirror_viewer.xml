@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 远程查看页中文资源,与 values/strings_mirror_viewer.xml 一一对应。 -->
+<resources>
+    <string name="mirror_viewer_conn_failed">连接失败\n%1$s</string>
+    <string name="mirror_viewer_waiting">等待连接...</string>
+    <string name="mirror_viewer_connected">● 已连接</string>
+    <string name="mirror_viewer_connecting">○ 连接中</string>
+    <string name="mirror_viewer_hint_tap">单击 ↦ 界面</string>
+    <string name="mirror_viewer_hint_drag">拖动 ↦ 控制</string>
+    <string name="mirror_viewer_hint_double">双击 ↦ 断开</string>
+    <string name="mirror_viewer_connecting_to">正在连接 %1$s...</string>
+</resources>

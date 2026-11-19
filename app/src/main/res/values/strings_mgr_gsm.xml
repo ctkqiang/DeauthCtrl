@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GsmTowerManager — English default strings. -->
+<resources>
+    <string name="mgr_gsm_permission_missing">Missing permissions: Location and Phone state are required</string>
+    <string name="mgr_gsm_no_cells">System returned no cell info — no cellular signal in airplane mode</string>
+    <string name="mgr_gsm_read_failed">Failed to read cell info: %1$s</string>
+    <string name="mgr_gsm_unknown_operator">Unknown operator</string>
+    <string name="mgr_gsm_unknown_network">Unknown network type</string>
+</resources>

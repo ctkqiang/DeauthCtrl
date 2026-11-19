@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nordic 工作台 —— 英文默认资源 -->
+<resources>
+    <string name="nordic_title">Nordic Workbench</string>
+    <string name="nordic_tab_adv">AD Decode</string>
+    <string name="nordic_tab_nus">NUS Terminal</string>
+    <string name="nordic_tab_bond">Bonding</string>
+
+    <!-- ─── 广告解析 · 错误提示 ─── -->
+    <string name="nordic_err_empty_hex">Enter advertising data hex bytes</string>
+    <string name="nordic_err_invalid_hex">Invalid hex format — bytes must be an even number of hex characters, separated by spaces / colons / hyphens</string>
+    <string name="nordic_err_empty_ad">AD data is empty or the first byte length is 0 — no fields to decode</string>
+
+    <!-- ─── 广告解析 ─── -->
+    <string name="nordic_panel_adv_input">Advertising Data · AD STRUCTURE</string>
+    <string name="nordic_input_hex_label">AD Data (hex)</string>
+    <string name="nordic_input_hex_placeholder">e.g. 02 01 06 03 03 0F 18 0B 09 44 65 61 75 74 68</string>
+    <string name="nordic_btn_parse">PARSE</string>
+    <string name="nordic_btn_clear">CLEAR</string>
+    <string name="nordic_format_note">Format: [length 1B][type 1B][data ...], the length byte includes the type byte itself; length 0x00 marks the end of advertising data. Out-of-range lengths are truncated to the actual remaining bytes and marked.</string>
+    <string name="nordic_panel_result">Decode Result · %1$d fields</string>
+    <string name="nordic_empty_no_fields">No fields to display — fix the input above and decode again</string>
+    <string name="nordic_empty_hint">Paste real advertising data and tap PARSE; this page never generates sample data</string>
+    <string name="nordic_uuid_note">128-bit UUIDs are reversed from little endian into standard UUIDs; company IDs / service UUIDs are decoded little endian too. Unknown IDs keep their raw hex — no guessing.</string>
+    <string name="nordic_panel_scope">Integration Notes · SCOPE</string>
+    <string name="nordic_scope_note1">The radar / BLE scan page shares this AdStructureDecoder for advertising details (the main thread wires the decoder into scan details); both follow the same AD Structure rules and produce identical results.</string>
+    <string name="nordic_scope_note2">Decoded types: Flags, 16 / 32 / 128-bit UUID lists, local name, TX power, Class of Device, connection interval range, Service Data, Appearance, advertising interval, LE device address, LE Role, URI and vendor-specific data. Unknown types show \"unknown AD type\" with raw hex.</string>
+
+    <!-- ─── 广告字段表 ─── -->
+    <string name="nordic_col_name">NAME</string>
+    <string name="nordic_col_type">TYPE</string>
+    <string name="nordic_col_raw">RAW</string>
+    <string name="nordic_col_decoded">DECODED</string>
+    <string name="nordic_empty_value">(empty)</string>
+
+    <!-- ─── NUS 终端 ─── -->
+    <string name="nordic_panel_connect">Connection · NORDIC UART SERVICE</string>
+    <string name="nordic_mac_label">Target MAC address</string>
+    <string name="nordic_btn_connect">CONNECT</string>
+    <string name="nordic_btn_disconnect">DISCONNECT</string>
+    <string name="nordic_stat_status">Status</string>
+    <string name="nordic_stat_device_name">Device name</string>
+    <string name="nordic_stat_profile">Service profile</string>
+    <string name="nordic_mtu_note">Requests MTU 247 after connecting; the actual value comes from the system onMtuChanged callback. Reading PHY is unsupported below Android 8.0. The NUS service is 6E400001, compatible with FFE0 / FFE1 serial.</string>
+    <string name="nordic_panel_terminal">Terminal · RX BUFFER</string>
+    <string name="nordic_rx_buffer">RX Buffer (%1$d/%2$d chars)</string>
+    <string name="nordic_rx_waiting">Waiting for device data — UTF-8 text notified over TX will append here</string>
+    <string name="nordic_send_label">Send content (UTF-8)</string>
+    <string name="nordic_send_placeholder">e.g. AT+VERSION?</string>
+    <string name="nordic_btn_send">SEND</string>
+    <string name="nordic_send_note">Sends write to the RX characteristic; Serial.println appends CRLF to the text. A single write must not exceed MTU-3 bytes — oversized writes are rejected explicitly, never silently truncated.</string>
+    <string name="nordic_sending">Sending — waiting for onCharacteristicWrite callback</string>
+    <string name="nordic_panel_log">Connection Log · NUS LOG</string>
+    <string name="nordic_log_header">Event stream (newest first)</string>
+    <string name="nordic_log_empty">No logs yet — connection, service discovery, CCCD subscription, TX/RX and error events are all recorded here</string>
+    <string name="nordic_log_limit">Showing latest 60 of %1$d entries</string>
+
+    <!-- ─── 绑定管理 ─── -->
+    <string name="nordic_panel_bonds">Bonded Devices · BONDED DEVICES</string>
+    <string name="nordic_btn_loading">READING...</string>
+    <string name="nordic_btn_refresh">REFRESH</string>
+    <string name="nordic_device_count">%1$d devices</string>
+    <string name="nordic_bond_loading_hint">Reading system bond list</string>
+    <string name="nordic_bond_empty">No bonded devices — pair in system Bluetooth settings first, then refresh</string>
+    <string name="nordic_bond_state">Status %1$s</string>
+    <string name="nordic_btn_unbonding">UNBONDING...</string>
+    <string name="nordic_btn_delete">DELETE</string>
+    <string name="nordic_unbond_confirm">Unbond %1$s (%2$s)?</string>
+    <string name="nordic_unbond_note">Programmatic unbonding uses the hidden BluetoothDevice.removeBond() method; Android 9+ may reject it. Re-pairing is required after unbonding.</string>
+    <string name="nordic_btn_confirm_unbond">CONFIRM UNBOND</string>
+    <string name="nordic_btn_cancel">CANCEL</string>
+    <string name="nordic_panel_bonding">Notes · BONDING</string>
+    <string name="nordic_bond_bullet1">The delete action is only available for system-bonded devices; an empty list means no bonds exist.</string>
+    <string name="nordic_bond_bullet2">A true return from removeBond only means the system accepted the request; the bond list is the final source of truth.</string>
+    <string name="nordic_bond_bullet3">If the system restricts hidden APIs or the vendor ROM lacks removeBond, remove (\"forget\") the device in system Bluetooth settings.</string>
+    <string name="nordic_bond_bullet4">Re-pairing must be confirmed in the system Bluetooth dialog; this page offers no silent pairing.</string>
+
+    <!-- ─── 能力边界 ─── -->
+    <string name="nordic_panel_honesty">Capability Boundaries · HONESTY</string>
+    <string name="nordic_honesty1">AD decode only decodes the real bytes you input; field meanings come from Bluetooth Assigned Numbers, with no business-semantic guessing.</string>
+    <string name="nordic_honesty2">NUS is Nordic\'s official demo service and only works with devices flashed with NUS firmware (or FFE0 / FFE1 serial firmware).</string>
+    <string name="nordic_honesty3">MTU / PHY are negotiated after connection; the device may reject the request or fall back to a lower tier.</string>
+    <string name="nordic_honesty4">Bonding relies on the hidden removeBond() method; if the system refuses, forget the device in system Bluetooth settings — this page never pretends deletion succeeded.</string>
+    <string name="nordic_honesty5">Bluetooth connection and pairing require the Nearby devices permission, requested through the app permission gateway.</string>
+</resources>

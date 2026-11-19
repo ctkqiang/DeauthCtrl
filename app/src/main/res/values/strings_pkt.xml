@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Packet Monitor screen strings (prefix: pkt_). -->
+<resources>
+    <!-- ─── 头部与操作 ─── -->
+    <string name="pkt_title">PACKET MONITOR</string>
+    <string name="pkt_btn_start">START MONITOR</string>
+    <string name="pkt_btn_stop">STOP MONITOR</string>
+
+    <!-- ─── 告警与空状态 ─── -->
+    <string name="pkt_warn_vpn_denied">VPN authorization not granted — traffic monitoring cannot start (VpnService requires system dialog confirmation)</string>
+    <string name="pkt_empty_listening">Listening on TUN, waiting for the first IPv4 packet ...</string>
+    <string name="pkt_empty_not_started">Monitoring not started yet — tap START MONITOR and confirm the system VPN authorization</string>
+    <string name="pkt_empty_no_match">No packets match the current filters — adjust the protocol / text filter, or turn off the background-noise filter</string>
+    <string name="pkt_list_count_notice">Showing %1$d / %2$d packets · only the latest 500 packets are kept in the list; summary and sessions use full-session statistics</string>
+
+    <!-- ─── 状态面板 ─── -->
+    <string name="pkt_panel_status">STATUS</string>
+    <string name="pkt_label_vpn_service">VPN SERVICE</string>
+    <string name="pkt_state_running">RUNNING</string>
+    <string name="pkt_state_stopped">STOPPED</string>
+    <string name="pkt_label_local_tun">LOCAL TUN</string>
+    <string name="pkt_label_route">ROUTE</string>
+    <string name="pkt_value_route">0.0.0.0/0 (IPv4 only)</string>
+    <string name="pkt_label_forwarding">FORWARDING</string>
+    <string name="pkt_value_forwarding">UDP / TCP user-space forwarding</string>
+
+    <!-- ─── 汇总面板 ─── -->
+    <string name="pkt_panel_summary">SUMMARY</string>
+    <string name="pkt_stat_packets">PACKETS</string>
+    <string name="pkt_stat_bytes">BYTES</string>
+    <string name="pkt_stat_sessions">SESSIONS</string>
+    <string name="pkt_stat_unique_domains">UNIQUE DOMAINS</string>
+    <string name="pkt_section_protocol">PROTOCOL MIX</string>
+    <string name="pkt_section_top_domains">TOP DOMAINS</string>
+    <string name="pkt_empty_no_domains">-- No domains resolved yet (DNS QNAME / TLS SNI / HTTP Host)</string>
+    <string name="pkt_unit_packets">pkts</string>
+    <string name="pkt_section_top_peers">TOP PEERS</string>
+    <string name="pkt_empty_no_peers">-- No peer addresses yet</string>
+    <string name="pkt_count_with_unit">%1$d %2$s</string>
+
+    <!-- ─── 会话面板 ─── -->
+    <string name="pkt_panel_sessions">SESSIONS</string>
+    <string name="pkt_empty_no_sessions">-- No sessions yet — every captured IPv4 packet is merged by source/destination address</string>
+    <string name="pkt_sessions_summary">Bidirectional aggregation · %1$d sessions total (showing %2$d)</string>
+    <string name="pkt_sessions_collapse">Collapse sessions</string>
+    <string name="pkt_sessions_expand">Show all sessions (%1$d)</string>
+    <string name="pkt_session_packets_bytes">%1$d pkts · %2$s</string>
+    <string name="pkt_session_last_active">Last seen %1$s</string>
+    <string name="pkt_session_domains">Domains %1$s</string>
+
+    <!-- ─── 过滤面板 ─── -->
+    <string name="pkt_panel_filter">FILTER</string>
+    <string name="pkt_filter_all">ALL</string>
+    <string name="pkt_input_label">Text filter · domain / IP substring</string>
+    <string name="pkt_input_placeholder">example.com or 93.184.216</string>
+    <string name="pkt_noise_on">Hide background noise: ON</string>
+    <string name="pkt_noise_off">Hide background noise: OFF</string>
+    <string name="pkt_clear_filters">Clear filters</string>
+    <string name="pkt_shown_count">Showing %1$d / %2$d packets</string>
+    <string name="pkt_shown_hidden_suffix">%1$d background-noise entries hidden</string>
+    <string name="pkt_noise_legend">Background noise = mDNS 224.0.0.251:5353 / SSDP 239.255.255.250:1900 / DHCP 67-68 / IGMP / NTP 123.</string>
+
+    <!-- ─── 数据包列表与详情树 ─── -->
+    <string name="pkt_log_title">PACKETS</string>
+    <string name="pkt_field_version">Version</string>
+    <string name="pkt_field_total_length">Total length</string>
+    <string name="pkt_field_protocol">Protocol</string>
+    <string name="pkt_field_address">Address</string>
+    <string name="pkt_field_port">Port</string>
+    <string name="pkt_field_query_name">Query name</string>
+    <string name="pkt_field_type">Type</string>
+    <string name="pkt_field_class">Class</string>
+    <string name="pkt_section_info">INFO</string>
+    <string name="pkt_section_hex_dump">HEX DUMP · first %1$d B / %2$d B total</string>
+    <string name="pkt_field_payload_offset">Payload offset</string>
+
+    <!-- ─── 能力边界 ─── -->
+    <string name="pkt_panel_honesty">HONESTY</string>
+    <string name="pkt_honesty_local_only">This page monitors local traffic only: VpnService creates a TUN interface (10.8.0.1/32) on this device and the system routes local IPv4 traffic through it. Traffic from other devices on the same Wi-Fi is not visible — that requires root + ARP spoofing or NIC promiscuous mode, which ordinary Android apps do not have.</string>
+    <string name="pkt_honesty_encryption">HTTPS content is end-to-end encrypted; only the TLS SNI domain and destination IP are visible (TLS 1.3 ECH hides the SNI). Plaintext HTTP is required to see Host and path; DNS queries are visible unless DoH / DoT is used. The HEX dump keeps only the first 64 bytes of each packet, never the full payload; all statistics come from real packets.</string>
+    <string name="pkt_honesty_sessions">Sessions aggregate bidirectionally by (source IP, destination IP); protocol mix and domains are accumulated across the whole session. The packet list keeps only the latest 500 packets, so its row count may be lower than the summary total. Top domains and peers are sorted by packet count, then by name.</string>
+    <string name="pkt_honesty_forwarding">To keep the network up, the service forwards flows in user space: UDP / TCP each open a protected upstream socket, and replies are re-encapsulated and written back to the TUN, which adds slight latency. ICMP is not forwarded (failing ping is expected), and IPv6 does not traverse this tunnel. Idle flows are reclaimed after 60 seconds; long-silent TCP connections may be dropped.</string>
+    <string name="pkt_honesty_shutdown">Stopping monitoring first writes to a self-pipe to wake the read thread, then closes the TUN fd; the system removes the VPN icon from the status bar and restores direct connectivity. The read, cleanup and forwarding threads are all daemons with join timeouts and never block service teardown.</string>
+</resources>

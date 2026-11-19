@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BootstrapInstaller — 简体中文资源。 -->
+<resources>
+    <string name="mgr_bootinst_extracting">解压 %1$d 项</string>
+    <string name="mgr_bootinst_rebuilding_links">重建链接</string>
+    <string name="mgr_bootinst_verifying">校验环境</string>
+    <string name="mgr_bootinst_ready">环境就绪</string>
+    <string name="mgr_bootinst_verify_failed">校验失败</string>
+    <string name="mgr_bootinst_failed">失败: %1$s</string>
+</resources>

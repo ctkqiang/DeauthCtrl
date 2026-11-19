@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nordic 工作台 —— 中文资源 -->
+<resources>
+    <string name="nordic_title">Nordic 工作台</string>
+    <string name="nordic_tab_adv">广告解析</string>
+    <string name="nordic_tab_nus">NUS 终端</string>
+    <string name="nordic_tab_bond">绑定管理</string>
+
+    <!-- ─── 广告解析 · 错误提示 ─── -->
+    <string name="nordic_err_empty_hex">请输入广播数据的十六进制字节</string>
+    <string name="nordic_err_invalid_hex">十六进制格式无效 —— 字节须为偶数个十六进制字符，可用空格 / 冒号 / 短横线分隔</string>
+    <string name="nordic_err_empty_ad">AD 数据为空或首字节长度为 0 —— 没有可解析的字段</string>
+
+    <!-- ─── 广告解析 ─── -->
+    <string name="nordic_panel_adv_input">广播数据 · AD STRUCTURE</string>
+    <string name="nordic_input_hex_label">AD 数据（十六进制）</string>
+    <string name="nordic_input_hex_placeholder">例如 02 01 06 03 03 0F 18 0B 09 44 65 61 75 74 68</string>
+    <string name="nordic_btn_parse">解析</string>
+    <string name="nordic_btn_clear">清空</string>
+    <string name="nordic_format_note">格式：[长度 1B][类型 1B][数据 …]，长度字节包含类型字节本身；长度 0x00 表示广播数据结束。长度越界时按实际剩余字节截断并标注。</string>
+    <string name="nordic_panel_result">解析结果 · %1$d 个字段</string>
+    <string name="nordic_empty_no_fields">没有可展示的字段 —— 修正上方输入后重新解析</string>
+    <string name="nordic_empty_hint">粘贴一段真实广播数据后点击「解析」；本页不生成示例数据</string>
+    <string name="nordic_uuid_note">128-bit UUID 按小端反序还原为标准 UUID；公司 ID / 服务 UUID 同样按小端解析。未收录的编号保留原始十六进制，不做猜测。</string>
+    <string name="nordic_panel_scope">接入说明 · SCOPE</string>
+    <string name="nordic_scope_note1">雷达 / BLE 扫描页的广播详情与本页共用同一个 AdStructureDecoder（主线程负责把解码器接进扫描页详情），两处按相同的 AD Structure 规则解析，结果一致。</string>
+    <string name="nordic_scope_note2">解析覆盖：Flags、16 / 32 / 128-bit UUID 列表、本地名、发射功率、Class of Device、连接间隔范围、Service Data、Appearance、广播间隔、LE 设备地址、LE Role、URI 与厂商自定义数据。未收录类型显示「未知 AD 类型」与原始十六进制。</string>
+
+    <!-- ─── 广告字段表 ─── -->
+    <string name="nordic_col_name">名称</string>
+    <string name="nordic_col_type">类型</string>
+    <string name="nordic_col_raw">原始值</string>
+    <string name="nordic_col_decoded">解码说明</string>
+    <string name="nordic_empty_value">(空)</string>
+
+    <!-- ─── NUS 终端 ─── -->
+    <string name="nordic_panel_connect">连接 · NORDIC UART SERVICE</string>
+    <string name="nordic_mac_label">目标 MAC 地址</string>
+    <string name="nordic_btn_connect">连接</string>
+    <string name="nordic_btn_disconnect">断开</string>
+    <string name="nordic_stat_status">状态</string>
+    <string name="nordic_stat_device_name">设备名称</string>
+    <string name="nordic_stat_profile">服务配置</string>
+    <string name="nordic_mtu_note">连接后请求 MTU 247，实际值以系统 onMtuChanged 回调为准；Android 8.0 以下不支持读取 PHY。NUS 服务为 6E400001，兼容 FFE0 / FFE1 串口。</string>
+    <string name="nordic_panel_terminal">终端 · RX BUFFER</string>
+    <string name="nordic_rx_buffer">接收缓冲（%1$d/%2$d 字符）</string>
+    <string name="nordic_rx_waiting">等待设备数据 —— TX 通知的 UTF-8 文本会追加到这里</string>
+    <string name="nordic_send_label">发送内容（UTF-8）</string>
+    <string name="nordic_send_placeholder">例如 AT+VERSION?</string>
+    <string name="nordic_btn_send">发送</string>
+    <string name="nordic_send_note">发送写入 RX 特征；Serial.println 等价于在文本后追加 CRLF。单次写入不得超过 MTU-3 字节，超长会明确拒绝而不是静默截断。</string>
+    <string name="nordic_sending">发送中 —— 等待 onCharacteristicWrite 回调</string>
+    <string name="nordic_panel_log">连接日志 · NUS LOG</string>
+    <string name="nordic_log_header">事件流（最新在上）</string>
+    <string name="nordic_log_empty">暂无日志 —— 连接、服务发现、CCCD 订阅、收发与错误事件都会记录在这里</string>
+    <string name="nordic_log_limit">仅显示最近 60 条，共 %1$d 条</string>
+
+    <!-- ─── 绑定管理 ─── -->
+    <string name="nordic_panel_bonds">已配对设备 · BONDED DEVICES</string>
+    <string name="nordic_btn_loading">读取中…</string>
+    <string name="nordic_btn_refresh">刷新列表</string>
+    <string name="nordic_device_count">%1$d 台</string>
+    <string name="nordic_bond_loading_hint">正在读取系统配对列表</string>
+    <string name="nordic_bond_empty">没有已配对设备 —— 先在系统蓝牙中完成配对后刷新</string>
+    <string name="nordic_bond_state">状态 %1$s</string>
+    <string name="nordic_btn_unbonding">解绑中…</string>
+    <string name="nordic_btn_delete">删除</string>
+    <string name="nordic_unbond_confirm">确认解绑 %1$s（%2$s）？</string>
+    <string name="nordic_unbond_note">程序化解绑依赖 BluetoothDevice.removeBond() 隐藏方法，Android 9+ 可能被系统拒绝；解绑后需要重新配对。</string>
+    <string name="nordic_btn_confirm_unbond">确认解绑</string>
+    <string name="nordic_btn_cancel">取消</string>
+    <string name="nordic_panel_bonding">说明 · BONDING</string>
+    <string name="nordic_bond_bullet1">删除按钮只对系统已配对设备开放；列表为空时说明当前没有配对记录。</string>
+    <string name="nordic_bond_bullet2">解绑调用返回 true 仅代表系统接受了请求，最终以配对列表是否移除为准。</string>
+    <string name="nordic_bond_bullet3">若系统限制隐藏 API 或厂商 ROM 不提供 removeBond，请到系统蓝牙设置中忽略该设备。</string>
+    <string name="nordic_bond_bullet4">重新配对需要在系统蓝牙弹窗中确认；本页不提供静默配对。</string>
+
+    <!-- ─── 能力边界 ─── -->
+    <string name="nordic_panel_honesty">能力边界 · HONESTY</string>
+    <string name="nordic_honesty1">广告解析只解码输入的真实字节；字段含义来自 Bluetooth Assigned Numbers，不推测业务语义。</string>
+    <string name="nordic_honesty2">NUS 是 Nordic 官方演示服务，仅对烧录了 NUS 固件（或 FFE0 / FFE1 串口固件）的设备有效。</string>
+    <string name="nordic_honesty3">MTU / PHY 为连接后协商值，设备可以拒绝请求或回落到更低档位。</string>
+    <string name="nordic_honesty4">绑定管理依赖隐藏方法 removeBond()；系统拒绝时请到系统蓝牙设置中忽略设备，本页不会假装已删除。</string>
+    <string name="nordic_honesty5">蓝牙连接与配对需要「附近的设备」权限，申请由应用权限网关统一处理。</string>
+</resources>

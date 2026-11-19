@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ThreatDetector — 简体中文资源。 -->
+<resources>
+    <string name="mgr_threat_cascade_failed">Haar 级联加载失败(文件损坏且重试无效)</string>
+    <string name="mgr_threat_init_failed">OpenCV 初始化失败</string>
+    <string name="mgr_threat_unavailable">检测器不可用</string>
+    <string name="mgr_threat_empty_frame">空帧</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SeismographManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_seismo_no_accelerometer">[!] 本机未提供加速度计(TYPE_ACCELEROMETER) —— 震动监视不可用</string>
+    <string name="mgr_seismo_register_failed">[!] 加速度计注册失败 —— 系统可能限制了传感器访问</string>
+</resources>

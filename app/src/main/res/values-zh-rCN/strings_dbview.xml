@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dbview_title">信号数据库</string>
+    <string name="dbview_last_refresh">上次注入 %1$s · +%2$d 条</string>
+    <string name="dbview_never_refreshed">尚未注入 · 点击右侧刷新</string>
+    <string name="dbview_refresh">⟳ 刷新注入</string>
+    <string name="dbview_insert_note">只 INSERT 注入最新数据,历史记录永久保留</string>
+    <string name="dbview_filter_all">全部</string>
+    <string name="dbview_empty">暂无数据 —— 打开雷达/BLE 扫描后点击「刷新注入」\n最新信号情报会写入数据库</string>
+    <string name="dbview_unnamed">&lt;无名&gt;</string>
+</resources>

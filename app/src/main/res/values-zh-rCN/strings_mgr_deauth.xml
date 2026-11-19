@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_deauth_probe_root_granted">root 已授予</string>
+    <string name="mgr_deauth_probe_no_root">无 root(su 不可用)</string>
+    <string name="mgr_deauth_probe_iface">接口 %1$s</string>
+    <string name="mgr_deauth_probe_iface_none">未发现 wlan</string>
+    <string name="mgr_deauth_probe_monitor">监控模式 %1$s</string>
+    <string name="mgr_deauth_probe_monitor_supported">支持</string>
+    <string name="mgr_deauth_probe_monitor_unsupported">不支持</string>
+    <string name="mgr_deauth_probe_injector">注入器 %1$s</string>
+    <string name="mgr_deauth_probe_injector_bundled">内置原生</string>
+    <string name="mgr_deauth_probe_injector_missing">未内置</string>
+    <string name="mgr_deauth_probe_no_root_note">注入在无 root 的 stock Android 上不可实现(SELinux 拒绝 raw socket)</string>
+    <string name="mgr_deauth_log_probing">探测 root 与工具链…</string>
+    <string name="mgr_deauth_log_probe_done">探测完成: %1$s</string>
+    <string name="mgr_deauth_log_aireplay_missing">未内置注入器且缺少 aireplay-ng —— 安装 aircrack-ng Android 移植版(如 kriswebdev/android_aircrack)到 PATH 后重试</string>
+    <string name="mgr_deauth_log_inject_started">注入会话启动 · 目标 %1$s · 信道 %2$d · %3$s · %4$s</string>
+    <string name="mgr_deauth_client_broadcast">广播(全部客户端)</string>
+    <string name="mgr_deauth_log_inject_exception">注入会话异常: %1$s</string>
+    <string name="mgr_deauth_log_inject_ended">注入会话结束 · 共注入 %1$d 帧</string>
+    <string name="mgr_deauth_log_sniff_started">被动嗅探启动 · %1$s · 监听信标/探测/去认证帧</string>
+    <string name="mgr_deauth_log_sniff_exception">嗅探会话异常: %1$s</string>
+    <string name="mgr_deauth_log_sniff_ended">嗅探会话结束 · 共解析 %1$d 帧</string>
+    <string name="mgr_deauth_log_arp_started">ARP 踢人启动 · 目标 %1$s · 网关 %2$s · %3$s</string>
+    <string name="mgr_deauth_log_arp_ended">ARP 会话结束 · 共投毒 %1$d 帧 · 目标缓存过期后自动恢复网络</string>
+    <string name="mgr_deauth_log_arp_exception">ARP 会话异常: %1$s</string>
+    <string name="mgr_deauth_log_extract_failed">注入器解压失败: %1$s</string>
+    <string name="mgr_deauth_err_session_running">注入会话已在运行</string>
+    <string name="mgr_deauth_err_bssid_invalid">BSSID 格式无效: %1$s</string>
+    <string name="mgr_deauth_err_client_invalid">客户端 MAC 格式无效: %1$s</string>
+    <string name="mgr_deauth_err_no_root_inject">无 root —— 注入在无 root 的 stock Android 上不可实现</string>
+    <string name="mgr_deauth_err_monitor_required">芯片/固件不支持监控模式(需 Nexmon/QCACLD 类补丁固件)</string>
+    <string name="mgr_deauth_err_no_iface">未发现无线接口</string>
+    <string name="mgr_deauth_err_no_injector">无可用注入器(内置注入器缺失且 aireplay-ng 未安装)</string>
+    <string name="mgr_deauth_err_session_active">会话已在运行</string>
+    <string name="mgr_deauth_err_no_root_sniff">无 root —— 嗅探在无 root 的 stock Android 上不可实现</string>
+    <string name="mgr_deauth_err_monitor_unsupported">芯片/固件不支持监控模式</string>
+    <string name="mgr_deauth_err_sniffer_missing">内置嗅探器缺失</string>
+    <string name="mgr_deauth_err_arp_no_root">无 root —— ARP 投毒需要 root</string>
+    <string name="mgr_deauth_err_target_ip">目标 IP 格式无效: %1$s</string>
+    <string name="mgr_deauth_err_gateway_ip">网关 IP 格式无效: %1$s</string>
+    <string name="mgr_deauth_err_engine_missing">内置引擎缺失</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PacketParser — 简体中文资源。 -->
+<resources>
+    <string name="mgr_pktpar_ipv4_protocol">IPv4 协议号 %1$d</string>
+    <string name="mgr_pktpar_dns_query">DNS 查询</string>
+    <string name="mgr_pktpar_dns_response">DNS 响应</string>
+    <string name="mgr_pktpar_tls_handshake">TLS 握手</string>
+</resources>

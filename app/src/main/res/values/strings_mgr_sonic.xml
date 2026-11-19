@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 声波数据链管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_sonic_error_no_symbols">No sendable symbols — only 0-9, A-D, *, # and space are supported</string>
+    <string name="mgr_sonic_error_track_write">AudioTrack write failed (%1$d)</string>
+    <string name="mgr_sonic_symbol_space">SPACE</string>
+    <string name="mgr_sonic_error_no_pcm_output">Device does not support 44.1kHz PCM output</string>
+    <string name="mgr_sonic_error_track_init">AudioTrack initialization failed (audio output may be in use)</string>
+    <string name="mgr_sonic_error_no_mic_capture">Device does not support 44.1kHz microphone capture</string>
+    <string name="mgr_sonic_error_mic_init">Microphone initialization failed (may be in use by another app)</string>
+    <string name="mgr_sonic_error_mic_read">Microphone read failed (%1$d)</string>
+    <string name="mgr_sonic_error_no_record_permission">Missing recording permission (RECORD_AUDIO); grant it in the app gateway and retry</string>
+</resources>

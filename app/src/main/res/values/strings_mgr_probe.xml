@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CapabilityProbe.kt — English default strings.
+  Key prefix: mgr_probe_.
+  Capability details are user-facing status text shown next to each check.
+-->
+<resources>
+
+    <!-- ─── Defaults ─── -->
+    <string name="mgr_probe_root_not_probed">Root probe not run yet</string>
+    <string name="mgr_probe_not_probed">Not probed yet</string>
+    <string name="mgr_probe_not_checked_root">Not checked: requires root + specific chip/firmware</string>
+
+    <!-- ─── SoftAP degradation note ─── -->
+    <string name="mgr_probe_softap_detail">Local device SoftAP only: does not change the target AP BSSID/channel/encryption and does not disconnect any client</string>
+    <string name="mgr_probe_softap_extra">; starting the hotspot may interrupt local Wi-Fi</string>
+
+    <!-- ─── root ─── -->
+    <string name="mgr_probe_err_no_su">su not found: stock Android apps lack CAP_NET_RAW, AF_PACKET is denied by SELinux, so monitor mode / frame injection is unavailable</string>
+    <string name="mgr_probe_root_timeout">su exists but did not respond within %1$dms (may be waiting for authorization or blocked by policy)</string>
+    <string name="mgr_probe_root_granted">su granted: %1$s</string>
+    <string name="mgr_probe_root_denied">su exists but not granted (exit=%1$d) %2$s</string>
+
+    <!-- ─── monitor mode / frame injection ─── -->
+    <string name="mgr_probe_no_root">No root on this system: stock Android does not support 802.11 monitor mode / frame injection</string>
+    <string name="mgr_probe_su_denied">su not granted: cannot check monitor mode / frame injection</string>
+    <string name="mgr_probe_root_unknown">Root probe incomplete: monitor mode / frame injection state unknown</string>
+    <string name="mgr_probe_nexutil_installed">nexutil installed</string>
+    <string name="mgr_probe_nexutil_missing">nexutil not found</string>
+    <string name="mgr_probe_nexutil_exit">nexutil -m2 exit=%1$d</string>
+    <string name="mgr_probe_nexutil_skipped">skipped nexutil -m2</string>
+    <string name="mgr_probe_iw_monitor">iw dev found type monitor</string>
+    <string name="mgr_probe_iw_no_monitor">iw dev found no monitor interface</string>
+    <string name="mgr_probe_con_mode_4">con_mode=4 (QCACLD monitor)</string>
+    <string name="mgr_probe_con_mode">con_mode=%1$s</string>
+    <string name="mgr_probe_unreadable">unreadable</string>
+    <string name="mgr_probe_aireplay_ok">aireplay-ng --test: Injection is working</string>
+    <string name="mgr_probe_aireplay_fail">aireplay-ng --test did not confirm injection (tool missing or chip/firmware unsupported)</string>
+    <string name="mgr_probe_detail_sep">;</string>
+
+    <!-- ─── LocalOnlyHotspot ─── -->
+    <string name="mgr_probe_lohs_api">LocalOnlyHotspot requires Android 8.0 (API 26)+</string>
+    <string name="mgr_probe_lohs_perm">NEARBY_WIFI_DEVICES missing (required to create a hotspot on Android 13+)</string>
+    <string name="mgr_probe_no_wifi_manager">No WifiManager</string>
+    <string name="mgr_probe_wifi_off">Wi-Fi is off</string>
+    <string name="mgr_probe_lohs_ok">Local hotspot can be created; only one unfinished request is allowed at a time</string>
+    <string name="mgr_probe_lohs_failed">Start failed reason=%1$d (channel occupied / mode conflict / policy denied)</string>
+    <string name="mgr_probe_lohs_security">SecurityException: missing permission or vendor ROM forbids LocalOnlyHotspot</string>
+    <string name="mgr_probe_lohs_exception">Start exception %1$s: %2$s</string>
+    <string name="mgr_probe_lohs_timeout">Hotspot probe timed out (%1$dms), may be occupied by another module</string>
+
+    <!-- ─── BLE ─── -->
+    <string name="mgr_probe_no_bt_adapter">No Bluetooth adapter on this device</string>
+    <string name="mgr_probe_ble_connect_perm">BLUETOOTH_CONNECT missing, cannot read Bluetooth state</string>
+    <string name="mgr_probe_ble_advertise_perm">BLUETOOTH_ADVERTISE missing, cannot start BLE advertising</string>
+    <string name="mgr_probe_bt_off">Bluetooth is off</string>
+    <string name="mgr_probe_no_ble_advertiser">Controller does not provide BLE advertising (BluetoothLeAdvertiser=null)</string>
+    <string name="mgr_probe_ble_ok">BLE advertising session can be created; minimum advertising interval about 100ms, cannot spoof the advertising MAC</string>
+
+</resources>

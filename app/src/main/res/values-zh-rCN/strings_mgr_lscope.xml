@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 逻辑示波管理器 —— 中文资源 -->
+<resources>
+    <!-- ─── 通道枚举标签 ─── -->
+    <string name="mgr_lscope_channel_ble">BLE 脉冲</string>
+    <string name="mgr_lscope_channel_wifi">WiFi 脉冲</string>
+    <string name="mgr_lscope_channel_cell">蜂窝</string>
+    <string name="mgr_lscope_channel_audio">音频</string>
+    <string name="mgr_lscope_channel_ir">红外</string>
+
+    <!-- ─── 状态与提示 ─── -->
+    <string name="mgr_lscope_no_channel_selected">至少选择一个通道后再启动采集</string>
+    <string name="mgr_lscope_ir_default_label">红外发射</string>
+    <string name="mgr_lscope_channel_error">通道异常: %1$s</string>
+    <string name="mgr_lscope_ble_no_scanner">BLE 通道未创建扫描器</string>
+    <string name="mgr_lscope_wifi_no_service">设备未提供 Wi-Fi 服务</string>
+    <string name="mgr_lscope_wifi_no_permission">缺少「附近设备」/「位置信息」权限 —— Wi-Fi 扫描不可用</string>
+    <string name="mgr_lscope_wifi_no_results">本轮未读取到扫描结果（Wi-Fi 关闭或扫描被系统节流）</string>
+    <string name="mgr_lscope_wifi_no_rssi">扫描结果中没有有效的 RSSI</string>
+    <string name="mgr_lscope_hidden_ssid">(隐藏 SSID)</string>
+    <string name="mgr_lscope_throttled_cache">%1$s · 节流缓存</string>
+    <string name="mgr_lscope_throttled_note">系统节流 startScan，本轮读的是缓存结果（RSSI 仍为真实值）</string>
+    <string name="mgr_lscope_cell_no_permission">缺少「位置信息」/「电话状态」权限 —— 蜂窝通道不可用</string>
+    <string name="mgr_lscope_cell_no_registered">系统未返回注册小区（飞行模式或无 SIM）</string>
+    <string name="mgr_lscope_cell_no_signal">注册小区 %1$s 未提供 RSRP / 信号值</string>
+    <string name="mgr_lscope_audio_no_permission">缺少录音权限 —— 音频通道不可用</string>
+    <string name="mgr_lscope_audio_unsupported">设备不支持 16kHz 单声道录音</string>
+    <string name="mgr_lscope_audio_create_failed">AudioRecord 创建失败</string>
+    <string name="mgr_lscope_audio_init_failed">AudioRecord 初始化失败（麦克风可能被占用）</string>
+    <string name="mgr_lscope_audio_start_failed">麦克风启动失败（可能被其它应用占用）</string>
+    <string name="mgr_lscope_audio_read_failed">音频读取失败（错误码 %1$d）</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ThreatDetector — English default strings. -->
+<resources>
+    <string name="mgr_threat_cascade_failed">Failed to load Haar cascade (file corrupt and retries ineffective)</string>
+    <string name="mgr_threat_init_failed">OpenCV initialization failed</string>
+    <string name="mgr_threat_unavailable">Detector unavailable</string>
+    <string name="mgr_threat_empty_frame">Empty frame</string>
+</resources>

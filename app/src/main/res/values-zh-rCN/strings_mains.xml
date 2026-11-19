@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mains_title">电线探测 · MAINS FINDER</string>
+    <string name="mains_panel_control">探测控制 · DETECTOR</string>
+    <string name="mains_label_status">状态</string>
+    <string name="mains_status_running">探测中</string>
+    <string name="mains_status_stopped">已停止</string>
+    <string name="mains_label_mains_mode">工频模式</string>
+    <string name="mains_mains_mode_value">%1$d Hz · 谐波 %2$d Hz</string>
+    <string name="mains_label_capture_params">采集参数</string>
+    <string name="mains_capture_params_value">%1$d Hz · %2$d 样本/帧</string>
+    <string name="mains_chip_50hz">50 Hz 工频</string>
+    <string name="mains_chip_60hz">60 Hz 工频</string>
+    <string name="mains_mode_note">切换模式会清空基线并重新校准 2 秒。中国 / 欧洲为 50 Hz,北美 / 日本部分地区为 60 Hz。</string>
+    <string name="mains_start">启动探测</string>
+    <string name="mains_stop">停止探测</string>
+    <string name="mains_calibrating">基线校准中 —— 保持手机静止 2 秒并远离墙面,先采集当前环境本底。</string>
+    <string name="mains_panel_live_level">实时电平 · LIVE LEVEL</string>
+    <string name="mains_label_strength">工频特征强度</string>
+    <string name="mains_label_baseline">环境基线</string>
+    <string name="mains_baseline_calibrating">校准中</string>
+    <string name="mains_label_frame_rms">整帧 RMS</string>
+    <string name="mains_label_fundamental">%1$d Hz 基波</string>
+    <string name="mains_label_harmonic">%1$d Hz 谐波</string>
+    <string name="mains_strength_note">特征强度 = 基波与谐波合成幅度 / 整帧 RMS;电平条按 20·log10 压缩到 0-100,便于观察弱分量。</string>
+    <string name="mains_alert_live_wire">[!] 检测到强工频电磁场 —— 墙内可能有带电线路(仅探测有负载回路)</string>
+    <string name="mains_panel_history">历史火花线 · HISTORY (最近 %1$d 帧)</string>
+    <string name="mains_empty_history">样本积累中 —— 启动后每帧电平会在此滚动绘制</string>
+    <string name="mains_current_level">当前 %1$d</string>
+    <string name="mains_panel_how_to">使用说明 · HOW TO</string>
+    <string name="mains_bullet_baseline">启动后先远离墙面 2 秒,等基线校准完成;基线代表当前环境本底。</string>
+    <string name="mains_bullet_move">把手机背面 / 麦克风贴近墙面约 2-5 厘米,沿墙面缓慢移动,观察电平与火花线变化。</string>
+    <string name="mains_bullet_load">被测线路必须带负载:开灯、充电或接入用电器。空载线路没有电流,不产生可测工频特征。</string>
+    <string name="mains_bullet_crosscheck">发现峰值后在该点做十字交叉复测,峰值连线的走向才更接近线路路径。</string>
+    <string name="mains_bullet_grip">手机壳、手部与金属物体会改变声场与电场分布;测量时尽量保持同一握持姿势。</string>
+    <string name="mains_panel_limits">原理与边界 · LIMITS</string>
+    <string name="mains_limit_detects">探测的是麦克风捕捉到的 50/60 Hz 基波与谐波(声学嗡鸣 + 手机模拟前端的电磁拾取),属于电磁 / 声学特征检测,不是透视,不能看见墙内线路。</string>
+    <string name="mains_limit_mic">手机麦克风对 50 Hz 的低频响应普遍较差,系统降噪 / 自动增益也可能削弱该分量,不同机型的灵敏度差异很大;读数只适合同一台设备上做相对比较。</string>
+    <string name="mains_limit_no_load">无负载(空载、开关断开、断电器)的线路几乎不产生可测工频场 —— 探测不到不代表墙内没有电线。</string>
+    <string name="mains_limit_raw">所有读数来自 AudioRecord 实时采样与本地 Goertzel 计算,未做任何模拟或补值;读不到时显示「--」。</string>
+</resources>

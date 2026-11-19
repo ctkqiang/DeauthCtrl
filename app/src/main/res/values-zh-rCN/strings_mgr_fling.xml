@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- fling 管道管理器 —— 中文资源 -->
+<resources>
+    <!-- ─── 接收端 ─── -->
+    <string name="mgr_fling_busy_receive">已有传输任务运行，无法启动接收</string>
+    <string name="mgr_fling_invalid_receive_port">端口无效：%1$d（接收端允许 0-65535）</string>
+    <string name="mgr_fling_listen_failed">监听端口 %1$d 失败：%2$s</string>
+    <string name="mgr_fling_receiver_listening">接收端已监听 0.0.0.0:%1$d</string>
+    <string name="mgr_fling_receiver_listening_ephemeral">接收端已监听 0.0.0.0:%1$d（内核临时端口）</string>
+    <string name="mgr_fling_receiver_stopped">接收端已停止</string>
+    <string name="mgr_fling_connection_established">连接建立：%1$s</string>
+    <string name="mgr_fling_save_dir_missing">写文件不可用：未配置保存目录，本次仅保留内存预览</string>
+    <string name="mgr_fling_receive_complete_file">接收完成：%1$d 字节 → %2$s</string>
+    <string name="mgr_fling_receive_complete_preview">接收完成：%1$d 字节（仅内存预览，未落盘）</string>
+    <string name="mgr_fling_receive_aborted">接收已中止：%1$s</string>
+    <string name="mgr_fling_receive_interrupted">接收中断：%1$s</string>
+
+    <!-- ─── 发送端 ─── -->
+    <string name="mgr_fling_text_label">文本 %1$d B</string>
+    <string name="mgr_fling_busy_send">已有传输任务运行，本次发送被拒绝</string>
+    <string name="mgr_fling_empty_host">接收端 IP 为空</string>
+    <string name="mgr_fling_invalid_send_port">端口无效：%1$d（发送端允许 1-65535）</string>
+    <string name="mgr_fling_send_started">发送开始：%1$s → %2$s:%3$d</string>
+    <string name="mgr_fling_open_stream_failed">无法打开待发送内容</string>
+    <string name="mgr_fling_connected">已连接：%1$s:%2$d</string>
+    <string name="mgr_fling_send_complete">发送完成：%1$d 字节 → %2$s:%3$d</string>
+    <string name="mgr_fling_send_failed">发送失败：%1$s</string>
+</resources>

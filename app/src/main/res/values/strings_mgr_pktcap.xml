@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 流量抓包服务 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_pktcap_stop_pipe_create_failed">[!] Failed to create the stop pipe — %1$s</string>
+    <string name="mgr_pktcap_vpn_establish_exception">[!] VPN establishment exception — %1$s: %2$s</string>
+    <string name="mgr_pktcap_vpn_establish_failed">[!] VPN establishment failed — not authorized or another VPN is already running</string>
+    <string name="mgr_pktcap_stop_pipe_missing">[!] Stop pipe missing — capture has stopped</string>
+    <string name="mgr_pktcap_tun_poll_failed">TUN poll failed — %1$s</string>
+    <string name="mgr_pktcap_tun_closed">TUN device closed</string>
+    <string name="mgr_pktcap_tun_read_failed">TUN read failed — %1$s</string>
+    <string name="mgr_pktcap_capture_stopped">[!] %1$s — capture has stopped</string>
+    <string name="mgr_pktcap_channel_name">Traffic Monitor</string>
+    <string name="mgr_pktcap_channel_desc">VpnService local traffic capture and statistics</string>
+    <string name="mgr_pktcap_foreground_failed">[!] Foreground notification failed to start (check the Manifest foreground service type/permission) — %1$s</string>
+    <string name="mgr_pktcap_notification_title">Traffic Monitor running</string>
+    <string name="mgr_pktcap_notification_text">VpnService local capture · tap to view</string>
+    <string name="mgr_pktcap_notification_stop">Stop</string>
+</resources>

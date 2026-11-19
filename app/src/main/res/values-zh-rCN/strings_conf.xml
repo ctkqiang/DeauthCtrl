@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="conf_title">局域网会议</string>
+    <string name="conf_online_count">在线 %1$d 人</string>
+    <string name="conf_status_in">● 会议中</string>
+    <string name="conf_status_out">○ 未入会</string>
+    <string name="conf_btn_join">进入会议</string>
+    <string name="conf_btn_leave">退出会议</string>
+    <string name="conf_panel_local">本机 · 流源与语音</string>
+    <string name="conf_ptt_talking">●●● 发送中 ●●●</string>
+    <string name="conf_ptt_idle">按住说话 · PTT</string>
+    <string name="conf_tx_stats">TX %1$d帧/%2$d片 · 失败 %3$d · 关键帧 %4$d · CSD %5$d · 重请求 %6$d</string>
+    <string name="conf_empty_members">等待局域网内其他成员入会…</string>
+    <string name="conf_panel_brief">会议说明</string>
+    <string name="conf_brief_body">同一 WiFi 内，每台设备广播自己的画面（前置/后置摄像头或屏幕），并同时接收所有成员的视频 —— 无互联网、无中心服务器</string>
+    <string name="conf_brief_video">· 视频: H.264 640×480@15fps UDP 239.1.2.3:10091（组播）</string>
+    <string name="conf_brief_fallback">· 兜底: 每片同时逐成员单播；CSD 每 2s 重播，缺帧自动请求关键帧</string>
+    <string name="conf_brief_voice">· 语音: PTT 半双工 8kHz PCM 单播</string>
+    <string name="conf_brief_discovery">· 发现: UDP 9998 定向广播/组播，6 秒超时</string>
+    <string name="conf_brief_limit_udp">· 限制: UDP 不保证送达，丢包会花屏/黑屏；关键帧重请求只能兜底，不能保证弱网流畅</string>
+    <string name="conf_brief_limit_ap">· 限制: AP 开启客户端隔离时广播/组播/单播都无法穿透，应用层没有绕过方法</string>
+    <string name="conf_brief_limit_screen">· 限制: 屏幕共享每次都需要系统授权；Android 14+ 一个授权会话只能创建一次虚拟显示，停止后需重新授权</string>
+    <string name="conf_stream_front">前置</string>
+    <string name="conf_stream_back">后置</string>
+    <string name="conf_stream_screen">屏幕</string>
+    <string name="conf_stream_none">无画面</string>
+    <string name="conf_rx_connected_no_data">已连接 · 未收到视频数据</string>
+    <string name="conf_rx_wait_surface">等待画面绑定</string>
+    <string name="conf_rx_no_signal">无信号 %1$ds · 已请求关键帧</string>
+    <string name="conf_rx_no_frame">已连接 · 未出图（等待关键帧）</string>
+    <string name="conf_rx_decoder_not_ready">解码器未就绪</string>
+    <string name="conf_tile_self_stream">本机 · %1$s</string>
+    <string name="conf_tile_self_no_stream">本机 · 未开流</string>
+    <string name="conf_tile_peer_no_video">对方未开画面</string>
+    <string name="conf_tile_broadcasting">● 广播中</string>
+    <string name="conf_rx_stats">收%1$d/解%2$d 缺片%3$d</string>
+    <string name="conf_default_operator_name">操作员</string>
+</resources>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RadarManager.kt — 简体中文资源。
+  与 values/strings_mgr_radar.xml 键集完全一致,仅翻译用户可见文案。
+  原文措辞与标点保持逐字不变。
+-->
+<resources>
+
+    <!-- ─── 目标占位名 ─── -->
+    <string name="mgr_radar_placeholder_bt">(BT设备)</string>
+    <string name="mgr_radar_placeholder_ble">(BLE设备)</string>
+    <string name="mgr_radar_hidden_ssid">&lt;隐藏SSID&gt;</string>
+
+    <!-- ─── 配对弹窗失败原因 ─── -->
+    <string name="mgr_radar_err_bt_unavailable">蓝牙不可用</string>
+    <string name="mgr_radar_err_bad_address">目标地址无效: %1$s</string>
+    <string name="mgr_radar_err_empty_message">消息不能为空</string>
+    <string name="mgr_radar_err_rename_failed">修改本机蓝牙名失败(需要 BLUETOOTH_CONNECT 权限)</string>
+    <string name="mgr_radar_err_pair_failed">配对请求发起失败 —— 目标可能不在可配对状态</string>
+
+    <!-- ─── 蓝牙主要设备类 ─── -->
+    <string name="mgr_radar_class_computer">计算机</string>
+    <string name="mgr_radar_class_phone">电话</string>
+    <string name="mgr_radar_class_imaging">影像设备</string>
+    <string name="mgr_radar_class_audio_video">音频/视频</string>
+    <string name="mgr_radar_class_wearable">可穿戴</string>
+    <string name="mgr_radar_class_network">网络设备</string>
+    <string name="mgr_radar_class_health">健康设备</string>
+    <string name="mgr_radar_class_peripheral">外设</string>
+    <string name="mgr_radar_class_toy">玩具</string>
+    <string name="mgr_radar_class_uncategorized">未分类</string>
+
+    <!-- ─── 蓝牙次要设备类 ─── -->
+    <string name="mgr_radar_minor_smartphone">智能手机</string>
+    <string name="mgr_radar_minor_cellular">蜂窝电话</string>
+    <string name="mgr_radar_minor_cordless">无绳电话</string>
+    <string name="mgr_radar_minor_modem_gateway">调制解调器/网关</string>
+    <string name="mgr_radar_minor_desktop">台式机</string>
+    <string name="mgr_radar_minor_laptop">笔记本</string>
+    <string name="mgr_radar_minor_handheld">掌上电脑/PDA</string>
+    <string name="mgr_radar_minor_wearable_computer">可穿戴计算机</string>
+    <string name="mgr_radar_minor_headphones">耳机</string>
+    <string name="mgr_radar_minor_loudspeaker">音箱</string>
+    <string name="mgr_radar_minor_headset">头戴式耳机</string>
+    <string name="mgr_radar_minor_car_audio">车载音响</string>
+    <string name="mgr_radar_minor_wrist_watch">智能手表</string>
+    <string name="mgr_radar_minor_glasses">智能眼镜</string>
+
+    <!-- ─── 绑定状态 ─── -->
+    <string name="mgr_radar_bond_bonded">已绑定</string>
+    <string name="mgr_radar_bond_bonding">绑定中</string>
+    <string name="mgr_radar_bond_none">未绑定</string>
+
+    <!-- ─── 链路类型 ─── -->
+    <string name="mgr_radar_link_classic">BR/EDR 经典</string>
+    <string name="mgr_radar_link_le">BLE 低功耗</string>
+    <string name="mgr_radar_link_dual">双模</string>
+    <string name="mgr_radar_link_unknown">未知</string>
+
+    <!-- ─── 厂商 ─── -->
+    <string name="mgr_radar_vendor_unknown">未知厂商</string>
+
+</resources>

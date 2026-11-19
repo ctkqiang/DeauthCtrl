@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="conf_title">LAN Conference</string>
+    <string name="conf_online_count">%1$d ONLINE</string>
+    <string name="conf_status_in">● IN CONFERENCE</string>
+    <string name="conf_status_out">○ NOT JOINED</string>
+    <string name="conf_btn_join">JOIN CONFERENCE</string>
+    <string name="conf_btn_leave">LEAVE CONFERENCE</string>
+    <string name="conf_panel_local">Local · Source &amp; Voice</string>
+    <string name="conf_ptt_talking">●●● TRANSMITTING ●●●</string>
+    <string name="conf_ptt_idle">HOLD TO TALK · PTT</string>
+    <string name="conf_tx_stats">TX %1$d frames/%2$d frags · fail %3$d · keyframes %4$d · CSD %5$d · re-requests %6$d</string>
+    <string name="conf_empty_members">Waiting for other members on the LAN to join…</string>
+    <string name="conf_panel_brief">Conference Notes</string>
+    <string name="conf_brief_body">On the same WiFi, each device broadcasts its own view (front/back camera or screen) and simultaneously receives every member\'s video — no internet, no central server</string>
+    <string name="conf_brief_video">· Video: H.264 640×480@15fps UDP 239.1.2.3:10091 (multicast)</string>
+    <string name="conf_brief_fallback">· Fallback: each fragment also unicast per member; CSD replay every 2 s, missing frames trigger keyframe requests</string>
+    <string name="conf_brief_voice">· Voice: PTT half-duplex 8kHz PCM unicast</string>
+    <string name="conf_brief_discovery">· Discovery: UDP 9998 directed broadcast/multicast, 6 s timeout</string>
+    <string name="conf_brief_limit_udp">· Limit: UDP does not guarantee delivery; packet loss causes smearing/black screens; keyframe re-requests are only a fallback and cannot keep weak links smooth</string>
+    <string name="conf_brief_limit_ap">· Limit: with AP client isolation enabled, broadcast/multicast/unicast cannot pass — there is no application-layer workaround</string>
+    <string name="conf_brief_limit_screen">· Limit: screen sharing needs system consent every time; on Android 14+ one consent session allows only one virtual display — after stopping, consent is required again</string>
+    <string name="conf_stream_front">FRONT</string>
+    <string name="conf_stream_back">BACK</string>
+    <string name="conf_stream_screen">SCREEN</string>
+    <string name="conf_stream_none">NO VIDEO</string>
+    <string name="conf_rx_connected_no_data">Connected · no video data received</string>
+    <string name="conf_rx_wait_surface">Waiting for surface binding</string>
+    <string name="conf_rx_no_signal">No signal %1$ds · keyframe requested</string>
+    <string name="conf_rx_no_frame">Connected · no picture yet (waiting for keyframe)</string>
+    <string name="conf_rx_decoder_not_ready">Decoder not ready</string>
+    <string name="conf_tile_self_stream">LOCAL · %1$s</string>
+    <string name="conf_tile_self_no_stream">LOCAL · NO STREAM</string>
+    <string name="conf_tile_peer_no_video">PEER VIDEO OFF</string>
+    <string name="conf_tile_broadcasting">● BROADCASTING</string>
+    <string name="conf_rx_stats">RX %1$d / DEC %2$d / MISS %3$d</string>
+    <string name="conf_default_operator_name">operator</string>
+</resources>

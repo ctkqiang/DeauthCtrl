@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Web server ViewModel strings (prefix: vm_web_). -->
+<resources>
+    <string name="vm_web_read_failed_empty">Read failed: file is empty or cannot be opened</string>
+    <string name="vm_web_read_failed">Read failed: %1$s</string>
+    <string name="vm_web_default_file_name">index.html (default)</string>
+</resources>

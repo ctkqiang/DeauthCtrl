@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Packet monitor ViewModel strings (prefix: vm_pkt_). -->
+<resources>
+    <string name="vm_pkt_vpn_query_failed">[!] VPN authorization query failed — %1$s</string>
+    <string name="vm_pkt_service_start_failed">[!] Packet capture service failed to start — %1$s: %2$s</string>
+    <string name="vm_pkt_service_stop_failed">[!] Packet capture service failed to stop — %1$s</string>
+</resources>

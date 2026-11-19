@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mesh_title">网格聊天 · BLE MESH</string>
+    <string name="mesh_stat_peers">在线节点</string>
+    <string name="mesh_stat_received">已收消息</string>
+    <string name="mesh_stat_relayed">中继次数</string>
+    <string name="mesh_my_id">本机 ID</string>
+    <string name="mesh_payload_budget">载荷预算 %1$dB</string>
+    <string name="mesh_panel_peers">在线节点 · PEERS</string>
+    <string name="mesh_peers_empty_running">监听中 —— 附近运行本模块的设备会在 8 秒窗口内出现在这里</string>
+    <string name="mesh_peers_empty_stopped">网格未运行 —— 启动后最近 8 秒听到的节点会显示在这里</string>
+    <string name="mesh_peer_direct">%1$d dBm · %2$ds · 直连</string>
+    <string name="mesh_peer_hops">%1$d dBm · %2$ds · %3$d 跳</string>
+    <string name="mesh_panel_log">消息流 · MESH LOG</string>
+    <string name="mesh_log_empty_running">等待消息 —— 附近运行本模块的设备会互相转发广播；本机发送的消息也会出现在这里</string>
+    <string name="mesh_log_empty_stopped">未运行 —— 启动后收到的消息会按时间倒序显示在这里</string>
+    <string name="mesh_panel_tx">发射 · MESH TX</string>
+    <string name="mesh_input_label">消息内容</string>
+    <string name="mesh_input_placeholder">18 字以内 · 明文广播 · 无回执</string>
+    <string name="mesh_char_count">%1$d/%2$d 字</string>
+    <string name="mesh_send">发送</string>
+    <string name="mesh_over_limit">[!] 超出 %1$d 字上限，发送时将截断</string>
+    <string name="mesh_start">启动网格</string>
+    <string name="mesh_stop">停止网格</string>
+    <string name="mesh_note_packet">广播包共 31B：协议头 MESH|ID|seq|ttl| 占 16-19B，文本实际只剩约 5-8B（ASCII 约 5-8 字，中文 1-3 字）；输入上限 18 字，发送时按字节截断。</string>
+    <string name="mesh_note_distance">典型距离 10-50m（开阔地、无遮挡）；TTL 初始 2，消息最多再经 2 跳，每台设备对同一条消息只中继一次。</string>
+    <string name="mesh_note_plaintext">全程明文广播、无加密、无鉴权、无送达回执：范围内任何 BLE 扫描器都能读到内容。</string>
+    <string name="mesh_note_tx">发送为 3 轮 × 1 秒广播窗口，速率约 3 秒/条；中继消息的 RSSI 是转发节点到本机的信号，不代表原始发送者的距离。</string>
+    <string name="mesh_note_offline">节点 8 秒无广播视为离线；本机 ID 由随机字母数字生成并持久化，不来自硬件标识。</string>
+    <string name="mesh_me">ME</string>
+    <string name="mesh_row_direct">直连</string>
+    <string name="mesh_row_hops">%1$d 跳</string>
+    <string name="mesh_mine_message">[ME] %1$s</string>
+    <string name="mesh_peer_message">[%1$s] %2$s</string>
+</resources>

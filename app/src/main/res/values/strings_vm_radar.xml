@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Device radar ViewModel strings (prefix: vm_radar_). -->
+<resources>
+    <string name="vm_radar_north_magnetic">MAG NORTH</string>
+    <string name="vm_radar_north_true">TRUE NORTH</string>
+</resources>

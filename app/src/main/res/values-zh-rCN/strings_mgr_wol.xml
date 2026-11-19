@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WolManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_wol_invalid_mac">[!] MAC 格式无效 —— 支持 aa:bb:cc:dd:ee:ff、aa-bb-cc-dd-ee-ff 或 12 位十六进制</string>
+    <string name="mgr_wol_packet_failed">[!] 魔术包构建失败 —— MAC 地址无法解析</string>
+    <string name="mgr_wol_send_failed">[!] 发送失败 —— %1$s</string>
+    <string name="mgr_wol_all_unreachable">所有广播地址均不可达</string>
+    <string name="mgr_wol_partial">[!] 部分发送失败 %1$d/%2$d：%3$s；已成功 %4$d 个。端口 %5$s。</string>
+    <string name="mgr_wol_sent">已发送 102 B 魔术包 × %1$d → %2$s（广播地址 %3$d 个，端口 %4$s）。UDP 无回执，无法确认目标是否唤醒。</string>
+    <string name="mgr_wol_failure_separator">；</string>
+</resources>

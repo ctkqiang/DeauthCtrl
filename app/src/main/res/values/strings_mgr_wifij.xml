@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WiFi 压制引擎 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_wifij_busy">Hotspot rotation is already running</string>
+    <string name="mgr_wifij_location_off">System location is off: Android requires location to scan Wi-Fi</string>
+    <string name="mgr_wifij_location_off_detail">System location is off: turn on system location and retry (even with location permission granted, the master location switch blocks scanning)</string>
+    <string name="mgr_wifij_location_off_retry">System location is off; turn on system location and retry</string>
+    <string name="mgr_wifij_scan_rejected_prefix">Wi-Fi scan rejected by the system: %1$s</string>
+    <string name="mgr_wifij_scan_throttled">System throttled the scan (startScan returned false); retry later</string>
+    <string name="mgr_wifij_no_ssid">No SSID available for rotation</string>
+    <string name="mgr_wifij_log_random_ssid">started with a system random SSID (public API below API 30 cannot specify one)</string>
+    <string name="mgr_wifij_softap_fallback">SoftApConfiguration unavailable — falling back to a system random SSID (target \'%1$s\' was not applied)</string>
+    <string name="mgr_wifij_start_timeout">Local hotspot start timed out (%1$dms without a system callback)</string>
+    <string name="mgr_wifij_action_wifi_scan">Wi-Fi scan</string>
+    <string name="mgr_wifij_action_hotspot_start">Hotspot start</string>
+    <string name="mgr_wifij_rejected_unknown">%1$s was rejected by the system: no missing permission identified (possibly a vendor ROM policy restriction)</string>
+    <string name="mgr_wifij_rejected_missing">%1$s rejected: missing %2$s</string>
+</resources>

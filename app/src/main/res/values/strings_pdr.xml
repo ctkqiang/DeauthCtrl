@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PdrHomingScreen — English default strings. -->
+<resources>
+    <string name="pdr_title">PDR HOMING</string>
+
+    <!-- ─── 航迹图 ─── -->
+    <string name="pdr_map_panel">DEAD RECKONING</string>
+    <string name="pdr_trail_info">Trail %1$d / 2000 pts · white line = dead-reckoning path · gold cross = start · triangle = current position</string>
+    <string name="pdr_grid_label">GRID %1$dm</string>
+    <string name="pdr_heading_up">NOSE UP</string>
+    <string name="pdr_north_up">HEADING -- · NORTH UP</string>
+
+    <!-- ─── 步测控制 ─── -->
+    <string name="pdr_start_steps">START STEPS</string>
+    <string name="pdr_resume_steps">RESUME STEPS</string>
+    <string name="pdr_pause_steps">PAUSE STEPS</string>
+    <string name="pdr_reset">RESET</string>
+
+    <!-- ─── 归航指示 ─── -->
+    <string name="pdr_homing_panel">HOMING</string>
+    <string name="pdr_home_distance_none">To start --</string>
+    <string name="pdr_home_arrived">Near the start point</string>
+    <string name="pdr_home_distance">To start %1$s m</string>
+    <string name="pdr_distance_bearing">%1$s · bearing %2$s</string>
+    <string name="pdr_nose_value">Nose %1$s°</string>
+    <string name="pdr_nose_none">Nose --</string>
+    <string name="pdr_rel_none">Relative --</string>
+    <string name="pdr_rel_ahead">Relative ahead</string>
+    <string name="pdr_rel_right">Relative right %1$s°</string>
+    <string name="pdr_rel_left">Relative left %1$s°</string>
+    <string name="pdr_heading_rel">%1$s · %2$s</string>
+    <string name="pdr_arrow_note">The arrow points toward the start; bearing is referenced to magnetic north, and the nose direction is referenced to the top of the phone</string>
+    <string name="pdr_waiting_first_step">Waiting for the first step — the step sensor only reports during real walking</string>
+
+    <!-- ─── 步长标定 ─── -->
+    <string name="pdr_step_panel">STEP LENGTH</string>
+    <string name="pdr_step_length_label">Step length (distance estimate)</string>
+    <string name="pdr_step_increment">0.05 m step</string>
+    <string name="pdr_step_hint">The 0.75m default is only an adult average. Walk 10 natural steps on a known 10m line, divide 10 by the step count, then calibrate; changes only affect future steps and never rewrite the existing trail.</string>
+
+    <!-- ─── 本程读数 ─── -->
+    <string name="pdr_telemetry_panel">TELEMETRY</string>
+    <string name="pdr_stat_steps">STEPS</string>
+    <string name="pdr_stat_distance">DISTANCE</string>
+    <string name="pdr_stat_heading">HEADING</string>
+    <string name="pdr_stat_home">TO START</string>
+    <string name="pdr_sensor_line">Sensors: %1$s · %2$s</string>
+    <string name="pdr_sensor_step_default">step counter</string>
+    <string name="pdr_sensor_step_unavailable">step counting unavailable</string>
+    <string name="pdr_sensor_rotation">rotation vector (heading)</string>
+    <string name="pdr_sensor_heading_unavailable">heading unavailable</string>
+    <string name="pdr_distance_note">Distance = sum of step count × step length at the time (estimated); distance to start = straight-line distance from the dead-reckoned position to (0,0), not a GPS measurement</string>
+
+    <!-- ─── 告警条 ─── -->
+    <string name="pdr_warn_no_step_sensor">No step sensor on this device (TYPE_STEP_COUNTER / TYPE_STEP_DETECTOR) — step reckoning unavailable</string>
+    <string name="pdr_warn_activity_permission">Android 10+ requires the \"Physical activity\" permission to read the step counter; it is not granted — grant it and re-enter this page</string>
+    <string name="pdr_warn_no_heading_sensor">No rotation-vector sensor on this device — heading unavailable, the trail cannot be computed</string>
+    <string name="pdr_warning_prefix">[!] %1$s</string>
+
+    <!-- ─── 精度声明 ─── -->
+    <string name="pdr_honesty_panel">ACCURACY</string>
+    <string name="pdr_honesty_p1" formatted="false">Dead reckoning (PDR) depends only on step count and heading, so error accumulates with distance: a hundred-metre route typically drifts 5-10%; turns, hand sway and pocket swing amplify it significantly.</string>
+    <string name="pdr_honesty_p2">It is only valuable indoors or underground where GPS / stable cell positioning is unavailable; in open terrain, trust satellite positioning.</string>
+    <string name="pdr_honesty_p3">The 0.75m default is only an adult average; height and gait vary widely — self-calibrate over a known distance. All readouts on this page come from the hardware step counter and rotation-vector sensor; when a sensor is missing or permission is denied, the UI shows \"unavailable\" and never fabricates data.</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GsmTowerManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_gsm_permission_missing">缺少权限:需要「位置信息」与「电话状态」授权</string>
+    <string name="mgr_gsm_no_cells">系统未返回小区信息 —— 飞行模式下无蜂窝信号</string>
+    <string name="mgr_gsm_read_failed">读取小区信息失败: %1$s</string>
+    <string name="mgr_gsm_unknown_operator">未知运营商</string>
+    <string name="mgr_gsm_unknown_network">未知制式</string>
+</resources>

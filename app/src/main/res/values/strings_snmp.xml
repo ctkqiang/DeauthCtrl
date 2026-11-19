@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="snmp_title">SNMP Scan · SNMPWALK</string>
+    <string name="snmp_panel_target">Target &amp; Communities · TARGET</string>
+    <string name="snmp_target_label">Target IP or subnet</string>
+    <string name="snmp_target_placeholder">192.168.1.1 or 192.168.1.0/24</string>
+    <string name="snmp_communities_label">Community strings (comma-separated, editable)</string>
+    <string name="snmp_net_params">UDP %1$d · %2$ds timeout per probe · concurrency %3$d</string>
+    <string name="snmp_btn_default_dict">DEFAULT DICT</string>
+    <string name="snmp_btn_start">START SCAN</string>
+    <string name="snmp_btn_stop">STOP SCAN</string>
+    <string name="snmp_panel_progress">Progress · PROGRESS</string>
+    <string name="snmp_probed">PROBED %1$d/%2$d</string>
+    <string name="snmp_hits">HITS %1$d</string>
+    <string name="snmp_panel_results">Results · RESPONSES (%1$d)</string>
+    <string name="snmp_results_hint">sysDescr is the device-reported vendor / model / firmware text; tap a card to expand the full text and raw packet</string>
+    <string name="snmp_scanning">Scanning — hits appear in real time</string>
+    <string name="snmp_empty_no_response">All %1$d probes this round got no valid response — a wrong community string, SNMP disabled, ACL blocking or v3-only all look identical</string>
+    <string name="snmp_empty_idle">Enter a target and community strings, then start the scan; results come only from real SNMP replies</string>
+    <string name="snmp_panel_scope">Honest Scope · SCOPE</string>
+    <string name="snmp_scope_protocol">SNMP v1/v2c only; this page sends v2c GetRequest and does no v3 authentication or encryption negotiation.</string>
+    <string name="snmp_scope_default">Only devices with default community strings (printers / routers / switches / NAS) may respond; a wrong string yields no response, indistinguishable from SNMP off, ACL blocking or v3-only.</string>
+    <string name="snmp_scope_fields">sysDescr / sysName / sysObjectID are real device-reported text; unavailable values show \"--\" with no guessing; scanning is single-packet probing with no retries.</string>
+    <string name="snmp_scope_authorized">[!] Only scan networks you are authorized to test.</string>
+    <string name="snmp_raw_response">RAW RESPONSE (hex)  %1$s</string>
+    <string name="snmp_expand_hint">▸ Tap to expand full sysDescr / sysObjectID / raw packet</string>
+</resources>

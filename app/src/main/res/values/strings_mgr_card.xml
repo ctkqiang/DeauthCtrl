@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CardWalletManager — English default strings. -->
+<resources>
+    <string name="mgr_card_default_name">Virtual card %1$d</string>
+</resources>

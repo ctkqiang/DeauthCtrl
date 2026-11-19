@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File transfer ViewModel strings (prefix: vm_ft_). -->
+<resources>
+    <string name="vm_ft_unknown_ip">UNKNOWN</string>
+    <string name="vm_ft_start_failed">Start failed — the port may be in use</string>
+    <string name="vm_ft_no_device">No devices found — enter the peer IP</string>
+    <string name="vm_ft_send_failed">Send failed — check the peer IP and network</string>
+</resources>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_mesh_err_permissions">缺少蓝牙权限：%1$s —— 请先在应用权限网关授予</string>
+    <string name="mgr_mesh_perm_sep">、</string>
+    <string name="mgr_mesh_perm_scan">扫描附近的设备</string>
+    <string name="mgr_mesh_perm_advertise">广播附近的设备</string>
+    <string name="mgr_mesh_perm_connect">连接 / 读取蓝牙状态</string>
+    <string name="mgr_mesh_perm_location">精确位置</string>
+    <string name="mgr_mesh_err_no_adapter">本机没有蓝牙适配器</string>
+    <string name="mgr_mesh_err_bt_off">蓝牙未开启 —— 请先在系统设置中打开蓝牙</string>
+    <string name="mgr_mesh_err_no_advertiser">本机控制器不提供 BLE 广播（BluetoothLeAdvertiser=null）</string>
+    <string name="mgr_mesh_err_no_scanner">系统未提供 BLE 扫描器 —— 请关闭蓝牙后重新打开再试</string>
+    <string name="mgr_mesh_err_not_running">网格未启动 —— 请先启动广播与扫描</string>
+    <string name="mgr_mesh_err_queue_not_ready">广播队列未就绪 —— 请重新启动网格</string>
+    <string name="mgr_mesh_err_empty">没有可发送的内容（控制符与「|」会被过滤）</string>
+    <string name="mgr_mesh_err_header_budget">广播载荷不足：协议头已超出本机载荷预算 %1$dB</string>
+    <string name="mgr_mesh_err_queue_closed">广播队列已关闭 —— 请重新启动网格</string>
+    <string name="mgr_mesh_notice_truncated_chars">输入超过 %1$d 字，已截断</string>
+    <string name="mgr_mesh_notice_truncated_bytes">广播载荷仅容纳 %1$d 字，已按字节截断</string>
+    <string name="mgr_mesh_notice_sep">；</string>
+    <string name="mgr_mesh_err_broadcast_task">广播任务异常：%1$s</string>
+    <string name="mgr_mesh_err_header_fit">广播载荷不足：协议头放不进本机载荷预算 %1$dB</string>
+    <string name="mgr_mesh_err_no_char">广播载荷不足：连 1 个字符都放不下（协议头已占满 %1$dB）</string>
+    <string name="mgr_mesh_notice_budget_tightened">载荷预算收紧至 %1$dB，实际发出 %2$d 字</string>
+    <string name="mgr_mesh_err_data_too_large">广播数据超长（BLE 31B 限制）：协议头已占满载荷，无法再缩短</string>
+    <string name="mgr_mesh_err_no_scanner_generic">系统未提供 BLE 扫描器</string>
+    <string name="mgr_mesh_err_scan_permission">扫描权限被系统拒绝：%1$s</string>
+    <string name="mgr_mesh_err_scan_permission_hint">请授予「附近的设备」权限</string>
+    <string name="mgr_mesh_err_scan_start">启动 BLE 扫描失败：%1$s</string>
+    <string name="mgr_mesh_scan_already_started">扫描已在进行中（请先停止再重试）</string>
+    <string name="mgr_mesh_scan_reg_failed">扫描回调注册失败，请关闭蓝牙再重新打开</string>
+    <string name="mgr_mesh_scan_internal">系统内部错误，请关闭蓝牙再重新打开</string>
+    <string name="mgr_mesh_scan_unsupported">此设备不支持 BLE 扫描</string>
+    <string name="mgr_mesh_scan_no_resources">蓝牙硬件资源不足，请关闭其他扫描类应用</string>
+    <string name="mgr_mesh_scan_too_frequent">扫描过于频繁，约 30 秒后重试</string>
+    <string name="mgr_mesh_scan_failed_code">扫描失败（系统错误码 %1$d）</string>
+    <string name="mgr_mesh_adv_data_too_large">广播数据超长（code=1）</string>
+    <string name="mgr_mesh_adv_too_many">广播槽位被占用（code=2）</string>
+    <string name="mgr_mesh_adv_already_started">广播会话已在运行（code=3）</string>
+    <string name="mgr_mesh_adv_internal">控制器内部错误（code=4）</string>
+    <string name="mgr_mesh_adv_unsupported">控制器不支持 BLE 广播（code=5）</string>
+    <string name="mgr_mesh_adv_timeout">等待广播回调超时（系统无响应）</string>
+    <string name="mgr_mesh_adv_no_permission">缺少 BLUETOOTH_ADVERTISE 权限</string>
+    <string name="mgr_mesh_adv_no_adapter">蓝牙适配器不可用</string>
+    <string name="mgr_mesh_adv_no_advertiser">控制器不提供 BLE 广播</string>
+    <string name="mgr_mesh_adv_exception">startAdvertising 抛出异常</string>
+    <string name="mgr_mesh_adv_failed_code">广播启动失败（code=%1$d）</string>
+</resources>

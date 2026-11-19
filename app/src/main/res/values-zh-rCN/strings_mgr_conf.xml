@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LAN conference manager — 中文资源 -->
+<resources>
+    <!-- 流源 -->
+    <string name="mgr_conf_stream_none">关闭</string>
+    <string name="mgr_conf_stream_front">前置摄</string>
+    <string name="mgr_conf_stream_back">后置摄</string>
+    <string name="mgr_conf_stream_screen">屏幕</string>
+
+    <!-- 编码器标签 -->
+    <string name="mgr_conf_encoder_front_camera">摄像头 前置</string>
+    <string name="mgr_conf_encoder_back_camera">摄像头 后置</string>
+    <string name="mgr_conf_encoder_screen">屏幕</string>
+
+    <!-- 视频状态行 -->
+    <string name="mgr_conf_video_idle">视频: 未开始</string>
+    <string name="mgr_conf_video_preparing">视频: 准备中…</string>
+    <string name="mgr_conf_video_no_source">视频: 未选择流源</string>
+    <string name="mgr_conf_video_off">视频: 已关闭</string>
+    <string name="mgr_conf_video_starting_front">视频: 正在启动前置摄像头…</string>
+    <string name="mgr_conf_video_starting_back">视频: 正在启动后置摄像头…</string>
+    <string name="mgr_conf_video_wait_screen_auth">视频: 等待屏幕授权…（每次共享需系统确认）</string>
+    <string name="mgr_conf_video_creating_screen">视频: 正在创建屏幕采集…</string>
+    <string name="mgr_conf_video_with_message">视频: %1$s</string>
+    <string name="mgr_conf_video_wait_first_frame">视频: %1$s 640×480@15 · 等待首帧</string>
+    <string name="mgr_conf_video_camera_disconnected">视频: 相机已断开</string>
+    <string name="mgr_conf_video_screen_ready_join">视频: 屏幕授权已就绪，入会后选择「屏幕」</string>
+    <string name="mgr_conf_video_screen_ready_select">视频: 屏幕授权已就绪，选择「屏幕」开始（每次共享需系统确认）</string>
+    <string name="mgr_conf_video_screen_size">视频: 屏幕内容 %1$d×%2$d，如需改变采集分辨率请重新授权</string>
+    <string name="mgr_conf_video_reauth_needed">视频: 需重新授权</string>
+    <string name="mgr_conf_video_screen_ended">屏幕共享已结束</string>
+    <string name="mgr_conf_video_first_frame_sent">视频: %1$s 640×480@15 · 已发出首帧</string>
+    <string name="mgr_conf_video_frames_sent">视频: %1$s 640×480@15 · 已发 %2$d 帧</string>
+
+    <!-- 错误 -->
+    <string name="mgr_conf_err_not_running_stream">未进入会议，无法开启视频源</string>
+    <string name="mgr_conf_err_start_failed">会议启动失败: %1$s</string>
+    <string name="mgr_conf_err_camera_unavailable">相机服务不可用</string>
+    <string name="mgr_conf_err_no_camera">未检测到相机</string>
+    <string name="mgr_conf_err_camera_session">相机采集会话启动失败: %1$s</string>
+    <string name="mgr_conf_err_camera_session_generic">相机编码会话失败</string>
+    <string name="mgr_conf_err_camera_session_msg">相机编码会话失败: %1$s</string>
+    <string name="mgr_conf_err_camera_error">相机错误 %1$d</string>
+    <string name="mgr_conf_err_camera_start">相机启动失败: %1$s</string>
+    <string name="mgr_conf_err_encoder_start">编码器启动失败: %1$s</string>
+    <string name="mgr_conf_err_encoder_error">编码器错误: %1$s</string>
+    <string name="mgr_conf_err_screen_create">屏幕采集创建失败</string>
+    <string name="mgr_conf_err_reauth_used">该次屏幕授权已用过,请重新选择「屏幕」触发重新授权</string>
+    <string name="mgr_conf_err_screen_failed">屏幕采集失败: %1$s</string>
+    <string name="mgr_conf_reauth_hint">需重新授权（%1$s）</string>
+    <string name="mgr_conf_err_frame_too_large">帧过大 %1$dB（超过 255 分片），已丢弃</string>
+    <string name="mgr_conf_err_video_send">视频发送失败: %1$s</string>
+    <string name="mgr_conf_err_csd">CSD 提取失败: %1$s</string>
+    <string name="mgr_conf_err_wifi_unresolved">未解析到 Wi-Fi 网络接口（已回退系统默认接口）：组播可能不可用，请确认已连接同一 Wi-Fi</string>
+    <string name="mgr_conf_err_port_bind">局域网端口绑定失败：视频/发现通道不可用（检查端口占用或 Wi-Fi 状态）</string>
+    <string name="mgr_conf_err_input_buffer">取输入缓冲失败: %1$s</string>
+    <string name="mgr_conf_err_decode">解码失败: %1$s</string>
+    <string name="mgr_conf_err_decode_output">解码输出失败: %1$s</string>
+    <string name="mgr_conf_err_decoder_create">解码器创建失败: %1$s</string>
+
+    <!-- 解码器状态展示值（manager 内保留为数据值） -->
+    <string name="mgr_conf_decoder_wait_data">等待视频数据</string>
+    <string name="mgr_conf_decoder_no_data">未收到视频数据</string>
+    <string name="mgr_conf_decoder_surface_failed">画面创建失败</string>
+    <string name="mgr_conf_decoder_surface_bound_wait_csd">画面已绑定，等待参数集</string>
+    <string name="mgr_conf_decoder_surface_detached">画面已解绑</string>
+    <string name="mgr_conf_decoder_connected_no_data">已连接，未收到视频数据</string>
+    <string name="mgr_conf_decoder_csd_changed">参数集变化，重建解码器</string>
+    <string name="mgr_conf_decoder_wait_surface">等待画面绑定</string>
+    <string name="mgr_conf_decoder_wait_csd">等待参数集(SPS/PPS)</string>
+    <string name="mgr_conf_decoder_ready">解码器就绪</string>
+    <string name="mgr_conf_decoder_create_failed">解码器创建失败</string>
+    <string name="mgr_conf_decoder_error">解码错误</string>
+    <string name="mgr_conf_decoder_decoding">解码中</string>
+</resources>

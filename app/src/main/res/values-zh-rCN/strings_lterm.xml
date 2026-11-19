@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TerminalScreen — 简体中文资源。 -->
+<resources>
+    <string name="lterm_title">本地终端</string>
+
+    <!-- ─── Termux bootstrap 状态条 ─── -->
+    <string name="lterm_bootstrap_installing">正在安装 Termux 环境 · %1$s · %2$d%%</string>
+    <string name="lterm_bootstrap_missing">Termux 环境未安装 —— 启动会话时自动解压官方 bootstrap(约 33MB,一次性)</string>
+    <string name="lterm_error_prefix">[!] %1$s</string>
+
+    <!-- ─── 会话状态 ─── -->
+    <string name="lterm_status_idle">未连接</string>
+    <string name="lterm_status_starting">启动中…</string>
+    <string name="lterm_status_online_title">会话在线 · %1$s</string>
+    <string name="lterm_status_online_pid">会话在线 · PID %1$d</string>
+    <string name="lterm_status_finished">已退出 · code %1$d</string>
+    <string name="lterm_status_failed">启动失败</string>
+
+    <!-- ─── 工具条按钮 ─── -->
+    <string name="lterm_paste">粘贴</string>
+    <string name="lterm_clear">清屏</string>
+    <string name="lterm_connect">连接</string>
+    <string name="lterm_disconnect">挂断</string>
+    <string name="lterm_failure_bar">! %1$s</string>
+
+    <!-- ─── 页脚提示 ─── -->
+    <string name="lterm_footer_hint">点击屏幕切换软键盘 · 长按拖动选区复制 · 双指缩放字号 · CTRL/ALT 粘滞（长按锁定） · 长按方向键连发 · 长按 - 输入 |</string>
+    <string name="lterm_footer_copy_mode">已进入选择模式</string>
+</resources>

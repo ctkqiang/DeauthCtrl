@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Flipper 万能遥控 ViewModel 中文资源,与 values/strings_vm_flipper.xml 一一对应。 -->
+<resources>
+    <string name="vm_flipper_no_candidates">[!] 该按钮在 tv.ir 库中无候选码</string>
+    <string name="vm_flipper_attempt">尝试 %1$d/%2$d · %3$s %4$s</string>
+    <string name="vm_flipper_flood_done">已轮发完毕 · 若电视未响应可再次点击重试</string>
+</resources>

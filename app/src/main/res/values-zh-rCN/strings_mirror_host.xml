@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 镜像前台服务中文资源,与 values/strings_mirror_host.xml 一一对应。 -->
+<resources>
+    <string name="mirror_host_notif_title">屏幕镜像运行中</string>
+    <string name="mirror_host_notif_text">正在共享屏幕</string>
+    <string name="mirror_host_channel_name">屏幕镜像</string>
+</resources>

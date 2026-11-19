@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ArpScanManager — English default strings. -->
+<resources>
+    <string name="mgr_arp_no_local_ip">No LAN IPv4 address — connect to WiFi or start a hotspot first</string>
+    <string name="mgr_arp_prefix_failed">Cannot derive the subnet prefix from %1$s</string>
+    <string name="mgr_arp_scan_failed">Scan failed: %1$s</string>
+    <string name="mgr_arp_no_devices">No online devices found — confirm WiFi is connected and the target is on the same subnet</string>
+</resources>

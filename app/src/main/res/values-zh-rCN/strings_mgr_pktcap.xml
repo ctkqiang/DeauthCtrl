@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 流量抓包服务 —— 中文资源 -->
+<resources>
+    <string name="mgr_pktcap_stop_pipe_create_failed">[!] 停机管道创建失败 —— %1$s</string>
+    <string name="mgr_pktcap_vpn_establish_exception">[!] VPN 建立异常 —— %1$s: %2$s</string>
+    <string name="mgr_pktcap_vpn_establish_failed">[!] VPN 建立失败 —— 未授权或已有其他 VPN 在运行</string>
+    <string name="mgr_pktcap_stop_pipe_missing">[!] 停机管道缺失 —— 抓包已停止</string>
+    <string name="mgr_pktcap_tun_poll_failed">TUN 轮询失败 —— %1$s</string>
+    <string name="mgr_pktcap_tun_closed">TUN 设备已关闭</string>
+    <string name="mgr_pktcap_tun_read_failed">TUN 读取失败 —— %1$s</string>
+    <string name="mgr_pktcap_capture_stopped">[!] %1$s —— 抓包已停止</string>
+    <string name="mgr_pktcap_channel_name">流量监视</string>
+    <string name="mgr_pktcap_channel_desc">VpnService 本机流量抓包与统计</string>
+    <string name="mgr_pktcap_foreground_failed">[!] 前台通知启动失败(检查 Manifest 前台服务类型/权限)—— %1$s</string>
+    <string name="mgr_pktcap_notification_title">流量监视运行中</string>
+    <string name="mgr_pktcap_notification_text">VpnService 本机抓包 · 点按查看</string>
+    <string name="mgr_pktcap_notification_stop">停止</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TermuxBootstrap — English default strings. -->
+<resources>
+    <string name="mgr_termux_asset_missing">Built-in bootstrap missing (%1$s) — trigger online installation from the terminal page while online</string>
+    <string name="mgr_termux_reading_asset">Reading built-in bootstrap package</string>
+    <string name="mgr_termux_extract_incomplete">Extraction finished but bin/sh or bin/bash is missing — bootstrap package corrupt; clear app data and retry</string>
+    <string name="mgr_termux_ready">Environment ready</string>
+    <string name="mgr_termux_ready_no_proot">Environment ready (proot/loader missing; basic commands work, apt needs proot)</string>
+    <string name="mgr_termux_install_failed">Bootstrap installation failed: %1$s</string>
+</resources>

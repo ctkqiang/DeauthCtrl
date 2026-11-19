@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_bond_state_none">Not bonded</string>
+    <string name="mgr_bond_state_bonding">Bonding</string>
+    <string name="mgr_bond_state_bonded">Bonded</string>
+    <string name="mgr_bond_state_unknown">Unknown(%1$d)</string>
+    <string name="mgr_bond_type_classic">Classic</string>
+    <string name="mgr_bond_type_le">BLE</string>
+    <string name="mgr_bond_type_dual">Dual</string>
+    <string name="mgr_bond_type_unknown">Unknown</string>
+    <string name="mgr_bond_perm_connect">connect device / read Bluetooth state</string>
+    <string name="mgr_bond_perm_bluetooth">Bluetooth (legacy permission)</string>
+    <string name="mgr_bond_perm_admin">Bluetooth admin (legacy permission)</string>
+    <string name="mgr_bond_perm_sep">", "</string>
+    <string name="mgr_bond_err_no_adapter">No Bluetooth adapter on this device</string>
+    <string name="mgr_bond_err_bt_off">Bluetooth is off — turn it on in system settings first</string>
+    <string name="mgr_bond_err_permissions">Missing Bluetooth permissions: %1$s — grant them in the app permission gateway first</string>
+    <string name="mgr_bond_err_read">Failed to read bonded devices: %1$s</string>
+    <string name="mgr_bond_err_mac_invalid">Invalid MAC format — expected AA:BB:CC:DD:EE:FF (12 hex digits)</string>
+    <string name="mgr_bond_err_unresolvable">System cannot resolve this MAC address</string>
+    <string name="mgr_bond_err_not_bonded">This device is not currently bonded — refresh the list and retry</string>
+    <string name="mgr_bond_msg_no_api">[!] This system does not expose programmatic unbonding (BluetoothDevice.removeBond unavailable) — ignore the device in system Bluetooth settings</string>
+    <string name="mgr_bond_msg_request_sent">Unbond request sent — waiting for the system to refresh the paired list</string>
+    <string name="mgr_bond_msg_refused">[!] System refused the unbond request — ignore the device in system Bluetooth settings</string>
+    <string name="mgr_bond_msg_call_failed">[!] Unbond call failed (%1$s) — some systems restrict hidden APIs; ignore the device in system Bluetooth settings</string>
+    <string name="mgr_bond_msg_still_bonded">[!] Device still appears in the paired list — the system may refuse programmatic unbonding; ignore it in system Bluetooth settings</string>
+    <string name="mgr_bond_msg_unbonded">Unbonded</string>
+</resources>

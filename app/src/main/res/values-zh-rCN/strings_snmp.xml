@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="snmp_title">SNMP 扫描 · SNMPWALK</string>
+    <string name="snmp_panel_target">目标与社区串 · TARGET</string>
+    <string name="snmp_target_label">目标 IP 或网段</string>
+    <string name="snmp_target_placeholder">192.168.1.1 或 192.168.1.0/24</string>
+    <string name="snmp_communities_label">社区串（逗号分隔，可编辑）</string>
+    <string name="snmp_net_params">UDP %1$d · 单包 %2$ds 超时 · 并发 %3$d</string>
+    <string name="snmp_btn_default_dict">默认字典</string>
+    <string name="snmp_btn_start">启动扫描</string>
+    <string name="snmp_btn_stop">停止扫描</string>
+    <string name="snmp_panel_progress">进度 · PROGRESS</string>
+    <string name="snmp_probed">已探测 %1$d/%2$d</string>
+    <string name="snmp_hits">命中 %1$d 台</string>
+    <string name="snmp_panel_results">结果 · RESPONSES (%1$d)</string>
+    <string name="snmp_results_hint">sysDescr 为设备自述的厂商 / 型号 / 固件文本，点击卡片可展开全文与原始报文</string>
+    <string name="snmp_scanning">扫描中 —— 命中结果会实时列出</string>
+    <string name="snmp_empty_no_response">本轮 %1$d 次探测均无有效响应 —— 社区串不匹配、设备未开 SNMP、ACL 拦截或仅支持 v3 都会表现为无响应</string>
+    <string name="snmp_empty_idle">输入目标与社区串后启动扫描；结果只来自设备的真实 SNMP 应答</string>
+    <string name="snmp_panel_scope">诚实说明 · SCOPE</string>
+    <string name="snmp_scope_protocol">仅支持 SNMP v1/v2c；本页发送 v2c GetRequest，不做 v3 认证与加密协商。</string>
+    <string name="snmp_scope_default">默认社区串的设备（打印机 / 路由器 / 交换机 / NAS）才可能响应；社区串不对即无响应，且与 SNMP 关闭、ACL 拦截、仅开 v3 的表现相同，无法区分原因。</string>
+    <string name="snmp_scope_fields">sysDescr / sysName / sysObjectID 均为设备真实返回的文本，读不到显示 \"--\"，不做推测；扫描为单包探测，无重试。</string>
+    <string name="snmp_scope_authorized">[!] 请只扫描已获授权的网络。</string>
+    <string name="snmp_raw_response">原始应答（hex）  %1$s</string>
+    <string name="snmp_expand_hint">▸ 点击展开 sysDescr 全文 / sysObjectID / 原始报文</string>
+</resources>

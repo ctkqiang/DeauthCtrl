@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flipper_title">UNIVERSAL REMOTE · FLIPPER TV</string>
+    <string name="flipper_tab_tv">TV UNIVERSAL REMOTE</string>
+    <string name="flipper_tab_clone">KEY CLONE LIBRARY</string>
+    <string name="flipper_panel_candidates">CANDIDATE LIBRARY · tv.ir (Flipper Zero open-source firmware)</string>
+    <string name="flipper_candidate_counts">%1$d button groups · %2$d candidate codes</string>
+    <string name="flipper_supported_protocols">Supported protocols: NEC/NECext/Samsung32/RC5/RC5X/RC6/SIRC/SIRC20; Kaseikyo/Pioneer/RCA/NEC42 candidates are skipped (counted truthfully)</string>
+    <string name="flipper_btn_power">POWER</string>
+    <string name="flipper_btn_vol_up">VOL +</string>
+    <string name="flipper_btn_vol_down">VOL -</string>
+    <string name="flipper_btn_ch_next">CH +</string>
+    <string name="flipper_btn_ch_prev">CH -</string>
+    <string name="flipper_btn_mute">MUTE</string>
+    <string name="flipper_candidate_count">%1$d candidates</string>
+    <string name="flipper_flood_status">Flooding · %1$s %2$d/%3$d · %4$s · skipped %5$d</string>
+    <string name="flipper_stop_flood">■ STOP FLOOD</string>
+    <string name="flipper_usage">Usage: aim at the TV and press POWER; the remote tries power codes for 317 brands one by one like Flipper (250 ms each). Tap again to stop when the TV turns on. The full run takes about 80 seconds.</string>
+    <string name="flipper_clone_warning">[!] The phone has no IR receiver and cannot learn over the air like Flipper — this library stores manually entered key codes: look up candidates in tv.ir, copy them from references, or enter RAW pulses (µs, comma-separated) to save and replay permanently.</string>
+    <string name="flipper_panel_new_key">NEW KEY</string>
+    <string name="flipper_remote_name_label">REMOTE NAME</string>
+    <string name="flipper_remote_name_placeholder">e.g. Living Room TV</string>
+    <string name="flipper_key_name_label">KEY NAME</string>
+    <string name="flipper_key_name_placeholder">e.g. Power</string>
+    <string name="flipper_address_label">ADDRESS (hex)</string>
+    <string name="flipper_command_label">COMMAND (hex)</string>
+    <string name="flipper_raw_label">RAW PULSES (optional, µs)</string>
+    <string name="flipper_raw_placeholder">9000,4500,560,1690,… (leave empty to generate from protocol)</string>
+    <string name="flipper_save_key">SAVE KEY ▸</string>
+    <string name="flipper_panel_my_remotes">MY REMOTES (%1$d)</string>
+    <string name="flipper_empty_remotes">Saved keys appear here, grouped by remote</string>
+    <string name="flipper_default_remote_name">My Remote</string>
+    <string name="flipper_default_key_name">Key %1$d</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 文件快传 ViewModel 中文资源,与 values/strings_vm_ft.xml 一一对应。 -->
+<resources>
+    <string name="vm_ft_unknown_ip">未知</string>
+    <string name="vm_ft_start_failed">启动失败 — 端口可能被占用</string>
+    <string name="vm_ft_no_device">未发现设备，请输入对方IP</string>
+    <string name="vm_ft_send_failed">发送失败 — 检查对方IP和网络</string>
+</resources>

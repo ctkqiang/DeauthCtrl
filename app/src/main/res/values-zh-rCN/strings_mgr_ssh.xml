@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SshClientManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_ssh_missing_fields">请填写主机地址与用户名</string>
+    <string name="mgr_ssh_disconnected">连接已断开</string>
+</resources>

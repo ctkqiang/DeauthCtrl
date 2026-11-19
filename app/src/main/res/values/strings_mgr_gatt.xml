@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BLE GATT manager — English default resources -->
+<resources>
+    <!-- Connection phases -->
+    <string name="mgr_gatt_phase_disconnected">DISCONNECTED</string>
+    <string name="mgr_gatt_phase_connecting">CONNECTING</string>
+    <string name="mgr_gatt_phase_connected">CONNECTED</string>
+    <string name="mgr_gatt_phase_discovering">DISCOVERING</string>
+    <string name="mgr_gatt_phase_ready">READY</string>
+    <string name="mgr_gatt_phase_error">ERROR</string>
+
+    <!-- Permission labels -->
+    <string name="mgr_gatt_perm_separator">, </string>
+    <string name="mgr_gatt_perm_connect">Connect devices / read Bluetooth state</string>
+    <string name="mgr_gatt_perm_bluetooth">Bluetooth (legacy permission)</string>
+    <string name="mgr_gatt_perm_bluetooth_admin">Bluetooth admin (legacy permission)</string>
+
+    <!-- GATT / ATT status hints -->
+    <string name="mgr_gatt_hint_unreachable"> — device unreachable / connected by another host / stale pairing cache; unpair in system Bluetooth and retry</string>
+    <string name="mgr_gatt_hint_timeout"> — connection timeout</string>
+    <string name="mgr_gatt_hint_remote_disconnect"> — remote disconnected</string>
+    <string name="mgr_gatt_hint_local_disconnect"> — local disconnect</string>
+    <string name="mgr_gatt_hint_auth"> — insufficient authentication; pair in system Bluetooth first</string>
+    <string name="mgr_gatt_hint_read_denied"> — read not permitted (encryption or pairing required)</string>
+    <string name="mgr_gatt_hint_write_denied"> — write not permitted</string>
+    <string name="mgr_gatt_hint_not_supported"> — request not supported</string>
+    <string name="mgr_gatt_hint_key_size"> — encryption key size too short</string>
+
+    <!-- connectGatt failure hints -->
+    <string name="mgr_gatt_connect_denied">Connection rejected by system: %1$s</string>
+    <string name="mgr_gatt_connect_denied_no_perm">Missing BLUETOOTH_CONNECT permission</string>
+    <string name="mgr_gatt_mac_invalid_ex">Invalid MAC address: %1$s</string>
+    <string name="mgr_gatt_mac_unresolved">System cannot resolve</string>
+    <string name="mgr_gatt_connect_failed_ex">Connection failed: %1$s</string>
+
+    <!-- connect() validation -->
+    <string name="mgr_gatt_err_mac_invalid">Invalid MAC format — expected AA:BB:CC:DD:EE:FF (12 hex digits)</string>
+    <string name="mgr_gatt_err_missing_perm">Missing Bluetooth permissions: %1$s — grant them in the app permission gateway first</string>
+    <string name="mgr_gatt_err_no_adapter">No Bluetooth adapter on this device</string>
+    <string name="mgr_gatt_err_bt_off">Bluetooth is off — turn it on in system settings first</string>
+    <string name="mgr_gatt_err_mac_resolve">System cannot resolve this MAC address</string>
+    <string name="mgr_gatt_log_connecting">Connecting to %1$s (%2$s), LE transport, 10 s timeout</string>
+    <string name="mgr_gatt_err_connect_timeout">Connection timeout (10 s) — target may be out of range, not connectable, or connected by another host</string>
+    <string name="mgr_gatt_err_connect_null">Connection failed — system returned null; toggle Bluetooth off and on, then retry</string>
+    <string name="mgr_gatt_log_disconnected">Disconnected</string>
+
+    <!-- Read / write / notify validation -->
+    <string name="mgr_gatt_err_not_connected">Not connected — connect to the target device first</string>
+    <string name="mgr_gatt_err_not_ready_read">Services not enumerated yet — wait for READY before reading</string>
+    <string name="mgr_gatt_err_not_ready_write">Services not enumerated yet — wait for READY before writing</string>
+    <string name="mgr_gatt_err_not_ready_notify">Services not enumerated yet — wait for READY before setting notifications</string>
+    <string name="mgr_gatt_err_char_missing">Characteristic not found — service table may be stale; reconnect</string>
+    <string name="mgr_gatt_err_read_unsupported">Characteristic does not support read (properties: %1$s)</string>
+    <string name="mgr_gatt_err_write_unsupported">Characteristic does not support write (properties: %1$s)</string>
+    <string name="mgr_gatt_err_notify_unsupported">Characteristic does not support notify / indicate (properties: %1$s)</string>
+    <string name="mgr_gatt_op_read">Read %1$s</string>
+    <string name="mgr_gatt_op_write">Write %1$s</string>
+    <string name="mgr_gatt_op_notify_on">Enable notifications %1$s</string>
+    <string name="mgr_gatt_op_notify_off">Disable notifications %1$s</string>
+    <string name="mgr_gatt_notify_on_label">Enable notifications</string>
+    <string name="mgr_gatt_notify_off_label">Disable notifications</string>
+    <string name="mgr_gatt_err_read_rejected">Read request rejected by system — retry later</string>
+    <string name="mgr_gatt_log_read_sent">Read request sent: %1$s</string>
+    <string name="mgr_gatt_err_hex_invalid">Write payload is not valid hex — example: 01 A0 FF (even number of characters)</string>
+    <string name="mgr_gatt_err_hex_empty">Write payload is empty — enter hex bytes</string>
+    <string name="mgr_gatt_err_write_too_long">Write length %1$dB exceeds the %2$dB per-write limit</string>
+    <string name="mgr_gatt_err_write_rejected">Write request rejected by system — check properties and payload length, then retry</string>
+    <string name="mgr_gatt_log_write_sent">Write request sent: %1$s ← %2$s</string>
+    <string name="mgr_gatt_log_notify_local_off">Notifications disabled locally (characteristic has no CCCD)</string>
+    <string name="mgr_gatt_err_no_cccd">Characteristic lacks a CCCD descriptor (0x2902) — cannot enable remote notifications</string>
+    <string name="mgr_gatt_err_local_notify">Local notification registration failed — system rejected setCharacteristicNotification</string>
+    <string name="mgr_gatt_err_notify_rejected">Notification subscription rejected by system — retry later</string>
+    <string name="mgr_gatt_log_notify_requested">Notification subscription sent: %1$s (awaiting CCCD write callback)</string>
+    <string name="mgr_gatt_log_unsubscribe_sent">Unsubscribe request sent: %1$s</string>
+
+    <!-- Callback events -->
+    <string name="mgr_gatt_err_connect_status">Connection failed (status=%1$d)%2$s</string>
+    <string name="mgr_gatt_log_connected">Connected to %1$s, discovering GATT services</string>
+    <string name="mgr_gatt_err_discover_start">Service discovery failed to start — discoverServices() returned false</string>
+    <string name="mgr_gatt_log_device_disconnected">Device disconnected</string>
+    <string name="mgr_gatt_err_disconnected_status">Connection lost (status=%1$d)%2$s</string>
+    <string name="mgr_gatt_err_discover_status">Service discovery failed (status=%1$d)%2$s</string>
+    <string name="mgr_gatt_log_services_done">Service enumeration complete: %1$d services / %2$d characteristics</string>
+    <string name="mgr_gatt_log_no_services">[!] Device exposes no GATT services — some devices only expose services after pairing in system Bluetooth</string>
+    <string name="mgr_gatt_err_write_failed">Write failed (status=%1$d)%2$s</string>
+    <string name="mgr_gatt_log_write_done">Write complete: %1$s</string>
+    <string name="mgr_gatt_err_desc_write">Descriptor write failed (status=%1$d)%2$s</string>
+    <string name="mgr_gatt_err_notify_toggle_failed">%1$s failed (status=%2$d)%3$s</string>
+    <string name="mgr_gatt_log_notify_enabled">Notifications enabled: %1$s</string>
+    <string name="mgr_gatt_log_notify_disabled">Notifications disabled: %1$s</string>
+    <string name="mgr_gatt_err_read_failed">Read failed (status=%1$d)%2$s</string>
+    <string name="mgr_gatt_empty_value">(empty)</string>
+    <string name="mgr_gatt_log_read_value">Read %1$s ← %2$s</string>
+    <string name="mgr_gatt_log_read_value_text">Read %1$s ← %2$s (text %3$s)</string>
+    <string name="mgr_gatt_log_notify_value">Notification %1$s ← %2$s</string>
+    <string name="mgr_gatt_log_notify_value_text">Notification %1$s ← %2$s (text %3$s)</string>
+    <string name="mgr_gatt_err_discover_timeout">Service discovery timeout (10 s) — device returned no service table; reconnect or pair in system Bluetooth first</string>
+
+    <!-- Operation watchdog -->
+    <string name="mgr_gatt_err_op_busy">Previous operation still pending (%1$s) — BLE allows only one GATT request at a time</string>
+    <string name="mgr_gatt_err_op_timeout">Operation timeout (10 s): no system callback for %1$s</string>
+</resources>

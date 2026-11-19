@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 战术相机管理器 —— 英文默认资源 -->
+<resources>
+    <string name="mgr_taccam_lens_front">Front lens</string>
+    <string name="mgr_taccam_lens_back">Back lens</string>
+    <string name="mgr_taccam_lens_external">External lens</string>
+    <string name="mgr_taccam_camera_error">Camera error code=%1$d</string>
+    <string name="mgr_taccam_session_config_failed">Preview session configuration failed</string>
+    <string name="mgr_taccam_session_create_failed">Preview session creation failed: %1$s</string>
+    <string name="mgr_taccam_no_pending_photo">No photo pending — take a shot first</string>
+    <string name="mgr_taccam_no_targets">No target to send to — wait for a device on the same subnet to come online</string>
+    <string name="mgr_taccam_send_timeout">Send timed out</string>
+    <string name="mgr_taccam_send_summary">Delivered %1$d/%2$d · %3$dKB JPEG</string>
+    <string name="mgr_taccam_send_summary_failed">Delivered %1$d/%2$d · %3$dKB JPEG · failed: %4$s</string>
+    <string name="mgr_taccam_camera_not_ready">Camera not ready</string>
+    <string name="mgr_taccam_captured">Captured · %1$d×%2$d · %3$dKB — choose a target to send</string>
+    <string name="mgr_taccam_preview_resume_failed">Preview resume failed: %1$s</string>
+</resources>

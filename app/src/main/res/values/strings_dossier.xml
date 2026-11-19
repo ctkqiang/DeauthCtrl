@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Target Dossier screen strings (prefix: dossier_). -->
+<resources>
+    <!-- ─── 头部与空状态 ─── -->
+    <string name="dossier_title">TARGET DOSSIER</string>
+    <string name="dossier_target_lost">Target lost — the device left detection range or the radar stopped</string>
+
+    <!-- ─── 身份块 ─── -->
+    <string name="dossier_vendor_line">Vendor: %1$s · OUI %2$s</string>
+    <string name="dossier_intel_line">Device intel: %1$s · confidence %2$d%%</string>
+    <string name="dossier_intel_basis">Basis: %1$s</string>
+    <string name="dossier_alias">Alias: %1$s</string>
+
+    <!-- ─── 快照横幅 ─── -->
+    <string name="dossier_live_line">● LIVE · last update %1$s</string>
+    <string name="dossier_stopped_line">◌ Radar stopped · snapshot from %1$s; return to the radar page to resume collection</string>
+
+    <!-- ─── 实时遥测 ─── -->
+    <string name="dossier_panel_telemetry">LIVE TELEMETRY</string>
+    <string name="dossier_trend_near">Approaching ↑ %1$+.1f dB/s</string>
+    <string name="dossier_trend_away">Receding ↓ %1$+.1f dB/s</string>
+    <string name="dossier_trend_stable">Stable → ±0.5 dB/s</string>
+    <string name="dossier_cell_distance">DIST (EST)</string>
+    <string name="dossier_cell_bearing">BEARING (EST)</string>
+    <string name="dossier_cell_noise">NOISE (EST)</string>
+    <string name="dossier_cell_hits">HITS</string>
+    <string name="dossier_value_distance">~%1$.1f m</string>
+    <string name="dossier_value_bearing">~%1$03d°</string>
+    <string name="dossier_value_noise">%1$ddBm</string>
+    <string name="dossier_value_hits">%1$d hits</string>
+    <string name="dossier_ptx_broadcast">advertised PTX %1$ddBm</string>
+    <string name="dossier_ptx_assumed">assumed PTX</string>
+    <string name="dossier_telemetry_note">~ = path-loss estimate (%1$s) · bearing is a MAC-hash estimate · noise floor is a constant -92dBm assumption</string>
+
+    <!-- ─── 图表 ─── -->
+    <string name="dossier_chart_rssi_title">Signal history · RSSI TREND (%1$d samples)</string>
+    <string name="dossier_chart_distance_title">DISTANCE TREND</string>
+    <string name="dossier_chart_accumulating_rssi">Accumulating samples — one point is appended per scan cycle</string>
+    <string name="dossier_panel_hits_chart">HITS PER MINUTE (last 10 minutes)</string>
+    <string name="dossier_chart_accumulating_hits">Accumulating samples — each scan hit counts into the current minute bucket</string>
+    <string name="dossier_hits_per_min">%1$d/min</string>
+
+    <!-- ─── 定位推演 ─── -->
+    <string name="dossier_panel_bearing">BEARING INFERENCE</string>
+    <string name="dossier_loc_estimated">ESTIMATED</string>
+    <string name="dossier_loc_collecting">COLLECTING</string>
+    <string name="dossier_loc_ambiguous">MULTIPATH</string>
+    <string name="dossier_loc_stale">STALE</string>
+    <string name="dossier_loc_unavailable">UNAVAILABLE</string>
+    <string name="dossier_compass_offline">Compass offline</string>
+    <string name="dossier_rotational_only">Rotational DF · not AoA</string>
+    <string name="dossier_bearing_empty">No bearing inference yet — focus this target on the radar page and slowly rotate the phone a full turn or more</string>
+    <string name="dossier_wifi_throttle_note">WiFi scans are throttled by the system and sample slowly, so this may stay in COLLECTING for a long time; BLE devices are better suited to inference</string>
+    <string name="dossier_coverage_status">Covered %1$d/36 bearing sectors · rotated %2$.1f turns · at least 0.75 turns and 45%% coverage</string>
+    <string name="dossier_info_samples">Samples</string>
+    <string name="dossier_info_samples_value">%1$d · coverage %2$d/36 · turns %3$.1f</string>
+    <string name="dossier_info_peak_shape">Peak shape</string>
+    <string name="dossier_info_peak_value">contrast %1$.1f dB · FWHM %2$d° · side-lobe ratio %3$.2f · confidence %4$.2f</string>
+    <string name="dossier_info_distance_est">Distance estimate</string>
+    <string name="dossier_info_distance_value">%1$.1f m · 1σ ±%2$.1f m</string>
+    <string name="dossier_info_distance_model">Distance model</string>
+    <string name="dossier_distance_model_assumed">assumed PTX · n=2.5 (not measured)</string>
+    <string name="dossier_distance_model_broadcast">advertised PTX · n=2.5</string>
+    <string name="dossier_info_position_fusion">Position fusion</string>
+    <string name="dossier_info_position_value">East %1$.1f m · North %2$.1f m · %3$d sweep samples</string>
+    <string name="dossier_info_confidence_ellipse">Confidence ellipse</string>
+    <string name="dossier_info_ellipse_value">50%% %1$.1f×%2$.1f m · 90%% %3$.1f×%4$.1f m</string>
+    <string name="dossier_info_last_sample">Last sample</string>
+    <string name="dossier_info_last_sample_value">%1$ds ago</string>
+    <string name="dossier_method_note">Method: rotate the phone, record the heading × RSSI pattern and take the power peak — this is antenna-directivity inference, not AoA/DF. Distance comes from the RSSI path-loss model; multipath reflections cause two-lobe ambiguity. All outputs are estimates, and error converges as samples accumulate.</string>
+
+    <!-- ─── 图表内文字 ─── -->
+    <string name="dossier_dir_north">N</string>
+    <string name="dossier_dir_east">E</string>
+    <string name="dossier_dir_south">S</string>
+    <string name="dossier_dir_west">W</string>
+    <string name="dossier_bearing_tag">θ̂ %1$03d° ± %2$d°</string>
+    <string name="dossier_rose_note">Radial = smoothed RSSI (relative) · world bearing, north up</string>
+    <string name="dossier_heading_profile_note">Heading × RSSI modulation profile · smoothed</string>
+    <string name="dossier_fusion_not_ready">Multi-turn fusion not ready — at least one full rotation required</string>
+    <string name="dossier_position_note">Grid 25m · ellipse is estimation error, not measurement precision</string>
+
+    <!-- ─── BLE 广播详情 ─── -->
+    <string name="dossier_panel_ble_adv">ADVERTISING DATA</string>
+    <string name="dossier_ble_no_adv">No advertising packet captured — the target may have been reported via classic Bluetooth discovery</string>
+    <string name="dossier_info_observed_via">Observed via</string>
+    <string name="dossier_observed_ble_scan">BLE scan</string>
+    <string name="dossier_observed_classic_merged">Classic discovery (merged)</string>
+    <string name="dossier_info_tx_power">TX power</string>
+    <string name="dossier_value_not_broadcast">not advertised</string>
+    <string name="dossier_info_adv_flags">Advertising flags</string>
+    <string name="dossier_info_manufacturer_id">Manufacturer ID</string>
+    <string name="dossier_info_service_uuid">Service UUIDs</string>
+    <string name="dossier_value_uuid_count">%1$d</string>
+    <string name="dossier_uuid_more">… %1$d more</string>
+    <string name="dossier_info_manufacturer_data">Manufacturer data</string>
+    <string name="dossier_info_service_data">Service data</string>
+    <string name="dossier_ble_adv_footnote">Advertising fields are raw captured values; a missing field means this packet did not carry it</string>
+
+    <!-- ─── 射频与安全 ─── -->
+    <string name="dossier_panel_rf">RF PARAMETERS</string>
+    <string name="dossier_info_frequency">Frequency</string>
+    <string name="dossier_info_channel">Channel</string>
+    <string name="dossier_info_bandwidth">Bandwidth</string>
+    <string name="dossier_info_center_freq0">Center freq 0</string>
+    <string name="dossier_info_center_freq1">Center freq 1</string>
+    <string name="dossier_panel_security">SECURITY</string>
+    <string name="dossier_info_encryption">Encryption</string>
+    <string name="dossier_sec_open">Open</string>
+
+    <!-- ─── 蓝牙参数 ─── -->
+    <string name="dossier_panel_bt">BLUETOOTH PARAMETERS</string>
+    <string name="dossier_info_mac_address">MAC address</string>
+    <string name="dossier_info_device_class_major">Device class (major)</string>
+    <string name="dossier_info_device_class_detail">Device class (detail)</string>
+    <string name="dossier_info_link_type">Link type</string>
+    <string name="dossier_info_bond_state">Bond state</string>
+    <string name="dossier_info_band">Band</string>
+
+    <!-- ─── 时间轴 ─── -->
+    <string name="dossier_panel_timeline">TIMELINE</string>
+    <string name="dossier_info_first_seen">First seen</string>
+    <string name="dossier_info_last_seen">Last seen</string>
+    <string name="dossier_info_duration">Duration</string>
+    <string name="dossier_duration_under_sec">under 1 s</string>
+    <string name="dossier_duration_seconds">%1$d s</string>
+    <string name="dossier_duration_minutes">%1$d min %2$d s</string>
+
+    <!-- ─── 战术评估 ─── -->
+    <string name="dossier_panel_threat">THREAT ASSESSMENT</string>
+    <string name="dossier_warn_weak_encryption">[!] This network uses weak encryption (%1$s); traffic can be sniffed in plaintext</string>
+
+    <!-- ─── 数据来源 ─── -->
+    <string name="dossier_panel_provenance">PROVENANCE</string>
+    <string name="dossier_provenance_wifi">SSID/BSSID/frequency/channel/bandwidth/security: raw WifiManager ScanResult values. Distance: RSSI path-loss model estimate (assumed PTX -40dBm, n=2.5), not measured. Bearing: MAC-hash placeholder estimate; phones lack AoA hardware, see the bearing panel for rotational inference. Noise floor: constant -92dBm assumption. Vendor: built-in OUI table, unknown when unmatched.</string>
+    <string name="dossier_provenance_bt">MAC/name/class/bond/link: raw BluetoothDevice values. Advertising data: raw ScanRecord capture (missing fields shown as —). Distance: RSSI path-loss model estimate (advertised PTX or assumed -59dBm, n=2.5), not measured. Bearing: MAC-hash placeholder estimate; see the bearing panel for rotational inference.</string>
+</resources>

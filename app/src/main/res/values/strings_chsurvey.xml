@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信道占用热力图 —— 英文默认资源 -->
+<resources>
+    <string name="chsurvey_title">Channel Occupancy · CHANNEL SURVEY</string>
+    <string name="chsurvey_status_scanning">SCANNING</string>
+    <string name="chsurvey_status_stopped">STOPPED</string>
+    <string name="chsurvey_running">RUNNING</string>
+    <string name="chsurvey_visible_aps">Visible AP %1$d</string>
+    <string name="chsurvey_updated">Updated %1$s</string>
+    <string name="chsurvey_throttled">[!] System rejected this scan round — reading cached snapshot; data may lag a few seconds</string>
+
+    <!-- ─── 扫描控制 ─── -->
+    <string name="chsurvey_panel_control">Scan Control · PASSIVE SURVEY</string>
+    <string name="chsurvey_stat_state">Run state</string>
+    <string name="chsurvey_stat_interval">Scan interval</string>
+    <string name="chsurvey_stat_last_update">Last update</string>
+    <string name="chsurvey_btn_start">START SCAN</string>
+    <string name="chsurvey_btn_stop">STOP SCAN</string>
+    <string name="chsurvey_passive_note">Passively aggregates system scan results (Beacon / Probe Response) and sends no frames; under system throttling a fresh round arrives roughly every 3-5 seconds.</string>
+
+    <!-- ─── 2.4 GHz ─── -->
+    <string name="chsurvey_panel_24">2.4 GHz · Channels 1-14</string>
+    <string name="chsurvey_empty_no_data">No scan data — recovers automatically once the alert above is resolved</string>
+    <string name="chsurvey_empty_stopped">Scan stopped — tap START SCAN above to begin the survey</string>
+    <string name="chsurvey_empty_waiting">Waiting for the first scan round...</string>
+    <string name="chsurvey_legend_idle">IDLE 0-2</string>
+    <string name="chsurvey_legend_crowded">CROWDED 3-5</string>
+    <string name="chsurvey_legend_severe">SEVERE 6+</string>
+    <string name="chsurvey_chart_note">Bar height = visible AP count; numbers above bars are AP counts, below are the strongest RSSI (dBm). Gold channel numbers 1 / 6 / 11 are the non-overlapping 20 MHz channels.</string>
+    <string name="chsurvey_click_hint">Tap a bar to expand AP details for that channel.</string>
+
+    <!-- ─── 5 GHz ─── -->
+    <string name="chsurvey_panel_5">5 GHz · Channels 36-165</string>
+    <string name="chsurvey_5_empty_stopped">Scan stopped — start a scan to show 5 GHz channels</string>
+    <string name="chsurvey_5_empty_none">No 5 GHz AP found in this scan — no nearby 5G network or the device does not support 5 GHz</string>
+    <string name="chsurvey_5_note">Lists only the common 5 GHz channels seen in this scan; channel number = 5000 + 5 × N MHz. Tap a row to view AP details for that channel.</string>
+
+    <!-- ─── 数据说明 ─── -->
+    <string name="chsurvey_panel_data_notes">Data Notes · Honest Boundaries</string>
+    <string name="chsurvey_note1">All values come from real WifiManager.scanResults snapshots — no interpolation, simulation or smoothing; missing data shows \"--\".</string>
+    <string name="chsurvey_note2">Only APs actively broadcasting Beacons are visible: hidden-SSID APs never appear in scanResults and are not counted.</string>
+    <string name="chsurvey_note3">Channel occupancy = visible AP count, not live spectrum or airtime utilization; a channel with few but busy APs can still be congested.</string>
+    <string name="chsurvey_note4">Scans are throttled by the system to roughly one round every 3-5 seconds; table values are the latest snapshot, not live spectrum.</string>
+    <string name="chsurvey_note5">RSSI is the received strength at the phone antenna (dBm); distance, walls and orientation affect it — it does not represent AP transmit power.</string>
+    <string name="chsurvey_note6">Android 9+ requires system location enabled and precise location permission granted, otherwise scan results stay empty.</string>
+    <string name="chsurvey_note7">Security type follows Beacon capabilities: WPA2/WPA3 mixed mode counts as WPA3; 6 GHz and uncommon channels are not counted.</string>
+
+    <!-- ─── 信道明细 ─── -->
+    <string name="chsurvey_channel_title">Channel %1$d · %2$d MHz</string>
+    <string name="chsurvey_stat_visible_aps">Visible APs</string>
+    <string name="chsurvey_stat_strongest_rssi">Strongest RSSI</string>
+    <string name="chsurvey_stat_avg_rssi">Average RSSI</string>
+    <string name="chsurvey_security_dist">Security · Open %1$d / WEP %2$d / WPA2 %3$d / WPA3 %4$d / Other %5$d</string>
+    <string name="chsurvey_ap_details">AP details (%1$d)</string>
+    <string name="chsurvey_no_visible_ap">No visible AP on this channel</string>
+</resources>

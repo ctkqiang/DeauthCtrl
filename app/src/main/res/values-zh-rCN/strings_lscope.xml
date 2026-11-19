@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LogicScopeScreen — 简体中文资源。 -->
+<resources>
+    <string name="lscope_title">逻辑示波 · LOGIC SCOPE</string>
+    <string name="lscope_ir_pattern_segments">IR %1$d 段</string>
+
+    <!-- ─── 通道选择 ─── -->
+    <string name="lscope_channels_panel">通道选择 · CHANNELS</string>
+    <string name="lscope_channels_locked">运行中通道选择已锁定 —— 先「停止采集」再切换</string>
+    <string name="lscope_channels_multi_hint">多选 · 最多同屏 %1$d 个 · 至少保留 1 个 · 默认 BLE 脉冲 + 音频</string>
+    <string name="lscope_start_capture">启动采集</string>
+    <string name="lscope_stop_capture">停止采集</string>
+
+    <!-- ─── 波形 ─── -->
+    <string name="lscope_waveform_panel">波形 · WAVEFORM</string>
+    <string name="lscope_now">现在</string>
+    <string name="lscope_window_info">窗口 %1$ds · 8×6 格</string>
+    <string name="lscope_capacity_points">%1$d 点/通道</string>
+    <string name="lscope_points_cached">%1$d 点在缓存</string>
+    <string name="lscope_waiting_first_sample">等待首个真实采样 —— 扫描事件出现后轨迹开始滚动</string>
+
+    <!-- ─── 通道读数 ─── -->
+    <string name="lscope_readout_panel">通道读数 · READOUT</string>
+    <string name="lscope_active_channels">进行中 %1$d / %2$d 通道</string>
+    <string name="lscope_clear_trace">清空轨迹</string>
+    <string name="lscope_channel_ble">BLE 脉冲</string>
+    <string name="lscope_channel_wifi">WiFi 脉冲</string>
+    <string name="lscope_channel_cell">蜂窝</string>
+    <string name="lscope_channel_audio">音频</string>
+    <string name="lscope_channel_ir">红外</string>
+    <string name="lscope_state_capturing">采集</string>
+    <string name="lscope_state_idle">未启动</string>
+    <string name="lscope_state_stopped">已停止</string>
+    <string name="lscope_event_count">计数 %1$d</string>
+    <string name="lscope_readout_value">工程值 %1$s · %2$s · %3$s</string>
+    <string name="lscope_no_label">无标签</string>
+    <string name="lscope_no_sample_waiting">暂无采样 —— 等待 %1$s 数据</string>
+    <string name="lscope_age_just_now">刚刚</string>
+    <string name="lscope_age_ms_ago">%1$d ms 前</string>
+    <string name="lscope_age_sec_ago">%1$s s 前</string>
+    <string name="lscope_age_min_ago">%1$d min 前</string>
+    <string name="lscope_channel_note">%1$s: %2$s</string>
+    <string name="lscope_warning_prefix">[!] %1$s</string>
+    <string name="lscope_ir_carrier">载波脉冲</string>
+    <string name="lscope_ir_gap">间隔</string>
+
+    <!-- ─── 映射与边界 ─── -->
+    <string name="lscope_honesty_panel">映射与边界 · HONESTY</string>
+    <string name="lscope_honesty_p1">脉冲通道（BLE / WiFi / 蜂窝 / 红外）画的是 Android 系统上报的扫描事件时刻与信号强度，按采样保持绘制成方波；它不是空口射频波形的物理采样，也不代表信号占用带宽。蜂窝通道为 2s 轮询的离散样本，红外通道需调用 submitIrPattern 注入真实发射图案后才有轨迹。</string>
+    <string name="lscope_honesty_p2" formatted="false">幅度映射：BLE / WiFi =（RSSI + 100）/ 80（-100 dBm → 0%，-20 dBm → 100%）；蜂窝 =（RSRP + 140）/ 100（-140 → 0%，-40 → 100%）；音频 =（dBFS + 80）/ 80（-80 dBFS → 0%，0 dBFS → 100%）；红外 载波 = 100%，间隔 = 0%。</string>
+    <string name="lscope_honesty_p3">音频通道 AudioRecord 16kHz / 16bit / 单声道，带宽上限 8kHz；每 100ms 的 1600 个原始采样压缩为一个 RMS 包络点（10Hz），画的是能量包络而不是原始音频波形；16kHz 采样无法还原 8kHz 以上的声音细节。</string>
+    <string name="lscope_honesty_p4" formatted="false">超出通道量程的样本在图中压在 0% / 100% 边界，读数以「≤ / ≥ 量程端点」标注，不把溢出值伪造成一个精确数字；音频标签中的 dBFS 才是该帧的真实测量值。</string>
+    <string name="lscope_honesty_p5">所有读数都来自系统 API 的真实返回值；没有数据时显示「--」，不插值、不编造。颜色只用于区分通道；本页是工程调试可视化，不是频谱分析仪，也没有测向或定位能力。</string>
+    <string name="lscope_honesty_p6">权限：BLE 扫描、Wi-Fi 扫描 / 位置信息、电话状态、录音由应用网关统一申请；任一权限缺失时对应通道会显示明确原因，而不是静默失败。</string>
+</resources>

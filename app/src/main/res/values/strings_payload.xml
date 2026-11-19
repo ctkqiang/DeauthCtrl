@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BLE 广播载荷协议显示名与描述 -->
+    <string name="payload_name_apple_continuity">Apple Continuity</string>
+    <string name="payload_desc_apple_continuity">Spoof AirDrop / Handoff / AirPods proximity advertisements</string>
+    <string name="payload_name_airpods">AirPods Popup</string>
+    <string name="payload_desc_airpods">Spoof AirPods pairing popup advertisement</string>
+    <string name="payload_name_ios_lock_screen">iOS Lock Screen Popup</string>
+    <string name="payload_desc_ios_lock_screen">AppleTV name prefix spoof — nearby iPhones show a device window</string>
+    <string name="payload_name_apple_action">Apple Action Message</string>
+    <string name="payload_desc_apple_action">Spoof Apple shortcuts — nearby iPhones show notification banners</string>
+    <string name="payload_name_crash_safari">Safari Crash Packet</string>
+    <string name="payload_desc_crash_safari">Legacy iOS Safari crash broadcast (fixed on modern iOS — protocol research only)</string>
+    <string name="payload_name_android_device">Android Device Spoof</string>
+    <string name="payload_desc_android_device">Fast Pair variant spoofing an Android device advertisement</string>
+    <string name="payload_name_swift_pair">Microsoft Swift Pair</string>
+    <string name="payload_desc_swift_pair">Spoof Windows peripheral pairing advertisement</string>
+    <string name="payload_name_fast_pair">Google Fast Pair</string>
+    <string name="payload_desc_fast_pair">Spoof Fast Pair device advertisement</string>
+    <string name="payload_name_smartthings">Samsung SmartThings</string>
+    <string name="payload_desc_smartthings">Spoof Samsung accessory advertisement</string>
+    <string name="payload_name_generic_random">Generic Random Stress</string>
+    <string name="payload_desc_generic_random">Fully random payload under test vendor IDs (protocol stress test)</string>
+    <string name="payload_name_flipper_style">Flipper-Style Flood</string>
+    <string name="payload_desc_flipper_style">Rotate several spoofed vendor advertisement modes</string>
+    <string name="payload_name_all_rotate">All Protocols (Rotate)</string>
+    <string name="payload_desc_all_rotate">Rotate through every available protocol in sequence</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 战术相机管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_taccam_lens_front">前置镜头</string>
+    <string name="mgr_taccam_lens_back">后置镜头</string>
+    <string name="mgr_taccam_lens_external">外部镜头</string>
+    <string name="mgr_taccam_camera_error">相机错误 code=%1$d</string>
+    <string name="mgr_taccam_session_config_failed">预览会话配置失败</string>
+    <string name="mgr_taccam_session_create_failed">预览会话创建失败: %1$s</string>
+    <string name="mgr_taccam_no_pending_photo">没有待发送的照片 —— 先拍摄</string>
+    <string name="mgr_taccam_no_targets">没有可发送的目标 —— 等待同网段设备上线</string>
+    <string name="mgr_taccam_send_timeout">发送超时</string>
+    <string name="mgr_taccam_send_summary">送达 %1$d/%2$d · %3$dKB JPEG</string>
+    <string name="mgr_taccam_send_summary_failed">送达 %1$d/%2$d · %3$dKB JPEG · 失败: %4$s</string>
+    <string name="mgr_taccam_camera_not_ready">相机未就绪</string>
+    <string name="mgr_taccam_captured">已捕获 · %1$d×%2$d · %3$dKB —— 选择目标后发送</string>
+    <string name="mgr_taccam_preview_resume_failed">预览恢复失败: %1$s</string>
+</resources>

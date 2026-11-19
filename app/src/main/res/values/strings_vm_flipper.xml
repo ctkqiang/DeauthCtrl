@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Flipper TV ViewModel strings (prefix: vm_flipper_). -->
+<resources>
+    <string name="vm_flipper_no_candidates">[!] No candidate codes for this button in the tv.ir library</string>
+    <string name="vm_flipper_attempt">Try %1$d/%2$d · %3$s %4$s</string>
+    <string name="vm_flipper_flood_done">Flood complete · tap again to retry if the TV does not respond</string>
+</resources>

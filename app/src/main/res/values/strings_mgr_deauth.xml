@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_deauth_probe_root_granted">root granted</string>
+    <string name="mgr_deauth_probe_no_root">no root (su unavailable)</string>
+    <string name="mgr_deauth_probe_iface">Interface %1$s</string>
+    <string name="mgr_deauth_probe_iface_none">no wlan found</string>
+    <string name="mgr_deauth_probe_monitor">Monitor %1$s</string>
+    <string name="mgr_deauth_probe_monitor_supported">supported</string>
+    <string name="mgr_deauth_probe_monitor_unsupported">unsupported</string>
+    <string name="mgr_deauth_probe_injector">Injector %1$s</string>
+    <string name="mgr_deauth_probe_injector_bundled">bundled native</string>
+    <string name="mgr_deauth_probe_injector_missing">not bundled</string>
+    <string name="mgr_deauth_probe_no_root_note">Injection is not possible on stock Android without root (SELinux denies raw socket)</string>
+    <string name="mgr_deauth_log_probing">Probing root and toolchain…</string>
+    <string name="mgr_deauth_log_probe_done">Probe complete: %1$s</string>
+    <string name="mgr_deauth_log_aireplay_missing">Bundled injector missing and aireplay-ng not found — install an Android port of aircrack-ng (e.g. kriswebdev/android_aircrack) on PATH and retry</string>
+    <string name="mgr_deauth_log_inject_started">Injection session started · target %1$s · channel %2$d · %3$s · %4$s</string>
+    <string name="mgr_deauth_client_broadcast">Broadcast (all clients)</string>
+    <string name="mgr_deauth_log_inject_exception">Injection session error: %1$s</string>
+    <string name="mgr_deauth_log_inject_ended">Injection session ended · %1$d frames sent</string>
+    <string name="mgr_deauth_log_sniff_started">Passive sniff started · %1$s · listening for beacon/probe/deauth frames</string>
+    <string name="mgr_deauth_log_sniff_exception">Sniff session error: %1$s</string>
+    <string name="mgr_deauth_log_sniff_ended">Sniff session ended · %1$d frames parsed</string>
+    <string name="mgr_deauth_log_arp_started">ARP kick started · target %1$s · gateway %2$s · %3$s</string>
+    <string name="mgr_deauth_log_arp_ended">ARP session ended · %1$d poisoned frames · target recovers when its cache expires</string>
+    <string name="mgr_deauth_log_arp_exception">ARP session error: %1$s</string>
+    <string name="mgr_deauth_log_extract_failed">Injector extraction failed: %1$s</string>
+    <string name="mgr_deauth_err_session_running">Injection session already running</string>
+    <string name="mgr_deauth_err_bssid_invalid">Invalid BSSID format: %1$s</string>
+    <string name="mgr_deauth_err_client_invalid">Invalid client MAC format: %1$s</string>
+    <string name="mgr_deauth_err_no_root_inject">No root — injection is not possible on stock Android without root</string>
+    <string name="mgr_deauth_err_monitor_required">Chip/firmware does not support monitor mode (patched firmware such as Nexmon/QCACLD required)</string>
+    <string name="mgr_deauth_err_no_iface">No wireless interface found</string>
+    <string name="mgr_deauth_err_no_injector">No usable injector (bundled injector missing and aireplay-ng not installed)</string>
+    <string name="mgr_deauth_err_session_active">Session already running</string>
+    <string name="mgr_deauth_err_no_root_sniff">No root — sniffing is not possible on stock Android without root</string>
+    <string name="mgr_deauth_err_monitor_unsupported">Chip/firmware does not support monitor mode</string>
+    <string name="mgr_deauth_err_sniffer_missing">Bundled sniffer missing</string>
+    <string name="mgr_deauth_err_arp_no_root">No root — ARP poisoning requires root</string>
+    <string name="mgr_deauth_err_target_ip">Invalid target IP format: %1$s</string>
+    <string name="mgr_deauth_err_gateway_ip">Invalid gateway IP format: %1$s</string>
+    <string name="mgr_deauth_err_engine_missing">Bundled engine missing</string>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dbview_title">SIGNAL DATABASE</string>
+    <string name="dbview_last_refresh">Last injection %1$s · +%2$d records</string>
+    <string name="dbview_never_refreshed">Not injected yet · tap refresh on the right</string>
+    <string name="dbview_refresh">⟳ REFRESH INJECT</string>
+    <string name="dbview_insert_note">Only INSERTs the latest snapshot; history is kept forever</string>
+    <string name="dbview_filter_all">ALL</string>
+    <string name="dbview_empty">No data — run a radar/BLE scan, then tap REFRESH INJECT.\nThe latest signal intel will be written to the database</string>
+    <string name="dbview_unnamed">&lt;unnamed&gt;</string>
+</resources>

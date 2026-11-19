@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BLE 扫描管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_blescan_drone_remote_id">无人机 Remote-ID</string>
+    <string name="mgr_blescan_error_no_adapter">此设备没有蓝牙适配器</string>
+    <string name="mgr_blescan_error_bluetooth_off">蓝牙未开启，请先在系统设置中打开蓝牙</string>
+    <string name="mgr_blescan_error_no_scan_permission">缺少蓝牙扫描权限，请在系统设置中授予「附近的设备」权限</string>
+    <string name="mgr_blescan_error_no_scanner">系统未提供 BLE 扫描器，请关闭蓝牙后重新打开再试</string>
+    <string name="mgr_blescan_error_permission_denied">扫描权限被系统拒绝：%1$s</string>
+    <string name="mgr_blescan_permission_hint">请在系统设置中授予「附近的设备」权限</string>
+    <string name="mgr_blescan_scan_already_started">扫描已在进行中，请先停止再重试</string>
+    <string name="mgr_blescan_scan_registration_failed">扫描回调注册失败，请关闭蓝牙再重新打开</string>
+    <string name="mgr_blescan_scan_internal_error">系统内部错误，请关闭蓝牙再重新打开</string>
+    <string name="mgr_blescan_scan_feature_unsupported">此设备不支持 BLE 扫描</string>
+    <string name="mgr_blescan_scan_out_of_resources">蓝牙硬件资源不足，请关闭其他扫描类应用后重试</string>
+    <string name="mgr_blescan_scan_too_frequently">扫描过于频繁，请等待约 30 秒后重试</string>
+    <string name="mgr_blescan_scan_failed">扫描失败（系统错误码 %1$d）</string>
+</resources>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 硬件自检台 —— 英文默认资源 -->
+<resources>
+    <string name="selfchk_title">Hardware Self Check · SELF CHECK</string>
+    <string name="selfchk_verdict_reading">Reading self check...</string>
+    <string name="selfchk_verdict_waiting">Waiting for read</string>
+    <string name="selfchk_verdict_alerts">Alerts · %1$d items</string>
+    <string name="selfchk_verdict_partial">No alerts · some items unavailable</string>
+    <string name="selfchk_verdict_ok">All normal</string>
+    <string name="selfchk_data_note">Data notes · Battery comes from BatteryManager and the ACTION_BATTERY_CHANGED sticky broadcast; temperature/current are system-reported values and vendor sampling may differ. CPU usage is estimated from two /proc/stat samples (window 250 ms); memory comes from ActivityManager.MemoryInfo; storage is StatFs for /data. Thermal zones read /sys/class/thermal — paths and units vary by vendor/kernel, unavailable reads show as unavailable; sensors and Wi-Fi are real system values, missing fields show --.</string>
+
+    <!-- ─── 结论卡片 ─── -->
+    <string name="selfchk_btn_reading">READING</string>
+    <string name="selfchk_btn_refresh">REFRESH</string>
+    <string name="selfchk_updated">Updated %1$s</string>
+    <string name="selfchk_sensor_zone_counts">Sensors %1$d · Thermal zones %2$d</string>
+
+    <!-- ─── 电池 ─── -->
+    <string name="selfchk_panel_battery">Battery</string>
+    <string name="selfchk_label_level">Level</string>
+    <string name="selfchk_stat_current">Current</string>
+    <string name="selfchk_stat_temperature">Temperature</string>
+    <string name="selfchk_stat_health">Health</string>
+    <string name="selfchk_stat_direction">Charge direction</string>
+    <string name="selfchk_stat_battery_status">Battery status</string>
+    <string name="selfchk_stat_power_source">Power source</string>
+    <string name="selfchk_stat_voltage">Voltage</string>
+    <string name="selfchk_stat_charge_counter">Charge counter</string>
+    <string name="selfchk_stat_technology">Battery technology</string>
+    <string name="selfchk_warn_no_battery">[!] System reports no battery on this device (emulator or battery-less hardware)</string>
+
+    <!-- ─── 热区 ─── -->
+    <string name="selfchk_panel_thermal">Thermal Zones</string>
+    <string name="selfchk_thermal_unavailable">Unavailable — this device exposes no thermal_zone readings under /sys/class/thermal</string>
+    <string name="selfchk_thermal_truncated">Read %1$d thermal zones, showing only the top %2$d</string>
+    <string name="selfchk_thermal_threshold">Thresholds: &gt; 45 °C red · &gt; 38 °C gold; temperatures are kernel-reported values</string>
+
+    <!-- ─── 负载 ─── -->
+    <string name="selfchk_panel_load">CPU / Memory / Storage</string>
+    <string name="selfchk_label_cpu_usage">CPU usage</string>
+    <string name="selfchk_cpu_unavailable">Unavailable — /proc/stat read failed</string>
+    <string name="selfchk_cpu_detail">Two /proc/stat samples, window %1$d ms · %2$d cores</string>
+    <string name="selfchk_label_memory">Memory</string>
+    <string name="selfchk_unavailable">Unavailable</string>
+    <string name="selfchk_mem_detail">Available %1$s / Total %2$s</string>
+    <string name="selfchk_warn_low_memory">[!] System reports low memory</string>
+    <string name="selfchk_label_storage">Storage /data</string>
+    <string name="selfchk_storage_detail">Free %1$s / Total %2$s</string>
+
+    <!-- ─── 传感器 ─── -->
+    <string name="selfchk_panel_sensors">Sensor Inventory</string>
+    <string name="selfchk_sensor_counts">Total %1$d · Common %2$d</string>
+    <string name="selfchk_sensor_only_first">showing first %1$d only</string>
+    <string name="selfchk_sensors_empty">System returned no sensors — empty on emulators or without a HAL</string>
+    <string name="selfchk_sensors_common">Common sensors</string>
+    <string name="selfchk_sensors_other">Other sensors</string>
+    <string name="selfchk_tag_common">COMMON</string>
+    <string name="selfchk_tag_other">OTHER</string>
+    <string name="selfchk_sensor_detail">Vendor %1$s · Resolution %2$s · Power %3$s mA</string>
+
+    <!-- ─── 网络 ─── -->
+    <string name="selfchk_panel_wifi">Wi-Fi Link</string>
+    <string name="selfchk_wifi_disabled">[!] Wi-Fi is off — no link readings</string>
+    <string name="selfchk_wifi_state_unavailable">Wi-Fi state unavailable</string>
+    <string name="selfchk_wifi_disconnected">Wi-Fi not connected — link information unavailable</string>
+    <string name="selfchk_stat_signal">Signal</string>
+    <string name="selfchk_stat_link_speed">Link speed</string>
+    <string name="selfchk_stat_tx_rx_speed">TX / RX speed</string>
+    <string name="selfchk_stat_freq_channel">Frequency / Channel</string>
+    <string name="selfchk_channel_suffix">Channel %1$d</string>
+    <string name="selfchk_stat_local_ip">Local IP</string>
+    <string name="selfchk_stat_gateway">Gateway</string>
+    <string name="selfchk_stat_wifi_standard">Wi-Fi standard</string>
+    <string name="selfchk_warn_no_location">[!] Location permission not granted; SSID/BSSID will be hidden by the system</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ssh_title">SSH 客户端</string>
+    <string name="ssh_remote_connection">远程连接</string>
+    <string name="ssh_local_terminal">▸ 本地终端 · LOCALHOST</string>
+    <string name="ssh_local_terminal_desc">本机 pty shell · 无需服务器</string>
+    <string name="ssh_host_label">主机 HOST</string>
+    <string name="ssh_port_label">端口</string>
+    <string name="ssh_username_label">用户名 USER</string>
+    <string name="ssh_password_label">密码 PASS</string>
+    <string name="ssh_fill_host_first">先填主机地址!</string>
+    <string name="ssh_connecting">连接中…</string>
+    <string name="ssh_establish_connection">建 立 连 接</string>
+    <string name="ssh_strict_host_key_warning">首次连接跳过主机指纹校验(StrictHostKeyChecking=no),请仅在授权的目标上使用</string>
+    <string name="ssh_online_status">在线 · %1$s:%2$s</string>
+    <string name="ssh_paste">粘贴</string>
+    <string name="ssh_clear">清屏</string>
+    <string name="ssh_disconnect">断开</string>
+    <string name="ssh_input_hint">键入命令 · 点击上方终端唤起键盘</string>
+</resources>

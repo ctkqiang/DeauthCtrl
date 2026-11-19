@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TacticalModules.kt — 中文资源(tact_*)，与 values/strings_tact.xml 一一对应。 -->
+<resources>
+    <!-- ─── 战术相机 ─── -->
+    <string name="tact_camera_title">战术相机</string>
+    <string name="tact_lens_select">镜头选择 · 最大分辨率直出</string>
+    <string name="tact_no_camera">未检测到相机</string>
+    <string name="tact_capture_photo">拍摄照片</string>
+    <string name="tact_manual_prefix">手动 %1$s</string>
+    <string name="tact_target_offline">目标已离线</string>
+    <string name="tact_waiting_receiver">等待发现接收台…</string>
+    <string name="tact_all_online">全部在线 (%1$d)</string>
+    <string name="tact_captured_pending">已捕获 · 待发送</string>
+    <string name="tact_cd_captured_photo">已捕获照片</string>
+    <string name="tact_send_target_auto">发送目标 · 自动发现</string>
+    <string name="tact_all_count">全部 (%1$d)</string>
+    <string name="tact_manual_dot">手动 · %1$s</string>
+    <string name="tact_temp_target_cancel">临时目标 · 点击取消</string>
+    <string name="tact_no_auto_targets">尚无自动发现目标</string>
+    <string name="tact_peer_hint">对方需保持应用进程存活,并与本机处于同一 Wi-Fi。</string>
+    <string name="tact_send_photo_to">发送照片 → %1$s</string>
+    <string name="tact_delivery_ack_hint">按目标回执统计送达;没有 OK 回执不会显示成功。</string>
+    <string name="tact_discard_photo">丢弃照片</string>
+    <string name="tact_receiver_panel">在线接收台 · 自动发现 · mDNS + 广播 + 端口探测</string>
+    <string name="tact_port_listening">● 接收端口 %1$d 已监听</string>
+    <string name="tact_receiver_not_ready">接收台未就绪(端口监听失败,自动重试中)</string>
+    <string name="tact_online_count">在线 %1$d 台</string>
+    <string name="tact_process_alive_hint">应用进程存活期间可用(进程被杀后停止,未启动前台服务)</string>
+    <string name="tact_layers_line">mDNS %1$s · UDP %2$s · 缓存 %3$s · 扫描 %4$d/%5$d</string>
+    <string name="tact_troubleshoot">排查: ① 两台设备同一 Wi-Fi  ② 对方应用进程存活  ③ 关闭 AP 隔离 / VPN  ④ 公共 Wi-Fi 常禁止客户端互访</string>
+    <string name="tact_rescan">重新搜索</string>
+    <string name="tact_manual_ip">手动 IP</string>
+    <string name="tact_received_photos_panel">接收照片 · 常开中继 (%1$d)</string>
+    <string name="tact_received_empty">对方拍摄发送后,照片自动到达并推送系统通知</string>
+    <string name="tact_cd_received_photo">收到的照片</string>
+    <string name="tact_saved_to_gallery">已保存到相册 ✓</string>
+    <string name="tact_save_failed">保存失败,请重试</string>
+    <string name="tact_download_save">下载保存 ▾</string>
+    <string name="tact_downloaded_kept">已下载 · 永久保留</string>
+    <string name="tact_memory_ttl">内存暂存 · %1$d 分钟后自动删除</string>
+    <string name="tact_cd_fullscreen_photo">全屏照片</string>
+    <string name="tact_from_sender">来自 %1$s</string>
+    <string name="tact_viewer_meta">%1$d×%2$d · %3$dKB · 点击任意处关闭</string>
+    <string name="tact_manual_ip_advanced">手动目标 IP · 高级</string>
+    <string name="tact_manual_ip_desc">自动发现被 AP 隔离 / VPN 阻断时使用。IP 必须是接收台当前的局域网地址;此目标只在本次页面有效。</string>
+    <string name="tact_ipv4_address">IPv4 地址</string>
+    <string name="tact_cancel">取消</string>
+    <string name="tact_use_ip">使用该 IP</string>
+    <string name="tact_invalid_ipv4">IPv4 无效:需 4 段 0-255,例如 192.168.1.23</string>
+    <string name="tact_manual_name">手动 %1$s</string>
+    <string name="tact_discovery_idle">发现未启动</string>
+    <string name="tact_discovery_searching">%1$s · %2$ds · 已发现 %3$d</string>
+    <string name="tact_discovery_found">已发现 %1$d 台接收台</string>
+    <string name="tact_discovery_exhausted">未发现接收台 · %1$s</string>
+
+    <!-- ─── 语音频谱 · SDR ─── -->
+    <string name="tact_voice_sdr_title">语音频谱 · SDR</string>
+    <string name="tact_band_full">全频段 0-22k</string>
+    <string name="tact_band_ultrasonic">超声聚焦 15-22k</string>
+    <string name="tact_ultrasonic_alarm">[!] 超声告警:18-22kHz 频段能量显著 —— 附近可能有电子设备线圈啸叫/超声源(启发式,消费级麦克风 20kHz+ 衰减严重,不代表鉴定结论)</string>
+    <string name="tact_start_spectrum">开启频谱侦测</string>
+    <string name="tact_stop_detection">停止侦测</string>
+    <string name="tact_noise_floor">噪声底</string>
+    <string name="tact_peak">峰值</string>
+    <string name="tact_frames_history">%1$d 帧历史</string>
+    <string name="tact_sdr_spectrum_header">SPECTRUM · dBFS</string>
+    <string name="tact_sdr_rec">● REC</string>
+    <string name="tact_sdr_stby">○ STBY</string>
+    <string name="tact_sdr_waterfall_header">WATERFALL · HEAT</string>
+    <string name="tact_sdr_center">CENTER</string>
+    <string name="tact_sdr_span">SPAN</string>
+    <string name="tact_sdr_rbw">RBW</string>
+    <string name="tact_sdr_pwr">PWR</string>
+
+    <!-- ─── 基站监视 ─── -->
+    <string name="tact_cell_tower_title">基站监视 · CELL TOWER</string>
+    <string name="tact_reading_operator">读取运营商…</string>
+    <string name="tact_cell_count">%1$s · 小区 %2$d 座</string>
+    <string name="tact_refresh">刷新 ▸</string>
+    <string name="tact_cell_waiting">等待小区数据 —— 点击刷新读取真实基站信息</string>
+    <string name="tact_registered_cell">● 注册小区</string>
+    <string name="tact_neighbor_cell">○ 邻区</string>
+    <string name="tact_cell_id">小区 ID</string>
+    <string name="tact_operator">运营商</string>
+    <string name="tact_gsm_band">频段: Band %1$s</string>
+    <string name="tact_distance_est">" · 距离粗估 %1$.0fm"</string>
+    <string name="tact_gsm_source">数据来源: 系统 CellInfo 真实返回值。距离为 RSRP 路径损耗粗估(±数百米),非测量;基站方位角手机无硬件可测,不提供。飞行模式/无信号时为空。</string>
+
+    <!-- ─── 摩尔斯码 ─── -->
+    <string name="tact_morse_title">摩尔斯码 · MORSE</string>
+    <string name="tact_morse_transmit">发送 · TRANSMIT</string>
+    <string name="tact_message_content">报文内容</string>
+    <string name="tact_message_placeholder">SOS / 任意文本</string>
+    <string name="tact_speed">速度</string>
+    <string name="tact_mode_sound">声音</string>
+    <string name="tact_mode_silent">静默闪光</string>
+    <string name="tact_mode_both">双模式</string>
+    <string name="tact_no_torch">[!] 此设备无闪光灯或相机不可用 —— 静默模式不可用</string>
+    <string name="tact_sending_progress">发送中 · 当前字符 %1$s · %2$d%%</string>
+    <string name="tact_start_send">开始发送</string>
+    <string name="tact_stop_send">停止发送</string>
+    <string name="tact_morse_keying">手动打键 · KEYING</string>
+    <string name="tact_keying_hint">按「·」「—」输入摩尔斯码,实时解码</string>
+    <string name="tact_key_dot">· DOT</string>
+    <string name="tact_key_dash">— DASH</string>
+    <string name="tact_char_end">字符结束 ▸</string>
+    <string name="tact_word_space">词空格</string>
+    <string name="tact_clear">清除</string>
+    <string name="tact_current_keying">当前打键: %1$s</string>
+    <string name="tact_decoded_placeholder">解码结果将显示在这里</string>
+    <string name="tact_morse_reference">对照表 · REFERENCE</string>
+    <string name="tact_morse_standard">国际摩尔斯标准:点=1 单位 · 划=3 单位 · 字符间 3 · 词间 7(Paris WPM)。静默模式用相机闪光灯打码,夜间可用。</string>
+
+    <!-- ─── 红外遥控 ─── -->
+    <string name="tact_ir_title">红外遥控</string>
+    <string name="tact_ir_emitter_panel">发射器状态 · IR EMITTER</string>
+    <string name="tact_ir_emitter_found">● 检测到红外发射器</string>
+    <string name="tact_ir_carrier_range">载波范围: %1$s Hz</string>
+    <string name="tact_ir_no_emitter">✕ 本机无红外发射器（小米/Mi Remote 系列等机型支持）</string>
+    <string name="tact_ir_tv_keys">电视常用键 · NEC 38kHz</string>
+    <string name="tact_ir_power">电源</string>
+    <string name="tact_ir_mute">静音</string>
+    <string name="tact_ir_source">输入源</string>
+    <string name="tact_ir_vol_up">音量+</string>
+    <string name="tact_ir_vol_down">音量-</string>
+    <string name="tact_ir_ch_up">频道+</string>
+    <string name="tact_ir_ch_down">频道-</string>
+    <string name="tact_ir_numeric_note">数字键为 NEC 0x00 地址通用映射，各品牌可能存在偏差</string>
+    <string name="tact_ir_universal">▸ 万能遥控 · Flipper tv.ir 泛洪库 + 按键克隆</string>
+    <string name="tact_ir_candidates">456 候选码</string>
+    <string name="tact_ir_protocol_panel">协议 · PROTOCOL</string>
+    <string name="tact_ir_protocol_hint">选择红外协议与参数;载波频率与脉冲时序按协议标准生成</string>
+    <string name="tact_ir_cmd_hex">命令(hex)</string>
+    <string name="tact_ir_device_hex">设备(hex)</string>
+    <string name="tact_ir_sony_desc">Sony SIRC:引导 2400µs,逻辑 1=1200µs 开+600µs 关,0=600µs+600µs,LSB 先发 · 12bit 标准</string>
+    <string name="tact_ir_send_sirc">发射 SIRC ▸</string>
+    <string name="tact_ir_addr_hex">地址(hex)</string>
+    <string name="tact_ir_rc5_desc">RC-5:889µs 曼彻斯特编码,36kHz 载波 · 飞利浦系设备</string>
+    <string name="tact_ir_send_rc5">发射 RC-5 ▸</string>
+    <string name="tact_ir_nec_desc">NEC:引导 9000µs 开+4500µs 关,1=560+1690µs,0=560+560µs,MSB 先发 · 最通用协议</string>
+    <string name="tact_ir_waveform_panel">波形示意 · WAVEFORM (协议标准时序)</string>
+    <string name="tact_ir_custom_panel">自定义码发射</string>
+    <string name="tact_ir_hex_invalid">HEX 地址/命令无效!</string>
+    <string name="tact_ir_send_nec">发射 NEC</string>
+    <string name="tact_ir_raw_label">原始脉冲 (µs, 逗号分隔)</string>
+    <string name="tact_raw_segments">RAW %1$d 段</string>
+    <string name="tact_ir_send_raw">发射原始码</string>
+
+    <!-- ─── NFC 工作台 ─── -->
+    <string name="tact_nfc_title">NFC · RFID 工作台</string>
+    <string name="tact_nfc_adapter_panel">适配器状态</string>
+    <string name="tact_nfc_no_hardware">✕ 本机无 NFC 硬件</string>
+    <string name="tact_nfc_disabled">NFC 已关闭</string>
+    <string name="tact_nfc_open_settings">打开系统 NFC 设置</string>
+    <string name="tact_nfc_reader_ready">● 读卡器就绪 —— 将标签贴近手机背部</string>
+    <string name="tact_nfc_tab_reader">读卡 READER</string>
+    <string name="tact_nfc_tab_emulator">模拟 EMULATOR</string>
+    <string name="tact_nfc_tab_writer">写入 WRITER</string>
+    <string name="tact_nfc_tab_identifier">识别 IDENTIFIER</string>
+    <string name="tact_nfc_current_tag">读卡结果 · CURRENT TAG</string>
+    <string name="tact_nfc_waiting_tag">等待标签接近…</string>
+    <string name="tact_nfc_tech">技术</string>
+    <string name="tact_nfc_no_ndef">无 NDEF 记录</string>
+    <string name="tact_nfc_sectors">扇区</string>
+    <string name="tact_nfc_writable">可写</string>
+    <string name="tact_yes">是</string>
+    <string name="tact_no">否</string>
+    <string name="tact_nfc_emulator_desc">手机模拟为 NFC 卡,被读卡器读取 —— 卡内容在下方管理</string>
+    <string name="tact_nfc_write_panel">写入 NDEF 文本</string>
+    <string name="tact_nfc_write_desc">支持 NTAG / Ultralight 等可自由读写标签；加密卡（Mifare Classic 带密钥）无法克隆 —— 密钥由厂商烧写，未授权穷举既不合法也不可行</string>
+    <string name="tact_nfc_write_content">写入内容</string>
+    <string name="tact_nfc_write_placeholder">贴卡后写入这段文本</string>
+    <string name="tact_nfc_prepare_write">准备写入</string>
+    <string name="tact_nfc_uid_history">UID 采集历史 (%1$d)</string>
+    <string name="tact_nfc_uid_history_empty">刷过的标签会按 UID 去重记录在这里</string>
+    <string name="tact_nfc_fingerprint">技术指纹 · FINGERPRINT</string>
+    <string name="tact_nfc_fingerprint_desc">按 UID 长度与技术支持区分卡型:</string>
+    <string name="tact_nfc_fp_4byte">· 4 字节 UID = Mifare Classic / Ultralight</string>
+    <string name="tact_nfc_fp_7byte">· 7 字节 UID = NTAG21x / DESFire</string>
+    <string name="tact_nfc_fp_8_10byte">· 8/10 字节 UID = Type 4B / ISO15693 类</string>
+    <string name="tact_nfc_fp_ndef">· 支持 NDEF = NFC Forum 标签</string>
+    <string name="tact_nfc_fp_sectors">· 扇区数 &gt; 0 = Mifare Classic(加密区密钥由厂商烧写)</string>
+    <string name="tact_nfc_fp_note">识别为启发式分型,以真实读到的技术支持为准</string>
+    <string name="tact_wave_sirc">SIRC: 2400µs 引导 · 12bit LSB</string>
+    <string name="tact_wave_rc5">RC-5: 曼彻斯特 · 889µs 位宽</string>
+    <string name="tact_wave_nec">NEC: 9000+4500µs 引导 · 8+8bit MSB</string>
+
+    <!-- ─── 卡模拟钱包 ─── -->
+    <string name="tact_wallet_panel">卡模拟钱包 · HCE EMULATION</string>
+    <string name="tact_wallet_desc">手机化身 NFC 卡:钱包存多张虚拟卡,选择一张设为活跃,读卡器贴近手机时由系统 HCE 服务应答(ISO 14443-4 APDU)</string>
+    <string name="tact_wallet_empty">还没有虚拟卡 —— 在下方添加</string>
+    <string name="tact_wallet_active">● 活跃</string>
+    <string name="tact_wallet_aid_data">AID F0010203040506 · 数据 %1$s</string>
+    <string name="tact_empty">空</string>
+    <string name="tact_wallet_set_active">设为活跃</string>
+    <string name="tact_delete">删除</string>
+    <string name="tact_wallet_card_name">卡名</string>
+    <string name="tact_wallet_card_name_ph">如:研究卡 A</string>
+    <string name="tact_wallet_card_data">卡数据 (hex,可选)</string>
+    <string name="tact_wallet_card_data_ph">如: DEADBEEF</string>
+    <string name="tact_wallet_add">添加虚拟卡</string>
+    <string name="tact_wallet_limitations">能力边界: HCE 仅模拟 ISO-DEP APDU 卡(自定义读卡器/研究场景); MIFARE Classic 门禁卡与支付卡需安全元件与发卡密钥,普通手机无法模拟</string>
+
+    <!-- ─── 串口监视 ─── -->
+    <string name="tact_serial_title">串口监视 · SERIAL MONITOR</string>
+    <string name="tact_serial_devices_panel">USB 串口设备 (%1$d)</string>
+    <string name="tact_serial_no_devices">未检测到串口设备 —— 通过 OTG 接入 FTDI/CH340/CP210x 或 Arduino</string>
+    <string name="tact_connected">已连接</string>
+    <string name="tact_connect">连接 ▸</string>
+    <string name="tact_serial_driver_note">FTDI/CH340 芯片需厂商驱动;系统未内置时仅能枚举无法通讯。CDC-ACM(Arduino 原生)兼容性最好。</string>
+    <string name="tact_serial_line_coding">线路参数 · LINE CODING</string>
+    <string name="tact_serial_baud">波特率</string>
+    <string name="tact_serial_data_bits">数据位</string>
+    <string name="tact_serial_stop_bits">停止位</string>
+    <string name="tact_parity_none">无校验</string>
+    <string name="tact_parity_odd">奇校验</string>
+    <string name="tact_parity_even">偶校验</string>
+    <string name="tact_serial_output">监视输出 (%1$d)</string>
+    <string name="tact_serial_send">发送</string>
+    <string name="tact_serial_send_ph">输入指令,自动补 CR+LF</string>
+    <string name="tact_send_arrow">发送 ▸</string>
+    <string name="tact_serial_not_connected">未连接设备 —— 发送不可用;先连接上方枚举到的串口设备</string>
+
+    <!-- ─── 有线探测 ─── -->
+    <string name="tact_otg_title">有线探测 · OTG RECON</string>
+    <string name="tact_otg_none">○ 无 OTG 设备</string>
+    <string name="tact_otg_found">● 检测到 %1$d 个 USB 设备</string>
+    <string name="tact_auto_refresh">自动刷新</string>
+    <string name="tact_otg_empty">接入 USB 以太网适配器或 USB 串口(FTDI/CH340/CP210x/Arduino)后自动出现</string>
+    <string name="tact_usb_device">USB 设备</string>
+    <string name="tact_otg_net">疑似网卡 → ARP 扫描 ▸</string>
+    <string name="tact_otg_serial">疑似串口 → 串口监视 ▸</string>
+    <string name="tact_otg_unknown">未识别设备类 —— 无法确定其用途</string>
+    <string name="tact_otg_note">识别为 VID/PID 与设备类的启发式推断;实际链路探测(ARP/串口收发)由对应工具执行。FTDI/CH340 串口芯片在无厂商驱动的 Android 上仅能枚举、无法通讯。</string>
+
+    <!-- ─── 数字夜视 ─── -->
+    <string name="tact_night_title">数字夜视</string>
+    <string name="tact_night_start">开启夜视</string>
+    <string name="tact_night_stop">关闭夜视</string>
+    <string name="tact_cd_night_frame">夜视画面</string>
+    <string name="tact_night_enhancing">增强画面生成中…</string>
+    <string name="tact_night_hint">开启夜视后显示绿色增强画面</string>
+    <string name="tact_night_confirmed">[!] 确认目标 — 人脸 %1$d · 人体 %2$d</string>
+    <string name="tact_detector_unavailable">OpenCV 不可用 · 仅画面增强</string>
+    <string name="tact_detector_loading">检测器加载中…</string>
+    <string name="tact_target_locked">TARGET LOCKED · 人脸 %1$d · 人体 %2$d</string>
+    <string name="tact_scanning">SCANNING · 无确认目标</string>
+    <string name="tact_detector_unavailable_reason">检测不可用: %1$s</string>
+    <string name="tact_detector_loading_detail">OpenCV 检测器加载中(首次约 1-2 秒)</string>
+    <string name="tact_detector_error">检测错误: %1$s</string>
+    <string name="tact_gain_panel">增益控制 · GAIN</string>
+    <string name="tact_gain_line">增益 %1$dx —— 数字放大,仅用于显示;检测使用未增益灰度</string>
+    <string name="tact_night_principle">原理: 高 ISO 捕获 → 亮度通道数字增益 → 荧光绿映射。消费级手机无红外补光/热成像,这是数字增强而非真实夜视;检测分数是模型权重,不是概率;HOG 为白天全身模型,低光召回有限。</string>
+
+    <!-- ─── 战术地图 ─── -->
+    <string name="tact_map_title">战术地图</string>
+    <string name="tact_no_fix">无定位 fix</string>
+    <string name="tact_marker_count">标记 %1$d</string>
+    <string name="tact_loc_denied">未授权定位 —— 无法显示本机位置</string>
+    <string name="tact_loc_services_off">系统定位已关闭 —— 请在设置中开启</string>
+    <string name="tact_loc_waiting_fix">等待首定位 —— 室内可能需 10-60 秒,请靠近窗边/室外</string>
+    <string name="tact_accuracy_unknown">精度未知</string>
+    <string name="tact_fix_age">" · %1$ds 前"</string>
+    <string name="tact_on">开</string>
+    <string name="tact_off">关</string>
+    <string name="tact_network_label">" · 网络 "</string>
+    <string name="tact_grant_location">授予定位</string>
+    <string name="tact_app_settings">应用设置</string>
+    <string name="tact_location_settings">定位设置</string>
+    <string name="tact_map_tiles_line">瓦片: 在线 OSM MAPNIK · %1$s · 无网络时仅显示已缓存区域 · 未缓存区域为空白</string>
+    <string name="tact_tile_online">在线</string>
+    <string name="tact_tile_cache_only">仅缓存</string>
+    <string name="tact_follow">◎ 跟随</string>
+    <string name="tact_night_filter">夜战滤镜</string>
+    <string name="tact_cache_only_toggle">仅缓存</string>
+    <string name="tact_locate_me">◎ 定位我</string>
+    <string name="tact_grid_on">经纬度网格 ON</string>
+    <string name="tact_markers_panel">战术标记 · MARKERS</string>
+    <string name="tact_markers_empty">长按地图投放标记点；标记只存于本机</string>
+    <string name="tact_map_attribution">瓦片 © OpenStreetMap contributors · 在线 MAPNIK,无离线包;已浏览区域自动缓存,未缓存区域在离线时为空白</string>
+</resources>

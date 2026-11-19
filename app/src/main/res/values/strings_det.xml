@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DetailScreens.kt — English default strings.
+  Key prefix: det_ (DetailScreens shard).
+  Technical abbreviations (BSSID/RSSI/SNR/dBm/MHz/UUID/OUI/PTT) stay identical in both languages.
+-->
+<resources>
+
+    <!-- ─── 页面标题 · TerminalHeader ─── -->
+    <string name="det_title_ble_flood">BLE Flood Engine</string>
+    <string name="det_title_bt_jam">Bluetooth Suppression Engine</string>
+    <string name="det_title_wifi_disrupt">WiFi Disruption Engine</string>
+    <string name="det_title_wifi_jam">WiFi Suppression Engine</string>
+    <string name="det_title_web_server">WEB Server</string>
+    <string name="det_title_arp_scan">ARP Network Scan</string>
+    <string name="det_title_ble_scanner">BLE Sniff Scan</string>
+    <string name="det_title_ping">PING Flood</string>
+    <string name="det_title_http_client">HTTP Client</string>
+    <string name="det_title_port_scan">Port Scan</string>
+    <string name="det_title_walkie">WiFi Walkie-Talkie</string>
+    <string name="det_title_radar">Device Radar</string>
+    <string name="det_title_probe_monitor">Probe Monitor · FRAME MONITOR</string>
+    <string name="det_title_file_transfer">File Transfer</string>
+    <string name="det_title_secure_vault">Encrypted Vault</string>
+    <string name="det_title_rev_shell">Reverse Shell</string>
+    <string name="det_title_payload">Payload Generator</string>
+    <string name="det_title_dir_brute">Dir Brute</string>
+    <string name="det_title_cve">CVE Search</string>
+
+    <!-- ─── 面板标题 · TermPanel ─── -->
+    <string name="det_panel_run_stats">RUN STATISTICS</string>
+    <string name="det_panel_adv_payload">ADV PAYLOAD</string>
+    <string name="det_panel_tx_params">TX PARAMETERS</string>
+    <string name="det_panel_status">STATUS</string>
+    <string name="det_panel_nearby_devices">NEARBY DEVICES (%1$d)</string>
+    <string name="det_panel_flood_params">FLOOD PARAMETERS</string>
+    <string name="det_panel_deauth_injection">REAL INJECTION · DEAUTH INJECTION</string>
+    <string name="det_panel_config">CONFIG</string>
+    <string name="det_panel_web_file">WEB FILE</string>
+    <string name="det_panel_server_info">SERVER INFO</string>
+    <string name="det_panel_scan_stats">SCAN STATISTICS</string>
+    <string name="det_panel_devices_found">DEVICES FOUND (%1$d)</string>
+    <string name="det_panel_device_detail">DEVICE DETAIL · %1$s</string>
+    <string name="det_panel_stats">STATISTICS</string>
+    <string name="det_panel_request_stats">REQUEST STATISTICS</string>
+    <string name="det_panel_response_headers">RESPONSE HEADERS (%1$d)</string>
+    <string name="det_panel_local_link">LOCAL LINK · RF LINK</string>
+    <string name="det_panel_online_nodes">ONLINE NODES (%1$d)</string>
+    <string name="det_panel_metal_detect">METAL DETECT · MAG</string>
+    <string name="det_panel_mesh_nodes">MESH NODES</string>
+    <string name="det_panel_peers_found">DEVICES FOUND (%1$d)</string>
+    <string name="det_panel_received_file">RECEIVED FILE</string>
+    <string name="det_panel_decrypted">DECRYPTED</string>
+    <string name="det_panel_session_log">SESSION LOG</string>
+
+    <!-- ─── 操作按钮 ─── -->
+    <string name="det_btn_run_flood">RUN FLOOD</string>
+    <string name="det_btn_stop_flood">STOP FLOOD</string>
+    <string name="det_btn_run_suppress">RUN SUPPRESSION</string>
+    <string name="det_btn_stop_suppress">STOP SUPPRESSION</string>
+    <string name="det_btn_run_disrupt">RUN DISRUPTION</string>
+    <string name="det_btn_stop_disrupt">STOP DISRUPTION</string>
+    <string name="det_btn_scan_networks">SCAN NETWORKS</string>
+    <string name="det_btn_scanning">SCANNING…</string>
+    <string name="det_btn_probe_capability">PROBE</string>
+    <string name="det_btn_stop_injection">■ STOP INJECTION</string>
+    <string name="det_btn_start_injection">START INJECTION</string>
+    <string name="det_btn_injecting">INJECTING · %1$d FRAMES</string>
+    <string name="det_btn_stop_sniffing">■ STOP SNIFFING · %1$d FRAMES</string>
+    <string name="det_btn_passive_sniff">PASSIVE SNIFF · BEACON/PROBE/DEAUTH (capture)</string>
+    <string name="det_btn_run_scan">RUN SCAN</string>
+    <string name="det_btn_cancel_scan">CANCEL SCAN</string>
+    <string name="det_btn_run_sniff">RUN SNIFF</string>
+    <string name="det_btn_stop_sniff">STOP SNIFF</string>
+    <string name="det_btn_run_probe">RUN PROBE</string>
+    <string name="det_btn_stop_probe">STOP PROBE</string>
+    <string name="det_btn_send_request">SEND REQUEST</string>
+    <string name="det_btn_cancel_request">CANCEL REQUEST</string>
+    <string name="det_btn_run_walkie">START RADIO</string>
+    <string name="det_btn_stop_walkie">STOP RADIO</string>
+    <string name="det_btn_live_active">LIVE · AUTO TX %1$ds</string>
+    <string name="det_btn_live_mode">LIVE MODE · HANDS-FREE AUTO TX</string>
+    <string name="det_btn_push_to_talk">HOLD TO TALK</string>
+    <string name="det_btn_run_radar">RUN RADAR</string>
+    <string name="det_btn_stop_radar">STOP RADAR</string>
+    <string name="det_btn_network_topology">NETMAP</string>
+    <string name="det_btn_signal_db">SIGNAL DB</string>
+    <string name="det_btn_open_settings">OPEN SETTINGS ▸</string>
+    <string name="det_btn_cancel">CANCEL</string>
+    <string name="det_btn_stop_poisoning">STOP POISONING</string>
+    <string name="det_btn_start_kick">START KICK ▸</string>
+    <string name="det_btn_send_popup">SEND POPUP ▸</string>
+    <string name="det_btn_pair_popup">PAIRING POPUP ▸</string>
+    <string name="det_btn_open_dossier">OPEN FULL DOSSIER ▸</string>
+    <string name="det_btn_unfocus">UNFOCUS</string>
+    <string name="det_btn_snapshot">STORE</string>
+    <string name="det_btn_tap_to_start">TAP TO START ▸</string>
+    <string name="det_btn_choose_file">CHOOSE FILE</string>
+    <string name="det_btn_run_server">RUN SERVER</string>
+    <string name="det_btn_stop_server">STOP SERVER</string>
+    <string name="det_btn_run_transfer">RUN TRANSFER</string>
+    <string name="det_btn_stop_transfer">STOP TRANSFER</string>
+    <string name="det_btn_send_all">SEND FILE → ALL DEVICES</string>
+    <string name="det_btn_send_to">SEND FILE → %1$s</string>
+    <string name="det_btn_choose_file_send">CHOOSE FILE &amp; SEND</string>
+    <string name="det_btn_open_file">OPEN FILE</string>
+    <string name="det_btn_photo">PHOTO</string>
+    <string name="det_btn_video">VIDEO</string>
+    <string name="det_btn_stop">STOP</string>
+    <string name="det_btn_record">RECORD</string>
+    <string name="det_btn_import_encrypt">IMPORT &amp; ENCRYPT</string>
+    <string name="det_btn_delete">DELETE</string>
+    <string name="det_btn_open">OPEN</string>
+    <string name="det_btn_clear">CLEAR</string>
+    <string name="det_btn_run_listen">RUN LISTENER</string>
+    <string name="det_btn_stop_listen">STOP LISTENER</string>
+    <string name="det_btn_send_command">SEND COMMAND</string>
+    <string name="det_btn_generate_payloads">GENERATE ALL PAYLOADS</string>
+    <string name="det_btn_run_enum">RUN ENUM</string>
+    <string name="det_btn_stop_enum">STOP ENUM</string>
+    <string name="det_btn_run_search">RUN SEARCH</string>
+    <string name="det_btn_searching">SEARCHING…</string>
+    <string name="det_btn_kick">KICK</string>
+
+    <!-- ─── 输入标签 ─── -->
+    <string name="det_label_forged_profile">FORGED PROFILE</string>
+    <string name="det_label_cycle_mode">CYCLE MODE</string>
+    <string name="det_label_tx_power">TX POWER LEVEL</string>
+    <string name="det_label_tx_interval">TX INTERVAL</string>
+    <string name="det_label_max_packets">MAX PACKETS</string>
+    <string name="det_label_target_network">TARGET NETWORK</string>
+    <string name="det_label_disrupt_duration">DURATION</string>
+    <string name="det_label_toggle_interval">TOGGLE INTERVAL</string>
+    <string name="det_label_target_bssid">TARGET BSSID</string>
+    <string name="det_label_channel">CHANNEL</string>
+    <string name="det_label_client_mac">CLIENT MAC (OPTIONAL)</string>
+    <string name="det_label_frames_per_round">FRAMES PER ROUND</string>
+    <string name="det_label_channel_switch_interval">CHANNEL SWITCH INTERVAL</string>
+    <string name="det_label_listen_address">LISTEN ADDRESS</string>
+    <string name="det_label_browser_url">BROWSER URL</string>
+    <string name="det_label_gateway_ip">GATEWAY IP</string>
+    <string name="det_label_peer_ip">PEER IP</string>
+    <string name="det_label_local_ip_gateway">LOCAL IP · GATEWAY</string>
+    <string name="det_label_signal_strength">SIGNAL</string>
+    <string name="det_label_channel_frequency">CHANNEL · FREQ</string>
+    <string name="det_label_negotiated_rate">LINK RATE</string>
+    <string name="det_label_wifi_standard">Wi-Fi STANDARD</string>
+    <string name="det_label_address">ADDRESS</string>
+    <string name="det_label_tx_power_stat">TX POWER</string>
+    <string name="det_label_devices_found">DEVICES DISCOVERED</string>
+    <string name="det_label_device_type">DEVICE TYPE</string>
+    <string name="det_label_services">SERVICES</string>
+    <string name="det_label_manufacturer_data">MANUFACTURER DATA</string>
+    <string name="det_label_target_host">TARGET HOST</string>
+    <string name="det_label_request_method">REQUEST METHOD</string>
+    <string name="det_label_request_headers">HEADERS</string>
+    <string name="det_label_request_body">REQUEST BODY</string>
+    <string name="det_label_response_size">RESPONSE SIZE</string>
+    <string name="det_label_charset">CHARSET</string>
+    <string name="det_label_redirect_target">REDIRECT TARGET</string>
+    <string name="det_label_response_body">RESPONSE BODY</string>
+    <string name="det_label_request_url">REQUEST URL</string>
+    <string name="det_label_hostname">HOSTNAME: %1$s</string>
+    <string name="det_label_listen_port">LISTEN PORT</string>
+    <string name="det_label_command">COMMAND</string>
+    <string name="det_label_target_ip">TARGET IP</string>
+    <string name="det_label_port">PORT</string>
+    <string name="det_label_target_url">TARGET URL</string>
+    <string name="det_label_search_keyword">SEARCH KEYWORD</string>
+    <string name="det_label_popup_message">POPUP MESSAGE (≤60 CHARS)</string>
+    <string name="det_label_passphrase">PASSPHRASE</string>
+    <string name="det_label_pitch">PITCH</string>
+    <string name="det_label_roll">ROLL</string>
+    <string name="det_label_drone">[!] DRONE</string>
+    <string name="det_tag_gateway">GATEWAY</string>
+
+    <!-- ─── 雷达内联详情标签 ─── -->
+    <string name="det_info_id">IDENT</string>
+    <string name="det_info_vendor">VENDOR</string>
+    <string name="det_info_signal">SIGNAL</string>
+    <string name="det_info_radio">RADIO</string>
+    <string name="det_info_security">SECURITY</string>
+    <string name="det_info_class">CLASS</string>
+    <string name="det_info_link">LINK</string>
+    <string name="det_info_adv">ADV</string>
+    <string name="det_info_device_intel">INTEL</string>
+    <string name="det_info_bearing">BEARING</string>
+    <string name="det_info_distance_model">RANGE MODEL</string>
+    <string name="det_info_tracking">TRACKING</string>
+
+    <!-- ─── 占位与提示 ─── -->
+    <string name="det_hint_leave_blank_unlimited">Leave blank = unlimited</string>
+    <string name="det_hint_blank_unlimited_short">(blank = unlimited)</string>
+    <string name="det_hint_channel_example">e.g. 6</string>
+    <string name="det_hint_blank_broadcast">Leave blank = broadcast to all</string>
+    <string name="det_hint_persistent_loop">0 = continuous loop</string>
+    <string name="det_hint_gateway_example">e.g. 192.168.1.1</string>
+    <string name="det_hint_headers_placeholder">Key: Value (lines starting with # are comments)</string>
+    <string name="det_hint_target_ip_example">e.g. 192.168.1.1</string>
+    <string name="det_hint_host_example">e.g. 8.8.8.8 or baidu.com</string>
+    <string name="det_hint_filter_device_name">Filter device name…</string>
+    <string name="det_filter_all">ALL</string>
+    <string name="det_hint_popup_message">Shown on the peer\'s system pairing dialog</string>
+    <string name="det_hint_passphrase">Encryption/decryption passphrase</string>
+    <string name="det_hint_port_example">e.g. 4444</string>
+    <string name="det_hint_cve_query">CVE ID / vendor / product name</string>
+    <string name="det_hint_ptt">Hold the disc to transmit · release to stop · live mode is hands-free</string>
+    <string name="det_hint_local_ap_measured">(measured local ↔ AP)</string>
+    <string name="det_hint_ble_flood_log">Packet log appears here once flooding starts</string>
+    <string name="det_hint_bt_jam_log">Run log appears here once suppression starts</string>
+    <string name="det_hint_web_log">Access log appears here once the server starts</string>
+    <string name="det_hint_arp_log">Battle log appears here once the scan starts</string>
+    <string name="det_hint_arp_idle">Run the task above to scan the LAN — online devices will be listed live</string>
+    <string name="det_hint_ble_scan_idle">Run the task above to start sniffing — nearby BLE devices will appear live</string>
+    <string name="det_hint_ping_idle">Enter a target and run the task above — results return in real time</string>
+    <string name="det_hint_http_log">Transfer log appears here once a request is sent</string>
+    <string name="det_hint_port_scan_idle">Enter a target host and start scanning — open ports will be listed live</string>
+    <string name="det_hint_radar_idle">Start the radar — detected devices light up on the scope</string>
+    <string name="det_hint_radar_no_match">No devices match the current filters</string>
+    <string name="det_hint_probe_wait">Waiting for WiFi frames — beacons appear once location services are on</string>
+    <string name="det_hint_no_transfer_peers">No targets found — enter a peer IP to send manually</string>
+    <string name="det_hint_revshell_log">Session output appears here once a target connects</string>
+    <string name="det_hint_payload_idle">Fill in target IP and port, then generate — payloads in every language will be listed here</string>
+    <string name="det_hint_dirbrute_idle">Enter a target URL and start enumeration — hits will be listed live</string>
+    <string name="det_hint_cve_idle">Enter a CVE ID, vendor or product name to search</string>
+
+    <!-- ─── 统计标签 ─── -->
+    <string name="det_stat_sent">SENT</string>
+    <string name="det_stat_failed">FAILED</string>
+    <string name="det_stat_total_attempts">TOTAL ATTEMPTS</string>
+    <string name="det_stat_success_rate">SUCCESS RATE</string>
+    <string name="det_stat_pps">TX RATE</string>
+    <string name="det_stat_uptime">UPTIME</string>
+    <string name="det_stat_ble_packets">BLE PACKETS</string>
+    <string name="det_stat_scan_cycles">SCAN CYCLES</string>
+    <string name="det_stat_devices_found">DEVICES FOUND</string>
+    <string name="det_stat_cycle">CYCLE</string>
+    <string name="det_stat_hotspot_starts">HOTSPOT STARTS</string>
+    <string name="det_stat_hotspot_stops">HOTSPOT STOPS</string>
+    <string name="det_stat_total_requests">TOTAL REQUESTS</string>
+    <string name="det_stat_success_responses">SUCCESS RESPONSES</string>
+    <string name="det_stat_not_found">NOT FOUND</string>
+    <string name="det_stat_rejected_method">METHOD REJECTED</string>
+    <string name="det_stat_bad_requests">BAD REQUESTS</string>
+    <string name="det_stat_handler_errors">HANDLER ERRORS</string>
+    <string name="det_stat_active_connections">ACTIVE CONNECTIONS</string>
+    <string name="det_stat_requests_per_minute">REQUESTS/MIN</string>
+    <string name="det_stat_status">STATUS</string>
+    <string name="det_stat_subnet">SUBNET</string>
+    <string name="det_stat_local_ip">LOCAL IP</string>
+    <string name="det_stat_probed">PROBED</string>
+    <string name="det_stat_hosts_online">HOSTS ONLINE</string>
+    <string name="det_stat_arp_cache_hits">ARP CACHE HITS</string>
+    <string name="det_stat_reverse_dns">REVERSE DNS</string>
+    <string name="det_stat_elapsed">ELAPSED</string>
+    <string name="det_stat_sent_count">SENT</string>
+    <string name="det_stat_received_count">RECV</string>
+    <string name="det_stat_loss">LOSS</string>
+    <string name="det_stat_min">MIN</string>
+    <string name="det_stat_avg">AVG</string>
+    <string name="det_stat_max">MAX</string>
+    <string name="det_stat_success_2xx">2xx SUCCESS</string>
+    <string name="det_stat_redirect_3xx">3xx REDIRECTS</string>
+    <string name="det_stat_client_error_4xx">4xx CLIENT ERRORS</string>
+    <string name="det_stat_server_error_5xx">5xx SERVER ERRORS</string>
+    <string name="det_stat_bytes_received">BYTES RECEIVED</string>
+    <string name="det_stat_avg_duration">AVG DURATION</string>
+    <string name="det_stat_last_status">LAST STATUS</string>
+    <string name="det_stat_last_duration">LAST DURATION</string>
+    <string name="det_stat_last_error">LAST ERROR</string>
+    <string name="det_stat_last_redirect">LAST REDIRECT</string>
+    <string name="det_compact_targets">TARGETS</string>
+    <string name="det_compact_high_risk">HIGH RISK</string>
+    <string name="det_compact_nodes">NODES</string>
+    <string name="det_compact_intel">INTEL</string>
+
+    <!-- ─── 状态 ─── -->
+    <string name="det_state_running">RUNNING</string>
+    <string name="det_state_stopped">STOPPED</string>
+    <string name="det_state_scanning">SCANNING</string>
+    <string name="det_state_idle">IDLE</string>
+    <string name="det_state_listening">LISTENING</string>
+    <string name="det_state_standby">○ STANDBY</string>
+    <string name="det_state_passive_watching">● PASSIVE MONITORING</string>
+    <string name="det_state_transmitting">TRANSMITTING</string>
+    <string name="det_state_talking">TALKING</string>
+    <string name="det_state_not_running">OFFLINE</string>
+    <string name="det_state_connected">CONNECTED</string>
+    <string name="det_state_waiting">WAITING</string>
+    <string name="det_state_open">OPEN</string>
+    <string name="det_chip_ble_flood">BLE FLOOD</string>
+    <string name="det_chip_device_discovery">DISCOVERY</string>
+
+    <!-- ─── 消息与错误 ─── -->
+    <string name="det_msg_flood_complete">FLOOD COMPLETE</string>
+    <string name="det_msg_scanning_bands">Scanning 2.4/5GHz bands…</string>
+    <string name="det_msg_networks_found">Found %1$d networks · sorted by signal · tap to select a target</string>
+    <string name="det_msg_scanning_targets">Scanning for targets…</string>
+    <string name="det_msg_targets_found">Found %1$d targets</string>
+    <string name="det_msg_no_open_ports">No open ports found</string>
+    <string name="det_msg_wifi_unavailable">WiFi service unavailable</string>
+    <string name="det_msg_wifi_disconnected">WiFi not connected — no upstream link to measure in hotspot mode</string>
+    <string name="det_msg_echo_no_response">Echo timeout (old version / weak link / peer left)</string>
+    <string name="det_msg_echo_measuring">Measuring echo…</string>
+    <string name="det_msg_no_peers">No online nodes — make sure the peer is on the same WiFi with the radio started</string>
+    <string name="det_msg_no_targets">NO TARGETS</string>
+    <string name="det_msg_pair_sent">Pairing request sent — a popup will appear on the peer\'s screen (local Bluetooth name restores after 60s)</string>
+    <string name="det_error_message_empty">[!] Message cannot be empty</string>
+    <string name="det_sticker_enter_message">Enter a popup message first!</string>
+    <string name="det_msg_kick_stopped">Poisoning stopped — target recovers once its cache expires</string>
+    <string name="det_msg_kick_started">Poisoning started — target is about to lose connectivity</string>
+
+    <!-- ─── 通用值 ─── -->
+    <string name="det_value_success">SUCCESS</string>
+    <string name="det_value_not_provided">Not provided</string>
+    <string name="det_value_ssid_hidden">Invisible (location off)</string>
+    <string name="det_value_invisible">Invisible</string>
+    <string name="det_value_drone_remote_id">Remote-ID broadcast detected (ASTM F3411)</string>
+    <string name="det_unknown">Unknown</string>
+    <string name="det_mac_pending">MAC pending</string>
+    <string name="det_hostname_unknown">Hostname unknown</string>
+    <string name="det_hidden_ssid">&lt;hidden&gt;</string>
+    <string name="det_empty_body">(empty)</string>
+    <string name="det_quality_excellent">EXCELLENT</string>
+    <string name="det_quality_good">GOOD</string>
+    <string name="det_quality_fair">FAIR</string>
+    <string name="det_quality_weak">WEAK</string>
+    <string name="det_quality_very_weak">VERY WEAK</string>
+
+    <!-- ─── Deauth 注入说明 ─── -->
+    <string name="det_warn_recent_fail_rate">[!] Recent failure rate %1$.0f%% — increase TX interval</string>
+    <string name="det_deauth_requires_root">Requires root + monitor-mode chipset; stock Android without root cannot inject 802.11 management frames</string>
+    <string name="det_deauth_missing_aireplay">" aireplay-ng"</string>
+    <string name="det_deauth_missing_monitor">" monitor-mode firmware (Nexmon/QCACLD)"</string>
+    <string name="det_deauth_missing">Missing:%1$s%2$s — re-probe after installation</string>
+    <string name="det_deauth_disclaimer">Injection sessions run aireplay-ng via su; for authorized testing only — the target must be a network you own or are authorized to test</string>
+    <string name="det_fmt_cycle">Cycle %1$d/%2$d</string>
+    <string name="det_fmt_jam_progress">Targets %1$d · cycles %2$d · starts %3$d · failures %4$d</string>
+    <string name="det_label_response_headers">Response headers (fields actually sent by the server)</string>
+    <string name="det_fmt_content_length">%1$s &lt;varies with page size&gt;</string>
+    <string name="det_fmt_other_status">Other statuses: %1$s</string>
+    <string name="det_warn_body_truncated">[!] Response body exceeds %1$s — truncated</string>
+
+    <!-- ─── ARP / 扫描格式 ─── -->
+    <string name="det_fmt_hosts_probed">Probed %1$d/%2$d hosts</string>
+    <string name="det_fmt_unrendered_devices">… %1$d more devices not rendered (display only — statistics remain complete)</string>
+    <string name="det_dialog_kick_title">KICK OFFLINE · %1$s</string>
+    <string name="det_dialog_pair_title">PAIRING POPUP · %1$s</string>
+    <string name="det_pair_mechanism">Mechanism: temporarily renames the local Bluetooth adapter to the message and initiates a standard pairing request. Only works on discoverable/pairable devices; this is a system dialog, not custom UI.</string>
+    <string name="det_arp_kick_mechanism">Mechanism: continuously broadcast forged ARP replies to the target (claiming the gateway is at a fake MAC). Once the target\'s ARP cache is poisoned, upstream traffic is black-holed — effectively disconnecting it.\n\nPrerequisites &amp; limits: requires root (some devices reject AF_PACKET via SELinux and will report it honestly); only effective against clients with dynamic ARP caches — anti-spoofing devices are immune; after stopping, the target recovers automatically once its cache expires (30-60s). This is active interference — only use it on networks you own or are authorized to test.</string>
+    <string name="det_fmt_poisoning_frames">POISONING · %1$d FRAMES</string>
+
+    <!-- ─── BLE 嗅探 / 通用格式 ─── -->
+    <string name="det_fmt_devices_found">Found %1$d devices</string>
+    <string name="det_fmt_strongest">Strongest %1$s</string>
+    <string name="det_label_rssi_trend">RSSI TREND (dBm)</string>
+    <string name="det_fmt_rssi_minmax">"Min:%1$d  Max:%2$d  Now:%3$d"</string>
+    <string name="det_label_raw_adv">RAW ADVERTISEMENT (HEX)</string>
+    <string name="det_raw_adv_note">AD Structure: Length · Type · Value; fields match the Android BLE stack decoding for direct comparison</string>
+    <string name="det_label_ad_decode">AD FIELD DECODE · nRF Connect style</string>
+    <string name="det_fmt_devices_found_tap">Found %1$d devices · tap to view details</string>
+    <string name="det_fmt_device_count">%1$d DEV</string>
+    <string name="det_fmt_uptime_seconds">%1$d s</string>
+
+    <!-- ─── PING / HTTP / 端口 ─── -->
+    <string name="det_fmt_probe_results">PROBE RESULTS · %1$s</string>
+    <string name="det_fmt_ping_reply">%1$db from %2$s · ttl=%3$d · %4$sms</string>
+    <string name="det_fmt_response_status">Status %1$d · %2$dms</string>
+    <string name="det_fmt_ports_scanned">Scanned %1$d/%2$d · open %3$d</string>
+    <string name="det_fmt_scan_report">SCAN REPORT · %1$s</string>
+    <string name="det_fmt_scan_summary">Scanned %1$d ports, %2$d open</string>
+
+    <!-- ─── 对讲机 ─── -->
+    <string name="det_fmt_echo">Echo %1$dms</string>
+    <string name="det_fmt_jitter">" · jitter %1$dms"</string>
+    <string name="det_fmt_loss">" · loss %1$d%%"</string>
+    <string name="det_fmt_self_reported">Self-reported %1$s · %2$s</string>
+    <string name="det_peers_metrics_note">RTT/jitter/loss = locally measured (UDP echo); \"self-reported\" = the peer\'s own ↔ AP link; peer-to-local RSSI is unavailable on non-rooted devices</string>
+    <string name="det_fmt_online">%1$d ONLINE</string>
+
+    <!-- ─── 雷达 · 罗盘与状态带 ─── -->
+    <string name="det_fmt_heading">HEADING · %1$s</string>
+    <string name="det_compass_online">GYRO+MAG · FUSION ONLINE</string>
+    <string name="det_compass_offline">SENSOR OFFLINE</string>
+    <string name="det_compass_sensor">ROTATION_VECTOR</string>
+    <string name="det_scope_mode_scan">MODE: SCAN</string>
+    <string name="det_scope_mode_idle">MODE: STANDBY</string>
+    <string name="det_fmt_scope_sweep">SCAN: %1$03d°</string>
+    <string name="det_fmt_scope_heading">HDG: %1$03d°</string>
+    <string name="det_fmt_scope_status2">"RANGE: 100m   TARGETS: %1$d/%2$d   FIX: %3$d   NODES: %4$d"</string>
+    <string name="det_cardinal_n">N</string>
+    <string name="det_cardinal_e">E</string>
+    <string name="det_cardinal_s">S</string>
+    <string name="det_cardinal_w">W</string>
+    <string name="det_legend_mesh_nodes">◈ Same-net nodes (range unknown)</string>
+    <string name="det_fmt_satellites">SAT %1$d</string>
+    <string name="det_fmt_bearing_collecting">Bearing sampling · coverage %1$d%% · rotate the device slowly</string>
+    <string name="det_sat_none">SAT 0 · INDOOR?</string>
+    <string name="det_warn_location_off">Location services off — WiFi targets invisible (BLE unaffected)</string>
+
+    <!-- ─── 雷达 · 列表与详情 ─── -->
+    <string name="det_fmt_target_list">TARGET LIST · %1$d/%2$d</string>
+    <string name="det_tag_focus_denoise">FOCUS · DENOISE</string>
+    <string name="det_fmt_signal_detail">RSSI %1$d dBm · SNR %2$d dB · noise %3$d dBm</string>
+    <string name="det_fmt_link_bond">%1$s · BOND: %2$s</string>
+    <string name="det_fmt_adv_info">TX %1$s · UUID ×%2$d · MFR ID %3$s</string>
+    <string name="det_fmt_intel_confidence">%1$s · CONFIDENCE %2$d%% · %3$s</string>
+    <string name="det_fmt_range_model_tx">ADV %1$dBm · n=2.5</string>
+    <string name="det_fmt_range_estimated">%1$.1fm · EST %2$03d°</string>
+    <string name="det_fmt_range_placeholder">%1$.1fm · %2$03d° · PLACEHOLDER</string>
+    <string name="det_range_model_assumed">Assumed PTX · n=2.5 (not measured)</string>
+    <string name="det_fmt_tracking">Hits %1$d · first seen %2$s</string>
+    <string name="det_fmt_track_limit">Showing the %1$d strongest · %2$d more not listed — narrow the range with the filters above</string>
+    <string name="det_loc_unavailable">Unavailable (compass offline or insufficient samples)</string>
+    <string name="det_fmt_loc_estimated">%1$03d° ± %2$d° · CONFIDENCE %3$d%% · %4$d SWEEPS</string>
+    <string name="det_fmt_loc_collecting">COLLECTING %1$d%% · rotate the device slowly</string>
+    <string name="det_loc_flat">Flat pattern, insufficient modulation — bearing unreliable</string>
+    <string name="det_loc_multipath">Multipath / multiple peaks — bearing unreliable</string>
+    <string name="det_fmt_loc_stale">Stale — last update %1$ds ago</string>
+    <string name="det_loc_unavailable_short">UNAVAILABLE</string>
+    <string name="det_threat_high">HIGH-RISK PROXIMITY</string>
+    <string name="det_threat_mid">MEDIUM PROXIMITY</string>
+    <string name="det_threat_far">DISTANT TARGET</string>
+
+    <!-- ─── 雷达 · 金属探测 / 配对 / 快照 ─── -->
+    <string name="det_metal_unavailable">MAGNETOMETER UNAVAILABLE</string>
+    <string name="det_fmt_calibrating">CALIBRATING %1$d%%</string>
+    <string name="det_metal_anomaly">MAGNETIC ANOMALY</string>
+    <string name="det_metal_stable">STABLE</string>
+    <string name="det_metal_note">Relative magnetic anomaly detection · not a distance measurement · tap to recalibrate</string>
+    <string name="det_fmt_stored">+%1$d stored</string>
+
+    <!-- ─── Probe 监视 ─── -->
+    <string name="det_fmt_beacon_count">Beacons %1$d</string>
+    <string name="det_probe_scope_note">Scope: management fields of beacon/probe-response frames (WifiManager scan results). Non-rooted Android cannot capture data frames or full-frame bytes; full packet capture requires root + an external adapter.</string>
+    <string name="det_field_beacons">Beacons</string>
+    <string name="det_field_bssid_hex">BSSID (hex)</string>
+    <string name="det_field_vendor_oui">Vendor OUI</string>
+    <string name="det_field_channel">Channel</string>
+    <string name="det_field_width">Width</string>
+    <string name="det_field_center_freq">CenterFreq</string>
+    <string name="det_field_capabilities">Capabilities</string>
+    <string name="det_field_security">Security</string>
+    <string name="det_field_rssi_snr">RSSI/SNR</string>
+    <string name="det_fmt_beacons_seen">%1$d hits · first seen %2$s</string>
+
+    <!-- ─── 文件快传 / 保险箱 / Shell / Payload / 枚举 / CVE ─── -->
+    <string name="det_fmt_local_address">Local address: %1$s</string>
+    <string name="det_fmt_sent_files">Sent: %1$d files</string>
+    <string name="det_fmt_vault_files">VAULT FILES · %1$d</string>
+    <string name="det_tag_photo">[IMAGE]</string>
+    <string name="det_tag_video">[VIDEO]</string>
+    <string name="det_tag_audio">[AUDIO]</string>
+    <string name="det_fmt_listening">Listening on 0.0.0.0:%1$s · %2$s</string>
+    <string name="det_dir_received">IN</string>
+    <string name="det_dir_sent">OUT</string>
+    <string name="det_dir_system">SYS</string>
+    <string name="det_fmt_payloads_generated">Generated %1$d payloads · target %2$s:%3$s</string>
+    <string name="det_fmt_paths_tested">Tested %1$d/%2$d paths · hits %3$d</string>
+    <string name="det_fmt_hit_paths">HIT PATHS · %1$d</string>
+    <string name="det_fmt_search_results">SEARCH RESULTS · %1$d</string>
+    <string name="det_fmt_published">Published: %1$s</string>
+
+</resources>

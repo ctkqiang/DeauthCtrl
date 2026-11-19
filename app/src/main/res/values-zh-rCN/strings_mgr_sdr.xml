@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- VoiceSdrManager — 简体中文资源。 -->
+<resources>
+    <string name="mgr_sdr_mic_init_failed">麦克风初始化失败（可能被其他应用占用）</string>
+</resources>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mgr_bond_state_none">未配对</string>
+    <string name="mgr_bond_state_bonding">配对中</string>
+    <string name="mgr_bond_state_bonded">已配对</string>
+    <string name="mgr_bond_state_unknown">未知(%1$d)</string>
+    <string name="mgr_bond_type_classic">经典蓝牙</string>
+    <string name="mgr_bond_type_le">BLE</string>
+    <string name="mgr_bond_type_dual">双模</string>
+    <string name="mgr_bond_type_unknown">未知</string>
+    <string name="mgr_bond_perm_connect">连接设备 / 读取蓝牙状态</string>
+    <string name="mgr_bond_perm_bluetooth">蓝牙（旧版权限）</string>
+    <string name="mgr_bond_perm_admin">蓝牙管理（旧版权限）</string>
+    <string name="mgr_bond_perm_sep">、</string>
+    <string name="mgr_bond_err_no_adapter">本机没有蓝牙适配器</string>
+    <string name="mgr_bond_err_bt_off">蓝牙未开启 —— 请先在系统设置中打开蓝牙</string>
+    <string name="mgr_bond_err_permissions">缺少蓝牙权限：%1$s —— 请先在应用权限网关授予</string>
+    <string name="mgr_bond_err_read">读取已配对设备失败：%1$s</string>
+    <string name="mgr_bond_err_mac_invalid">MAC 格式无效 —— 应为 AA:BB:CC:DD:EE:FF（12 位十六进制）</string>
+    <string name="mgr_bond_err_unresolvable">系统无法解析该 MAC 地址</string>
+    <string name="mgr_bond_err_not_bonded">该设备当前不在已配对状态 —— 请刷新列表后再操作</string>
+    <string name="mgr_bond_msg_no_api">[!] 当前系统不提供程序化解绑（BluetoothDevice.removeBond 不可用）—— 请到系统蓝牙设置中忽略该设备</string>
+    <string name="mgr_bond_msg_request_sent">解绑请求已发送 —— 正在等待系统刷新配对列表</string>
+    <string name="mgr_bond_msg_refused">[!] 系统拒绝了解绑请求 —— 请到系统蓝牙设置中忽略该设备</string>
+    <string name="mgr_bond_msg_call_failed">[!] 解绑调用失败（%1$s）—— 部分系统限制隐藏 API，请到系统蓝牙设置中忽略该设备</string>
+    <string name="mgr_bond_msg_still_bonded">[!] 配对列表仍显示该设备 —— 系统可能拒绝程序化解绑，请到系统蓝牙设置中忽略此设备</string>
+    <string name="mgr_bond_msg_unbonded">已解除绑定</string>
+</resources>

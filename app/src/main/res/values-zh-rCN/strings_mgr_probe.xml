@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CapabilityProbe.kt — 简体中文资源。
+  与 values/strings_mgr_probe.xml 键集完全一致,仅翻译用户可见文案。
+  原文措辞与标点保持逐字不变。
+-->
+<resources>
+
+    <!-- ─── 默认值 ─── -->
+    <string name="mgr_probe_root_not_probed">尚未执行 root 探测</string>
+    <string name="mgr_probe_not_probed">尚未探测</string>
+    <string name="mgr_probe_not_checked_root">未检测：需要 root + 特定芯片/固件</string>
+
+    <!-- ─── SoftAP 降级说明 ─── -->
+    <string name="mgr_probe_softap_detail">仅本机 SoftAP：不会改变目标 AP 的 BSSID/信道/加密，也不会断开任何客户端</string>
+    <string name="mgr_probe_softap_extra">；启动热点可能中断本机 Wi-Fi</string>
+
+    <!-- ─── root ─── -->
+    <string name="mgr_probe_err_no_su">未找到 su：stock Android 普通应用没有 CAP_NET_RAW，AF_PACKET 被 SELinux 拒绝，不提供 monitor mode / 帧注入</string>
+    <string name="mgr_probe_root_timeout">su 存在但 %1$dms 内无响应（可能正在等待授权或被策略拒绝）</string>
+    <string name="mgr_probe_root_granted">su 已授权：%1$s</string>
+    <string name="mgr_probe_root_denied">su 存在但未授权（exit=%1$d）%2$s</string>
+
+    <!-- ─── monitor mode / 帧注入 ─── -->
+    <string name="mgr_probe_no_root">当前系统没有 root：stock Android 不支持 802.11 monitor mode / 帧注入</string>
+    <string name="mgr_probe_su_denied">su 未授权：无法检查 monitor mode / 帧注入</string>
+    <string name="mgr_probe_root_unknown">未完成 root 探测：monitor mode / 帧注入状态未知</string>
+    <string name="mgr_probe_nexutil_installed">nexutil 已安装</string>
+    <string name="mgr_probe_nexutil_missing">未找到 nexutil</string>
+    <string name="mgr_probe_nexutil_exit">nexutil -m2 exit=%1$d</string>
+    <string name="mgr_probe_nexutil_skipped">跳过 nexutil -m2</string>
+    <string name="mgr_probe_iw_monitor">iw dev 发现 type monitor</string>
+    <string name="mgr_probe_iw_no_monitor">iw dev 未发现 monitor 接口</string>
+    <string name="mgr_probe_con_mode_4">con_mode=4（QCACLD monitor）</string>
+    <string name="mgr_probe_con_mode">con_mode=%1$s</string>
+    <string name="mgr_probe_unreadable">不可读</string>
+    <string name="mgr_probe_aireplay_ok">aireplay-ng --test：Injection is working</string>
+    <string name="mgr_probe_aireplay_fail">aireplay-ng --test 未确认注入（工具未安装或芯片/固件不支持）</string>
+    <string name="mgr_probe_detail_sep">；</string>
+
+    <!-- ─── LocalOnlyHotspot ─── -->
+    <string name="mgr_probe_lohs_api">LocalOnlyHotspot 需要 Android 8.0 (API 26)+</string>
+    <string name="mgr_probe_lohs_perm">缺少 NEARBY_WIFI_DEVICES（Android 13+ 创建热点必需）</string>
+    <string name="mgr_probe_no_wifi_manager">无 WifiManager</string>
+    <string name="mgr_probe_wifi_off">Wi-Fi 未开启</string>
+    <string name="mgr_probe_lohs_ok">本机热点可创建；同一时刻只允许一个未完成请求</string>
+    <string name="mgr_probe_lohs_failed">启动失败 reason=%1$d（渠道占用/模式冲突/策略禁止）</string>
+    <string name="mgr_probe_lohs_security">SecurityException：缺少权限或厂商 ROM 禁止 LocalOnlyHotspot</string>
+    <string name="mgr_probe_lohs_exception">启动异常 %1$s: %2$s</string>
+    <string name="mgr_probe_lohs_timeout">热点探测超时（%1$dms），可能正被其他模块占用</string>
+
+    <!-- ─── BLE ─── -->
+    <string name="mgr_probe_no_bt_adapter">本机没有蓝牙适配器</string>
+    <string name="mgr_probe_ble_connect_perm">缺少 BLUETOOTH_CONNECT，无法读取蓝牙状态</string>
+    <string name="mgr_probe_ble_advertise_perm">缺少 BLUETOOTH_ADVERTISE，无法启动 BLE 广播</string>
+    <string name="mgr_probe_bt_off">蓝牙未开启</string>
+    <string name="mgr_probe_no_ble_advertiser">控制器不提供 BLE 广播（BluetoothLeAdvertiser=null）</string>
+    <string name="mgr_probe_ble_ok">可创建 BLE 广播会话；空口间隔最低约 100ms，不能伪造广播 MAC</string>
+
+</resources>

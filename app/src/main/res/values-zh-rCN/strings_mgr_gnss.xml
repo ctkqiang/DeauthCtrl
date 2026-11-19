@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GNSS 星图管理器 —— 中文资源 -->
+<resources>
+    <string name="mgr_gnss_error_gps_off">定位服务已关闭 —— 请在系统设置中开启「位置信息」,GNSS 才有卫星数据</string>
+    <string name="mgr_gnss_error_permission">缺少「位置信息」权限 —— 请到系统设置授予「精确位置」后重试</string>
+    <string name="mgr_gnss_error_legacy">系统版本低于 Android 7.0 —— 无 GnssStatus 卫星回调,无法绘制天图</string>
+    <string name="mgr_gnss_no_service">设备未提供定位服务 —— 无法读取 GNSS 状态</string>
+    <string name="mgr_gnss_empty_reason">未捕获卫星信号 —— 室内或 GNSS 被遮挡时回调星数为 0;请到开阔天空/窗边测试</string>
+    <string name="mgr_gnss_register_failed">注册 GNSS 状态回调失败: %1$s</string>
+    <string name="mgr_gnss_register_rejected">系统拒绝注册 GNSS 状态回调 —— 请确认定位权限与 GNSS 硬件可用</string>
+</resources>

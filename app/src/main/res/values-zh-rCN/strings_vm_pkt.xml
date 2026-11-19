@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 流量监视 ViewModel 中文资源,与 values/strings_vm_pkt.xml 一一对应。 -->
+<resources>
+    <string name="vm_pkt_vpn_query_failed">[!] VPN 授权查询失败 —— %1$s</string>
+    <string name="vm_pkt_service_start_failed">[!] 抓包服务启动失败 —— %1$s: %2$s</string>
+    <string name="vm_pkt_service_stop_failed">[!] 抓包服务停止失败 —— %1$s</string>
+</resources>
