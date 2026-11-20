@@ -165,7 +165,9 @@ fun BleGattScreen(radarVm: RadarViewModel, back: () -> Unit) {
                     runLabel = stringResource(R.string.gatt_btn_connect),
                     stopLabel = stringResource(R.string.gatt_btn_disconnect),
                 ) {
-                    if (sessionActive) vm.disconnect() else vm.connect(macInput)
+                    if (sessionActive) vm.disconnect()
+                    else if (macInput.isBlank()) xin.ctkqiang.deauthctrl.ui.components.StickerBus.showBruh()
+                    else vm.connect(macInput)
                 }
                 Spacer(Modifier.height(8.dp))
                 PanelStat(stringResource(R.string.gatt_stat_status), stringResource(state.phase.labelRes), phaseColor(state.phase))

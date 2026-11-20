@@ -43,35 +43,14 @@ object LauncherIcon {
     /** 饱和度低于此值的主题视为无彩色 → 灰变体 */
     private const val GRAY_SATURATION_THRESHOLD = 0.12f
 
-    /** 按色板主色启用对应图标变体;API 26 以下无 adaptive/alias 图标,保持默认 */
+    /**
+     * 启动图标换色已移除:曾按队伍禁用/启用 13 个 activity-alias,
+     * 桌面旧图标指向被禁用别名时报「Activity class does not exist」且
+     * 禁用状态持久化在设备上、应用自身无法恢复。现在保留为 no-op,
+     * 启动入口固定 MainActivityLaunchCyan(manifest 中永久启用)。
+     */
     fun apply(context: Context, palette: HudPalette) {
-        if (Build.VERSION.SDK_INT < 26) return
-        val hsv = FloatArray(3)
-        AndroidColor.colorToHSV(palette.primary.toArgb(), hsv)
-        val chosen = if (hsv[1] < GRAY_SATURATION_THRESHOLD) {
-            VARIANTS.first { it.id == "gray" }
-        } else {
-            VARIANTS.filter { it.hue >= 0f }.minBy { v ->
-                val d = Math.abs(hsv[0] - v.hue)
-                Math.min(d, 360f - d)
-            }
-        }
-        val pm = context.packageManager
-        val pkg = context.packageName
-        Log.i(TAG, "apply: team=${palette.id} chosen=${chosen.id} pkg=$pkg")
-        VARIANTS.forEach { v ->
-            runCatching {
-                pm.setComponentEnabledSetting(
-                    ComponentName(pkg, "$pkg.${v.alias}"),
-                    if (v === chosen) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                    else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP,
-                )
-                Log.i(TAG, "alias ${v.alias} -> ${if (v === chosen) "ENABLED" else "DISABLED"} ok")
-            }.onFailure {
-                Log.e(TAG, "alias ${v.alias} failed", it)
-            }
-        }
+        // no-op:单一固定启动入口,不再切换别名
     }
 
     private const val TAG = "LauncherIcon"

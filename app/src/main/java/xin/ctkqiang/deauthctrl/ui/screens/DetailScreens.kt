@@ -1874,7 +1874,9 @@ fun PortScannerScreen(vm: PortScannerViewModel, initialHost: String? = null, bac
                 Spacer(Modifier.height(8.dp))
                 ActionButton(running, stringResource(R.string.det_btn_run_scan), stringResource(R.string.det_btn_cancel_scan)) {
                     haptic.hud()
-                    if (running) vm.stop() else vm.start()
+                    if (running) vm.stop()
+                    else if (host.isBlank()) xin.ctkqiang.deauthctrl.ui.components.StickerBus.showBruh()
+                    else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
                 Spacer(Modifier.height(6.dp))
@@ -2670,6 +2672,7 @@ fun RadarScreen(
                                 haptic.hud()
                                 if (pairMsg.isBlank()) {
                                     xin.ctkqiang.deauthctrl.ui.components.StickerBus.show(context.getString(R.string.det_sticker_enter_message))
+                                    xin.ctkqiang.deauthctrl.ui.components.StickerBus.showBruh()
                                     pairResult = context.getString(R.string.det_error_message_empty)
                                 } else {
                                     pairResult = vm.sendPairingPopup(t.address, pairMsg)?.let { "[!] $it" }
@@ -4900,7 +4903,13 @@ private fun FileTransferLivePanel(
 
         Spacer(Modifier.height(8.dp))
         Surface(
-            modifier = Modifier.fillMaxWidth().clickable { picker.launch(arrayOf("*/*")) },
+            modifier = Modifier.fillMaxWidth().clickable {
+                if (peers.isEmpty() && manualIp.isBlank()) {
+                    xin.ctkqiang.deauthctrl.ui.components.StickerBus.showBruh()
+                } else {
+                    picker.launch(arrayOf("*/*"))
+                }
+            },
             shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
             color = Red.copy(alpha = 0.12f),
             border = BorderStroke(1.dp, Red.copy(alpha = 0.4f)),
