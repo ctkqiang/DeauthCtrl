@@ -59,5 +59,10 @@
 
     <!-- ─── 厂商 ─── -->
     <string name="mgr_radar_vendor_unknown">未知厂商</string>
-
+    <string name="mgr_radar_connect_bad_ssid">目标没有 SSID —— 无法连接</string>
+    <string name="mgr_radar_connect_wep_unsupported">WEP 网络无法通过系统弹窗直连</string>
+    <string name="mgr_radar_connect_bad_pass">密码无效(WPA/WPA2/WPA3 需 8 位以上)</string>
+    <string name="mgr_radar_connect_failed">连接失败 —— 若系统允许会弹出自己的连接对话框</string>
+    <string name="mgr_radar_pair_failed">配对请求失败 —— 目标需处于可发现/可连接状态</string>
+    <string name="mgr_radar_connect_perm">连接 WiFi 需要定位权限且定位已开启(Android 10+ 系统硬性要求)</string>
 </resources>

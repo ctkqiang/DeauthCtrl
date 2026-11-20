@@ -395,6 +395,25 @@ class TacticalMapManager(context: Context) {
         saturation.postConcat(greenTone)
         return ColorMatrixColorFilter(saturation)
     }
+
+    /**
+     * 黑白负片滤镜 —— 灰度取反:瓦片全去色后反转亮度。
+     *
+     * 原图浅色底(道路/建筑)变深色、深色底(绿地/水面)变亮白,
+     * 形成「相片负片」式战术地图 —— 底暗、路网亮白,彩色设备标记
+     * 在黑底上对比极强。亮度 L = 0.299R+0.587G+0.114B,输出 = 255-L。
+     */
+    fun monoNegativeFilter(): ColorFilter {
+        val m = ColorMatrix(
+            floatArrayOf(
+                -0.299f, -0.587f, -0.114f, 0f, 255f,
+                -0.299f, -0.587f, -0.114f, 0f, 255f,
+                -0.299f, -0.587f, -0.114f, 0f, 255f,
+                0f, 0f, 0f, 1f, 0f,
+            ),
+        )
+        return ColorMatrixColorFilter(m)
+    }
 }
 
 /**

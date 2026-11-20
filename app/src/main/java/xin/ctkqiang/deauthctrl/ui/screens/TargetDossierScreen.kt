@@ -145,11 +145,12 @@ fun TargetDossierScreen(vm: RadarViewModel, targetId: String, back: () -> Unit) 
 /** 身份块 —— 类型徽章 + 名称 + 关键标识 */
 @Composable
 private fun IdentityBlock(t: RadarTarget) {
-    // BLE 广播观测 → BLE 徽章;仅经典发现 → BT 徽章
+    // 与雷达盘同一套固定类别色:友方蓝 / WiFi 红 / BLE 青 / 经典 BT 绿(与队伍主题解耦)
     val badge = when {
-        t.type == "wifi" -> "WIFI" to Warn
-        t.observedVia == "ble" -> "BLE" to TacGreen
-        else -> "BT" to Gold
+        t.bonded -> stringResource(R.string.det_badge_friendly) to FRIENDLY_BLIP
+        t.type == "wifi" -> "WIFI" to WIFI_BLIP
+        t.observedVia == "ble" -> "BLE" to BLE_BLIP
+        else -> "BT" to BT_BLIP
     }
     Surface(
         Modifier.fillMaxWidth(),

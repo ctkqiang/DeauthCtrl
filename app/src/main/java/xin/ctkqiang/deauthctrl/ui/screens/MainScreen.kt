@@ -26,6 +26,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
@@ -87,6 +89,7 @@ import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material.icons.outlined.NetworkPing
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Radar
 import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.outlined.Search
@@ -109,6 +112,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.graphics.drawscope.rotate
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.sample
+import kotlin.math.PI
+import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -132,6 +142,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -234,25 +247,42 @@ fun MainScreen(
     }
 
     /** 进入目标路由，先把当前路由压栈；重复进入同一路由不压栈 */
+    // Lumia 式导航:前进页从右滑入、旧页向左退场;返回时反向 —— 方向标记驱动过渡
+    var navForward by remember { mutableStateOf(true) }
+
     val navigate: (String) -> Unit = { target ->
         if (target != screen) {
             backStack.add(screen)
+            navForward = true
             screen = target
         }
     }
 
     /** 返回上一屏；栈空则回主页 */
-    val goBack: () -> Unit = { screen = backStack.removeLastOrNull() ?: ROUTE_HOME }
+    val goBack: () -> Unit = {
+        navForward = false
+        screen = backStack.removeLastOrNull() ?: ROUTE_HOME
+    }
+    // 雷达弹窗「去攻击」→ 跳转 WiFi 干扰页并预选目标 BSSID
+    var deauthBssid by remember { mutableStateOf<String?>(null) }
+    // 雷达同网弹窗动作预选:扫端口 / SSH / 踢出网络
+    var portScanHost by remember { mutableStateOf<String?>(null) }
+    var sshPrefill by remember { mutableStateOf<String?>(null) }
+    var arpKickIp by remember { mutableStateOf<String?>(null) }
 
     /** 雷达页入口 —— 战术仪表盘:整页滚动/垫子网格/金属探测/方位推演/遥测条/网格节点 */
     val openRadar: @Composable () -> Unit = {
         RadarScreen(
-            radarVm, walkieVm, dbVm,
+            radarVm, walkieVm, dbVm, arpVm,
             back = goBack,
             radarAlertOn = hapticsOn && radarAlertOn,
             onSelectTarget = { id -> selectedTargetId = id; navigate("target") },
             onOpenNetmap = { navigate("netmap") },
             onOpenDb = { navigate("dbview") },
+            onDeauth = { t -> deauthBssid = t.id; navigate("wifi") },
+            onScanPorts = { ip -> portScanHost = ip; navigate("portscan") },
+            onSsh = { ip -> sshPrefill = ip; navigate("terminal") },
+            onKick = { ip -> arpKickIp = ip; navigate("arp") },
         )
     }
 
@@ -271,16 +301,27 @@ fun MainScreen(
             AnimatedContent(
                 targetState = screen,
                 transitionSpec = {
-                    // 全息切片展开:新页自屏幕中线向上下展开(裁剪显形)+ 轻微放大,
-                    // 旧页向中线收拢退场 —— 像战术终端切换投影频道
-                    (fadeIn(tween(220)) +
-                        expandVertically(animationSpec = tween(340, easing = FastOutSlowInEasing), expandFrom = Alignment.CenterVertically, clip = true) +
-                        scaleIn(initialScale = 0.965f, animationSpec = tween(340, easing = FastOutSlowInEasing)))
-                        .togetherWith(
-                            fadeOut(tween(140)) +
-                                shrinkVertically(animationSpec = tween(260, easing = FastOutSlowInEasing), shrinkTowards = Alignment.CenterVertically, clip = true) +
-                                scaleOut(targetScale = 0.97f, animationSpec = tween(260, easing = FastOutSlowInEasing))
-                        )
+                    // Lumia 式页面过渡:新页横向滑入(带轻微缩放视差)+ 淡入,
+                    // 旧页向反方向滑出 + 快速淡出 —— 页面绝不凭空消失
+                    if (navForward) {
+                        (slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { it / 3 } +
+                            fadeIn(tween(200)) +
+                            scaleIn(initialScale = 0.97f, animationSpec = tween(260, easing = FastOutSlowInEasing)))
+                            .togetherWith(
+                                slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 6 } +
+                                    fadeOut(tween(160)) +
+                                    scaleOut(targetScale = 0.985f, animationSpec = tween(220, easing = FastOutSlowInEasing))
+                            )
+                    } else {
+                        (slideInHorizontally(tween(260, easing = FastOutSlowInEasing)) { -it / 4 } +
+                            fadeIn(tween(200)) +
+                            scaleIn(initialScale = 0.97f, animationSpec = tween(260, easing = FastOutSlowInEasing)))
+                            .togetherWith(
+                                slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 6 } +
+                                    fadeOut(tween(160)) +
+                                    scaleOut(targetScale = 0.985f, animationSpec = tween(220, easing = FastOutSlowInEasing))
+                            )
+                    }
                 },
             ) { current ->
                 when (current) {
@@ -289,24 +330,24 @@ fun MainScreen(
                     ROUTE_REMOTE_VIEWER -> RemoteViewerScreen(vm = mirrorVm, device = selectedMirrorDevice, back = goBack)
                     "ble" -> BleDetailScreen(bleVm, back = goBack)
                     "btjam" -> BtJamDetailScreen(btVm, back = goBack)
-                    "wifi" -> WifiDetailScreen(wifiVm, back = goBack)
+                    "wifi" -> WifiDetailScreen(wifiVm, radarVm, initialBssid = deauthBssid, back = goBack)
                     "wifijam" -> WifiJamDetailScreen(wjVm, back = goBack)
                     "webserver" -> WebServerDetailScreen(wsVm, back = goBack)
-                    "arp" -> ArpDetailScreen(arpVm, back = goBack)
+                    "arp" -> ArpDetailScreen(arpVm, initialIp = arpKickIp, back = goBack)
                     "http" -> HttpClientScreen(httpVm, back = goBack)
                     "ping" -> PingScreen(pingVm, back = goBack)
                     "blescan" -> BleScannerScreen(blescanVm, back = goBack)
-                    "portscan" -> PortScannerScreen(portscanVm, back = goBack)
+                    "portscan" -> PortScannerScreen(portscanVm, initialHost = portScanHost, back = goBack)
                     "walkie" -> WalkieTalkieScreen(walkieVm, back = goBack)
                     "radar" -> openRadar()
                     "target" -> selectedTargetId?.let { TargetDossierScreen(radarVm, it, back = goBack) } ?: openRadar()
-                    "filetransfer" -> FileTransferScreen(ftVm, back = goBack)
+                    "filetransfer" -> FileTransferScreen(ftVm, arpVm, back = goBack)
                     "vault" -> SecureVaultScreen(vaultVm, back = goBack)
                     "revshell" -> RevShellScreen(revVm, back = goBack)
                     "payload" -> PayloadScreen(payloadVm, back = goBack)
                     "brute" -> DirBruteScreen(bruteVm, back = goBack)
                     "cve" -> CVEScreen(cveVm, back = goBack)
-                    "terminal" -> SshTerminalScreen(terminalVm, back = goBack, onOpenLocal = { navigate("localterm") })
+                    "terminal" -> SshTerminalScreen(terminalVm, initialHost = sshPrefill, back = goBack, onOpenLocal = { navigate("localterm") })
                     "localterm" -> TerminalScreen(viewModel(), back = goBack)
                     "probe" -> ProbeMonitorScreen(radarVm, back = goBack)
                     "serialmon" -> SerialMonitorScreen(back = goBack)
@@ -324,10 +365,10 @@ fun MainScreen(
                     "logicscope" -> LogicScopeScreen(back = goBack)
                     "flippertv" -> FlipperTvScreen(back = goBack)
                     "netbios" -> NetBiosScreen(back = goBack)
-                    "blegatt" -> BleGattScreen(back = goBack)
+                    "blegatt" -> BleGattScreen(radarVm, back = goBack)
                     "snmp" -> SnmpScreen(back = goBack)
                     "lantools" -> LanToolsScreen(back = goBack)
-                    "nordicbench" -> NordicBenchScreen(back = goBack)
+                    "nordicbench" -> NordicBenchScreen(radarVm, back = goBack)
                     "morse" -> MorseScreen(back = goBack)
                     "dbview" -> DbViewScreen(dbVm, radarVm, blescanVm, wifiVm, back = goBack)
                     "taccam" -> TacticalCameraScreen(viewModel(), operatorName = username, back = goBack, openPhotoId = openPhotoId)
@@ -353,6 +394,7 @@ fun MainScreen(
                     "keygen" -> KeyGenScreen(viewModel(), back = goBack)
                     "level" -> LevelScreen(back = goBack)
                     "ai" -> AiScreen(back = goBack)
+                    "intel" -> IntelFeedScreen(viewModel(), back = goBack)
                     ROUTE_ABOUT -> SettingsScreen(settingsVm, back = goBack)
                 }
             }
@@ -558,8 +600,8 @@ private class HomeEntry(
     val icon: ImageVector,
 )
 
-/** 主页分区 */
-private class HomeGroup(val label: String, val routes: List<String>)
+/** 主页分区 —— 每区一个固定分组色,与队伍主题解耦:侦察青/无线红/工具绿/态势金/实验琥珀/网络紫 */
+private class HomeGroup(val label: String, val color: Color, val routes: List<String>)
 
 /** 操作员行段间分隔符 —— 暗灰中点 */
 @Composable
@@ -568,63 +610,94 @@ private fun HomeSep() {
 }
 
 /**
+ * 遥测格 —— 主页头部的大号实时读数:数值上、标签下,类别色描边。
+ * 目标/高危/友方/运行中四格并排,打开主页第一眼就是态势。
+ */
+@Composable
+private fun TelemetryCell(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Surface(
+        modifier,
+        shape = CutCornerShape(topStart = 9.dp, bottomEnd = 9.dp),
+        color = color.copy(alpha = 0.07f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.4f)),
+    ) {
+        Column(Modifier.padding(vertical = 9.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, fontFamily = Mono, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = color)
+            Spacer(Modifier.height(1.dp))
+            Text(label, fontFamily = Mono, fontSize = 7.5.sp, color = Gray)
+        }
+    }
+}
+
+/**
  * 全息核心 —— 主页英雄区动态多环核心
  *
  * 层次(自外向内):脉冲外辉光 → 涟漪扩散环 → 60 刻度慢旋环 →
  * 反向虚线内环 → 中心菱形(径向辉光 + 金色本体 + 白核)。
- * 所有旋转与呼吸只读绘制层状态,零逐帧重组。
+ *
+ * 性能:全部动画由单个 withFrameNanos 帧循环驱动,相位只写进
+ * mutableFloatStateOf 并在 draw 阶段读取 —— 每帧只重绘不重组,
+ * 不再用 4 个 InfiniteTransition 每帧重组整个核心。
  */
 @Composable
 private fun HoloCore(size: Dp, modifier: Modifier = Modifier) {
-    val motion = rememberInfiniteTransition(label = "holo_core")
-    val tickRot by motion.animateFloat(0f, 360f, infiniteRepeatable(tween(16_000, easing = LinearEasing)), label = "ticks")
-    val dashRot by motion.animateFloat(360f, 0f, infiniteRepeatable(tween(9_000, easing = LinearEasing)), label = "dash")
-    val ripple by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(2_300, easing = FastOutSlowInEasing), RepeatMode.Restart), label = "ripple")
-    val glowPulse by motion.animateFloat(0.45f, 1f, infiniteRepeatable(tween(1_200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "glow")
+    var phaseMs by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        var last = 0L
+        while (true) {
+            withFrameNanos { now ->
+                if (last == 0L) { last = now; return@withFrameNanos }
+                val dtMs = (now - last) / 1_000_000f
+                last = now
+                phaseMs = (phaseMs + dtMs) % 7_200_000f
+            }
+        }
+    }
 
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
-        // 底层:脉冲外辉光 + 涟漪 + 静态外环
         Canvas(Modifier.fillMaxSize()) {
             val c = Offset(this.size.width / 2f, this.size.height / 2f)
             val r = this.size.minDimension / 2f
-            drawCircle(Red.copy(alpha = 0.08f * glowPulse), r * 0.965f, c, style = Stroke(7.dp.toPx()))
+            val tSec = phaseMs / 1000f
+
+            // 底层:脉冲外辉光 + 涟漪 + 静态外环
+            val glowPulse = (0.5f + 0.5f * sin(tSec * 2.0 * PI / 1.2f)).toFloat()
+            drawCircle(Red.copy(alpha = 0.08f * (0.45f + 0.55f * glowPulse)), r * 0.965f, c, style = Stroke(7.dp.toPx()))
+            val ripple = (tSec % 2.3f) / 2.3f
             val pr = 0.22f + ripple * 0.74f
             drawCircle(Red.copy(alpha = (1f - ripple) * 0.45f), r * pr, c, style = Stroke(1.1.dp.toPx()))
             drawCircle(Red.copy(alpha = 0.30f), r * 0.94f, c, style = Stroke(1.dp.toPx()))
-        }
-        // 60 刻度环:每 30° 一主刻度,慢速顺时针 —— 设备外壳
-        Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = tickRot }) {
-            val c = Offset(this.size.width / 2f, this.size.height / 2f)
-            val r = this.size.minDimension / 2f
-            for (i in 0 until 60) {
-                val rad = Math.toRadians(i * 6.0)
-                val major = i % 5 == 0
-                val inner = r * (if (major) 0.80f else 0.855f)
-                drawLine(
-                    Red.copy(alpha = if (major) 0.55f else 0.20f),
-                    Offset(c.x + inner * cos(rad).toFloat(), c.y + inner * sin(rad).toFloat()),
-                    Offset(c.x + r * 0.93f * cos(rad).toFloat(), c.y + r * 0.93f * sin(rad).toFloat()),
-                    if (major) 1.3.dp.toPx() else 0.6.dp.toPx(),
+
+            // 60 刻度环:每 30° 一主刻度,16s/圈慢速顺时针
+            rotate((tSec / 16f) * 360f, pivot = c) {
+                for (i in 0 until 60) {
+                    val rad = Math.toRadians(i * 6.0)
+                    val major = i % 5 == 0
+                    val inner = r * (if (major) 0.80f else 0.855f)
+                    drawLine(
+                        Red.copy(alpha = if (major) 0.55f else 0.20f),
+                        Offset(c.x + inner * cos(rad).toFloat(), c.y + inner * sin(rad).toFloat()),
+                        Offset(c.x + r * 0.93f * cos(rad).toFloat(), c.y + r * 0.93f * sin(rad).toFloat()),
+                        if (major) 1.3.dp.toPx() else 0.6.dp.toPx(),
+                    )
+                }
+            }
+
+            // 反向旋转虚线内环(9s/圈)
+            rotate(-(tSec / 9f) * 360f, pivot = c) {
+                drawCircle(
+                    Gold.copy(alpha = 0.55f),
+                    r * 0.70f,
+                    c,
+                    style = Stroke(1.2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 6f))),
                 )
             }
-        }
-        // 反向旋转虚线内环
-        Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = dashRot }) {
-            val c = Offset(this.size.width / 2f, this.size.height / 2f)
-            val r = this.size.minDimension / 2f
+
+            // 中心菱形径向辉光底
             drawCircle(
-                Gold.copy(alpha = 0.55f),
-                r * 0.70f,
-                c,
-                style = Stroke(1.2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 6f))),
-            )
-        }
-        // 中心菱形:径向辉光底 + 金色本体 + 白核
-        Canvas(Modifier.size(size * 0.56f)) {
-            drawCircle(
-                Brush.radialGradient(listOf(Red.copy(alpha = 0.32f), Color.Transparent), center = Offset(this.size.width / 2f, this.size.height / 2f), radius = this.size.minDimension / 2f),
+                Brush.radialGradient(listOf(Red.copy(alpha = 0.32f), Color.Transparent), center = c, radius = this.size.minDimension / 2f),
                 radius = this.size.minDimension / 2f,
-                center = Offset(this.size.width / 2f, this.size.height / 2f),
+                center = c,
             )
         }
         Star(Gold, size * 0.40f)
@@ -635,13 +708,24 @@ private fun HoloCore(size: Dp, modifier: Modifier = Modifier) {
 /**
  * 主页全息扫描掠光 —— 每 4.2 秒一道主色光带自上而下扫过整页,
  * 像雷达对战术地图做一次全屏扫描。纯绘制层,不拦截触摸。
+ * 帧循环驱动(draw 阶段读相位),零逐帧重组。
  */
 @Composable
 private fun HomeSweep(modifier: Modifier = Modifier) {
-    val sweep = rememberInfiniteTransition(label = "home_sweep")
-    val phase by sweep.animateFloat(0f, 1f, infiniteRepeatable(tween(4_200, easing = LinearEasing), RepeatMode.Restart), label = "phase")
+    var phaseMs by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        var last = 0L
+        while (true) {
+            withFrameNanos { now ->
+                if (last == 0L) { last = now; return@withFrameNanos }
+                val dtMs = (now - last) / 1_000_000f
+                last = now
+                phaseMs = (phaseMs + dtMs) % 4_200f
+            }
+        }
+    }
     Canvas(modifier) {
-        val y = phase * size.height
+        val y = phaseMs / 4_200f * size.height
         val bandH = 130.dp.toPx()
         drawRect(
             brush = Brush.verticalGradient(
@@ -708,6 +792,15 @@ fun HomeScreen(
     val sshOnline = terminalr is SshClientManager.Status.Connected
     val mirrorState by mirrorVm.state.collectAsState()
     val mirrorr = mirrorState is MirroringState.HostLive
+    // 雷达目标表每 500ms 轮询一次 —— 主页只做态势读数,2s 采样防整页被高频重组拖卡
+    @OptIn(FlowPreview::class)
+    val radarTargets by produceState(initialValue = emptyList<RadarTarget>()) {
+        radarVm.targets.sample(2000).collect { value = it }
+    }
+    // 实时事件行:雷达最近一次新目标探测
+    val contact by radarVm.contact.collectAsState()
+    var lastContact by remember { mutableStateOf<RadarContactEvent?>(null) }
+    LaunchedEffect(contact) { contact?.let { lastContact = it } }
 
     // 操作员身份 —— 设置页可改呼号与队伍，头部行实时跟随
     val username by settingsVm.username.collectAsState()
@@ -722,6 +815,7 @@ fun HomeScreen(
         HomeEntry(stringResource(R.string.home_radar_name), stringResource(R.string.home_radar_desc), "radar", radarr, { if (radarr) radarVm.stop() else radarVm.start() }, Icons.Outlined.Radar),
         HomeEntry(stringResource(R.string.home_netmap_name), stringResource(R.string.home_netmap_desc), "netmap", false, null, Icons.Outlined.TravelExplore),
         HomeEntry(stringResource(R.string.home_cve_name), stringResource(R.string.home_cve_desc), "cve", cver, null, Icons.Outlined.Search),
+        HomeEntry(stringResource(R.string.home_intel_name), stringResource(R.string.home_intel_desc), "intel", false, null, Icons.Outlined.Notifications),
         HomeEntry(stringResource(R.string.home_sdr_name), stringResource(R.string.home_sdr_desc), "sdr", false, null, Icons.Outlined.Equalizer),
         HomeEntry(stringResource(R.string.home_taccam_name), stringResource(R.string.home_taccam_desc), "taccam", false, null, Icons.Outlined.CameraAlt),
         HomeEntry(stringResource(R.string.home_gsm_name), stringResource(R.string.home_gsm_desc), "gsm", false, null, Icons.Outlined.Sensors),
@@ -785,17 +879,28 @@ fun HomeScreen(
     )
 
     val groups = listOf(
-        HomeGroup(stringResource(R.string.home_group_recon), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "sdr", "taccam", "gsm", "mdns")),
-        HomeGroup(stringResource(R.string.home_group_wireless), listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
-        HomeGroup(stringResource(R.string.home_group_tools), listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview", "hash", "qr", "keygen", "ai")),
-        HomeGroup(stringResource(R.string.home_group_situational), listOf("gnss", "pdr", "mains", "sonic", "selfcheck", "level")),
-        HomeGroup(stringResource(R.string.home_group_lab), listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools")),
-        HomeGroup(stringResource(R.string.home_group_network), listOf("webserver", "http", "brute", "ping", "packetmon", "dns", "whois", "tlscert")),
+        HomeGroup(stringResource(R.string.home_group_recon), Color(0xFF00E5FF), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "intel", "sdr", "taccam", "gsm", "mdns")),
+        HomeGroup(stringResource(R.string.home_group_wireless), Color(0xFFFF4D5E), listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
+        HomeGroup(stringResource(R.string.home_group_tools), Color(0xFF00E676), listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview", "hash", "qr", "keygen", "ai")),
+        HomeGroup(stringResource(R.string.home_group_situational), Gold, listOf("gnss", "pdr", "mains", "sonic", "selfcheck", "level")),
+        HomeGroup(stringResource(R.string.home_group_lab), Warn, listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools")),
+        HomeGroup(stringResource(R.string.home_group_network), Color(0xFFB388FF), listOf("webserver", "http", "brute", "ping", "packetmon", "dns", "whois", "tlscert")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }
     val activeEntries = entries.filter { it.running }
     val haptic = LocalHapticFeedback.current
+
+    // 收藏功能:☆ 钉住的模块置顶显示,持久化在 deauthctrl_prefs
+    val context = LocalContext.current
+    val favPrefs = remember { context.getSharedPreferences("deauthctrl_prefs", 0) }
+    val favRoutes = remember { mutableStateOf(favPrefs.getStringSet("fav_routes", emptySet())?.toMutableSet() ?: mutableSetOf()) }
+    fun toggleFav(route: String) {
+        val cur = favRoutes.value
+        if (route in cur) cur.remove(route) else cur.add(route)
+        favPrefs.edit().putStringSet("fav_routes", cur).apply()
+        favRoutes.value = cur
+    }
 
     // 主页用 LazyVerticalGrid 而非 LazyColumn：60 个模块以 2 列网格懒加载，
     // 滚动与遥测刷新时只组合可见项，避免整页重组导致的卡顿
@@ -807,50 +912,100 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // ─── 全息核心头部（跨两列） ───────────────────────────────
+        // ─── 全息核心头部（跨两列）:核心 + 标题并排,下方遥测带与实时事件行 ──
         item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
-            val shimmerSweep by rememberInfiniteTransition(label = "title_shimmer").animateFloat(
-                0f, 1f,
-                infiniteRepeatable(tween(2_800, easing = LinearEasing), RepeatMode.Restart),
-                label = "sweep",
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                HoloCore(96.dp)
-                Spacer(Modifier.height(10.dp))
-                // 标题流光:金色高光带每 2.8 秒扫过一次标题
-                Text(
-                    stringResource(R.string.app_name),
-                    fontFamily = Sans,
-                    fontSize = 27.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 0.sp,
-                    style = TextStyle(
-                        brush = Brush.linearGradient(
-                            colors = listOf(White, Gold, White),
-                            start = Offset(-140f + shimmerSweep * 520f, 0f),
-                            end = Offset(140f + shimmerSweep * 520f, 0f),
-                        ),
-                    ),
-                )
-                Spacer(Modifier.height(2.dp))
-                GlitchText(stringResource(R.string.main_home_glitch), glitchIntervalMs = 3200, style = TextStyle(fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp), modifier = Modifier.align(Alignment.CenterHorizontally))
-                Spacer(Modifier.height(2.dp))
-                // 操作员行分段着色:呼号金色、队伍主色、加密信道电光青 —— 信息一眼分层
+            Column(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.main_home_operator_prefix), fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                    Text(username, fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold)
-                    HomeSep()
-                    Text(squad.teamName, fontFamily = Mono, fontSize = 9.sp, color = squad.primary)
-                    HomeSep()
-                    Text(stringResource(R.string.main_home_holo_terminal), fontFamily = Mono, fontSize = 9.sp, color = Gray)
-                    HomeSep()
-                    Text(stringResource(R.string.main_home_encryption), fontFamily = Mono, fontSize = 9.sp, color = TacGreen)
+                    HoloCore(88.dp)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        // 静态金白渐变标题(流光动画改为静态渐变:流光状态每帧更新会导致标题逐帧重组)
+                        Text(
+                            stringResource(R.string.app_name),
+                            fontFamily = Sans,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black,
+                            style = TextStyle(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Gold, White, Gold),
+                                    start = Offset(0f, 0f),
+                                    end = Offset(600f, 0f),
+                                ),
+                            ),
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        GlitchText(stringResource(R.string.main_home_glitch), glitchIntervalMs = 3200, style = TextStyle(fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp))
+                        Spacer(Modifier.height(4.dp))
+                        // 操作员行分段着色:呼号金色、队伍主色、加密信道电光青 —— 信息一眼分层
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.main_home_operator_prefix), fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                            Text(username, fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold)
+                            HomeSep()
+                            Text(squad.teamName, fontFamily = Mono, fontSize = 8.sp, color = squad.primary)
+                            HomeSep()
+                            Text(stringResource(R.string.main_home_encryption), fontFamily = Mono, fontSize = 8.sp, color = TacGreen)
+                        }
+                    }
                 }
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
+                // ── 遥测带:四大实时读数 ──
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    TelemetryCell(stringResource(R.string.main_tel_targets), "${radarTargets.size}", TacGreen, Modifier.weight(1f))
+                    TelemetryCell(stringResource(R.string.main_tel_high), "${radarTargets.count { radarThreatTier(it).key == "high" }}", Danger, Modifier.weight(1f))
+                    TelemetryCell(stringResource(R.string.main_tel_friendly), "${radarTargets.count { it.bonded }}", FRIENDLY_BLIP, Modifier.weight(1f))
+                    TelemetryCell(stringResource(R.string.main_tel_running), "${activeEntries.size}", Gold, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(6.dp))
+                // ── 实时事件行:最新雷达新目标 + 快捷入口 ──
+                Surface(
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                    color = SurfaceBg,
+                    border = BorderStroke(1.dp, BorderDim),
+                ) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PulseStar(active = radarr, size = 6.dp)
+                        Spacer(Modifier.width(7.dp))
+                        Text(
+                            lastContact?.let { stringResource(R.string.main_tel_contact, it.count, it.names.take(2).joinToString(" / "), SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(it.timeMs))) }
+                                ?: stringResource(R.string.main_tel_idle),
+                            fontFamily = Mono, fontSize = 8.sp,
+                            color = if (lastContact != null) TacGreen else Gray,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(stringResource(R.string.main_sitrep_radar), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.clickable { nav("radar") }.padding(horizontal = 6.dp, vertical = 3.dp))
+                        Text(stringResource(R.string.main_sitrep_netmap), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.clickable { nav("netmap") }.padding(horizontal = 6.dp, vertical = 3.dp))
+                        Text(stringResource(R.string.main_sitrep_intel), fontFamily = Sans, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.clickable { nav("intel") }.padding(horizontal = 6.dp, vertical = 3.dp))
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
             }
         }
         item(key = "status", span = { GridItemSpan(maxLineSpan) }) { StatusBar() }
         item(key = "status_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
+
+        // ─── 收藏分区:☆ 钉住的模块置顶显示 ───
+        val favEntries = favRoutes.value.mapNotNull { entriesByRoute[it] }
+        if (favEntries.isNotEmpty()) {
+            item(key = "fav_header", span = { GridItemSpan(maxLineSpan) }) { SectionLabel(stringResource(R.string.main_fav_section), Gold) }
+            favEntries.forEachIndexed { index, entry ->
+                item(key = "fav_" + entry.route) {
+                    HomeGridCard(
+                        name = entry.name,
+                        desc = entry.desc,
+                        running = entry.running,
+                        icon = entry.icon,
+                        groupColor = Gold,
+                        favorite = true,
+                        onToggleFavorite = { haptic.hud(); toggleFav(entry.route) },
+                        delayMs = index.coerceAtMost(CASCADE_MAX_STEPS) * CASCADE_STEP_MS,
+                        onClick = { nav(entry.route) },
+                        onToggle = entry.toggle,
+                    )
+                }
+            }
+            item(key = "fav_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(4.dp)) }
+        }
 
         if (activeEntries.isNotEmpty()) {
             item(key = "running_header", span = { GridItemSpan(maxLineSpan) }) {
@@ -871,7 +1026,7 @@ fun HomeScreen(
         }
 
         groups.forEach { group ->
-            item(key = "label_" + group.label, span = { GridItemSpan(maxLineSpan) }) { SectionLabel(group.label) }
+            item(key = "label_" + group.label, span = { GridItemSpan(maxLineSpan) }) { SectionLabel(group.label, group.color) }
             group.routes.mapNotNull { entriesByRoute[it] }.forEachIndexed { index, entry ->
                 item(key = "card_" + entry.route) {
                     HomeGridCard(
@@ -879,6 +1034,9 @@ fun HomeScreen(
                         desc = entry.desc,
                         running = entry.running,
                         icon = entry.icon,
+                        groupColor = group.color,
+                        favorite = entry.route in favRoutes.value,
+                        onToggleFavorite = { haptic.hud(); toggleFav(entry.route) },
                         delayMs = index.coerceAtMost(CASCADE_MAX_STEPS) * CASCADE_STEP_MS,
                         onClick = { nav(entry.route) },
                         onToggle = entry.toggle,
@@ -939,6 +1097,7 @@ fun HomeScreen(
  * 主页 2 列网格的竖版模块卡
  *
  * 结构：顶部 30dp 图标 → 名称（运行中带脉冲菱形）→ 单行描述 → 全宽按钮条。
+ * 分组色：左缘 3dp 色轨 + 图标框 + 「进入」字色,分区一眼可辨;
  * 运行态：电光青呼吸边框 + 四角锁定框；呼吸相位只在绘制阶段读取，不产生逐帧重组。
  * 入场：delayMs 延迟后 fade + 上滑，保留原有级联节奏。
  */
@@ -948,9 +1107,12 @@ private fun HomeGridCard(
     desc: String,
     running: Boolean,
     icon: ImageVector,
+    groupColor: Color = TacGreen,
     delayMs: Long = 0L,
     onClick: () -> Unit,
     onToggle: (() -> Unit)? = null,
+    favorite: Boolean = false,
+    onToggleFavorite: (() -> Unit)? = null,
 ) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { if (delayMs > 0) delay(delayMs); visible = true }
@@ -983,6 +1145,7 @@ private fun HomeGridCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .scale(cardScale)
+                .lumiaTilt()
                 .clickable(interactionSource = cardInteraction, indication = LocalIndication.current) {
                     haptic.hud()
                     onClick()
@@ -992,12 +1155,33 @@ private fun HomeGridCard(
             border = if (running) null else BorderStroke(1.dp, BorderDim),
         ) {
             Box {
+                // 收藏星标:右上角独立点击,不影响卡片本体(★ 已钉住 / ☆ 未收藏)
+                if (onToggleFavorite != null) {
+                    Text(
+                        if (favorite) "★" else "☆",
+                        fontFamily = Mono, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                        color = if (favorite) Gold else Gray.copy(alpha = 0.4f),
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .clickable { onToggleFavorite() }
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                    )
+                }
+                // 分组色左轨(运行态转电光青)
+                Box(
+                    Modifier.matchParentSize().drawWithCache {
+                        val w = 3.dp.toPx()
+                        onDrawBehind {
+                            drawRect(if (running) TacGreen.copy(alpha = 0.9f) else groupColor.copy(alpha = 0.55f), size = Size(w, size.height))
+                        }
+                    },
+                )
                 Column(Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 10.dp)) {
-                    // 模块图标:斜切角底板容器,运行态底板泛青 —— 52 张卡视觉统一成战术模块阵列
+                    // 模块图标:斜切角底板容器,分组色描边,运行态底板泛青 —— 52 张卡视觉统一成战术模块阵列
                     Surface(
                         shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                        color = if (running) TacGreen.copy(alpha = 0.10f) else SurfaceAlt,
-                        border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else BorderDim),
+                        color = if (running) TacGreen.copy(alpha = 0.10f) else groupColor.copy(alpha = 0.06f),
+                        border = BorderStroke(1.dp, if (running) TacGreen.copy(alpha = 0.5f) else groupColor.copy(alpha = 0.4f)),
                     ) {
                         Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
                             Icon(icon, contentDescription = name, tint = iconTint, modifier = Modifier.size(24.dp))
@@ -1031,7 +1215,7 @@ private fun HomeGridCard(
                     )
                     Spacer(Modifier.height(10.dp))
                     if (onToggle == null) {
-                        // 纯入口：透明底 + 暗框「进入」
+                        // 纯入口：透明底 + 暗框「进入」(分组色)
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1042,14 +1226,14 @@ private fun HomeGridCard(
                                 },
                             shape = barShape,
                             color = Color.Transparent,
-                            border = BorderStroke(1.dp, BorderDim),
+                            border = BorderStroke(1.dp, groupColor.copy(alpha = 0.35f)),
                         ) {
                             Text(
                                 stringResource(R.string.main_enter),
                                 fontFamily = Sans,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Red,
+                                color = groupColor,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
                             )

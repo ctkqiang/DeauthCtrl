@@ -2,6 +2,7 @@ package xin.ctkqiang.deauthctrl.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,6 +62,7 @@ import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.viewmodel.BleGattViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
 
 /**
  * BLE GATT 工作台 —— 服务枚举 / 读写 / 通知
@@ -78,11 +80,13 @@ import xin.ctkqiang.deauthctrl.viewmodel.BleGattViewModel
  * 写操作会真实改变设备状态，没有撤销通道。
  */
 @Composable
-fun BleGattScreen(back: () -> Unit) {
+fun BleGattScreen(radarVm: RadarViewModel, back: () -> Unit) {
     val vm: BleGattViewModel = viewModel()
     val state by vm.state.collectAsState()
     var macInput by remember { mutableStateOf("") }
     var expandedServices by remember { mutableStateOf<Set<String>>(emptySet()) }
+    // 设备选择器:从雷达扫描结果点选,免手输 MAC
+    var showPicker by remember { mutableStateOf(false) }
 
     // 离开页面主动断开，避免 GATT 连接留在后台
     DisposableEffect(Unit) {
@@ -110,11 +114,51 @@ fun BleGattScreen(back: () -> Unit) {
         ) {
             // ── 连接控制 ──────────────────────────────────────────────
             TermPanel(stringResource(R.string.gatt_panel_connect)) {
-                TermInput(
-                    stringResource(R.string.gatt_target_mac_label),
-                    macInput,
-                    placeholder = stringResource(R.string.gatt_target_mac_placeholder),
-                ) { macInput = it.take(32) }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    TermInput(
+                        stringResource(R.string.gatt_target_mac_label),
+                        macInput,
+                        placeholder = stringResource(R.string.gatt_target_mac_placeholder),
+                        modifier = Modifier.weight(1f),
+                    ) { macInput = it.take(32) }
+                    Spacer(Modifier.width(6.dp))
+                    Surface(
+                        modifier = Modifier.clickable { showPicker = true },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = Gold.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
+                    ) {
+                        Text(
+                            stringResource(R.string.picker_pick),
+                            fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                            color = Gold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 11.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                // ── 附近 BLE:雷达扫描结果点选即填,免手输;GATT 直连不配对 ──
+                val nearbyBle = remember(radarVm) { radarVm }
+                val radarTargets by nearbyBle.targets.collectAsState()
+                val bleNearby = radarTargets.filter { it.type == "bt" }.sortedByDescending { it.rssi }.take(4)
+                if (bleNearby.isNotEmpty()) {
+                    Text(stringResource(R.string.gatt_nearby_label), fontFamily = Mono, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = Gold)
+                    Spacer(Modifier.height(3.dp))
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        bleNearby.forEach { t ->
+                            Surface(
+                                modifier = Modifier.clickable { macInput = t.address },
+                                shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
+                                color = BLE_BLIP.copy(alpha = 0.10f),
+                                border = BorderStroke(1.dp, BLE_BLIP.copy(alpha = 0.5f)),
+                            ) {
+                                Column(Modifier.padding(horizontal = 7.dp, vertical = 4.dp)) {
+                                    Text(t.name.take(12).ifBlank { "?" }, fontFamily = Sans, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = White, maxLines = 1)
+                                    Text("${t.address} · ${t.rssi}dBm", fontFamily = Mono, fontSize = 6.5.sp, color = BLE_BLIP)
+                                }
+                            }
+                        }
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 ActionButton(
                     running = sessionActive,
@@ -129,6 +173,11 @@ fun BleGattScreen(back: () -> Unit) {
                 PanelStat(stringResource(R.string.gatt_stat_device_address), state.deviceAddress.ifBlank { "--" })
                 PanelStat(stringResource(R.string.gatt_stat_services_chars), "${state.services.size} / ${state.characteristicCount}")
                 Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.gatt_no_pair_hint),
+                    fontFamily = Sans, fontSize = 8.sp, color = TacGreen, lineHeight = 12.sp,
+                )
+                Spacer(Modifier.height(3.dp))
                 Text(
                     stringResource(R.string.gatt_mac_hint),
                     fontFamily = Sans,
@@ -266,6 +315,20 @@ fun BleGattScreen(back: () -> Unit) {
             }
             Spacer(Modifier.height(10.dp))
         }
+    }
+
+    // ── 设备选择器:点选雷达扫描结果,免手输 MAC ──
+    if (showPicker) {
+        RadarDevicePickerDialog(
+            vm = radarVm,
+            title = stringResource(R.string.gatt_picker_title),
+            typeFilter = "all",
+            onPick = { t ->
+                macInput = if (t.type == "wifi") t.id else t.address
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
     }
 }
 

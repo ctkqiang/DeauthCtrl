@@ -1,6 +1,7 @@
 package xin.ctkqiang.deauthctrl.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,7 @@ import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.viewmodel.NordicBenchViewModel
+import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
 
 /**
  * Nordic 工作台 —— 广告解析 / NUS 终端 / 绑定管理
@@ -83,7 +85,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.NordicBenchViewModel
  * 不补全读不到的设备名。NUS 只对烧录了对应固件的设备有效。
  */
 @Composable
-fun NordicBenchScreen(back: () -> Unit) {
+fun NordicBenchScreen(radarVm: RadarViewModel, back: () -> Unit) {
     val vm: NordicBenchViewModel = viewModel()
     val nusState by vm.nusState.collectAsState()
     val bondState by vm.bondState.collectAsState()
@@ -100,6 +102,8 @@ fun NordicBenchScreen(back: () -> Unit) {
     var macInput by remember { mutableStateOf("") }
     var sendText by remember { mutableStateOf("") }
     var lineEnding by remember { mutableStateOf(NusLineEnding.CRLF) }
+    // 设备选择器:从雷达扫描结果点选,免手输 MAC
+    var showPicker by remember { mutableStateOf(false) }
 
     // 绑定页签的待确认删除目标
     var pendingRemove by remember { mutableStateOf<BondedDevice?>(null) }
@@ -185,6 +189,7 @@ fun NordicBenchScreen(back: () -> Unit) {
                     onSendText = { sendText = it },
                     lineEnding = lineEnding,
                     onLineEnding = { lineEnding = it },
+                    onOpenPicker = { showPicker = true },
                 )
 
                 else -> BondTab(
@@ -199,6 +204,20 @@ fun NordicBenchScreen(back: () -> Unit) {
             HonestyPanel()
             Spacer(Modifier.height(10.dp))
         }
+    }
+
+    // ── 设备选择器:点选雷达扫描结果,免手输 MAC ──
+    if (showPicker) {
+        RadarDevicePickerDialog(
+            vm = radarVm,
+            title = stringResource(R.string.nordic_picker_title),
+            typeFilter = "all",
+            onPick = { t ->
+                macInput = if (t.type == "wifi") t.id else t.address
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
     }
 }
 
@@ -378,6 +397,7 @@ private fun NusTab(
     onSendText: (String) -> Unit,
     lineEnding: NusLineEnding,
     onLineEnding: (NusLineEnding) -> Unit,
+    onOpenPicker: () -> Unit,
 ) {
     val terminalScroll = rememberScrollState()
 
@@ -390,8 +410,26 @@ private fun NusTab(
     }
 
     TermPanel(stringResource(R.string.nordic_panel_connect)) {
-        TermInput(stringResource(R.string.nordic_mac_label), macInput, placeholder = "AA:BB:CC:DD:EE:FF") {
-            onMacInput(it.take(32))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TermInput(
+                stringResource(R.string.nordic_mac_label),
+                macInput,
+                placeholder = "AA:BB:CC:DD:EE:FF",
+                modifier = Modifier.weight(1f),
+            ) { onMacInput(it.take(32)) }
+            Spacer(Modifier.width(6.dp))
+            Surface(
+                modifier = Modifier.clickable { onOpenPicker() },
+                shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                color = Gold.copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
+            ) {
+                Text(
+                    stringResource(R.string.picker_pick),
+                    fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    color = Gold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 11.dp),
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
         ActionButton(

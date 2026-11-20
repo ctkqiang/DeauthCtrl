@@ -36,6 +36,7 @@
     <!-- ─── NUS 终端 ─── -->
     <string name="nordic_panel_connect">Connection · NORDIC UART SERVICE</string>
     <string name="nordic_mac_label">Target MAC address</string>
+    <string name="nordic_picker_title">Select device from radar scan</string>
     <string name="nordic_btn_connect">CONNECT</string>
     <string name="nordic_btn_disconnect">DISCONNECT</string>
     <string name="nordic_stat_status">Status</string>

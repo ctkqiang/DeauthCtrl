@@ -3,6 +3,9 @@
     <string name="gatt_title">BLE GATT Workbench</string>
     <string name="gatt_panel_connect">Connection · GATT CLIENT</string>
     <string name="gatt_target_mac_label">Target MAC address</string>
+    <string name="gatt_picker_title">Select target from radar scan</string>
+    <string name="gatt_nearby_label">NEARBY BLE · tap to fill — GATT connects without pairing</string>
+    <string name="gatt_no_pair_hint">No pairing needed: direct GATT connection reads services / characteristics UUIDs</string>
     <string name="gatt_target_mac_placeholder">AA:BB:CC:DD:EE:FF</string>
     <string name="gatt_btn_connect">CONNECT</string>
     <string name="gatt_btn_disconnect">DISCONNECT</string>

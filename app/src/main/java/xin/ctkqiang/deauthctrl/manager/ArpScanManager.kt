@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
@@ -168,6 +169,44 @@ class ArpScanManager {
      *
      * @return true 表示探测已开始；false 表示前置条件不满足，原因见 [error]
      */
+    /**
+     * IP 地理定位(免 Key):ip-api.com 公开 JSON。
+     * 私有/回环/链路本地地址直接返回 null —— 内网地址没有地理意义,不编造。
+     * 返回 "国家 · 省 · 市 · ISP [lat,lon]" 或 null(私有/失败)。
+     */
+    suspend fun geoLookup(ip: String): String? = withContext(Dispatchers.IO) {
+        if (isPrivateIp(ip)) return@withContext null
+        runCatching {
+            val conn = (java.net.URL("http://ip-api.com/json/$ip?fields=status,country,regionName,city,isp,lat,lon")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                connectTimeout = 6000
+                readTimeout = 8000
+                instanceFollowRedirects = true
+                setRequestProperty("User-Agent", "DeauthCtrl/1.0")
+            }
+            val text = conn.inputStream.bufferedReader().use { it.readText() }
+            val o = org.json.JSONObject(text)
+            if (o.optString("status") != "success") return@runCatching null
+            buildString {
+                append(o.optString("country")).append(" · ").append(o.optString("regionName"))
+                append(" · ").append(o.optString("city")).append(" · ").append(o.optString("isp"))
+                append("  [%.3f,%.3f]".format(o.optDouble("lat"), o.optDouble("lon")))
+            }
+        }.getOrNull()
+    }
+
+    /** 私有/回环/链路本地地址判定 */
+    private fun isPrivateIp(ip: String): Boolean {
+        val parts = ip.split('.').mapNotNull { it.toIntOrNull() }
+        if (parts.size != 4) return true
+        return parts[0] == 10 ||
+            (parts[0] == 172 && parts[1] in 16..31) ||
+            (parts[0] == 192 && parts[1] == 168) ||
+            parts[0] == 127 ||
+            (parts[0] == 169 && parts[1] == 254) ||
+            (parts[0] == 100 && parts[1] in 64..127)
+    }
+
     fun scan(): Boolean {
         stop()
         val session = sessionId.incrementAndGet()

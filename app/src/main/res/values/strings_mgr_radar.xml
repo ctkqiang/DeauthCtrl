@@ -59,5 +59,10 @@
 
     <!-- ─── Vendor ─── -->
     <string name="mgr_radar_vendor_unknown">Unknown vendor</string>
-
+    <string name="mgr_radar_connect_bad_ssid">Target has no SSID — cannot connect</string>
+    <string name="mgr_radar_connect_wep_unsupported">WEP networks cannot be connected via system dialog</string>
+    <string name="mgr_radar_connect_bad_pass">Invalid passphrase (WPA/WPA2/WPA3 needs 8+ chars)</string>
+    <string name="mgr_radar_connect_failed">Connect failed — the system will show its own dialog if it can proceed</string>
+    <string name="mgr_radar_pair_failed">Pairing request failed — the target must be discoverable / connectable</string>
+    <string name="mgr_radar_connect_perm">Location permission and location service required for WiFi connect (Android 10+ system rule)</string>
 </resources>

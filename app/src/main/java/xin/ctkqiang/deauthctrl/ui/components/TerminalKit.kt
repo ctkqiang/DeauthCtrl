@@ -10,6 +10,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -52,6 +53,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,6 +69,11 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -376,14 +383,45 @@ fun TerminalHeader(title: String, back: () -> Unit) {
  * 线尾菱形端点。主页分区与详情页面板共用，整支应用的分区视觉锚点。
  */
 @Composable
-fun SectionLabel(text: String) {
+fun SectionLabel(text: String, color: Color = Red) {
     Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("▸ ", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Red)
+        Text("▸ ", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
         Text(text, fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
         Spacer(Modifier.width(9.dp))
-        Box(Modifier.weight(1f).height(1.dp).background(Red.copy(alpha = 0.35f)))
+        Box(Modifier.weight(1f).height(1.dp).background(color.copy(alpha = 0.35f)))
         Spacer(Modifier.width(7.dp))
-        Star(Gold.copy(alpha = 0.8f), 6.dp)
+        Star(color.copy(alpha = 0.8f), 6.dp)
+    }
+}
+
+/**
+ * 战术遥测单行条 —— 设备雷达同款视觉:菱形 + 2-4 格「数值/标签」+ 竖线分隔。
+ * 对讲机 / BLE 嗅探 / ARP / 端口扫描等所有执行页共用,保证全应用战术视觉一致。
+ * 参数为 (数值, 标签) 对。
+ */
+@Composable
+fun TacticalStatStrip(cells: List<Pair<String, String>>, modifier: Modifier = Modifier) {
+    Surface(
+        modifier,
+        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, BorderDim),
+    ) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+            Star(Gold, 7.dp)
+            Spacer(Modifier.width(8.dp))
+            cells.forEachIndexed { i, (value, label) ->
+                if (i > 0) {
+                    Spacer(Modifier.width(10.dp))
+                    Box(Modifier.width(1.dp).height(18.dp).background(BorderDim))
+                    Spacer(Modifier.width(10.dp))
+                }
+                Column {
+                    Text(value, fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TacGreen)
+                    Text(label, fontFamily = Sans, fontSize = 7.5.sp, color = Gray)
+                }
+            }
+        }
     }
 }
 
@@ -713,6 +751,7 @@ fun ModuleCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .scale(cardScale)
+                .lumiaTilt()
                 .clickable(interactionSource = cardInteraction, indication = LocalIndication.current) {
                     haptic.hud()
                     onClick()
@@ -872,5 +911,49 @@ private fun KitPreview() {
                 StatChip("丢包", "0%")
             }
         }
+    }
+}
+
+/**
+ * Lumia 式按压倾斜 —— 按到组件哪里就往哪里轻微倾斜(最大约 5°),
+ * 松手弹簧回正;配合页面横向滑入过渡,还原 Windows Phone 的流体触感。
+ * 只作用于绘制层,不拦截点击。
+ */
+@Composable
+fun Modifier.lumiaTilt(): Modifier {
+    val density = LocalDensity.current
+    var pressed by remember { mutableStateOf(false) }
+    var targetX by remember { mutableFloatStateOf(0f) }
+    var targetY by remember { mutableFloatStateOf(0f) }
+    // 按压时弹簧跟随手指位置,松手弹簧回正 —— 不用受限作用域里的挂起调用
+    val restX by animateFloatAsState(
+        targetValue = if (pressed) targetX else 0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 420f),
+    )
+    val restY by animateFloatAsState(
+        targetValue = if (pressed) targetY else 0f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 420f),
+    )
+    return pointerInput(Unit) {
+        awaitEachGesture {
+            awaitFirstDown()
+            pressed = true
+            while (true) {
+                val event = awaitPointerEvent()
+                val change = event.changes.firstOrNull()
+                if (change == null || !change.pressed) break
+                val w = size.width.toFloat().coerceAtLeast(1f)
+                val h = size.height.toFloat().coerceAtLeast(1f)
+                targetY = -((change.position.x - w / 2f) / w) * 5f
+                targetX = ((change.position.y - h / 2f) / h) * 5f
+            }
+            pressed = false
+        }
+    }.graphicsLayer {
+        rotationX = restX
+        rotationY = restY
+        scaleX = if (pressed) 0.985f else 1f
+        scaleY = if (pressed) 0.985f else 1f
+        cameraDistance = 10f * density.density
     }
 }

@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ai_title">Offline AI Terminal</string>
-    <string name="ai_panel_model">Model</string>
+    <string name="ai_tab_chat">CHAT</string>
+    <string name="ai_tab_models">MODEL BAY</string>
+    <string name="ai_channel_line">CH: LOCAL-LLM · %1$d TOK</string>
+    <string name="ai_empty_hint">Type below — everything runs on this device</string>
+    <string name="ai_param_line">TEMP %1$s · sampling chips moved to a single line</string>
+    <string name="ai_recv">RECEIVING</string>
+    <string name="ai_models_ready">BAY · %1$d/%2$d READY</string>
+    <string name="ai_panel_model">Model Bay</string>
+    <string name="ai_model_bay_hint">swipe · tap to switch</string>
+    <string name="ai_tag_uncensored">UNCENSORED</string>
+    <string name="ai_tag_reasoning">REASONING</string>
+    <string name="ai_tag_standard">STANDARD</string>
+    <string name="ai_tag_custom">CUSTOM</string>
     <string name="ai_label_model">Model</string>
     <string name="ai_label_storage">Size</string>
     <string name="ai_label_status">Status</string>
@@ -13,6 +25,11 @@
     <string name="ai_btn_download">Download Model</string>
     <string name="ai_btn_cancel">Cancel</string>
     <string name="ai_btn_delete_model">Delete Model</string>
+    <string name="ai_btn_import">Import .litertlm</string>
+    <string name="ai_btn_url">URL DL</string>
+    <string name="ai_ph_url">Paste a direct .litertlm link (e.g. HuggingFace resolve URL)…</string>
+    <string name="ai_panel_system">System Prompt</string>
+    <string name="ai_ph_system">Define the assistant persona and boundaries (blank = model default)…</string>
     <string name="ai_panel_chat">Chat</string>
     <string name="ai_label_params">Sampling</string>
     <string name="ai_empty_chat">Download the model, then chat runs entirely on this device</string>
@@ -23,14 +40,17 @@
     <string name="ai_role_you">YOU</string>
     <string name="ai_role_ai">AI</string>
     <string name="ai_panel_limits">Scope &amp; Limits</string>
-    <string name="ai_limit_download">First setup needs a one-time network download (~1.5 GB) from Hugging Face — no account required.</string>
+    <string name="ai_limit_download">First setup needs a one-time network download (~1.5-2.6 GB) from Hugging Face — no account required. Uncensored, reasoning and standard models all live in one menu.</string>
     <string name="ai_limit_offline">After download, inference is 100% offline — prompts and outputs never leave the device.</string>
+    <string name="ai_note_uncensored">No content filter exists in local inference — the model behaves exactly as its weights dictate. Other uncensored models (TinyDolphin-1.1B, abliterated Qwen2.5-1.5B / Llama-3.2-1B safetensors) can be converted to .litertlm on a PC with litert-torch and pulled in via import or URL download.</string>
     <string name="ai_limit_device">Runtime supports arm64-v8a / x86_64 only; ~6 GB RAM recommended. On weaker devices the model loads slowly or fails.</string>
     <string name="ai_limit_quality">1.5B-parameter quantized models: fast and private, but not cloud-scale assistants. Treat their output accordingly.</string>
     <string name="ai_err_arch">This device\'s CPU is not supported by the LiteRT-LM runtime (arm64 / x86_64 only).</string>
     <string name="ai_warn_ram">Device memory is below the model\'s 6 GB recommendation — loading may fail.</string>
+    <string name="ai_model_nanbeige">Nanbeige-3B</string>
     <string name="ai_model_qwen">Qwen2.5-1.5B</string>
     <string name="ai_model_deepseek">DeepSeek-R1</string>
+    <string name="ai_model_gemma4u">Gemma-4-E2B</string>
     <string name="ai_temp_default">T Default</string>
-    <string name="ai_limit_gated">Both listed models download without an HF account; smaller models (Gemma3-1B) are gated repos and therefore not included.</string>
+    <string name="ai_limit_gated">One-click download + auto setup, zero configuration. Every model in the menu downloads straight from Hugging Face and loads automatically.</string>
 </resources>

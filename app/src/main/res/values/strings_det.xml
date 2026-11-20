@@ -140,6 +140,15 @@
     <string name="det_label_browser_url">BROWSER URL</string>
     <string name="det_label_gateway_ip">GATEWAY IP</string>
     <string name="det_label_peer_ip">PEER IP</string>
+    <string name="det_ft_lan_hosts">LAN HOSTS · tap to fill</string>
+    <string name="det_ft_scan_lan">RESCAN ▸</string>
+    <string name="det_ft_scanning_lan">SCANNING…</string>
+    <string name="det_ft_lan_empty">No LAN hosts found — tap RESCAN, or type the IP below</string>
+    <string name="det_ft_manual_ip">MANUAL IP (optional)</string>
+    <string name="det_ft_host">host</string>
+    <string name="det_ft_local">LOCAL IP</string>
+    <string name="det_ft_sent">SENT</string>
+    <string name="det_ft_state">STATE</string>
     <string name="det_label_local_ip_gateway">LOCAL IP · GATEWAY</string>
     <string name="det_label_signal_strength">SIGNAL</string>
     <string name="det_label_channel_frequency">CHANNEL · FREQ</string>
@@ -185,8 +194,10 @@
     <string name="det_info_adv">ADV</string>
     <string name="det_info_device_intel">INTEL</string>
     <string name="det_info_bearing">BEARING</string>
+    <string name="det_info_distance">DIST</string>
     <string name="det_info_distance_model">RANGE MODEL</string>
     <string name="det_info_tracking">TRACKING</string>
+    <string name="det_info_threat">THREAT</string>
 
     <!-- ─── 占位与提示 ─── -->
     <string name="det_hint_leave_blank_unlimited">Leave blank = unlimited</string>
@@ -387,13 +398,36 @@
     <string name="det_scope_mode_idle">MODE: STANDBY</string>
     <string name="det_fmt_scope_sweep">SCAN: %1$03d°</string>
     <string name="det_fmt_scope_heading">HDG: %1$03d°</string>
-    <string name="det_fmt_scope_status2">"RANGE: 100m   TARGETS: %1$d/%2$d   FIX: %3$d   NODES: %4$d"</string>
+    <string name="det_fmt_scope_status2">"RANGE: %1$s   TARGETS: %2$d/%3$d   FIX: %4$d   NODES: %5$d"</string>
     <string name="det_cardinal_n">N</string>
     <string name="det_cardinal_e">E</string>
     <string name="det_cardinal_s">S</string>
     <string name="det_cardinal_w">W</string>
     <string name="det_legend_mesh_nodes">◈ Same-net nodes (range unknown)</string>
     <string name="det_fmt_satellites">SAT %1$d</string>
+    <string name="det_fmt_lan">LAN %1$d</string>
+    <string name="det_lan_scanning">LAN ▸▸</string>
+    <string name="det_lan_legend">▣ Same-net hosts ×%1$d (range unknown)</string>
+    <string name="det_lan_popup_title">SAME-NET</string>
+    <string name="det_lan_hostname">HOST</string>
+    <string name="det_lan_mac">MAC</string>
+    <string name="det_lan_latency">LATENCY</string>
+    <string name="det_lan_hint">Discovered by ping sweep on the local subnet — distance and angle unknown (no RSSI)</string>
+    <string name="det_lan_scan_ports">SCAN PORTS ▸</string>
+    <string name="det_lan_ssh">SSH ▸</string>
+    <string name="det_lan_kick">KICK OFF NETWORK ▸</string>
+    <string name="det_lan_geo_loading">LOCATING…</string>
+    <string name="det_lan_geo_private">Private address — no geographic meaning</string>
+    <string name="det_fmt_towers">CELL %1$d</string>
+    <string name="det_tower_legend">▲ Cell towers ×%1$d (bearing placeholder)</string>
+    <string name="det_tower_registered">REGISTERED</string>
+    <string name="det_tower_neighbor">NEIGHBOR</string>
+    <string name="det_tower_signal">SIGNAL</string>
+    <string name="det_tower_distance">DIST</string>
+    <string name="det_tower_cell">CELL ID</string>
+    <string name="det_tower_operator">MCC/MNC</string>
+    <string name="det_tower_bands">BANDS</string>
+    <string name="det_tower_hint">Distance = RSRP path-loss estimate (±hundreds of meters); bearing not measurable on phone hardware — scope angle is a placeholder</string>
     <string name="det_fmt_bearing_collecting">Bearing sampling · coverage %1$d%% · rotate the device slowly</string>
     <string name="det_sat_none">SAT 0 · INDOOR?</string>
     <string name="det_warn_location_off">Location services off — WiFi targets invisible (BLE unaffected)</string>
@@ -405,10 +439,10 @@
     <string name="det_fmt_link_bond">%1$s · BOND: %2$s</string>
     <string name="det_fmt_adv_info">TX %1$s · UUID ×%2$d · MFR ID %3$s</string>
     <string name="det_fmt_intel_confidence">%1$s · CONFIDENCE %2$d%% · %3$s</string>
-    <string name="det_fmt_range_model_tx">ADV %1$dBm · n=2.5</string>
+    <string name="det_fmt_range_model_tx">ADV %1$dBm · n=%2$.1f</string>
     <string name="det_fmt_range_estimated">%1$.1fm · EST %2$03d°</string>
     <string name="det_fmt_range_placeholder">%1$.1fm · %2$03d° · PLACEHOLDER</string>
-    <string name="det_range_model_assumed">Assumed PTX · n=2.5 (not measured)</string>
+    <string name="det_range_model_assumed">Assumed PTX · n=%1$.1f (not measured)</string>
     <string name="det_fmt_tracking">Hits %1$d · first seen %2$s</string>
     <string name="det_fmt_track_limit">Showing the %1$d strongest · %2$d more not listed — narrow the range with the filters above</string>
     <string name="det_loc_unavailable">Unavailable (compass offline or insufficient samples)</string>
@@ -421,6 +455,37 @@
     <string name="det_threat_high">HIGH-RISK PROXIMITY</string>
     <string name="det_threat_mid">MEDIUM PROXIMITY</string>
     <string name="det_threat_far">DISTANT TARGET</string>
+    <string name="det_threat_friendly">FRIENDLY DEVICE</string>
+
+    <!-- ─── 雷达 · 目标弹窗(点触 blip) ─── -->
+    <string name="det_badge_friendly">FRIEND</string>
+    <string name="det_popup_friendly">FRIENDLY</string>
+    <string name="det_popup_open_dossier">OPEN DOSSIER</string>
+    <string name="det_popup_close_hint">Tap outside to close</string>
+    <string name="det_popup_connect">CONNECT</string>
+    <string name="det_popup_deauth">DEAUTH ▸</string>
+    <string name="det_popup_pair">PAIR</string>
+    <string name="det_ph_passphrase">Passphrase (blank if open)…</string>
+    <string name="det_msg_connect_sent">Connect request sent — confirm in the system dialog</string>
+    <string name="det_msg_pair_request_sent">Pairing request sent — confirm on both devices</string>
+    <string name="picker_hint">Live from the radar scan · %1$d device(s) listed — tap to fill, no typing</string>
+    <string name="picker_start_scan">▶ START RADAR SCAN</string>
+    <string name="picker_scanning">SCANNING…</string>
+    <string name="picker_pick">SELECT</string>
+    <string name="det_picker_title">Select target from radar scan</string>
+    <string name="tact_strip_progress">PROGRESS</string>
+    <string name="tact_strip_devices">DEVICES</string>
+    <string name="tact_strip_subnet">SUBNET</string>
+    <string name="tact_strip_scan">SCAN</string>
+    <string name="tact_strip_sniff">SNIFF</string>
+    <string name="tact_strip_open">OPEN PORTS</string>
+    <string name="tact_strip_nodes">NODES</string>
+    <string name="tact_strip_talking">TALKING</string>
+    <string name="tact_strip_live">LIVE</string>
+    <string name="tact_strip_link">LINK</string>
+    <string name="tact_strip_strongest">STRONGEST</string>
+    <string name="tact_strip_on">ON</string>
+    <string name="tact_strip_off">OFF</string>
 
     <!-- ─── 雷达 · 金属探测 / 配对 / 快照 ─── -->
     <string name="det_metal_unavailable">MAGNETOMETER UNAVAILABLE</string>

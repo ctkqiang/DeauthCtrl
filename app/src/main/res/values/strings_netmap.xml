@@ -14,6 +14,10 @@
     <string name="netmap_btn_start_scan">▶ START SCAN</string>
     <string name="netmap_osm_note">OSM public tiles · no API key</string>
     <string name="netmap_btn_locate">◎ LOCATE ME</string>
+    <string name="netmap_style_label">MAP STYLE</string>
+    <string name="netmap_style_mono">NEG B/W</string>
+    <string name="netmap_style_night">NIGHT</string>
+    <string name="netmap_style_color">COLOR</string>
     <string name="netmap_estimate_note">Position is a GPS+RSSI estimate (no AoA hardware), for situational awareness only</string>
     <string name="netmap_open_dossier">OPEN FULL DOSSIER ▸</string>
     <string name="netmap_marker_self">SELF</string>

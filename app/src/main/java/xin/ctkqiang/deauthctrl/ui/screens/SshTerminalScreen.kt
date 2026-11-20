@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -86,7 +87,7 @@ private val SshBg = Color(0xFF04121C)
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () -> Unit) {
+fun SshTerminalScreen(vm: SshClientViewModel, initialHost: String? = null, back: () -> Unit, onOpenLocal: () -> Unit) {
     val status by vm.status.collectAsState()
     val host by vm.host.collectAsState()
     val port by vm.port.collectAsState()
@@ -94,6 +95,11 @@ fun SshTerminalScreen(vm: SshClientViewModel, back: () -> Unit, onOpenLocal: () 
     val password by vm.password.collectAsState()
     val version by vm.screenVersion.collectAsState()
     val haptic = LocalHapticFeedback.current
+
+    // 雷达同网弹窗「SSH」跳转:目标 IP 自动填入主机框
+    LaunchedEffect(Unit) {
+        if (vm.host.value.isBlank()) initialHost?.let { vm.manager.host.value = it }
+    }
 
     val online = status is SshClientManager.Status.Connected
     val clipboard = LocalClipboardManager.current

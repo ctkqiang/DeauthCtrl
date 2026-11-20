@@ -74,6 +74,7 @@ data class RadarTarget(
     val deviceClassMajor: String = "",// 设备大类：电话 / 计算机 / 音频…
     val deviceClassDetail: String = "",// 大类内的具体小类（如 "Smartphone"）
     val bondState: String = "",       // 未绑定 / 绑定中 / 已绑定
+    val bonded: Boolean = false,      // 已绑定/绑定中 —— 雷达页按友方设备处理:蓝色高亮、不告警不震动
     val linkType: String = "",        // BR/EDR / BLE / 双模
     val alias: String = "",           // 配对别名（BluetoothDevice.getAlias 真实返回值,可为空）
     // ── BLE 广播详情（仅 ble 扫描路径捕获,经典相位不擦除已捕获字段） ──
@@ -109,6 +110,12 @@ private const val HIT_BUCKET_MAX = 10
  */
 fun rssiDistanceEstimateM(rssi: Int, refDbm: Float, pathLossExp: Float = 2.5f): Float =
     Math.pow(10.0, ((refDbm - rssi) / (10f * pathLossExp)).toDouble()).toFloat().coerceIn(0.3f, 100f)
+
+/** 最近若干采样 RSSI 中位数 —— 距离估计用,抗单次扫描抖动;历史已含新样本,恒非空 */
+private fun medianRssi(history: List<RssiSample>): Int {
+    val tail = history.takeLast(5).map { it.rssi }.sorted()
+    return tail[tail.size / 2]
+}
 
 class RadarManager(private val context: Context) {
 
@@ -196,7 +203,7 @@ class RadarManager(private val context: Context) {
             name = r.SSID.ifBlank { L10n.get(R.string.mgr_radar_hidden_ssid) },
             type = "wifi",
             rssi = r.level,
-            distanceM = rssiDistanceEstimateM(r.level, -40f),
+            distanceM = rssiDistanceEstimateM(medianRssi(history), WIFI_REF_DBM, WIFI_PATH_LOSS),
             angleDeg = pseudoAngle(r.BSSID),
             channel = "CH${channelFromFreq(r.frequency)}",
             frequencyMhz = r.frequency,
@@ -239,7 +246,9 @@ class RadarManager(private val context: Context) {
         val cls = runCatching { device?.bluetoothClass }.getOrNull()
         // 距离模型:BLE 广播真实携带发射功率时用它;经典相位无新广播时继承旧 PTX(否则模型来回跳)
         val ptxDbm = freshAdv?.txPowerLevelDbm?.takeIf { it in -40..10 } ?: prev?.txPowerDbm
-        val ptx = ptxDbm?.toFloat() ?: -59f
+        val refDbm = ptxDbm?.toFloat() ?: if (source == "classic") BT_CLASSIC_REF_DBM else BLE_ASSUMED_REF_DBM
+        // 绑定状态粘滞:经典发现相位没有 BLE 相位的信息来源,不能把已绑定目标打回陌生
+        val bonded = (device?.bondState == BluetoothDevice.BOND_BONDED || device?.bondState == BluetoothDevice.BOND_BONDING) || prev?.bonded == true
         // 名称优先级:有效新名 > 广播名 > 旧名 > 占位名;经典发现的 "(BT设备)" 永不覆盖好名字
         val effectiveName = when {
             name.isNotBlank() && !name.startsWith("(") -> name
@@ -252,13 +261,14 @@ class RadarManager(private val context: Context) {
             name = effectiveName,
             type = "bt",
             rssi = rssi,
-            distanceM = rssiDistanceEstimateM(rssi, ptx),
+            distanceM = rssiDistanceEstimateM(medianRssi(history), refDbm, BT_PATH_LOSS),
             angleDeg = pseudoAngle(addr),
             channel = "2.4GHz",
             address = addr,
             deviceClassMajor = majorClassName(cls),
             deviceClassDetail = minorClassName(cls),
             bondState = bondStateName(device?.bondState ?: BluetoothDevice.BOND_NONE),
+            bonded = bonded,
             linkType = linkTypeName(runCatching { device?.type }.getOrNull()),
             alias = runCatching { device?.alias }.getOrNull()?.takeIf { it.isNotBlank() } ?: prev?.alias.orEmpty(),
             bleAdv = adv,
@@ -314,6 +324,111 @@ class RadarManager(private val context: Context) {
             if (itr.next().value.lastSeenMs < cutoff) itr.remove()
         }
         wifiSeenTs.keys.retainAll { targets.containsKey(it) }
+    }
+
+    // ─── 连接动作(雷达弹窗:连接 WiFi / 配对蓝牙) ────────────────────────────
+
+    /** WiFi 连接请求回调必须持有引用 —— 被 GC 则系统回收连接 */
+    private val wifiConnectCallback = java.util.concurrent.atomic.AtomicReference<android.net.ConnectivityManager.NetworkCallback?>(null)
+
+    /**
+     * 连接雷达发现的目标 WiFi 网络。
+     *
+     * API 29+:WifiNetworkSpecifier —— 系统弹窗让用户确认后建立连接,
+     * 应用拿不到密码明文之外的任何信息,无需 root;WPA3/WPA2/WPA/开放
+     * 都走标准路径,OWE 由系统自动协商。WEP 系统直连不支持,如实报错。
+     * API 28-:WifiConfiguration + enableNetwork(已废弃但仍可用)。
+     *
+     * @return null 表示已发起;非 null 为失败原因
+     */
+    @SuppressLint("MissingPermission")
+    fun requestWifiConnect(ssid: String, security: String, passphrase: String): String? {
+        val name = ssid.trim()
+        if (name.isEmpty()) return L10n.get(R.string.mgr_radar_connect_bad_ssid)
+        val sec = security.uppercase()
+        return if (Build.VERSION.SDK_INT >= 29) {
+            val builder = android.net.wifi.WifiNetworkSpecifier.Builder().setSsid(name)
+            val spec = try {
+                when {
+                    sec.contains("WPA3") -> builder.setWpa3Passphrase(passphrase)
+                    sec.contains("WPA2") || sec.contains("WPA") -> builder.setWpa2Passphrase(passphrase)
+                    sec.contains("WEP") -> return L10n.get(R.string.mgr_radar_connect_wep_unsupported)
+                    else -> Unit // 开放 / OWE
+                }
+                builder.build()
+            } catch (e: IllegalArgumentException) {
+                return e.message ?: L10n.get(R.string.mgr_radar_connect_bad_pass)
+            }
+            val cm = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            val request = android.net.NetworkRequest.Builder()
+                .addTransportType(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+                .removeCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .setNetworkSpecifier(spec)
+                .build()
+            wifiConnectCallback.set(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {}
+                override fun onUnavailable() { wifiConnectCallback.set(null) }
+            })
+            wifiConnectCallback.set(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {}
+                override fun onUnavailable() { wifiConnectCallback.set(null) }
+            })
+            // 崩溃修复:requestNetwork 在缺少定位权限/定位关闭/系统拒绝时抛
+            // SecurityException(Android 10+ 对 WifiNetworkSpecifier 的硬性要求),
+            // 必须捕获并如实返回原因,而不是让应用崩掉
+            return try {
+                cm.requestNetwork(request, wifiConnectCallback.get()!!)
+                null
+            } catch (e: SecurityException) {
+                wifiConnectCallback.set(null)
+                L10n.get(R.string.mgr_radar_connect_perm)
+            } catch (e: Exception) {
+                wifiConnectCallback.set(null)
+                e.message ?: L10n.get(R.string.mgr_radar_connect_failed)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val conf = android.net.wifi.WifiConfiguration().apply {
+                SSID = "\"$name\""
+                when {
+                    sec.contains("WPA3") || sec.contains("WPA2") || sec.contains("WPA") -> {
+                        preSharedKey = "\"$passphrase\""
+                        allowedKeyManagement.set(android.net.wifi.WifiConfiguration.KeyMgmt.WPA_PSK)
+                    }
+                    sec.contains("WEP") -> {
+                        wepKeys[0] = "\"$passphrase\""
+                        allowedKeyManagement.set(android.net.wifi.WifiConfiguration.KeyMgmt.NONE)
+                        allowedAuthAlgorithms.set(android.net.wifi.WifiConfiguration.AuthAlgorithm.OPEN)
+                    }
+                    else -> allowedKeyManagement.set(android.net.wifi.WifiConfiguration.KeyMgmt.NONE)
+                }
+            }
+            val netId = try { wifiManager.addNetwork(conf) } catch (_: Exception) { -1 }
+            if (netId < 0) return L10n.get(R.string.mgr_radar_connect_failed)
+            val ok = wifiManager.enableNetwork(netId, true) && wifiManager.reconnect()
+            if (!ok) return L10n.get(R.string.mgr_radar_connect_failed)
+            null
+        }
+    }
+
+    /**
+     * 配对雷达发现的蓝牙/BLE 目标 —— 双方设备弹出系统配对请求。
+     * 已绑定直接成功;目标需处于可发现/可连接状态。这是标准系统配对,
+     * 不是静默连接(Android 无静默配对通道,如实说明)。
+     *
+     * @return null 表示已发起或已绑定;非 null 为失败原因
+     */
+    @SuppressLint("MissingPermission")
+    fun pairDevice(addr: String): String? {
+        val adapter = btManager?.adapter ?: return L10n.get(R.string.mgr_radar_err_bt_unavailable)
+        val device = try {
+            adapter.getRemoteDevice(addr)
+        } catch (_: Exception) {
+            return L10n.get(R.string.mgr_radar_err_bad_address, addr)
+        }
+        if (device.bondState == BluetoothDevice.BOND_BONDED) return null
+        val ok = try { device.createBond() } catch (_: Exception) { false }
+        return if (ok) null else L10n.get(R.string.mgr_radar_pair_failed)
     }
 
     /**
@@ -668,6 +783,22 @@ class RadarManager(private val context: Context) {
         /** 扫描相位:Ble 扫描与经典发现互斥(Android 框架层),分时轮换 */
         private const val PHASE_BLE = 0
         private const val PHASE_DISCOVERY = 1
+
+        // ── 距离模型参数(与 RssiLocalizationEngine/档案页共用同一口径) ──
+        /** WiFi:1m 参考功率 -40dBm,室内路径损耗指数 2.5 —— 近距离展开充分,远距收敛 100m */
+        const val WIFI_REF_DBM = -40f
+        const val WIFI_PATH_LOSS = 2.5f
+        /**
+         * 蓝牙/BLE:路径损耗指数 2.0(近场传播)。
+         * 原先经典与 BLE 共用 -59dBm@1m + n=2.5,-70..-90dBm 的目标全部挤在
+         * 0.3..5m 一小团 —— 雷达盘上看全部堆在圆心。分参考功率 + 降指数后,
+         * -85dBm ≈ 30m 量级,与真实蓝牙感知距离吻合,盘面分布展开。
+         */
+        const val BT_PATH_LOSS = 2.0f
+        /** 经典蓝牙(Class 2 发射功率约 4dBm)1m 参考功率 */
+        const val BT_CLASSIC_REF_DBM = -55f
+        /** BLE 广播缺 TX Power 字段时的假定 1m 参考功率 */
+        const val BLE_ASSUMED_REF_DBM = -59f
 
         /** BLE 相位窗口:一个相位内连续扫描时长 */
         private const val BLE_SCAN_WINDOW_MS = 10_000L

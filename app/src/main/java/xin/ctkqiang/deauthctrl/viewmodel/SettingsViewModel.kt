@@ -14,6 +14,12 @@ const val KEY_OPERATOR_NAME = "operator_name"
 const val KEY_TEAM_ID = "team_id"
 const val KEY_HAPTICS_ENABLED = "haptics_enabled"
 const val KEY_RADAR_ALERT_ENABLED = "radar_alert_enabled"
+const val KEY_MAP_STYLE = "map_style"
+
+/** 地图瓦片风格选项值 */
+const val MAP_STYLE_MONO = "mono"    // 黑白负片(默认,战术夜视)
+const val MAP_STYLE_NIGHT = "night"  // 夜战绿
+const val MAP_STYLE_COLOR = "color"  // 原始彩色 OSM
 
 /**
  * 操作员设置 ViewModel
@@ -43,6 +49,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _radarAlert = MutableStateFlow(prefs.getBoolean(KEY_RADAR_ALERT_ENABLED, true))
     val radarAlertEnabled: StateFlow<Boolean> = _radarAlert
 
+    /** 地图瓦片风格 —— 黑白负片 / 夜战绿 / 原始彩色 */
+    private val _mapStyle = MutableStateFlow(prefs.getString(KEY_MAP_STYLE, MAP_STYLE_MONO) ?: MAP_STYLE_MONO)
+    val mapStyle: StateFlow<String> = _mapStyle
+
     /** 设置操作员呼号 */
     fun setUsername(name: String) {
         _username.value = name
@@ -69,5 +79,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _radarAlert.value = enabled
         prefs.edit().putBoolean(KEY_RADAR_ALERT_ENABLED, enabled).apply()
         HudThemeState.radarAlertEnabled = enabled
+    }
+
+    /** 切换地图瓦片风格 */
+    fun setMapStyle(style: String) {
+        _mapStyle.value = style
+        prefs.edit().putString(KEY_MAP_STYLE, style).apply()
     }
 }

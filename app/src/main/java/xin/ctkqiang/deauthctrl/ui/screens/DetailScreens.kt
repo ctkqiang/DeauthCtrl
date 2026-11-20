@@ -95,6 +95,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -103,8 +107,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -115,8 +123,13 @@ import xin.ctkqiang.deauthctrl.manager.JammerScanState
 import xin.ctkqiang.deauthctrl.manager.AdStructureDecoder
 import xin.ctkqiang.deauthctrl.manager.DeviceIntel
 import xin.ctkqiang.deauthctrl.manager.WifiDeauthEngine
+import xin.ctkqiang.deauthctrl.manager.ArpEntry
+import xin.ctkqiang.deauthctrl.manager.ArpScanManager
 import xin.ctkqiang.deauthctrl.manager.GnssSat
+import xin.ctkqiang.deauthctrl.manager.GsmTowerManager
+import xin.ctkqiang.deauthctrl.manager.TowerCell
 import xin.ctkqiang.deauthctrl.manager.GnssSkyManager
+import xin.ctkqiang.deauthctrl.manager.RadarManager
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.manager.WalkieRttStatus
 import xin.ctkqiang.deauthctrl.manager.WebServerManager
@@ -150,6 +163,7 @@ import xin.ctkqiang.deauthctrl.ui.components.TermPanel
 import xin.ctkqiang.deauthctrl.ui.components.TacGreen
 import xin.ctkqiang.deauthctrl.ui.components.TacGreenDim
 import xin.ctkqiang.deauthctrl.ui.components.TacticalCorners
+import xin.ctkqiang.deauthctrl.ui.components.TacticalStatStrip
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
@@ -184,6 +198,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -551,7 +566,7 @@ private fun BtJamLogPanel(vm: BluetoothJammerViewModel) {
  * - 主操作按钮 + 周期进度 + 运行统计
  */
 @Composable
-fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
+fun WifiDetailScreen(vm: WifiDisruptViewModel, radarVm: RadarViewModel, initialBssid: String? = null, back: () -> Unit) {
     val ss by vm.scanState.collectAsState(); val fl by vm.isFlooding.collectAsState()
     var sel by remember { mutableStateOf<WifiNetwork?>(null) }
     var dur by remember { mutableIntStateOf(vm.getDuration()) }
@@ -560,6 +575,15 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
 
     // 进入页面自动扫描附近网络(仅被动扫描;干扰泛洪仍需手动执行)
     LaunchedEffect(Unit) { if (ss is ScanState.Idle) vm.scanNetworks() }
+    // 雷达弹窗「去攻击」跳转:扫描结果一到就自动选中目标 BSSID
+    LaunchedEffect(ss, initialBssid) {
+        if (initialBssid == null || sel != null) return@LaunchedEffect
+        val r = ss as? ScanState.Results ?: return@LaunchedEffect
+        r.networks.firstOrNull { it.bssid == initialBssid }?.let {
+            sel = it
+            vm.selectTarget(it)
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader(stringResource(R.string.det_title_wifi_disrupt), back)
@@ -641,7 +665,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
                 WifiLivePanel(vm, fl = fl)
 
                 // ── 真实注入引擎:root + 监控模式芯片才可用,无则如实显示不可用 ──
-                DeauthInjectionPanel(vm, preselectBssid = sel?.bssid, preselectChannel = sel?.channel)
+                DeauthInjectionPanel(vm, radarVm, preselectBssid = sel?.bssid, preselectChannel = sel?.channel)
             }
         }
     }
@@ -659,6 +683,7 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, back: () -> Unit) {
 @Composable
 private fun DeauthInjectionPanel(
     vm: WifiDisruptViewModel,
+    radarVm: RadarViewModel,
     preselectBssid: String?,
     preselectChannel: Int?,
 ) {
@@ -668,6 +693,8 @@ private fun DeauthInjectionPanel(
     var channel by remember { mutableStateOf("") }
     var client by remember { mutableStateOf("") }
     var count by remember { mutableStateOf("64") }
+    // 设备选择器:点选雷达扫描结果,免手输 BSSID/客户端 MAC
+    var pickFor by remember { mutableStateOf<String?>(null) } // "bssid" | "client" | null
     var startError by remember { mutableStateOf<String?>(null) }
 
     // 扫描列表选中目标后自动回填 BSSID/信道(用户仍可手改)
@@ -711,11 +738,16 @@ private fun DeauthInjectionPanel(
             }
         }
         Spacer(Modifier.height(6.dp))
-        TermInput(stringResource(R.string.det_label_target_bssid), bssid, placeholder = "AA:BB:CC:DD:EE:FF") { bssid = it; startError = null }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TermInput(stringResource(R.string.det_label_target_bssid), bssid, placeholder = "AA:BB:CC:DD:EE:FF", modifier = Modifier.weight(1f)) { bssid = it; startError = null }
+            Spacer(Modifier.width(6.dp))
+            PickerButton { pickFor = "bssid" }
+        }
         Spacer(Modifier.height(5.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             TermInput(stringResource(R.string.det_label_channel), channel, placeholder = stringResource(R.string.det_hint_channel_example), modifier = Modifier.weight(1f)) { channel = it }
             TermInput(stringResource(R.string.det_label_client_mac), client, placeholder = stringResource(R.string.det_hint_blank_broadcast), modifier = Modifier.weight(1.6f)) { client = it }
+            PickerButton { pickFor = "client" }
         }
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -787,6 +819,44 @@ private fun DeauthInjectionPanel(
         Text(
             stringResource(R.string.det_deauth_disclaimer),
             fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.75f), lineHeight = 11.sp,
+        )
+    }
+
+    // ── 设备选择器:点选雷达扫描结果,免手输 BSSID / 客户端 MAC ──
+    pickFor?.let { field ->
+        RadarDevicePickerDialog(
+            vm = radarVm,
+            title = stringResource(R.string.det_picker_title),
+            typeFilter = if (field == "bssid") "wifi" else "all",
+            onPick = { t ->
+                when (field) {
+                    "bssid" -> {
+                        bssid = t.id
+                        if (t.channel.isNotEmpty()) channel = t.channel.removePrefix("CH")
+                    }
+                    else -> client = if (t.type == "wifi") t.id else t.address
+                }
+                startError = null
+                pickFor = null
+            },
+            onDismiss = { pickFor = null },
+        )
+    }
+}
+
+/** 「选择」按钮 —— 打开雷达设备选择器,替代手输地址 */
+@Composable
+private fun PickerButton(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+        color = Gold.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
+    ) {
+        Text(
+            stringResource(R.string.picker_pick),
+            fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+            color = Gold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 11.dp),
         )
     }
 }
@@ -1064,7 +1134,7 @@ private const val ARP_DEVICE_RENDER_LIMIT = 128
  * - 实时日志
  */
 @Composable
-fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
+fun ArpDetailScreen(vm: ArpScanViewModel, initialIp: String? = null, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
     val error by vm.error.collectAsState()
     val haptic = LocalHapticFeedback.current
@@ -1085,19 +1155,80 @@ fun ArpDetailScreen(vm: ArpScanViewModel, back: () -> Unit) {
                 }
 
                 error?.let { ErrorBanner(it) }
+                Spacer(Modifier.height(6.dp))
+                ArpStatStrip(vm, running)
 
                 // 高频数据区独立订阅：扫描期间探测进度/统计/设备/日志每秒多次刷新
-                ArpLivePanel(vm, running = running)
+                ArpLivePanel(vm, running = running, preselectIp = initialIp)
                 if (!running) ArpIdleHint(vm)
             }
         }
     }
 }
 
-/** ARP 扫描实时面板 —— 独立订阅进度、统计、设备与日志 */
+/** ARP 战术遥测条 —— 雷达同款视觉:进度/设备/网段/状态 */
 @Composable
-private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
+private fun ArpStatStrip(vm: ArpScanViewModel, running: Boolean) {
+    val stats by vm.stats.collectAsState()
     val devices by vm.devices.collectAsState()
+    TacticalStatStrip(
+        listOf(
+            "${stats.hostsScanned}/${stats.hostCount}" to stringResource(R.string.tact_strip_progress),
+            "${devices.size}" to stringResource(R.string.tact_strip_devices),
+            stats.subnet.ifBlank { "--" } to stringResource(R.string.tact_strip_subnet),
+            (if (running) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_strip_scan),
+        ),
+    )
+}
+
+/** BLE 嗅探战术遥测条 —— 设备数/最强信号/状态 */
+@Composable
+private fun BleStatStrip(vm: BleScannerViewModel, running: Boolean) {
+    val devices by vm.devices.collectAsState()
+    TacticalStatStrip(
+        listOf(
+            "${devices.size}" to stringResource(R.string.tact_strip_devices),
+            (devices.maxOfOrNull { it.rssi }?.let { "${it}dBm" } ?: "--") to stringResource(R.string.tact_strip_strongest),
+            (if (running) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_strip_sniff),
+        ),
+    )
+}
+
+/** 端口扫描战术遥测条 —— 进度/开放端口/状态 */
+@Composable
+private fun PortStatStrip(vm: PortScannerViewModel, running: Boolean) {
+    val results by vm.results.collectAsState()
+    val scanned by vm.scanned.collectAsState()
+    val total by vm.total.collectAsState()
+    val open = results.count { it.state == "open" }
+    TacticalStatStrip(
+        listOf(
+            "$scanned/$total" to stringResource(R.string.tact_strip_progress),
+            "$open" to stringResource(R.string.tact_strip_open),
+            (if (running) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_strip_scan),
+        ),
+    )
+}
+
+/** 对讲机战术遥测条 —— 节点/说话中/直播/链路 */
+@Composable
+private fun WalkieStatStrip(vm: WalkieTalkieViewModel, running: Boolean) {
+    val peers by vm.peers.collectAsState()
+    val link by vm.link.collectAsState()
+    val live by vm.isLive.collectAsState()
+    TacticalStatStrip(
+        listOf(
+            "${peers.size}" to stringResource(R.string.tact_strip_nodes),
+            "${peers.count { it.isTalking }}" to stringResource(R.string.tact_strip_talking),
+            (if (live) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_strip_live),
+            (link.info?.rssiDbm?.let { "${it}dBm" } ?: "--") to stringResource(R.string.tact_strip_link),
+        ),
+    )
+}
+
+/** ARP 扫描实时面板 —— 独立订阅进度、统计、设备与日志;preselectIp 自动选中踢出目标 */
+@Composable
+private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean, preselectIp: String? = null) {    val devices by vm.devices.collectAsState()
     val stats by vm.stats.collectAsState()
     val log by vm.log.collectAsState()
     val tf = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
@@ -1109,6 +1240,12 @@ private fun ArpLivePanel(vm: ArpScanViewModel, running: Boolean) {
     var kickTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // (ip, hostname)
     var kickGateway by remember { mutableStateOf("") }
     var kickResult by remember { mutableStateOf<String?>(null) }
+    // 雷达同网弹窗「踢出网络」跳转:设备列表一到就自动选中目标 IP
+    LaunchedEffect(devices, preselectIp) {
+        if (kickTarget == null && preselectIp != null) {
+            devices.firstOrNull { it.ip == preselectIp }?.let { kickTarget = it.ip to it.hostname }
+        }
+    }
     // 网关默认值:本机 DHCP 网关
     LaunchedEffect(Unit) {
         if (kickGateway.isBlank()) {
@@ -1319,6 +1456,8 @@ fun BleScannerScreen(vm: BleScannerViewModel, back: () -> Unit) {
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
+                Spacer(Modifier.height(6.dp))
+                BleStatStrip(vm, running)
 
                 // 高频数据区独立订阅：嗅探期间设备列表与 RSSI 每秒多次刷新
                 BleScannerLivePanel(vm, running = running, selected = selected, onSelect = { selected = it }, modifier = Modifier.weight(1f))
@@ -1716,11 +1855,16 @@ private fun HttpLogPanel(vm: HttpClientViewModel) {
  * - 扫描报告（开放端口 + 服务 + Banner）
  */
 @Composable
-fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
+fun PortScannerScreen(vm: PortScannerViewModel, initialHost: String? = null, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
     val host by vm.host.collectAsState()
     val error by vm.error.collectAsState()
     val haptic = LocalHapticFeedback.current
+
+    // 雷达同网弹窗「扫端口」跳转:目标 IP 自动填入
+    LaunchedEffect(Unit) {
+        if (host.isBlank()) initialHost?.let { vm.setHost(it) }
+    }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader(stringResource(R.string.det_title_port_scan), back)
@@ -1733,6 +1877,8 @@ fun PortScannerScreen(vm: PortScannerViewModel, back: () -> Unit) {
                     if (running) vm.stop() else vm.start()
                 }
                 error?.let { ErrorBanner(it) }
+                Spacer(Modifier.height(6.dp))
+                PortStatStrip(vm, running)
 
                 // 高频数据区独立订阅：扫描期间进度与结果持续刷新
                 PortScanLivePanel(vm, running = running, host = host, error = error)
@@ -1836,6 +1982,8 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                         if (running) vm.stop() else vm.start()
                     }
                     error?.let { ErrorBanner(it) }
+                    Spacer(Modifier.height(6.dp))
+                    WalkieStatStrip(vm, running)
                     // 本机 WiFi 链路遥测(对讲跑在 WiFi LAN 上,链路质量即通话质量上限)
                     WalkieLinkPanel(vm)
                     // 高频数据区独立订阅：对讲期间在线设备与说话状态持续刷新
@@ -2102,24 +2250,64 @@ private fun WalkiePeersPanel(vm: WalkieTalkieViewModel, running: Boolean) {
 data class RadarThreatTier(val label: String, val color: Color, val desc: String, val key: String = "")
 
 /**
+ * 雷达固定类别色 —— 与队伍主题彻底解耦。
+ *
+ * 此前 blip 用 Danger/TacGreen(主题色),切到红队后 WiFi 红、蓝牙也红、
+ * 队友节点也红,盘面一片同色。现在四个类别各占一个固定色,任何队伍下互不撞色:
+ * WiFi 红(敌性) / BLE 青 / 经典蓝牙绿 / 已绑定友方蓝。网格节点仍用主题金
+ * (队伍身份色),靠菱形形状与圆形 blip 区分。档案页身份徽章复用同一套颜色。
+ */
+internal val WIFI_BLIP = Color(0xFFFF4D5E)
+internal val BLE_BLIP = Color(0xFF00E5FF)
+internal val BT_BLIP = Color(0xFF00E676)
+internal val FRIENDLY_BLIP = Color(0xFF4D9FFF)
+/** 基站层固定色:紫 —— 与 blip(红/青/绿/蓝)、同网(琥珀)、网格(金)全部错开 */
+private val CELL_TOWER_COLOR = Color(0xFFB388FF)
+private val TIER_HIGH = Color(0xFFFF4D5E)
+private val TIER_MID = Color(0xFFFFB547)
+private val TIER_FAR = Color(0xFF6AD18A)
+
+/** 目标 → 类别色:友方优先,其次 WiFi/BLE/经典蓝牙 */
+internal fun radarBlipColor(t: RadarTarget): Color = when {
+    t.bonded -> FRIENDLY_BLIP
+    t.type == "wifi" -> WIFI_BLIP
+    t.observedVia == "ble" -> BLE_BLIP
+    else -> BT_BLIP
+}
+
+/** 类型过滤匹配 —— BT 与 BLE 是两条独立观测路径,筛选必须分开;设备选择器复用 */
+internal fun matchesTypeFilter(t: RadarTarget, filter: String): Boolean = when (filter) {
+    "wifi" -> t.type == "wifi"
+    "ble" -> t.type == "bt" && t.observedVia == "ble"
+    "bt" -> t.type == "bt" && t.observedVia != "ble"
+    else -> true
+}
+
+/**
  * 按信号强度与估算距离推演目标威胁分级
  *
  * 距离由 RSSI 路径损耗模型估算，非测量值（手机无测距硬件）；
  * 分级阈值与档案页历史逻辑一致：贴身/强信号 → 高危，近距/稳定 → 中等，其余 → 远端背景。
+ * 已绑定设备一律友方 —— 无论多近都不算敌对目标。
  */
 fun radarThreatTier(t: RadarTarget): RadarThreatTier = when {
+    t.bonded -> RadarThreatTier(
+        "友方设备", FRIENDLY_BLIP,
+        "已绑定/已连接的已知设备,视为非敌对目标 —— 雷达上蓝色高亮,不触发触觉警报",
+        key = "friendly",
+    )
     t.distanceM < 8f || t.rssi > -45 -> RadarThreatTier(
-        "高危接近", Danger,
+        "高危接近", TIER_HIGH,
         "目标信号极强 / 估算距离 ${"%.1f".format(t.distanceM)}m，位于贴身范围内，建议立即甄别身份",
         key = "high",
     )
     t.distanceM < 25f || t.rssi > -65 -> RadarThreatTier(
-        "中等接近", Warn,
+        "中等接近", TIER_MID,
         "目标位于 ${"%.1f".format(t.distanceM)}m 附近，信号稳定，持续跟踪其移动轨迹",
         key = "mid",
     )
     else -> RadarThreatTier(
-        "远端目标", TacGreen,
+        "远端目标", TIER_FAR,
         "目标距本机较远（${"%.1f".format(t.distanceM)}m），属环境背景设备，维持常规监视",
         key = "far",
     )
@@ -2153,11 +2341,16 @@ fun RadarScreen(
     vm: RadarViewModel,
     walkieVm: WalkieTalkieViewModel,
     dbVm: DbViewModel,
+    arpVm: ArpScanViewModel,
     back: () -> Unit,
     radarAlertOn: Boolean,
     onSelectTarget: (String) -> Unit,
     onOpenNetmap: () -> Unit,
     onOpenDb: () -> Unit,
+    onDeauth: (RadarTarget) -> Unit,
+    onScanPorts: (String) -> Unit,
+    onSsh: (String) -> Unit,
+    onKick: (String) -> Unit,
 ) {
     val running by vm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
@@ -2168,6 +2361,21 @@ fun RadarScreen(
     var focusedId by remember { mutableStateOf<String?>(null) }
     // 卫星层开关(GNSS 实例在下方 context 声明之后构造)
     var satelliteOn by remember { mutableStateOf(true) }
+    // 同网设备层:ARP Ping Sweep 发现本机所在网段的在线主机,叠加到雷达外环 —— 默认开启
+    var lanOn by remember { mutableStateOf(true) }
+    val lanDevices by arpVm.devices.collectAsState()
+    val lanScanning by arpVm.isRunning.collectAsState()
+    LaunchedEffect(lanOn) {
+        if (lanOn) {
+            // 每 60s 重扫一遍网段:新上线主机自动进环
+            while (true) {
+                if (!arpVm.isRunning.value) arpVm.scan()
+                delay(60_000L)
+            }
+        } else {
+            arpVm.stop()
+        }
+    }
     // 配对弹窗:目标 + 消息 + 结果反馈
     var pairTarget by remember { mutableStateOf<RadarTarget?>(null) }
     var pairMsg by remember { mutableStateOf("") }
@@ -2204,11 +2412,25 @@ fun RadarScreen(
         onDispose { gnss.stop() }
     }
 
-    // 聚焦目标距离振动：越近振幅越大、节奏越快；越远渐弱；超出雷达量程静默
+    // 基站层:本机注册小区 + 邻区(TelephonyManager.allCellInfo 真实数据) —— 默认开启
+    var towersOn by remember { mutableStateOf(true) }
+    val gsmManager = remember { GsmTowerManager(context) }
+    val towerState by gsmManager.state.collectAsState()
+    LaunchedEffect(towersOn) {
+        if (towersOn) {
+            while (true) {
+                runCatching { gsmManager.refresh() }
+                delay(15_000L)
+            }
+        }
+    }
+
+    // 聚焦目标距离振动：越近振幅越大、节奏越快；越远渐弱；超出雷达量程静默。
+    // 友方(已绑定)设备不震动 —— 非敌对目标不该被触觉警报骚扰
     LaunchedEffect(focusedId, radarAlertOn) {
         while (true) {
             val t = focusedId?.let { id -> vm.targets.value.firstOrNull { it.id == id } }
-            if (t == null || !radarAlertOn || t.distanceM > 100f) {
+            if (t == null || !radarAlertOn || t.bonded || t.distanceM > 100f) {
                 delay(1200)
                 continue
             }
@@ -2285,6 +2507,15 @@ fun RadarScreen(
                         typeFilter = typeFilter,
                         query = query,
                         focusedId = focusedId,
+                        lanHosts = if (lanOn) lanDevices else emptyList(),
+                        towers = if (towersOn) towerState.towers else emptyList(),
+                        onTapDot = { id -> haptic.hud(); focusedId = id },
+                        onTapEmpty = { focusedId = null },
+                        onOpenDossier = { id -> haptic.hud(); onSelectTarget(id) },
+                        onDeauth = onDeauth,
+                        onScanPorts = onScanPorts,
+                        onSsh = onSsh,
+                        onKick = onKick,
                         modifier = Modifier.width(disc).height(disc + 34.dp),
                     )
                 }
@@ -2293,12 +2524,11 @@ fun RadarScreen(
                 Spacer(Modifier.height(6.dp))
                 TacticalStatusStrip(vm, walkieVm, dbVm)
                 Spacer(Modifier.height(6.dp))
+                // ── 筛选行:等宽分段控件 + 卫星/同网开关,搜索独占下一行 ──
                 Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     RadarFilterBar(
                         typeFilter = typeFilter,
                         onTypeFilter = { typeFilter = it; focusedId = null },
-                        query = query,
-                        onQuery = { query = it; focusedId = null },
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.width(6.dp))
@@ -2317,10 +2547,74 @@ fun RadarScreen(
                             else stringResource(R.string.det_fmt_satellites, gnssState.satellites.size),
                             fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                             color = if (satelliteOn) Gold else Gray,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 9.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(5.dp))
+                    // 同网设备层开关:ARP Ping Sweep 发现本网段在线主机,叠加到雷达外环
+                    Surface(
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            lanOn = !lanOn
+                        },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = if (lanOn) Warn.copy(alpha = 0.14f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (lanOn) Warn.copy(alpha = 0.6f) else BorderDim),
+                    ) {
+                        Text(
+                            if (lanScanning) stringResource(R.string.det_lan_scanning)
+                            else stringResource(R.string.det_fmt_lan, lanDevices.size),
+                            fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = if (lanOn) Warn else Gray,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 9.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(5.dp))
+                    // 基站层开关:注册小区 + 邻区(紫三角标记)
+                    Surface(
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            towersOn = !towersOn
+                        },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = if (towersOn) CELL_TOWER_COLOR.copy(alpha = 0.14f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (towersOn) CELL_TOWER_COLOR.copy(alpha = 0.6f) else BorderDim),
+                    ) {
+                        Text(
+                            stringResource(R.string.det_fmt_towers, towerState.towers.size),
+                            fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = if (towersOn) CELL_TOWER_COLOR else Gray,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 9.dp),
                         )
                     }
                 }
+                // ── 搜索行:独占整行,⌕ 前缀 ──
+                Spacer(Modifier.height(5.dp))
+                BasicTextField(
+                    value = query,
+                    onValueChange = { query = it; focusedId = null },
+                    singleLine = true,
+                    textStyle = TextStyle(fontFamily = Mono, fontSize = 10.sp, color = White),
+                    cursorBrush = SolidColor(Gold),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp))
+                        .background(SurfaceAlt)
+                        .border(1.dp, BorderDim, CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    decorationBox = { inner ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⌕", fontFamily = Mono, fontSize = 11.sp, color = Gold.copy(alpha = 0.7f))
+                            Spacer(Modifier.width(6.dp))
+                            Box(Modifier.weight(1f)) {
+                                if (query.isEmpty()) {
+                                    Text(stringResource(R.string.det_hint_filter_device_name), fontFamily = Sans, fontSize = 10.sp, color = Gray.copy(alpha = 0.5f))
+                                }
+                                inner()
+                            }
+                        }
+                    },
+                )
                 Spacer(Modifier.height(6.dp))
                 RadarTrackPanel(
                     vm,
@@ -2749,46 +3043,46 @@ private fun CompassStrip(vm: RadarViewModel) {
 private fun RadarFilterBar(
     typeFilter: String,
     onTypeFilter: (String) -> Unit,
-    query: String,
-    onQuery: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("all" to stringResource(R.string.det_filter_all), "wifi" to "WIFI", "bt" to "BLE").forEach { (key, label) ->
-                Surface(
-                    modifier = Modifier.clickable { onTypeFilter(key) },
-                    shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
-                    color = if (typeFilter == key) Red.copy(alpha = 0.16f) else SurfaceBg,
-                    border = BorderStroke(1.dp, if (typeFilter == key) Red.copy(alpha = 0.7f) else BorderDim),
+    // 等宽分段控件:四个片均分宽度,选中段类别色高亮 + ◆ 指示 —— 不再与搜索框挤一行
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        // BT(经典发现)与 BLE(广播扫描)分开筛 —— 两条独立观测路径,共用「bt」类型但来源不同
+        listOf(
+            "all" to stringResource(R.string.det_filter_all),
+            "wifi" to "WIFI",
+            "ble" to "BLE",
+            "bt" to "BT",
+        ).forEach { (key, label) ->
+            val selected = typeFilter == key
+            val selColor = when (key) {
+                "wifi" -> WIFI_BLIP
+                "ble" -> BLE_BLIP
+                "bt" -> BT_BLIP
+                else -> Red
+            }
+            Surface(
+                modifier = Modifier.weight(1f).clickable { onTypeFilter(key) },
+                shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                color = if (selected) selColor.copy(alpha = 0.16f) else SurfaceBg,
+                border = BorderStroke(1.dp, if (selected) selColor.copy(alpha = 0.8f) else BorderDim),
+            ) {
+                Row(
+                    Modifier.padding(vertical = 9.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (selected) {
+                        Star(selColor, 5.dp)
+                        Spacer(Modifier.width(4.dp))
+                    }
                     Text(
                         label,
                         fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                        color = if (typeFilter == key) Red else Gray,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                        color = if (selected) selColor else Gray,
                     )
                 }
             }
-            BasicTextField(
-                value = query,
-                onValueChange = onQuery,
-                singleLine = true,
-                textStyle = TextStyle(fontFamily = Mono, fontSize = 10.sp, color = White),
-                cursorBrush = SolidColor(Gold),
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
-                    .background(SurfaceAlt)
-                    .border(1.dp, BorderDim, CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                decorationBox = { inner ->
-                    if (query.isEmpty()) {
-                        Text(stringResource(R.string.det_hint_filter_device_name), fontFamily = Sans, fontSize = 10.sp, color = Gray.copy(alpha = 0.5f))
-                    }
-                    inner()
-                },
-            )
         }
     }
 }
@@ -2801,6 +3095,15 @@ private fun RadarFilterBar(
  * 所有随时间变化的值都在 draw 阶段读取：扫描期间零重组。
  * 视觉层：渐变光束 + 8 层磷光尾迹 + 针尾拖影 + 目标磷光轨迹 +
  * 目标-中心连线 + 扫过命中白闪 + 锁定框 + 声呐 ping + 噪点 + 罗盘。
+ *
+ * ## 自动量程
+ * 量程按可见目标分布自动缩放(10/25/50/100m 挡位,迟滞防抖,1s 平滑动画):
+ * 外圈没有设备就放大盘面,把目标展开到真实相对位置上 —— 无需手动 +/- 缩放。
+ * 距离环刻度随量程同步重标注。
+ *
+ * ## 点触交互
+ * 点击 blip(半径 20dp 命中区)聚焦目标并弹出技术详情卡(贴 blip 右侧,
+ * 放不下自动翻到左侧);点击空白处关闭弹窗并取消聚焦。
  */
 @Composable
 private fun RadarScope(
@@ -2811,6 +3114,15 @@ private fun RadarScope(
     typeFilter: String,
     query: String,
     focusedId: String?,
+    lanHosts: List<ArpEntry>,
+    towers: List<TowerCell>,
+    onScanPorts: (String) -> Unit,
+    onSsh: (String) -> Unit,
+    onKick: (String) -> Unit,
+    onTapDot: (String) -> Unit,
+    onTapEmpty: () -> Unit,
+    onOpenDossier: (String) -> Unit,
+    onDeauth: (RadarTarget) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // draw 阶段读取 targets/heading/localizations/peers/卫星:更新只触发重绘,不触发重组
@@ -2822,6 +3134,53 @@ private fun RadarScope(
     val textMeasurer = rememberTextMeasurer()
     val haptic = LocalHapticFeedback.current
     val ctx = LocalContext.current
+
+    // ── 自动量程:按可见目标分布换挡,迟滞防抖,1s 平滑动画 ──
+    val rangeM = remember { Animatable(100f) }
+    LaunchedEffect(typeFilter, query) {
+        while (true) {
+            delay(1200)
+            val vis = targetsState.value.filter {
+                matchesTypeFilter(it, typeFilter) && (query.isBlank() || it.name.contains(query, ignoreCase = true))
+            }
+            val dmax = vis.maxOfOrNull { it.distanceM } ?: 0f
+            val desired = when {
+                vis.isEmpty() -> 25f
+                dmax <= 8f -> 10f
+                dmax <= 20f -> 25f
+                dmax <= 45f -> 50f
+                else -> 100f
+            }
+            val cur = rangeM.targetValue
+            // 迟滞:目标分布显著超出/缩进当前量程才换挡,RSSI 抖动不会来回缩放
+            if (desired < cur * 0.45f || desired > cur * 0.85f) {
+                rangeM.animateTo(desired, tween(1000, easing = FastOutSlowInEasing))
+            }
+        }
+    }
+
+    // ── 点触弹窗状态:(目标 id, 盘面本地锚点) —— 锚点随目标移动在 draw 阶段微调 ──
+    var popupAnchor by remember { mutableStateOf<Pair<String, Offset>?>(null) }
+    // 同网主机弹窗:(ArpEntry, 本地锚点) —— 与目标弹窗互斥
+    var popupLan by remember { mutableStateOf<Pair<ArpEntry, Offset>?>(null) }
+    // 基站弹窗:(TowerCell, 本地锚点)
+    var popupCell by remember { mutableStateOf<Pair<TowerCell, Offset>?>(null) }
+    // 弹窗在窗口坐标系定位:记录本 Box 的窗口偏移与自身尺寸
+    var boxPosInWindow by remember { mutableStateOf(IntOffset.Zero) }
+    var scopeSize by remember { mutableStateOf(IntSize.Zero) }
+    // 聚焦切换(列表/点触)后弹窗跟随:聚焦目标不再是弹窗目标时关闭弹窗
+    LaunchedEffect(focusedId) {
+        if (popupAnchor != null && popupAnchor!!.first != focusedId) popupAnchor = null
+    }
+    // 同网主机下线(下一轮扫描不再出现)则关闭其弹窗
+    LaunchedEffect(lanHosts) {
+        if (popupLan != null && lanHosts.none { it.ip == popupLan!!.first.ip }) popupLan = null
+    }
+    // 基站消失则关闭其弹窗
+    LaunchedEffect(towers) {
+        if (popupCell != null && towers.none { it.cid == popupCell!!.first.cid }) popupCell = null
+    }
+    val friendlyTagText = stringResource(R.string.det_popup_friendly)
     val cardinalLabels = listOf(
         stringResource(R.string.det_cardinal_n) to 0f,
         stringResource(R.string.det_cardinal_e) to 90f,
@@ -2834,6 +3193,8 @@ private fun RadarScope(
     val scopeHeadingFmt = ctx.getString(R.string.det_fmt_scope_heading)
     val scopeStatus2Fmt = ctx.getString(R.string.det_fmt_scope_status2)
     val meshLegendText = stringResource(R.string.det_legend_mesh_nodes)
+    val lanLegendFmt = ctx.getString(R.string.det_lan_legend)
+    val cellLegendFmt = ctx.getString(R.string.det_tower_legend)
     val satelliteTagFmt = ctx.getString(R.string.det_fmt_satellites)
     val bearingCollectingFmt = ctx.getString(R.string.det_fmt_bearing_collecting)
 
@@ -2866,7 +3227,8 @@ private fun RadarScope(
     }
 
     // ── 目标磷光轨迹：最近 8 个历史位置（目标移动留下的余晖） ──
-    // 记录时就用「当前生效位置」:有方位推演结果用估计方位,否则哈希占位方位
+    // 记录时就用「当前生效位置」:有方位推演结果用估计方位,否则哈希占位方位。
+    // 距离按米记录 —— 自动量程缩放时轨迹随盘面一起缩放,不留错位余晖
     val trails = remember { mutableStateMapOf<String, List<TrailPoint>>() }
     LaunchedEffect(Unit) {
         snapshotFlow { vm.targets.value }.collect { targets ->
@@ -2876,9 +3238,11 @@ private fun RadarScope(
                 val e = locNow[t.id]
                 val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
                 val angle = if (locked) e.bearingDeg else t.angleDeg
-                val dist = if (locked) (e.distanceM / 100f).coerceIn(0.06f, 0.94f) else (t.distanceM / 100f).coerceIn(0.06f, 0.94f)
+                val dist = if (locked) e.distanceM else t.distanceM
                 t.id to TrailPoint(angle, dist)
             }
+            // 弹窗目标消失(过期清理)则关闭弹窗
+            if (popupAnchor != null && current[popupAnchor!!.first] == null) popupAnchor = null
             val merged = HashMap<String, List<TrailPoint>>()
             trails.forEach { (id, hist) ->
                 val cur = current[id]
@@ -2901,7 +3265,9 @@ private fun RadarScope(
         modifier
             .clip(CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
             .background(Dark)
-            .border(1.dp, BorderDim, CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)),
+            .border(1.dp, BorderDim, CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
+            .onGloballyPositioned { boxPosInWindow = it.positionInWindow().round() }
+            .onSizeChanged { scopeSize = it },
     ) {
         // ═══ 静态盘面层:背景辉光 / 距离环 / 网格 / 距离标签 ═══
         // drawWithCache 缓存几何与 Path —— 扫描帧循环不再重绘这些元素
@@ -2912,7 +3278,7 @@ private fun RadarScope(
                 val statusStyle = TextStyle(fontFamily = Mono, fontSize = 8.5.sp, color = g.copy(alpha = 0.86f))
                 val maxW = (size.width - 12.dp.toPx()).toInt().coerceAtLeast(1)
                 val bandH = textMeasurer.measure(
-                    String.format(scopeStatus2Fmt, 0, 0, 0, 0),
+                    String.format(scopeStatus2Fmt, "", 0, 0, 0, 0),
                     statusStyle,
                     constraints = Constraints(maxWidth = maxW),
                 ).size.height * 2 + 3.dp.toPx() * 2
@@ -2943,14 +3309,10 @@ private fun RadarScope(
                     gy += gridStep
                 }
                 val clipOval = Path().apply { addOval(Rect(Offset(cx - r, cy - r), Size(r * 2f, r * 2f))) }
-                val gridTags = listOf(25f, 50f, 75f).map { m ->
-                    val tr = r * m / 100f
-                    cachedMeasure("grid", "${m.toInt()}", TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = g.copy(alpha = 0.5f))) to tr
-                }
 
                 onDrawBehind {
                     drawRect(glowBrush)
-                    // 距离环:外环最亮,层次向外递增
+                    // 距离环:外环最亮,层次向外递增(刻度文字由动态层按当前量程绘制)
                     listOf(0.25f, 0.5f, 0.75f, 1f).forEachIndexed { i, s ->
                         drawCircle(g.copy(alpha = 0.15f + i * 0.06f), r * s, Offset(cx, cy), style = Stroke(if (i == 3) 1.8f else 0.7f))
                     }
@@ -2959,32 +3321,112 @@ private fun RadarScope(
                     drawLine(g.copy(alpha = 0.11f), Offset(cx, cy - r), Offset(cx, cy + r), 0.7f)
                     clipPath(clipOval) {
                         drawPath(gridPath, g.copy(alpha = 0.10f), style = Stroke(0.6f))
-                        gridTags.forEach { (tag, tr) ->
-                            drawText(tag, topLeft = Offset(cx + tr - tag.size.width / 2f, cy + 2.dp.toPx()))
-                        }
                     }
                 }
             },
         ) {}
 
         // ═══ 动态帧层:扫描光束 / 目标 / 罗盘 / 状态带 —— 每帧重绘 ═══
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(
+            Modifier.fillMaxSize().pointerInput(typeFilter, query, focusedId, running) {
+                detectTapGestures { tap ->
+                    val targetsNow = targetsState.value
+                    val vis = radarVisibleTargets(targetsNow, typeFilter, query, focusedId, 40)
+                    // 与绘制阶段同一套几何:复算状态带高 → 盘面中心/半径 → 命中检测
+                    val locNow = locState.value
+                    val statusStyleTap = TextStyle(fontFamily = Mono, fontSize = 8.5.sp, color = TacGreen.copy(alpha = 0.86f))
+                    val maxWTap = (size.width - 12.dp.toPx()).toInt().coerceAtLeast(1)
+                    val l1Tap = textMeasurer.measure(
+                        (if (running) scopeModeScan else scopeModeIdle) + "   " + String.format(scopeSweepFmt, sweepDeg.toInt() % 360) + "   " + String.format(scopeHeadingFmt, headingState.value.toInt() % 360),
+                        statusStyleTap,
+                        constraints = Constraints(maxWidth = maxWTap),
+                    )
+                    val l2Tap = textMeasurer.measure(
+                        String.format(scopeStatus2Fmt, "", 0, 0, 0, 0),
+                        statusStyleTap,
+                        constraints = Constraints(maxWidth = maxWTap),
+                    )
+                    val bandHTap = l1Tap.size.height + l2Tap.size.height + 3.dp.toPx() * 2
+                    val fieldHTap = (size.height - bandHTap).coerceAtLeast(1f)
+                    val cxTap = size.width / 2f
+                    val cyTap = fieldHTap / 2f
+                    val rTap = minOf(cxTap, cyTap) * 0.90f
+                    val rngTap = rangeM.value
+                    var hit: RadarTarget? = null
+                    var hitX = 0f
+                    var hitY = 0f
+                    var best = Float.MAX_VALUE
+                    for (t in vis) {
+                        val e = locNow[t.id]
+                        val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
+                        val effAngle = if (locked) e.bearingDeg else t.angleDeg
+                        val dist = ((if (locked) e.distanceM else t.distanceM) / rngTap).coerceIn(0.06f, 0.94f)
+                        val ta = Math.toRadians((effAngle - headingState.value - 90.0).toDouble()).toFloat()
+                        val x = cxTap + dist * rTap * cos(ta)
+                        val y = cyTap + dist * rTap * sin(ta)
+                        val d = (tap - Offset(x, y)).getDistance()
+                        if (d <= 20.dp.toPx() && d < best) { best = d; hit = t; hitX = x; hitY = y }
+                    }
+                    if (hit != null) {
+                        popupAnchor = hit!!.id to Offset(hitX, hitY)
+                        popupLan = null
+                        onTapDot(hit!!.id)
+                    } else {
+                        // 同网主机命中:琥珀方框标记在外环(距离未知,按 IP 哈希散开)
+                        var lanHit: ArpEntry? = null
+                        var lanX = 0f
+                        var lanY = 0f
+                        var lanBest = Float.MAX_VALUE
+                        val lanR = rTap * 0.82f
+                        for (h in lanHosts) {
+                            val pa = (h.ip.hashCode() and 0x7FFFFFFF) % 360f
+                            val paRad = Math.toRadians((pa - headingState.value - 90.0).toDouble()).toFloat()
+                            val hx = cxTap + lanR * cos(paRad)
+                            val hy = cyTap + lanR * sin(paRad)
+                            val d = (tap - Offset(hx, hy)).getDistance()
+                            if (d <= 16.dp.toPx() && d < lanBest) { lanBest = d; lanHit = h; lanX = hx; lanY = hy }
+                        }
+                        var cellHit: TowerCell? = null
+                        var cellX = 0f
+                        var cellY = 0f
+                        var cellBest = Float.MAX_VALUE
+                        for (tw in towers) {
+                            val pa = (tw.cid.hashCode() and 0x7FFFFFFF) % 360f
+                            val dist01 = ((tw.distanceEstimateM ?: 900f) / rngTap).coerceIn(0.10f, 0.94f)
+                            val paRad = Math.toRadians((pa - headingState.value - 90.0).toDouble()).toFloat()
+                            val hx = cxTap + dist01 * rTap * cos(paRad)
+                            val hy = cyTap + dist01 * rTap * sin(paRad)
+                            val d = (tap - Offset(hx, hy)).getDistance()
+                            if (d <= 15.dp.toPx() && d < cellBest) { cellBest = d; cellHit = tw; cellX = hx; cellY = hy }
+                        }
+                        if (lanHit != null) {
+                            popupAnchor = null
+                            popupLan = lanHit!! to Offset(lanX, lanY)
+                            popupCell = null
+                        } else if (cellHit != null) {
+                            popupAnchor = null
+                            popupLan = null
+                            popupCell = cellHit!! to Offset(cellX, cellY)
+                        } else {
+                            popupAnchor = null
+                            popupLan = null
+                            popupCell = null
+                            onTapEmpty()
+                        }
+                    }
+                }
+            },
+        ) {
             val g = TacGreen
             // draw 阶段读取:任何高频更新只触发重绘,绝不重组组合树
             val targets = targetsState.value
             val heading = headingState.value
             val peers = peersState.value
             val satellites = satState?.value?.satellites.orEmpty()
+            // 当前量程 —— 自动缩放动画逐帧推进,绘制直接用当前值
+            val rng = rangeM.value
             // ── 过滤后的可见目标：聚焦目标永远显示，其余按类型/关键词过滤;绘制上限 40 防卡顿 ──
-            val filteredAll = targets.filter { t ->
-                t.id == focusedId ||
-                    ((typeFilter == "all" || t.type == typeFilter) &&
-                        (query.isBlank() || t.name.contains(query, ignoreCase = true)))
-            }
-            val visibleTargets = (focusedId?.let { id -> filteredAll.filter { it.id == id } }.orEmpty() +
-                filteredAll.filter { it.id != focusedId }.sortedByDescending { it.rssi }.take(40))
-                .distinctBy { it.id }
-            val focusedTarget = focusedId?.let { id -> targets.firstOrNull { it.id == id } }
+            val visibleTargets = radarVisibleTargets(targets, typeFilter, query, focusedId, 40)
             // ── 底部状态带:先测量两行文字,再反推盘面几何 —— 文字绝不裁切 ──
             val loc = locState.value
             val statusStyle = TextStyle(fontFamily = Mono, fontSize = 8.5.sp, color = g.copy(alpha = 0.86f))
@@ -2996,7 +3438,7 @@ private fun RadarScope(
             )
             val estCount = loc.values.count { it.state == LocState.ESTIMATED }
             val l2 = textMeasurer.measure(
-                String.format(scopeStatus2Fmt, visibleTargets.size, targets.size, estCount, peers.size),
+                String.format(scopeStatus2Fmt, "%.0fm".format(rng), visibleTargets.size, targets.size, estCount, peers.size),
                 statusStyle,
                 constraints = Constraints(maxWidth = maxW),
             )
@@ -3038,6 +3480,14 @@ private fun RadarScope(
                 drawText(mg, topLeft = base + Offset(0f, -1.dp.toPx()))
                 drawText(mg, topLeft = base + Offset(0f, 1.dp.toPx()))
                 drawText(m, topLeft = base)
+            }
+
+            // ── 距离环刻度:按当前量程实时重标注(自动缩放时随盘面一起变) ──
+            listOf(0.25f, 0.5f, 0.75f).forEach { s ->
+                val v = rng * s
+                val lab = if (v >= 10f) "%.0f".format(v) else "%.1f".format(v)
+                val tag = cachedMeasure("grid", lab, TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = g.copy(alpha = 0.5f)))
+                drawText(tag, topLeft = Offset(cx + r * s - tag.size.width / 2f, cy + 2.dp.toPx()))
             }
 
             // ── 机头航向指针：固定在屏幕顶部，指向设备当前朝向 ──
@@ -3092,17 +3542,16 @@ private fun RadarScope(
                 )
             }
 
-            // ── 目标-中心连线（数据链）：随罗盘航向同步旋转 ──
+            // ── 目标-中心连线（数据链）：随罗盘航向同步旋转,颜色跟随类别色 ──
             if (running || targets.isNotEmpty()) {
                 visibleTargets.forEach { t ->
                     val e = loc[t.id]
                     val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
                     val effAngle = if (locked) e.bearingDeg else t.angleDeg
-                    val dist = ((if (locked) e.distanceM else t.distanceM) / 100f).coerceIn(0.06f, 0.94f)
+                    val dist = ((if (locked) e.distanceM else t.distanceM) / rng).coerceIn(0.06f, 0.94f)
                     val tr = dist * r
                     val ta = Math.toRadians((effAngle - heading - 90.0).toDouble()).toFloat()
-                    val blip = if (t.type == "wifi") Danger else TacGreen
-                    drawLine(blip.copy(alpha = 0.12f), Offset(cx, cy), Offset(cx + tr * cos(ta), cy + tr * sin(ta)), 0.8f)
+                    drawLine(radarBlipColor(t).copy(alpha = 0.12f), Offset(cx, cy), Offset(cx + tr * cos(ta), cy + tr * sin(ta)), 0.8f)
                 }
             }
 
@@ -3134,14 +3583,15 @@ private fun RadarScope(
             }
 
             // ── 目标 blip：磷光轨迹 + 扫过点亮 + 命中白闪 + 锁定框 + 编号 ──
-            // 红点（WiFi）刻意放大加强：三层光晕 + 双脉动环 + 白芯十字，一眼锁定敌目标
+            // 类别固定色(WiFi 红 / BLE 青 / 经典 BT 绿 / 友方蓝),与队伍主题解耦;
+            // 友方(已绑定)画静止双环 + 蓝框角,不脉动不震动 —— 一眼识别非敌对目标
             if (running || targets.isNotEmpty()) {
                 visibleTargets.forEachIndexed { i, t ->
                     // 方位推演置信达标时用估计方位/距离替换哈希占位(位置仍为估计值)
                     val e = loc[t.id]
                     val locked = e != null && e.state == LocState.ESTIMATED && e.confidence >= 0.45f && !e.bearingDeg.isNaN()
                     val effAngle = if (locked) e.bearingDeg else t.angleDeg
-                    val dist = ((if (locked) e.distanceM else t.distanceM) / 100f).coerceIn(0.06f, 0.94f)
+                    val dist = ((if (locked) e.distanceM else t.distanceM) / rng).coerceIn(0.06f, 0.94f)
                     val tr = dist * r
                     // 目标方位为世界坐标，绘制时减去航向与 90° 屏幕偏置 —— 转动机身，盘面目标随之旋转
                     val ta = Math.toRadians((effAngle - heading - 90.0).toDouble()).toFloat()
@@ -3155,26 +3605,46 @@ private fun RadarScope(
                     val isFocused = t.id == focusedId
                     // 聚焦模式下非聚焦目标大幅降噪淡出，聚焦目标恒定高亮
                     val bright = ((1f - abs(d) / 50f).coerceIn(0.10f, 1f)) * (if (focusedId == null || isFocused) 1f else 0.16f)
-                    val blip = if (t.type == "wifi") Danger else TacGreen
+                    val blip = radarBlipColor(t)
+                    val friendly = t.bonded
 
-                    // 磷光轨迹：历史位置渐隐余晖（同样跟随航向旋转）
+                    // 磷光轨迹：历史位置渐隐余晖（同样跟随航向旋转;距离按米记录,随量程缩放）
                     trails[t.id]?.dropLast(1)?.forEachIndexed { k, pt ->
                         val pta = Math.toRadians((pt.angleDeg - heading - 90.0).toDouble()).toFloat()
-                        val pxa = cx + pt.dist01 * r * cos(pta)
-                        val pya = cy + pt.dist01 * r * sin(pta)
+                        val pr = (pt.distM / rng).coerceIn(0f, 1f)
+                        val pxa = cx + pr * r * cos(pta)
+                        val pya = cy + pr * r * sin(pta)
                         drawCircle(blip.copy(alpha = (0.05f + k * 0.045f) * (if (isFocused || focusedId == null) 1f else 0.16f)), 1.6.dp.toPx(), Offset(pxa, pya))
                     }
 
-                    // 醒目的 blip:紧凑光晕 + 双脉动扩散环 + 亮核(光晕收小,目标更锐)
+                    // 醒目的 blip:紧凑光晕 + 亮核(光晕收小,目标更锐)
                     drawCircle(blip.copy(alpha = bright * 0.26f), 10.dp.toPx(), Offset(x, y))
                     drawCircle(blip.copy(alpha = bright * 0.55f), 5.5.dp.toPx(), Offset(x, y))
 
-                    val rippleBase = ((sweepDeg / 360f) * 2f + i * 0.37f) % 1f
-                    listOf(0f, 0.5f).forEach { off ->
-                        val ph = (rippleBase + off) % 1f
-                        val rr = 3.dp.toPx() + 30.dp.toPx() * ph
-                        drawCircle(blip.copy(alpha = (1f - ph) * 0.26f * bright), rr, Offset(x, y), style = Stroke(4f))
-                        drawCircle(blip.copy(alpha = (1f - ph) * 0.95f * bright), rr, Offset(x, y), style = Stroke(1.4f))
+                    if (friendly) {
+                        // 友方标记:静止双环(绝不脉动) + 蓝框角 + FRIENDLY 标签 —— 非敌对目标持续高亮
+                        drawCircle(blip.copy(alpha = bright * 0.45f), 9.dp.toPx(), Offset(x, y), style = Stroke(1.4f))
+                        drawCircle(blip.copy(alpha = bright * 0.22f), 14.dp.toPx(), Offset(x, y), style = Stroke(1f))
+                        val fs = 30.dp.toPx()
+                        withTransform({ translate(x - fs / 2f, y - fs / 2f) }) {
+                            drawTacticalCorners(
+                                blip.copy(alpha = bright * 0.85f),
+                                Size(fs, fs),
+                                len = 7.dp.toPx(),
+                                stroke = 1.3.dp.toPx(),
+                            )
+                        }
+                        val fTag = cachedMeasure("friendly", friendlyTagText, TextStyle(fontFamily = Mono, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = blip.copy(alpha = bright)))
+                        drawText(fTag, topLeft = Offset(x - fTag.size.width / 2f, y - 24.dp.toPx()))
+                    } else {
+                        // 未知目标双脉动扩散环
+                        val rippleBase = ((sweepDeg / 360f) * 2f + i * 0.37f) % 1f
+                        listOf(0f, 0.5f).forEach { off ->
+                            val ph = (rippleBase + off) % 1f
+                            val rr = 3.dp.toPx() + 30.dp.toPx() * ph
+                            drawCircle(blip.copy(alpha = (1f - ph) * 0.26f * bright), rr, Offset(x, y), style = Stroke(4f))
+                            drawCircle(blip.copy(alpha = (1f - ph) * 0.95f * bright), rr, Offset(x, y), style = Stroke(1.4f))
+                        }
                     }
 
                     // 核心点 + 白芯 + 十字准星
@@ -3184,13 +3654,13 @@ private fun RadarScope(
                     drawLine(blip.copy(alpha = bright * 0.85f), Offset(x - cross, y), Offset(x + cross, y), 1.2f)
                     drawLine(blip.copy(alpha = bright * 0.85f), Offset(x, y - cross), Offset(x, y + cross), 1.2f)
 
-                    // ── 高危接近警示:红色双环 + 「!」标签(与档案页同一套威胁分级) ──
+                    // ── 高危接近警示:红色双环 + 「!」标签(与档案页同一套威胁分级;友方不在此列) ──
                     val tier = radarThreatTier(t)
                     if (tier.key == "high") {
                         val warnR = 22.dp.toPx() + 3.dp.toPx() * sin(sweepDeg * 0.07f + i)
-                        drawCircle(Danger.copy(alpha = bright * 0.85f), warnR, Offset(x, y), style = Stroke(2.2f))
-                        drawCircle(Danger.copy(alpha = bright * 0.5f), warnR + 4.dp.toPx(), Offset(x, y), style = Stroke(1.2f))
-                        val bang = cachedMeasure("bang", "!", TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Danger))
+                        drawCircle(TIER_HIGH.copy(alpha = bright * 0.85f), warnR, Offset(x, y), style = Stroke(2.2f))
+                        drawCircle(TIER_HIGH.copy(alpha = bright * 0.5f), warnR + 4.dp.toPx(), Offset(x, y), style = Stroke(1.2f))
+                        val bang = cachedMeasure("bang", "!", TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TIER_HIGH))
                         drawText(bang, topLeft = Offset(x + warnR, y - warnR))
                     }
 
@@ -3234,6 +3704,14 @@ private fun RadarScope(
                                 stroke = 1.3.dp.toPx(),
                             )
                         }
+                    }
+
+                    // 点触弹窗锚点跟随:目标移动超过 3px 时同步弹窗位置(只在变化时写状态,不产生每帧重组)
+                    val anchor = popupAnchor
+                    if (anchor != null && anchor.first == t.id) {
+                        val dx = x - anchor.second.x
+                        val dy = y - anchor.second.y
+                        if (dx * dx + dy * dy > 9f) popupAnchor = t.id to Offset(x, y)
                     }
 
                     // 编号标签
@@ -3280,7 +3758,7 @@ private fun RadarScope(
                         val worldBearing = Math.toDegrees(atan2(foc.eastM.toDouble(), foc.northM.toDouble())).toFloat()
                         val worldDist = sqrt(foc.eastM * foc.eastM + foc.northM * foc.northM)
                         val ma = Math.toRadians((worldBearing - heading - 90.0).toDouble()).toFloat()
-                        mk = Offset(cx + (worldDist / 100f * r) * cos(ma), cy + (worldDist / 100f * r) * sin(ma))
+                        mk = Offset(cx + (worldDist / rng * r) * cos(ma), cy + (worldDist / rng * r) * sin(ma))
                     } else {
                         mk = Offset(cx + r * cos(bRad), cy + r * sin(bRad))
                     }
@@ -3290,8 +3768,8 @@ private fun RadarScope(
                     drawCircle(mkColor.copy(alpha = 0.6f), 3.5.dp.toPx(), mk)
                     if (hasFix && foc.sweepCount > 0) {
                         // 置信椭圆(90%,旋转至椭圆主轴;世界角 → 屏幕角同一映射)
-                        val aSemi = (foc.ellipseSemiMajorM / 100f * r).coerceAtLeast(3f)
-                        val bSemi = (foc.ellipseSemiMinorM / 100f * r).coerceAtLeast(3f)
+                        val aSemi = (foc.ellipseSemiMajorM / rng * r).coerceAtLeast(3f)
+                        val bSemi = (foc.ellipseSemiMinorM / rng * r).coerceAtLeast(3f)
                         val phi = Math.toRadians((foc.ellipseAngleDeg - heading - 90.0).toDouble()).toFloat()
                         withTransform({
                             translate(mk.x, mk.y)
@@ -3374,6 +3852,107 @@ private fun RadarScope(
                 drawText(legend, topLeft = Offset(8.dp.toPx(), 8.dp.toPx()))
             }
 
+            // ── 同网主机层:ARP Ping Sweep 发现的本网段在线主机 ──
+            // 距离/方位未知(无 RSSI),按 IP 哈希散在固定外环上,琥珀方框与圆形 blip 区分;
+            // 点触方框弹出 IP/主机名/MAC/时延详情
+            if (lanHosts.isNotEmpty()) {
+                val lanR = r * 0.82f
+                drawCircle(
+                    Warn.copy(alpha = 0.30f),
+                    lanR, Offset(cx, cy),
+                    style = Stroke(0.8f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 7f))),
+                )
+                lanHosts.sortedBy { it.ip }.forEachIndexed { i, h ->
+                    val pa = (h.ip.hashCode() and 0x7FFFFFFF) % 360f
+                    val paRad = Math.toRadians((pa - heading - 90.0).toDouble()).toFloat()
+                    val x = cx + lanR * cos(paRad)
+                    val y = cy + lanR * sin(paRad)
+                    // 方框标记:双相扩散细方框 + 实心小方
+                    val ph = ((sweepDeg / 360f) * 2f + i * 0.29f) % 1f
+                    val half = 3.dp.toPx() + 9.dp.toPx() * ph
+                    drawRect(
+                        Warn.copy(alpha = (1f - ph) * 0.5f),
+                        topLeft = Offset(x - half, y - half),
+                        size = Size(half * 2f, half * 2f),
+                        style = Stroke(1.2f),
+                    )
+                    val s = 3.4.dp.toPx()
+                    drawRect(
+                        Warn.copy(alpha = 0.95f),
+                        topLeft = Offset(x - s, y - s),
+                        size = Size(s * 2f, s * 2f),
+                        style = Stroke(1.5f),
+                    )
+                    // IP 标签:少量主机常显,多主机光束扫过时显示
+                    val paScreen = ((pa - heading - 90f) % 360f + 360f) % 360f
+                    val showTag = lanHosts.size <= 8 || abs(((sweepDeg - paScreen + 540f) % 360f) - 180f) < 40f
+                    if (showTag) {
+                        val tag = cachedMeasure("lan", h.ip, TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = Warn.copy(alpha = 0.95f)))
+                        drawText(tag, topLeft = Offset(x - tag.size.width / 2f, y + 7.dp.toPx()))
+                    }
+                    // 弹窗锚点跟随
+                    val anchor = popupLan
+                    if (anchor != null && anchor.first.ip == h.ip) {
+                        val dx = x - anchor.second.x
+                        val dy = y - anchor.second.y
+                        if (dx * dx + dy * dy > 9f) popupLan = h to Offset(x, y)
+                    }
+                }
+                val lanLegend = cachedMeasure(
+                    "lanlegend",
+                    String.format(lanLegendFmt, lanHosts.size),
+                    TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = Warn.copy(alpha = 0.85f)),
+                )
+                drawText(lanLegend, topLeft = Offset(8.dp.toPx(), 28.dp.toPx()))
+            }
+
+            // ── 基站层:注册小区 + 邻区(紫三角) ──
+            // 距离 = RSRP 路径损耗粗估;方位无硬件可测,按 CID 哈希散开(占位)并如实标注
+            if (towers.isNotEmpty()) {
+                towers.sortedByDescending { it.isRegistered }.forEach { tw ->
+                    val pa = (tw.cid.hashCode() and 0x7FFFFFFF) % 360f
+                    val dist01 = ((tw.distanceEstimateM ?: 900f) / rng).coerceIn(0.10f, 0.94f)
+                    val tr = dist01 * r
+                    val paRad = Math.toRadians((pa - heading - 90.0).toDouble()).toFloat()
+                    val x = cx + tr * cos(paRad)
+                    val y = cy + tr * sin(paRad)
+                    val s = 5.5.dp.toPx()
+                    val tri = Path().apply {
+                        moveTo(x, y - s)
+                        lineTo(x - s * 0.9f, y + s * 0.75f)
+                        lineTo(x + s * 0.9f, y + s * 0.75f)
+                        close()
+                    }
+                    if (tw.isRegistered) {
+                        drawPath(tri, CELL_TOWER_COLOR.copy(alpha = 0.9f))
+                        drawPath(tri, White.copy(alpha = 0.55f), style = Stroke(1f))
+                        // 注册小区常显标签:类型 + 信号
+                        val sig = tw.rsrpDbm ?: tw.rssiDbm
+                        val tag = cachedMeasure(
+                            "cell",
+                            "${tw.type}${sig?.let { " $it" } ?: ""}",
+                            TextStyle(fontFamily = Mono, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = CELL_TOWER_COLOR),
+                        )
+                        drawText(tag, topLeft = Offset(x - tag.size.width / 2f, y + 8.dp.toPx()))
+                    } else {
+                        drawPath(tri, CELL_TOWER_COLOR.copy(alpha = 0.45f), style = Stroke(1.3f))
+                    }
+                    // 弹窗锚点跟随
+                    val anchor = popupCell
+                    if (anchor != null && anchor.first.cid == tw.cid) {
+                        val dx = x - anchor.second.x
+                        val dy = y - anchor.second.y
+                        if (dx * dx + dy * dy > 9f) popupCell = tw to Offset(x, y)
+                    }
+                }
+                val cellLegend = cachedMeasure(
+                    "celllegend",
+                    String.format(cellLegendFmt, towers.size),
+                    TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = CELL_TOWER_COLOR.copy(alpha = 0.85f)),
+                )
+                drawText(cellLegend, topLeft = Offset(8.dp.toPx(), 44.dp.toPx()))
+            }
+
             // ── 卫星层:GNSS 星座叠加(仰角→半径, 方位→屏幕角, 与目标同一罗盘映射) ──
             // 数据来自系统 GnssStatus 真实解算;卫星是外圈金色小点+细环,与目标 blip 明显区分
             if (satellites.isNotEmpty()) {
@@ -3384,11 +3963,12 @@ private fun RadarScope(
                     val sa = Math.toRadians((az - heading - 90.0).toDouble()).toFloat()
                     val x = cx + sr * cos(sa)
                     val y = cy + sr * sin(sa)
+                    // 星座固定色:与 blip 类别色(红/青/绿/蓝)错开,外圈小点不与目标混淆
                     val color = when (sat.constellationName) {
-                        "GPS" -> Gold
-                        "北斗" -> Danger
-                        "伽利略" -> TacGreen
-                        "格洛纳斯" -> Warn
+                        "GPS" -> White
+                        "北斗" -> Color(0xFFFF9100)
+                        "伽利略" -> Color(0xFFB388FF)
+                        "格洛纳斯" -> Color(0xFF9FA8B8)
                         else -> White
                     }
                     drawCircle(color.copy(alpha = 0.35f), 4.dp.toPx(), Offset(x, y))
@@ -3411,11 +3991,473 @@ private fun RadarScope(
             drawText(l1, topLeft = Offset((size.width - l1.size.width) / 2f, fieldH + bandPad))
             drawText(l2, topLeft = Offset((size.width - l2.size.width) / 2f, fieldH + bandPad + l1.size.height))
         }
+
+        // ═══ 点触弹窗:窗口坐标系定位,贴 blip 右侧(放不下翻左侧),盘面外不裁切 ═══
+        popupAnchor?.let { (id, anchor) ->
+            RadarBlipPopup(
+                vm = vm,
+                targetId = id,
+                anchorLocal = anchor,
+                boxPosInWindow = boxPosInWindow,
+                scopeSize = scopeSize,
+                onOpenDossier = onOpenDossier,
+                onDeauth = onDeauth,
+            )
+        }
+        // ═══ 同网主机弹窗:与目标弹窗互斥 ═══
+        popupLan?.let { (host, anchor) ->
+            RadarLanPopup(
+                host = host,
+                anchorLocal = anchor,
+                boxPosInWindow = boxPosInWindow,
+                scopeSize = scopeSize,
+                onScanPorts = onScanPorts,
+                onSsh = onSsh,
+                onKick = onKick,
+            )
+        }
+        // ═══ 基站弹窗 ═══
+        popupCell?.let { (cell, anchor) ->
+            RadarTowerPopup(
+                cell = cell,
+                anchorLocal = anchor,
+                boxPosInWindow = boxPosInWindow,
+                scopeSize = scopeSize,
+            )
+        }
     }
 }
 
-/** 雷达目标磷光轨迹点（角度 + 归一化距离） */
-private data class TrailPoint(val angleDeg: Float, val dist01: Float)
+/** 雷达可见目标:聚焦目标恒首位,其余按信号强度取前 limit 个 —— 绘制与点触命中共用 */
+private fun radarVisibleTargets(
+    targets: List<RadarTarget>,
+    typeFilter: String,
+    query: String,
+    focusedId: String?,
+    limit: Int,
+): List<RadarTarget> {
+    val filteredAll = targets.filter { t ->
+        t.id == focusedId ||
+            (matchesTypeFilter(t, typeFilter) && (query.isBlank() || t.name.contains(query, ignoreCase = true)))
+    }
+    return (focusedId?.let { id -> filteredAll.filter { it.id == id } }.orEmpty() +
+        filteredAll.filter { it.id != focusedId }.sortedByDescending { it.rssi }.take(limit))
+        .distinctBy { it.id }
+}
+
+/** 雷达目标磷光轨迹点（角度 + 米制距离,绘制时按当前量程缩放） */
+private data class TrailPoint(val angleDeg: Float, val distM: Float)
+
+/**
+ * 点触 blip 弹窗 —— 技术详情 + 规格 + 与本机距离,贴在目标旁边实时刷新。
+ *
+ * 定位:优先贴目标右侧,右侧放不下翻到左侧;纵向上移小半卡高,
+ * 再夹到窗口可视区内 —— 页面滚动/盘面位置变化时锚点随 Box 窗口坐标走。
+ */
+@Composable
+private fun RadarBlipPopup(
+    vm: RadarViewModel,
+    targetId: String,
+    anchorLocal: Offset,
+    boxPosInWindow: IntOffset,
+    scopeSize: IntSize,
+    onOpenDossier: (String) -> Unit,
+    onDeauth: (RadarTarget) -> Unit,
+) {
+    val targets by vm.targets.collectAsState()
+    val locNow by vm.localizations.collectAsState()
+    val t = targets.firstOrNull { it.id == targetId } ?: return
+    val blip = radarBlipColor(t)
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val cfg = LocalConfiguration.current
+    val popupW = 236.dp
+    val estH = 430.dp
+    // 连接动作本地状态:密码 + 结果反馈
+    var pass by remember { mutableStateOf("") }
+    var actionMsg by remember { mutableStateOf<String?>(null) }
+    var actionErr by remember { mutableStateOf(false) }
+    // 成功文案在组合期取好(点击回调不是组合上下文,不能调 stringResource)
+    val connectSentText = stringResource(R.string.det_msg_connect_sent)
+    val pairSentText = stringResource(R.string.det_msg_pair_request_sent)
+    val side = with(density) { 14.dp.toPx() }
+    val cardW = with(density) { popupW.toPx() }
+    val cardH = with(density) { estH.toPx() }
+    val wPx = scopeSize.width.toFloat()
+    // 横向:优先贴右侧;右侧放不下翻左侧;再不够夹进盘面
+    var ax = anchorLocal.x + side
+    if (ax + cardW > wPx - 8f) ax = anchorLocal.x - side - cardW
+    ax = ax.coerceIn(8f, (wPx - cardW - 8f).coerceAtLeast(8f))
+    // 纵向:锚点上移小半卡高,夹进窗口
+    var ay = anchorLocal.y - cardH / 3f
+    val winH = with(density) { (cfg.screenHeightDp.dp).toPx() }
+    ay = ay.coerceIn(8f, (winH - cardH - 8f).coerceAtLeast(8f))
+    val offset = IntOffset(
+        (boxPosInWindow.x + ax).roundToInt(),
+        (boxPosInWindow.y + ay).roundToInt(),
+    )
+
+    val wifi = t.type == "wifi"
+    val tier = radarThreatTier(t)
+    val typeLabel = when {
+        t.bonded -> stringResource(R.string.det_popup_friendly)
+        wifi -> "WIFI"
+        t.observedVia == "ble" -> "BLE"
+        else -> "BT"
+    }
+
+    Popup(alignment = Alignment.TopStart, offset = offset, onDismissRequest = {}) {
+        Surface(
+            shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp),
+            color = Dark,
+            border = BorderStroke(1.dp, blip.copy(alpha = 0.75f)),
+            shadowElevation = 14.dp,
+        ) {
+            Column(Modifier.width(popupW).padding(10.dp)) {
+                // 头部:类别徽章 + 名称 + 友方徽章
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
+                        color = blip.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, blip.copy(alpha = 0.7f)),
+                    ) {
+                        Text(
+                            typeLabel,
+                            fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold,
+                            color = blip, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(t.name.take(14), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White, maxLines = 1, modifier = Modifier.weight(1f))
+                    if (t.bonded) {
+                        Surface(
+                            shape = CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp),
+                            color = FRIENDLY_BLIP.copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, FRIENDLY_BLIP.copy(alpha = 0.6f)),
+                        ) {
+                            Text(stringResource(R.string.det_popup_friendly), fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = FRIENDLY_BLIP, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                // 距离突出行:大号距离 + 方位(估计/占位)
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(stringResource(R.string.det_info_distance), fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(bottom = 2.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("%.1f m".format(t.distanceM), fontFamily = Mono, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = blip)
+                    Spacer(Modifier.width(8.dp))
+                    val e = locNow[t.id]
+                    val hasLoc = e != null && e.state == LocState.ESTIMATED && !e.bearingDeg.isNaN()
+                    val rangeText = if (e != null && hasLoc) stringResource(R.string.det_fmt_range_estimated, e.distanceM, e.bearingDeg.toInt())
+                    else stringResource(R.string.det_fmt_range_placeholder, t.distanceM, t.angleDeg.toInt())
+                    Text(
+                        rangeText,
+                        fontFamily = Mono, fontSize = 7.sp, color = if (hasLoc) Gold else Gray,
+                        modifier = Modifier.padding(bottom = 2.dp),
+                    )
+                }
+                Spacer(Modifier.height(5.dp))
+                InlineInfoRow(stringResource(R.string.det_info_id), if (wifi) t.id else t.address)
+                InlineInfoRow(stringResource(R.string.det_info_vendor), "${t.vendor} · OUI ${t.vendorOui}")
+                InlineInfoRow(stringResource(R.string.det_info_signal), stringResource(R.string.det_fmt_signal_detail, t.rssi, t.snrDb, t.noiseDbm))
+                if (wifi) {
+                    InlineInfoRow(stringResource(R.string.det_info_radio), "${t.frequencyMhz}MHz · ${t.channel} · ${t.channelWidth}")
+                    InlineInfoRow(stringResource(R.string.det_info_security), t.security.ifEmpty { "--" })
+                } else {
+                    InlineInfoRow(stringResource(R.string.det_info_class), "${t.deviceClassMajor}${if (t.deviceClassDetail.isNotEmpty()) " · ${t.deviceClassDetail}" else ""}")
+                    InlineInfoRow(stringResource(R.string.det_info_link), stringResource(R.string.det_fmt_link_bond, t.linkType, t.bondState))
+                    if (t.bleAdv?.hasRecord == true) {
+                        InlineInfoRow(
+                            stringResource(R.string.det_info_adv),
+                            stringResource(
+                                R.string.det_fmt_adv_info,
+                                if (t.txPowerDbm != null) "${t.txPowerDbm}dBm" else "—",
+                                t.bleAdv.serviceUuids.size,
+                                if (t.bleAdv.manufacturerId >= 0) "0x%04X".format(t.bleAdv.manufacturerId) else "—",
+                            ),
+                        )
+                    }
+                }
+                InlineInfoRow(stringResource(R.string.det_info_bearing), locLabel(locNow[t.id]))
+                InlineInfoRow(
+                    stringResource(R.string.det_info_threat),
+                    stringResource(
+                        when (tier.key) {
+                            "high" -> R.string.det_threat_high
+                            "mid" -> R.string.det_threat_mid
+                            "friendly" -> R.string.det_threat_friendly
+                            else -> R.string.det_threat_far
+                        },
+                    ),
+                )
+                Spacer(Modifier.height(6.dp))
+                // ── 连接/攻击动作:WiFi 可连接可跳攻击,BT/BLE 走系统配对 ──
+                if (wifi) {
+                    BasicTextField(
+                        value = pass,
+                        onValueChange = { pass = it },
+                        singleLine = true,
+                        textStyle = TextStyle(fontFamily = Mono, fontSize = 9.sp, color = White),
+                        cursorBrush = SolidColor(Gold),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                            .background(SurfaceAlt)
+                            .border(1.dp, BorderDim, CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                            .padding(horizontal = 8.dp, vertical = 7.dp),
+                        decorationBox = { inner ->
+                            if (pass.isEmpty()) {
+                                Text(stringResource(R.string.det_ph_passphrase), fontFamily = Mono, fontSize = 8.sp, color = Gray.copy(alpha = 0.5f))
+                            }
+                            inner()
+                        },
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable {
+                                haptic.hud()
+                                val err = vm.connectWifiTarget(t.name, t.security, pass)
+                                actionErr = err != null
+                                actionMsg = err ?: connectSentText
+                                if (err == null) pass = ""
+                            },
+                            shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                            color = TacGreen.copy(alpha = 0.10f),
+                            border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
+                        ) {
+                            Text(stringResource(R.string.det_popup_connect), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+                        }
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable {
+                                haptic.hud()
+                                onDeauth(t)
+                            },
+                            shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                            color = Danger.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, Danger.copy(alpha = 0.6f)),
+                        ) {
+                            Text(stringResource(R.string.det_popup_deauth), fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Danger, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+                        }
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            haptic.hud()
+                            val err = vm.pairTarget(t.address)
+                            actionErr = err != null
+                            actionMsg = err ?: pairSentText
+                        },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = TacGreen.copy(alpha = 0.10f),
+                        border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
+                    ) {
+                        Text(stringResource(R.string.det_popup_pair), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TacGreen, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+                    }
+                }
+                actionMsg?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(it, fontFamily = Sans, fontSize = 8.sp, color = if (actionErr) Danger else TacGreen, lineHeight = 11.sp)
+                }
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        haptic.hud()
+                        onOpenDossier(t.id)
+                    },
+                    shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                    color = Gold.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Gold.copy(alpha = 0.4f)),
+                ) {
+                    Text(stringResource(R.string.det_popup_open_dossier), fontFamily = Sans, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 6.dp))
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(R.string.det_popup_close_hint), fontFamily = Mono, fontSize = 7.sp, color = Gray.copy(alpha = 0.7f), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            }
+        }
+    }
+}
+
+/**
+ * 同网主机弹窗 —— ARP Ping Sweep 发现的局域网设备详情。
+ * 距离与方位未知(无 RSSI),如实呈现;定位逻辑与目标弹窗相同。
+ */
+@Composable
+private fun RadarLanPopup(
+    host: ArpEntry,
+    anchorLocal: Offset,
+    boxPosInWindow: IntOffset,
+    scopeSize: IntSize,
+    onScanPorts: (String) -> Unit,
+    onSsh: (String) -> Unit,
+    onKick: (String) -> Unit,
+) {
+    val density = LocalDensity.current
+    val cfg = LocalConfiguration.current
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val popupW = 216.dp
+    val estH = 330.dp
+    val side = with(density) { 14.dp.toPx() }
+    val cardW = with(density) { popupW.toPx() }
+    val cardH = with(density) { estH.toPx() }
+    val wPx = scopeSize.width.toFloat()
+    var ax = anchorLocal.x + side
+    if (ax + cardW > wPx - 8f) ax = anchorLocal.x - side - cardW
+    ax = ax.coerceIn(8f, (wPx - cardW - 8f).coerceAtLeast(8f))
+    var ay = anchorLocal.y - cardH / 3f
+    val winH = with(density) { (cfg.screenHeightDp.dp).toPx() }
+    ay = ay.coerceIn(8f, (winH - cardH - 8f).coerceAtLeast(8f))
+    val offset = IntOffset(
+        (boxPosInWindow.x + ax).roundToInt(),
+        (boxPosInWindow.y + ay).roundToInt(),
+    )
+
+    // IP 定位(免 Key ip-api.com;私有地址如实显示无地理信息)
+    val arpManager = remember { ArpScanManager() }
+    var geoText by remember { mutableStateOf<String?>(null) }
+    var geoLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(host.ip) {
+        geoLoading = true
+        geoText = arpManager.geoLookup(host.ip)
+        geoLoading = false
+    }
+
+    Popup(alignment = Alignment.TopStart, offset = offset, onDismissRequest = {}) {
+        Surface(
+            shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp),
+            color = Dark,
+            border = BorderStroke(1.dp, Warn.copy(alpha = 0.75f)),
+            shadowElevation = 14.dp,
+        ) {
+            Column(Modifier.width(popupW).padding(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
+                        color = Warn.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, Warn.copy(alpha = 0.7f)),
+                    ) {
+                        Text(stringResource(R.string.det_lan_popup_title), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Warn, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(host.ip, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(6.dp))
+                InlineInfoRow(stringResource(R.string.det_lan_hostname), host.hostname.ifBlank { "--" })
+                InlineInfoRow(stringResource(R.string.det_lan_mac), host.mac.ifBlank { "--" })
+                InlineInfoRow(stringResource(R.string.det_lan_latency), host.latency)
+                Spacer(Modifier.height(6.dp))
+                // ── 定位结果行 ──
+                when {
+                    geoLoading -> Text(stringResource(R.string.det_lan_geo_loading), fontFamily = Mono, fontSize = 7.5.sp, color = Gray)
+                    geoText != null -> Text("◎ $geoText", fontFamily = Mono, fontSize = 7.5.sp, color = TacGreen, lineHeight = 11.sp)
+                    else -> Text(stringResource(R.string.det_lan_geo_private), fontFamily = Mono, fontSize = 7.5.sp, color = Gray, lineHeight = 11.sp)
+                }
+                Spacer(Modifier.height(6.dp))
+                // ── 行动:扫端口 / SSH / 踢出网络 ──
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    LanActionButton(stringResource(R.string.det_lan_scan_ports), TacGreen, Modifier.weight(1f)) {
+                        haptic.hud()
+                        onScanPorts(host.ip)
+                    }
+                    LanActionButton(stringResource(R.string.det_lan_ssh), Gold, Modifier.weight(1f)) {
+                        haptic.hud()
+                        onSsh(host.ip)
+                    }
+                }
+                Spacer(Modifier.height(5.dp))
+                LanActionButton(stringResource(R.string.det_lan_kick), Danger, Modifier.fillMaxWidth()) {
+                    haptic.hud()
+                    onKick(host.ip)
+                }
+                Spacer(Modifier.height(5.dp))
+                Text(stringResource(R.string.det_lan_hint), fontFamily = Sans, fontSize = 7.5.sp, color = Gray, lineHeight = 11.sp)
+            }
+        }
+    }
+}
+
+/** 同网主机弹窗动作按钮 */
+@Composable
+private fun LanActionButton(label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+        color = color.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.55f)),
+    ) {
+        Text(label, fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = color, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 7.dp))
+    }
+}
+
+/**
+ * 基站弹窗 —— 注册小区/邻区技术参数。距离为 RSRP 路径损耗粗估,
+ * 方位手机无硬件可测(盘面角度是占位),全部如实标注。
+ */
+@Composable
+private fun RadarTowerPopup(
+    cell: TowerCell,
+    anchorLocal: Offset,
+    boxPosInWindow: IntOffset,
+    scopeSize: IntSize,
+) {
+    val density = LocalDensity.current
+    val cfg = LocalConfiguration.current
+    val popupW = 216.dp
+    val estH = 200.dp
+    val side = with(density) { 14.dp.toPx() }
+    val cardW = with(density) { popupW.toPx() }
+    val cardH = with(density) { estH.toPx() }
+    val wPx = scopeSize.width.toFloat()
+    var ax = anchorLocal.x + side
+    if (ax + cardW > wPx - 8f) ax = anchorLocal.x - side - cardW
+    ax = ax.coerceIn(8f, (wPx - cardW - 8f).coerceAtLeast(8f))
+    var ay = anchorLocal.y - cardH / 3f
+    val winH = with(density) { (cfg.screenHeightDp.dp).toPx() }
+    ay = ay.coerceIn(8f, (winH - cardH - 8f).coerceAtLeast(8f))
+    val offset = IntOffset(
+        (boxPosInWindow.x + ax).roundToInt(),
+        (boxPosInWindow.y + ay).roundToInt(),
+    )
+
+    val sig = cell.rsrpDbm ?: cell.rssiDbm
+
+    Popup(alignment = Alignment.TopStart, offset = offset, onDismissRequest = {}) {
+        Surface(
+            shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp),
+            color = Dark,
+            border = BorderStroke(1.dp, CELL_TOWER_COLOR.copy(alpha = 0.75f)),
+            shadowElevation = 14.dp,
+        ) {
+            Column(Modifier.width(popupW).padding(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
+                        color = CELL_TOWER_COLOR.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, CELL_TOWER_COLOR.copy(alpha = 0.7f)),
+                    ) {
+                        Text(
+                            if (cell.isRegistered) stringResource(R.string.det_tower_registered) else stringResource(R.string.det_tower_neighbor),
+                            fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = CELL_TOWER_COLOR, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(cell.type, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(6.dp))
+                InlineInfoRow(stringResource(R.string.det_tower_signal), sig?.let { "$it dBm" } ?: "--")
+                InlineInfoRow(stringResource(R.string.det_tower_distance), cell.distanceEstimateM?.let { "≈${"%.0f".format(it)}m" } ?: "--")
+                InlineInfoRow(stringResource(R.string.det_tower_cell), "CID ${cell.cid} · TAC ${cell.tacLac}")
+                InlineInfoRow(stringResource(R.string.det_tower_operator), cell.mccMnc.ifBlank { "--" })
+                if (cell.bands.isNotEmpty()) {
+                    InlineInfoRow(stringResource(R.string.det_tower_bands), cell.bands.joinToString("/") { "B$it" })
+                }
+                Spacer(Modifier.height(5.dp))
+                Text(stringResource(R.string.det_tower_hint), fontFamily = Sans, fontSize = 7.5.sp, color = Gray, lineHeight = 11.sp)
+            }
+        }
+    }
+}
 
 /** 雷达目标列表面板 —— 随整页滚动(非内嵌滚动),上限 30 行保护,聚焦目标强制包含 */
 @Composable
@@ -3434,8 +4476,7 @@ private fun RadarTrackPanel(
     val locState = vm.localizations.collectAsState()
     val filtered = targets.filter { t ->
         t.id == focusedId ||
-            ((typeFilter == "all" || t.type == typeFilter) &&
-                (query.isBlank() || t.name.contains(query, ignoreCase = true)))
+            (matchesTypeFilter(t, typeFilter) && (query.isBlank() || t.name.contains(query, ignoreCase = true)))
     }
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -3472,7 +4513,14 @@ private fun RadarTrackPanel(
                 ) {
                     Column {
                         Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(if (wifi) "WIFI" else if (t.observedVia == "ble") "BLE" else "BT", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (wifi) Danger else TacGreen, modifier = Modifier.width(34.dp))
+                            // 类别芯片:友方蓝 / WiFi 红 / BLE 青 / 经典 BT 绿 —— 与盘面 blip 同色
+                            val typeLabel = when {
+                                t.bonded -> stringResource(R.string.det_badge_friendly)
+                                wifi -> "WIFI"
+                                t.observedVia == "ble" -> "BLE"
+                                else -> "BT"
+                            }
+                            Text(typeLabel, fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = radarBlipColor(t), modifier = Modifier.width(34.dp))
                             Column(Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
@@ -3521,6 +4569,7 @@ private fun RadarTrackPanel(
                                         when (tier.key) {
                                             "high" -> R.string.det_threat_high
                                             "mid" -> R.string.det_threat_mid
+                                            "friendly" -> R.string.det_threat_friendly
                                             else -> R.string.det_threat_far
                                         },
                                     ),
@@ -3558,7 +4607,8 @@ private fun RadarTrackPanel(
                                 }
                                 // 方位推演状态行
                                 InlineInfoRow(stringResource(R.string.det_info_bearing), locLabel(locNow[t.id]))
-                                InlineInfoRow(stringResource(R.string.det_info_distance_model), if (t.txPowerDbm != null) stringResource(R.string.det_fmt_range_model_tx, t.txPowerDbm) else stringResource(R.string.det_range_model_assumed))
+                                val pathLossN = if (wifi) RadarManager.WIFI_PATH_LOSS else RadarManager.BT_PATH_LOSS
+                                InlineInfoRow(stringResource(R.string.det_info_distance_model), if (t.txPowerDbm != null) stringResource(R.string.det_fmt_range_model_tx, t.txPowerDbm, pathLossN) else stringResource(R.string.det_range_model_assumed, pathLossN))
                                 InlineInfoRow(stringResource(R.string.det_info_tracking), stringResource(R.string.det_fmt_tracking, t.hitCount, SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(t.firstSeenMs))))
                                 Spacer(Modifier.height(5.dp))
                                 Surface(
@@ -3729,12 +4779,18 @@ private fun RadarTarget.ssidHex(): String = id.uppercase()
 
 /** 文件快传页 —— 局域网文件传输 */
 @Composable
-fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
+fun FileTransferScreen(vm: FileTransferViewModel, arpVm: ArpScanViewModel, back: () -> Unit) {
     val running by vm.isRunning.collectAsState()
     val error by vm.error.collectAsState()
     val haptic = LocalHapticFeedback.current
     var manualIp by remember { mutableStateOf("") }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { vm.sendFile(it, manualIp) } }
+    // 同网主机:ARP Ping Sweep 结果点选,无需手输 IP
+    val arpDevices by arpVm.devices.collectAsState()
+    val arpRunning by arpVm.isRunning.collectAsState()
+    LaunchedEffect(Unit) {
+        if (arpDevices.isEmpty() && !arpRunning) arpVm.scan()
+    }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader(stringResource(R.string.det_title_file_transfer), back)
@@ -3746,11 +4802,23 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
                 }
                 error?.let { ErrorBanner(it) }
 
+                Spacer(Modifier.height(6.dp))
+                // ── 战术遥测条:本机/同网主机/已发送/状态 ──
+                val sentCount by vm.sentCount.collectAsState()
+                TacticalStatStrip(
+                    listOf(
+                        vm.localIp to stringResource(R.string.det_ft_local),
+                        "${arpDevices.size}" to stringResource(R.string.tact_strip_devices),
+                        "$sentCount" to stringResource(R.string.det_ft_sent),
+                        (if (running) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.det_ft_state),
+                    ),
+                )
+                Spacer(Modifier.height(6.dp))
+
                 if (running) {
-                    Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.det_fmt_local_address, vm.localIp), fontFamily = Sans, fontSize = 10.sp, color = Gray)
                     // 高频数据区独立订阅：UDP 发现期间设备列表与发送计数持续刷新
-                    FileTransferLivePanel(vm, manualIp = manualIp, onManualIp = { manualIp = it }, picker = picker)
+                    FileTransferLivePanel(vm, arpDevices = arpDevices, arpRunning = arpRunning, onRescan = { arpVm.scan() }, manualIp = manualIp, onManualIp = { manualIp = it }, picker = picker)
                 }
 
                 FileTransferInboxPanel(vm)
@@ -3763,6 +4831,9 @@ fun FileTransferScreen(vm: FileTransferViewModel, back: () -> Unit) {
 @Composable
 private fun FileTransferLivePanel(
     vm: FileTransferViewModel,
+    arpDevices: List<ArpEntry>,
+    arpRunning: Boolean,
+    onRescan: () -> Unit,
     manualIp: String,
     onManualIp: (String) -> Unit,
     picker: androidx.activity.compose.ManagedActivityResultLauncher<Array<String>, Uri?>,
@@ -3787,7 +4858,44 @@ private fun FileTransferLivePanel(
             Spacer(Modifier.height(6.dp))
             HintBreathing(stringResource(R.string.det_hint_no_transfer_peers))
             Spacer(Modifier.height(6.dp))
-            TermInput(stringResource(R.string.det_label_peer_ip), manualIp, placeholder = "192.168.x.x") { onManualIp(it) }
+            // ── 同网主机:点选即填,无需手输 IP ──
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.det_ft_lan_hosts), fontFamily = Mono, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.weight(1f))
+                Text(
+                    stringResource(if (arpRunning) R.string.det_ft_scanning_lan else R.string.det_ft_scan_lan),
+                    fontFamily = Mono, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, color = Warn,
+                    modifier = Modifier.clickable { if (!arpRunning) onRescan() }.padding(horizontal = 4.dp, vertical = 2.dp),
+                )
+            }
+            Spacer(Modifier.height(3.dp))
+            if (arpDevices.isEmpty()) {
+                Text(stringResource(R.string.det_ft_lan_empty), fontFamily = Sans, fontSize = 8.5.sp, color = Gray)
+            } else {
+                Surface(
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                    color = SurfaceBg,
+                    border = BorderStroke(1.dp, BorderDim),
+                ) {
+                    LazyColumn(Modifier.fillMaxWidth().heightIn(max = 150.dp)) {
+                        items(arpDevices.take(30), key = { it.ip }) { h ->
+                            val on = manualIp == h.ip
+                            Row(
+                                Modifier.fillMaxWidth().clickable { onManualIp(h.ip) }.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(if (on) "▸" else " ", fontFamily = Mono, fontSize = 11.sp, color = Gold, modifier = Modifier.width(16.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(h.hostname.ifBlank { stringResource(R.string.det_ft_host) }.take(20), fontFamily = Sans, fontSize = 10.sp, color = if (on) White else Gray, maxLines = 1)
+                                    Text(h.ip, fontFamily = Mono, fontSize = 8.5.sp, color = if (on) Gold else Gray)
+                                }
+                                Text(h.latency, fontFamily = Mono, fontSize = 7.5.sp, color = Gray)
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            TermInput(stringResource(R.string.det_ft_manual_ip), manualIp, placeholder = "192.168.x.x") { onManualIp(it) }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -4190,7 +5298,8 @@ private fun WifiDetailPreview() {
     PreviewTheme {
         val app = LocalContext.current.applicationContext as? Application
         val vm = if (app != null) previewViewModel { WifiDisruptViewModel(app) } else null
-        if (vm == null) PreviewFallback("WiFi 干扰引擎") else WifiDetailScreen(vm, back = {})
+        val radarVm = if (app != null) previewViewModel { RadarViewModel(app) } else null
+        if (vm == null || radarVm == null) PreviewFallback("WiFi 干扰引擎") else WifiDetailScreen(vm, radarVm, back = {})
     }
 }
 
@@ -4278,8 +5387,9 @@ private fun RadarPreview() {
         val vm = if (app != null) previewViewModel { RadarViewModel(app) } else null
         val walkieVm = if (app != null) previewViewModel { WalkieTalkieViewModel(app) } else null
         val dbVm = if (app != null) previewViewModel { DbViewModel(app) } else null
-        if (vm == null || walkieVm == null || dbVm == null) PreviewFallback("设备雷达")
-        else RadarScreen(vm, walkieVm, dbVm, back = {}, radarAlertOn = true, onSelectTarget = {}, onOpenNetmap = {}, onOpenDb = {})
+        val arpVm = if (app != null) previewViewModel { ArpScanViewModel() } else null
+        if (vm == null || walkieVm == null || dbVm == null || arpVm == null) PreviewFallback("设备雷达")
+        else RadarScreen(vm, walkieVm, dbVm, arpVm, back = {}, radarAlertOn = true, onSelectTarget = {}, onOpenNetmap = {}, onOpenDb = {}, onDeauth = {}, onScanPorts = {}, onSsh = {}, onKick = {})
     }
 }
 
@@ -4289,7 +5399,8 @@ private fun FileTransferPreview() {
     PreviewTheme {
         val app = LocalContext.current.applicationContext as? Application
         val vm = if (app != null) previewViewModel { FileTransferViewModel(app) } else null
-        if (vm == null) PreviewFallback("文件快传") else FileTransferScreen(vm, back = {})
+        val arpVm = if (app != null) previewViewModel { ArpScanViewModel() } else null
+        if (vm == null || arpVm == null) PreviewFallback("文件快传") else FileTransferScreen(vm, arpVm, back = {})
     }
 }
 

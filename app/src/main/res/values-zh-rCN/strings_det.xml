@@ -140,6 +140,15 @@
     <string name="det_label_browser_url">浏览器访问地址</string>
     <string name="det_label_gateway_ip">网关 IP</string>
     <string name="det_label_peer_ip">对方 IP</string>
+    <string name="det_ft_lan_hosts">同网主机 · 点选即填</string>
+    <string name="det_ft_scan_lan">重扫 ▸</string>
+    <string name="det_ft_scanning_lan">扫描中…</string>
+    <string name="det_ft_lan_empty">没有找到同网主机 —— 点「重扫」,或在下方手动输入 IP</string>
+    <string name="det_ft_manual_ip">手动 IP(可选)</string>
+    <string name="det_ft_host">主机</string>
+    <string name="det_ft_local">本机 IP</string>
+    <string name="det_ft_sent">已发送</string>
+    <string name="det_ft_state">状态</string>
     <string name="det_label_local_ip_gateway">本机 IP · 网关</string>
     <string name="det_label_signal_strength">信号强度</string>
     <string name="det_label_channel_frequency">信道 · 频率</string>
@@ -185,8 +194,10 @@
     <string name="det_info_adv">广播</string>
     <string name="det_info_device_intel">设备情报</string>
     <string name="det_info_bearing">方位推演</string>
+    <string name="det_info_distance">距离</string>
     <string name="det_info_distance_model">距离模型</string>
     <string name="det_info_tracking">跟踪</string>
+    <string name="det_info_threat">威胁</string>
 
     <!-- ─── 占位与提示 ─── -->
     <string name="det_hint_leave_blank_unlimited">留空表示不限</string>
@@ -387,13 +398,36 @@
     <string name="det_scope_mode_idle">模式: 待机</string>
     <string name="det_fmt_scope_sweep">扫描: %1$03d°</string>
     <string name="det_fmt_scope_heading">航向: %1$03d°</string>
-    <string name="det_fmt_scope_status2">"量程: 100m   目标: %1$d/%2$d   定位: %3$d   节点: %4$d"</string>
+    <string name="det_fmt_scope_status2">"量程: %1$s   目标: %2$d/%3$d   定位: %4$d   节点: %5$d"</string>
     <string name="det_cardinal_n">北</string>
     <string name="det_cardinal_e">东</string>
     <string name="det_cardinal_s">南</string>
     <string name="det_cardinal_w">西</string>
     <string name="det_legend_mesh_nodes">◈ 同网节点(距离未知)</string>
     <string name="det_fmt_satellites">卫星 %1$d</string>
+    <string name="det_fmt_lan">同网 %1$d</string>
+    <string name="det_lan_scanning">同网扫描中</string>
+    <string name="det_lan_legend">▣ 同网主机 ×%1$d(距离未知)</string>
+    <string name="det_lan_popup_title">同网主机</string>
+    <string name="det_lan_hostname">主机名</string>
+    <string name="det_lan_mac">MAC</string>
+    <string name="det_lan_latency">时延</string>
+    <string name="det_lan_hint">本网段 Ping Sweep 发现 —— 距离与方位未知(无 RSSI)</string>
+    <string name="det_lan_scan_ports">扫描端口 ▸</string>
+    <string name="det_lan_ssh">SSH ▸</string>
+    <string name="det_lan_kick">踢出网络 ▸</string>
+    <string name="det_lan_geo_loading">定位中…</string>
+    <string name="det_lan_geo_private">私有地址 —— 无地理信息</string>
+    <string name="det_fmt_towers">基站 %1$d</string>
+    <string name="det_tower_legend">▲ 基站 ×%1$d(方位占位)</string>
+    <string name="det_tower_registered">注册小区</string>
+    <string name="det_tower_neighbor">邻区</string>
+    <string name="det_tower_signal">信号</string>
+    <string name="det_tower_distance">距离</string>
+    <string name="det_tower_cell">小区</string>
+    <string name="det_tower_operator">MCC/MNC</string>
+    <string name="det_tower_bands">频段</string>
+    <string name="det_tower_hint">距离 = RSRP 路径损耗粗估(±数百米);方位手机无硬件可测 —— 盘面角度为占位</string>
     <string name="det_fmt_bearing_collecting">方位推演采样中 · 覆盖 %1$d%% · 请缓慢旋转机身</string>
     <string name="det_sat_none">卫星 0 · 室内?</string>
     <string name="det_warn_location_off">定位服务关闭 —— WiFi 目标不可见(BLE 不受影响)</string>
@@ -405,10 +439,10 @@
     <string name="det_fmt_link_bond">%1$s · 绑定: %2$s</string>
     <string name="det_fmt_adv_info">TX %1$s · UUID %2$d 个 · 厂商ID %3$s</string>
     <string name="det_fmt_intel_confidence">%1$s · 置信 %2$d%% · %3$s</string>
-    <string name="det_fmt_range_model_tx">广播 %1$dBm · n=2.5</string>
+    <string name="det_fmt_range_model_tx">广播 %1$dBm · n=%2$.1f</string>
     <string name="det_fmt_range_estimated">%1$.1fm · 估计 %2$03d°</string>
     <string name="det_fmt_range_placeholder">%1$.1fm · %2$03d° · 占位</string>
-    <string name="det_range_model_assumed">假定 PTX · n=2.5(非测量)</string>
+    <string name="det_range_model_assumed">假定 PTX · n=%1$.1f(非测量)</string>
     <string name="det_fmt_tracking">命中 %1$d 次 · 首见 %2$s</string>
     <string name="det_fmt_track_limit">仅显示信号最强的 %1$d 个 · 另有 %2$d 个未列出,可用上方筛选缩小范围</string>
     <string name="det_loc_unavailable">不可用（罗盘离线或样本不足）</string>
@@ -421,6 +455,37 @@
     <string name="det_threat_high">高危接近</string>
     <string name="det_threat_mid">中等接近</string>
     <string name="det_threat_far">远端目标</string>
+    <string name="det_threat_friendly">友方设备</string>
+
+    <!-- ─── 雷达 · 目标弹窗(点触 blip) ─── -->
+    <string name="det_badge_friendly">友方</string>
+    <string name="det_popup_friendly">友方</string>
+    <string name="det_popup_open_dossier">打开档案</string>
+    <string name="det_popup_close_hint">点空白处关闭</string>
+    <string name="det_popup_connect">连接</string>
+    <string name="det_popup_deauth">去攻击 ▸</string>
+    <string name="det_popup_pair">配对</string>
+    <string name="det_ph_passphrase">密码(开放网络留空)…</string>
+    <string name="det_msg_connect_sent">已发起连接,请在系统弹窗确认</string>
+    <string name="det_msg_pair_request_sent">配对请求已发出,请在双方设备确认</string>
+    <string name="picker_hint">来自雷达实时扫描 · 已列出 %1$d 台设备 —— 点选即填,无需手输</string>
+    <string name="picker_start_scan">▶ 启动雷达扫描</string>
+    <string name="picker_scanning">扫描中…</string>
+    <string name="picker_pick">选择</string>
+    <string name="det_picker_title">从雷达扫描中选择目标</string>
+    <string name="tact_strip_progress">进度</string>
+    <string name="tact_strip_devices">设备</string>
+    <string name="tact_strip_subnet">网段</string>
+    <string name="tact_strip_scan">扫描</string>
+    <string name="tact_strip_sniff">嗅探</string>
+    <string name="tact_strip_open">开放端口</string>
+    <string name="tact_strip_nodes">节点</string>
+    <string name="tact_strip_talking">说话中</string>
+    <string name="tact_strip_live">直播</string>
+    <string name="tact_strip_link">链路</string>
+    <string name="tact_strip_strongest">最强</string>
+    <string name="tact_strip_on">开</string>
+    <string name="tact_strip_off">关</string>
 
     <!-- ─── 雷达 · 金属探测 / 配对 / 快照 ─── -->
     <string name="det_metal_unavailable">磁力计不可用</string>

@@ -58,6 +58,9 @@ import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.ui.components.hud
 import xin.ctkqiang.deauthctrl.ui.theme.HudPalette
 import xin.ctkqiang.deauthctrl.ui.theme.TEAM_THEMES
+import xin.ctkqiang.deauthctrl.viewmodel.MAP_STYLE_COLOR
+import xin.ctkqiang.deauthctrl.viewmodel.MAP_STYLE_MONO
+import xin.ctkqiang.deauthctrl.viewmodel.MAP_STYLE_NIGHT
 import xin.ctkqiang.deauthctrl.viewmodel.SettingsViewModel
 
 /**
@@ -75,6 +78,7 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
     val teamId by vm.teamId.collectAsState()
     val haptics by vm.hapticsEnabled.collectAsState()
     val radarAlert by vm.radarAlertEnabled.collectAsState()
+    val mapStyle by vm.mapStyle.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
@@ -141,6 +145,30 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
                     checked = radarAlert,
                     onChecked = { vm.setRadarAlert(it) },
                 )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // ─── 战术地图 ───
+            TermPanel(stringResource(R.string.settings_map_section)) {
+                Text(stringResource(R.string.settings_map_desc), fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                Spacer(Modifier.height(8.dp))
+                listOf(
+                    MAP_STYLE_MONO to (R.string.settings_map_mono to R.string.settings_map_mono_desc),
+                    MAP_STYLE_NIGHT to (R.string.settings_map_night to R.string.settings_map_night_desc),
+                    MAP_STYLE_COLOR to (R.string.settings_map_color to R.string.settings_map_color_desc),
+                ).forEach { (style, texts) ->
+                    SettingChoiceRow(
+                        title = stringResource(texts.first),
+                        desc = stringResource(texts.second),
+                        selected = mapStyle == style,
+                        onClick = {
+                            haptic.hud()
+                            vm.setMapStyle(style)
+                        },
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
             }
 
             Spacer(Modifier.height(10.dp))

@@ -74,6 +74,14 @@
             android:theme="@style/Theme.DeauthCtrl" />
 
         <!--
+          情报中心订阅推送:AlarmManager 周期唤醒,拉取已订阅源的 RSS/Atom
+          并对比去重后发本地通知 —— 无任何 API Key,纯公开订阅源。
+        -->
+        <receiver
+            android:name=".IntelFeedReceiver"
+            android:exported="false" />
+
+        <!--
           启动图标换色:主入口全部经由 activity-alias 暴露,
           每个 alias 对应一个图标颜色变体。LauncherIcon.apply()
           按队伍主题色相启用对应变体、停用其余 —— 桌面图标随主题换色。

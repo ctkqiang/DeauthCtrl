@@ -349,11 +349,12 @@ class RssiLocalizationEngine {
         }
         l.smoothedConf = l.smoothedConf * 0.6f + conf * 0.4f
 
-        // ── 距离:窗口 RSSI 中位数 → 路径损耗模型 ──
+        // 距离:窗口 RSSI 中位数 → 路径损耗模型(与 RadarManager 同参数,禁止各处复制口径)
         val rssiList = l.distWindow.map { it.rssi }
         val medRssi = rssiList.sorted().getOrNull(rssiList.size / 2)
-        val refDbm = if (id in bleTxRefs) bleTxRefs[id]!! else if (id in wifiRefs) -40f else -59f
-        val dMed = medRssi?.let { rssiDistanceEstimateM(it, refDbm) } ?: Float.NaN
+        val refDbm = if (id in bleTxRefs) bleTxRefs[id]!! else if (id in wifiRefs) RadarManager.WIFI_REF_DBM else RadarManager.BLE_ASSUMED_REF_DBM
+        val n = if (id in wifiRefs) RadarManager.WIFI_PATH_LOSS else RadarManager.BT_PATH_LOSS
+        val dMed = medRssi?.let { rssiDistanceEstimateM(it, refDbm, n) } ?: Float.NaN
         // σ_rssi = sqrt(MAD 测量噪声² + PTX 不确定度² + 模型误差²)
         val mad = if (rssiList.size >= 3) {
             val med = medRssi ?: 0
@@ -367,7 +368,7 @@ class RssiLocalizationEngine {
         }
         val sigModel = 3f
         val sigRssi = sqrt(sigMeas * sigMeas + sigPtx * sigPtx + sigModel * sigModel)
-        val sigD = if (dMed.isNaN()) 0f else dMed * ln(10f) / (10f * 2.5f) * sigRssi
+        val sigD = if (dMed.isNaN()) 0f else dMed * ln(10f) / (10f * n) * sigRssi
 
         // ── 圈边界 Fix 融合:至少完成一整圈 + 覆盖达标 + 方向图有效 + 目标新鲜 ──
         // (epoch 0 只有零星样本;平坦/双峰方向图不给 Fix;目标消失后冻结,防幽灵 Fix)
@@ -578,6 +579,9 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
     private var pollJob: Job? = null
     private var sensorRegistered = false
     private var magRegistered = false
+
+    /** 新目标触觉警报节流 —— 上次发射时间戳(ms) */
+    private var lastContactMs = 0L
 
     /** 罗盘引用计数 —— 雷达页离场动画与档案页入场重叠时不会误关传感器 */
     private var compassRefs = 0
@@ -811,9 +815,16 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
                 val list = manager.targets.values.toList().sortedBy { it.id }
                 if (list != _targets.value) _targets.value = list
                 val fresh = manager.drainNewContacts()
-                if (fresh.isNotEmpty()) {
-                    val names = list.filter { it.id in fresh }.map { it.name }
-                    _contact.value = RadarContactEvent(System.currentTimeMillis(), fresh.size, names)
+                // 友方(已绑定)设备不触发新目标触觉警报;BLE 随机 MAC 轮换会
+                // 无限制造「新」目标,1.5s 节流防震到手麻 —— 两个闸门都在这里
+                val hostile = fresh.filter { id -> list.firstOrNull { it.id == id }?.bonded != true }
+                if (hostile.isNotEmpty()) {
+                    val nowMs = System.currentTimeMillis()
+                    if (nowMs - lastContactMs >= CONTACT_ALERT_MIN_INTERVAL_MS) {
+                        lastContactMs = nowMs
+                        val names = list.filter { it.id in hostile }.map { it.name }
+                        _contact.value = RadarContactEvent(nowMs, hostile.size, names)
+                    }
                 }
                 // 方位推演:每 tick 吞样本,约 1Hz 出结果
                 engine.syncRefs(list)
@@ -840,6 +851,13 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
     /** 配对弹窗消息:让目标设备弹出系统配对请求(改本机蓝牙名 + createBond) */
     fun sendPairingPopup(addr: String, message: String): String? = manager.sendPairingPopup(addr, message)
 
+    /** 配对雷达目标(标准系统配对请求) */
+    fun pairTarget(addr: String): String? = manager.pairDevice(addr)
+
+    /** 连接雷达 WiFi 目标(WifiNetworkSpecifier 系统确认弹窗 / 旧版直连) */
+    fun connectWifiTarget(ssid: String, security: String, passphrase: String): String? =
+        manager.requestWifiConnect(ssid, security, passphrase)
+
     /** 单目标实时流 —— 档案页订阅,目标更新即发射(内容去重) */
     fun targetFlow(id: String): Flow<RadarTarget?> =
         _targets.map { list -> list.firstOrNull { it.id == id } }.distinctUntilChanged()
@@ -864,5 +882,7 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
         private const val MAG_EXIT_REL = 0.03f
         /** 金属探测状态发射间隔上限 */
         private const val MAG_EMIT_INTERVAL_MS = 100L
+        /** 新目标触觉警报最小间隔 —— BLE 随机 MAC 轮换会密集报新,防震到手麻 */
+        private const val CONTACT_ALERT_MIN_INTERVAL_MS = 1500L
     }
 }

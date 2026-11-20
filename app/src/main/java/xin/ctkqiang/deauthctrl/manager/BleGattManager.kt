@@ -982,7 +982,7 @@ class BleGattManager(private val context: Context) {
 
     companion object {
         /** 连接超时：10 秒未进入已连接状态即断线 */
-        const val CONNECT_TIMEOUT_MS = 10_000L
+        const val CONNECT_TIMEOUT_MS = 60_000L
 
         /** 服务枚举超时：10 秒未收到服务表即断线 */
         const val DISCOVER_TIMEOUT_MS = 10_000L

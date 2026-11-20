@@ -36,6 +36,7 @@
     <!-- ─── NUS 终端 ─── -->
     <string name="nordic_panel_connect">连接 · NORDIC UART SERVICE</string>
     <string name="nordic_mac_label">目标 MAC 地址</string>
+    <string name="nordic_picker_title">从雷达扫描中选择设备</string>
     <string name="nordic_btn_connect">连接</string>
     <string name="nordic_btn_disconnect">断开</string>
     <string name="nordic_stat_status">状态</string>

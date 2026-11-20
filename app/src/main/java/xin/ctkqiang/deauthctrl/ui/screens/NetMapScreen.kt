@@ -54,6 +54,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
+import xin.ctkqiang.deauthctrl.manager.TacticalMapManager
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -69,6 +70,10 @@ import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
 import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.ui.components.hud
+import xin.ctkqiang.deauthctrl.viewmodel.KEY_MAP_STYLE
+import xin.ctkqiang.deauthctrl.viewmodel.MAP_STYLE_COLOR
+import xin.ctkqiang.deauthctrl.viewmodel.MAP_STYLE_MONO
+import xin.ctkqiang.deauthctrl.viewmodel.MAP_STYLE_NIGHT
 import xin.ctkqiang.deauthctrl.viewmodel.RadarViewModel
 import xin.ctkqiang.deauthctrl.viewmodel.TacticalMapViewModel
 import java.text.SimpleDateFormat
@@ -105,6 +110,18 @@ fun NetMapScreen(
     val gpsOn by mapVm.manager.gpsOn.collectAsState()
     var selectedId by remember { mutableStateOf<String?>(null) }
     var recenterRequested by remember { mutableStateOf(0) }
+
+    // 地图风格(与设置页共用 deauthctrl_prefs 的 KEY_MAP_STYLE):黑白负片为默认
+    var mapStyle by remember {
+        mutableStateOf(
+            context.getSharedPreferences("deauthctrl_prefs", 0)
+                .getString(KEY_MAP_STYLE, MAP_STYLE_MONO) ?: MAP_STYLE_MONO,
+        )
+    }
+    // 首定位自动缩放:定位一到位就把地图拉到本机 19 级 —— 不再从全球视图起步
+    var autoCentered by remember { mutableStateOf(false) }
+    // 已应用的滤镜风格:风格变化才重设,避免每帧重建 ColorFilter
+    var appliedStyle by remember { mutableStateOf<String?>(null) }
 
     // 无线电状态轮询(2s)
     val radios by produceState(initialValue = RadiosState(), context) {
@@ -221,6 +238,36 @@ fun NetMapScreen(
 
             Spacer(Modifier.height(6.dp))
 
+            // ── 地图风格:黑白负片 / 夜战绿 / 原始彩色(与设置页共用偏好) ──
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.netmap_style_label), fontFamily = Mono, fontSize = 8.sp, color = Gray)
+                listOf(
+                    MAP_STYLE_MONO to stringResource(R.string.netmap_style_mono),
+                    MAP_STYLE_NIGHT to stringResource(R.string.netmap_style_night),
+                    MAP_STYLE_COLOR to stringResource(R.string.netmap_style_color),
+                ).forEach { (key, label) ->
+                    Surface(
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            mapStyle = key
+                            context.getSharedPreferences("deauthctrl_prefs", 0).edit().putString(KEY_MAP_STYLE, key).apply()
+                        },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = if (mapStyle == key) Gold.copy(alpha = 0.14f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (mapStyle == key) Gold.copy(alpha = 0.6f) else BorderDim),
+                    ) {
+                        Text(
+                            label,
+                            fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = if (mapStyle == key) Gold else Gray,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+
             // ── 地图 + 设备标记 ──
             Box(
                 Modifier.fillMaxWidth().weight(1f)
@@ -237,6 +284,12 @@ fun NetMapScreen(
                         MapView(ctx).apply {
                             setTileSource(TileSourceFactory.MAPNIK)
                             setMultiTouchControls(true)
+                            // 禁用瓦片重复铺满 + 最小缩放 2.0(与情报地图同一套修复)
+                            isHorizontalMapRepetitionEnabled = false
+                            isVerticalMapRepetitionEnabled = false
+                            minZoomLevel = 2.0
+                            applyMapStyle(this, mapStyle, mapVm.manager)
+                            appliedStyle = mapStyle
                             // 最大拉近起步:用户要能看到自己半径内的街道细节,而不是一个点
                             controller.setZoom(19.0)
                             mapVm.manager.location.value?.let {
@@ -245,6 +298,18 @@ fun NetMapScreen(
                         }
                     },
                     update = { map ->
+                        // 风格切换(设置页或本页芯片):重新套用瓦片滤镜
+                        if (appliedStyle != mapStyle) {
+                            applyMapStyle(map, mapStyle, mapVm.manager)
+                            appliedStyle = mapStyle
+                        }
+                        // 首定位自动缩放:定位一到位就把地图拉到本机 19 级,精确锚定当前位置
+                        val loc = location
+                        if (!autoCentered && loc != null) {
+                            map.controller.setZoom(19.0)
+                            map.controller.setCenter(GeoPoint(loc.latitude, loc.longitude))
+                            autoCentered = true
+                        }
                         // 快速定位
                         if (recenterRequested > 0) {
                             mapVm.manager.location.value?.let { loc ->
@@ -304,6 +369,24 @@ fun NetMapScreen(
 
 /** 无线电开关状态快照 */
 private data class RadiosState(val wifiOn: Boolean = true, val btOn: Boolean = true)
+
+/**
+ * 按风格套用瓦片滤镜:黑白负片(默认) / 夜战绿 / 原始彩色。
+ * 滤镜只作用于瓦片层,设备标记/自机菱形不受影响 —— 彩色 blip 在黑底上对比极强。
+ */
+private fun applyMapStyle(map: MapView, style: String, mgr: TacticalMapManager) {
+    val tiles = map.overlayManager.tilesOverlay
+    tiles.setColorFilter(
+        when (style) {
+            MAP_STYLE_NIGHT -> mgr.nightFilter()
+            MAP_STYLE_COLOR -> null
+            else -> mgr.monoNegativeFilter()
+        },
+    )
+    // 未加载瓦片的底色随风格切换:彩色用浅灰,暗色风格用深底
+    tiles.loadingBackgroundColor = if (style == MAP_STYLE_COLOR) 0xFFE8E4DE.toInt() else 0xFF0A0F14.toInt()
+    tiles.loadingLineColor = if (style == MAP_STYLE_COLOR) 0xFFB8B2A8.toInt() else 0xFF2A3440.toInt()
+}
 
 /**
  * 同步设备标记到地图:

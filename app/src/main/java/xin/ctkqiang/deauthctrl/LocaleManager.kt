@@ -34,6 +34,10 @@ object LocaleManager {
         LANG_EN to Locale.ENGLISH,
     )
 
+    /** 进程启动时捕获的设备原始默认语言 —— 切回「跟随系统」用它恢复,而不是被覆盖过的 Locale.getDefault() */
+    @Volatile
+    private var deviceDefaultLocale: Locale? = null
+
     /** 当前持久化的语言偏好(默认 system) */
     fun current(base: Context): String =
         base.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -42,12 +46,21 @@ object LocaleManager {
     /**
      * 按持久化偏好包装 context。
      *
-     * 偏好为 system 时原样返回 base —— 资源回退链由系统 locale 决定
-     * (values-zh-rCN 命中中文设备,values 英文 default 兜底)。
+     * 偏好为 system 时用设备原始默认语言原样返回 base —— 资源回退链由系统
+     * locale 决定(values-zh-rCN 命中中文设备,values 英文 default 兜底)。
+     *
+     * 注意:必须在 **Application 与 Activity 两层**都调用。Application 层只
+     * 在进程启动时执行一次,语言切换后 recreate 的 Activity 必须自己重新
+     * 包装,否则新偏好永远不生效(旧 bug:选了 English 界面仍是中文)。
      */
     fun wrap(base: Context): Context {
-        val locale = OVERRIDES[current(base)] ?: return base
+        if (deviceDefaultLocale == null) deviceDefaultLocale = Locale.getDefault()
+        val lang = current(base)
+        val locale = OVERRIDES[lang] ?: deviceDefaultLocale ?: Locale.getDefault()
         Locale.setDefault(locale)
+        if (lang == LANG_SYSTEM && locale.toLanguageTag() == (deviceDefaultLocale ?: locale).toLanguageTag()) {
+            return base
+        }
         val config = Configuration(base.resources.configuration)
         config.setLocale(locale)
         return base.createConfigurationContext(config)
@@ -62,7 +75,7 @@ object LocaleManager {
     fun apply(activity: Activity, lang: String) {
         activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit().putString(KEY_LANGUAGE, lang).apply()
-        Locale.setDefault(OVERRIDES[lang] ?: Locale.getDefault())
+        Locale.setDefault(OVERRIDES[lang] ?: deviceDefaultLocale ?: Locale.getDefault())
         activity.recreate()
     }
 }

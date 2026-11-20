@@ -3,6 +3,9 @@
     <string name="gatt_title">BLE GATT 工作台</string>
     <string name="gatt_panel_connect">连接 · GATT CLIENT</string>
     <string name="gatt_target_mac_label">目标 MAC 地址</string>
+    <string name="gatt_picker_title">从雷达扫描中选择目标</string>
+    <string name="gatt_nearby_label">附近 BLE · 点选即填 —— GATT 直连无需配对</string>
+    <string name="gatt_no_pair_hint">无需配对:GATT 直连即可读取服务/特征 UUID</string>
     <string name="gatt_target_mac_placeholder">AA:BB:CC:DD:EE:FF</string>
     <string name="gatt_btn_connect">连接</string>
     <string name="gatt_btn_disconnect">断开</string>

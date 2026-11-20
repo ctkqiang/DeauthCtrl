@@ -14,6 +14,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -55,6 +62,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -70,6 +79,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -124,6 +134,7 @@ import xin.ctkqiang.deauthctrl.ui.components.TacticalCorners
 import xin.ctkqiang.deauthctrl.ui.components.TermInput
 import xin.ctkqiang.deauthctrl.ui.components.TermPanel
 import xin.ctkqiang.deauthctrl.ui.components.TerminalHeader
+import xin.ctkqiang.deauthctrl.ui.components.TacticalStatStrip
 import xin.ctkqiang.deauthctrl.ui.components.Warn
 import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.ui.components.hud
@@ -214,6 +225,16 @@ fun TacticalCameraScreen(
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader(stringResource(R.string.tact_camera_title), back)
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
+            // ── 战术遥测条:在线节点/已收照片/目标/服务端口 ──
+            TacticalStatStrip(
+                listOf(
+                    "${peers.size}" to stringResource(R.string.tact_cam_nodes),
+                    "${received.size}" to stringResource(R.string.tact_cam_received),
+                    (peers.firstOrNull { it.id == selectedPeerId }?.name ?: if (peers.isEmpty()) "--" else "ALL") to stringResource(R.string.tact_cam_target),
+                    "$serverPort" to stringResource(R.string.tact_cam_port),
+                ),
+            )
+            Spacer(Modifier.height(8.dp))
             TermPanel(stringResource(R.string.tact_lens_select)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     cameras.forEach { c ->
@@ -686,10 +707,68 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
 
     // 瀑布历史:最近 110 帧(新帧在顶部,历史向下滚动 —— SDR 惯例)
     val waterfall = remember { mutableStateListOf<FloatArray>() }
+    // 瀑布冻结:FRZ 开关按住现场,不吞新帧历史
+    var frozen by remember { mutableStateOf(false) }
     LaunchedEffect(frame) {
         frame?.let { f ->
+            if (frozen) return@LaunchedEffect
             waterfall.add(0, f.bins)
             if (waterfall.size > 110) waterfall.removeAt(waterfall.size - 1)
+        }
+    }
+
+    // 信号列表:每帧提取噪声底以上的局部峰(间距 ≥3 bin),取前 8 —— 真实 SDR 的信号清单
+    val signals = remember { mutableStateListOf<SdrSignalRow>() }
+    LaunchedEffect(frame) {
+        frame?.let { f ->
+            val peaks = mutableListOf<Pair<Int, Float>>()
+            for (i in 1 until f.bins.size - 1) {
+                val b = f.bins[i]
+                if (b > f.noiseFloorDb + 8f && b >= f.bins[i - 1] && b >= f.bins[i + 1]) peaks.add(i to b)
+            }
+            val merged = mutableListOf<Pair<Int, Float>>()
+            for ((idx, db) in peaks.sortedByDescending { it.second }) {
+                if (merged.none { kotlin.math.abs(it.first - idx) < 3 }) merged.add(idx to db)
+                if (merged.size >= 8) break
+            }
+            val prev = signals.associate { (it.hz / 100f).toInt() to it.db }
+            signals.clear()
+            merged.sortedBy { it.first }.forEach { (idx, db) ->
+                val hz = idx * 22050f / f.bins.size
+                val prevDb = prev[(hz / 100f).toInt()]
+                signals.add(SdrSignalRow(hz, db, if (prevDb != null) db - prevDb else 0f))
+            }
+        }
+    }
+
+    // 峰警报:峰值越过操作员设定阈值即告警(上升沿触发一次触觉 + 横幅)
+    var alarmThreshold by remember { mutableFloatStateOf(-35f) }
+    var peakAlarm by remember { mutableStateOf(false) }
+    // 频谱显示频窗:0 全频 / 1 人声 0.3-3.4k / 2 超声 15-22.05k(纯视觉缩放)
+    var viewBand by remember { mutableIntStateOf(0) }
+    // 信号事件日志:告警与强信号时间线(同频 2s 去抖,进程内存)
+    val signalLog = remember { mutableStateListOf<SdrEventRow>() }
+    val lastEventAt = remember { mutableMapOf<Int, Long>() }
+    LaunchedEffect(frame) {
+        frame?.let { f ->
+            val over = f.peakDb > alarmThreshold
+            if (over && !peakAlarm) {
+                peakAlarm = true
+                haptic.hud(HapticFeedbackType.LongPress)
+            } else if (!over && peakAlarm) {
+                peakAlarm = false
+            }
+            // 事件日志:上升沿告警 + 强信号(>-30dB)
+            if (over || f.peakDb > -30f) {
+                val key = (f.peakHz / 2000f).toInt()
+                val now = System.currentTimeMillis()
+                val last = lastEventAt[key] ?: 0L
+                if (now - last > 2000L) {
+                    lastEventAt[key] = now
+                    signalLog.add(0, SdrEventRow(now, f.peakHz, f.peakDb, over))
+                    if (signalLog.size > 60) signalLog.removeAt(signalLog.size - 1)
+                }
+            }
         }
     }
 
@@ -728,6 +807,20 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
                     }
                 }
             }
+            // ── 显示频窗:全频 / 人声 / 超声(频谱横轴缩放,纯视觉) ──
+            Row(Modifier.fillMaxWidth().padding(top = 5.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                listOf(0 to stringResource(R.string.tact_viewband_full), 1 to stringResource(R.string.tact_viewband_voice), 2 to stringResource(R.string.tact_viewband_us)).forEach { (v, label) ->
+                    val on = viewBand == v
+                    Surface(
+                        modifier = Modifier.clickable { haptic.hud(); viewBand = v },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = if (on) Gold.copy(alpha = 0.13f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (on) Gold.copy(alpha = 0.6f) else BorderDim),
+                    ) {
+                        Text(label, fontFamily = Mono, fontSize = 8.5.sp, fontWeight = FontWeight.Bold, color = if (on) Gold else Gray, modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp))
+                    }
+                }
+            }
             if (usAlarm) {
                 Spacer(Modifier.height(6.dp))
                 Surface(
@@ -742,11 +835,76 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
                     )
                 }
             }
+            // 峰警报横幅:峰值越过阈值(上升沿触发触觉)
+            if (peakAlarm) {
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                    color = Warn.copy(alpha = 0.14f),
+                    border = BorderStroke(1.dp, Warn.copy(alpha = 0.6f)),
+                ) {
+                    Text(
+                        stringResource(R.string.tact_sdr_peak_alarm, "%.0f".format(frame?.peakDb ?: 0f)),
+                        fontFamily = Mono, fontSize = 9.sp, color = Warn, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    )
+                }
+            }
+            // 峰警报阈值:滑杆实时可调(-70..-10 dB)
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.tact_sdr_threshold), fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.width(96.dp))
+                Slider(
+                    value = alarmThreshold,
+                    onValueChange = { alarmThreshold = it },
+                    valueRange = -70f..-10f,
+                    modifier = Modifier.weight(1f).height(26.dp),
+                    colors = SliderDefaults.colors(thumbColor = Gold, activeTrackColor = Gold, inactiveTrackColor = SurfaceAlt),
+                )
+                Text("%.0f dB".format(alarmThreshold), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold)
+            }
             ActionButton(running, stringResource(R.string.tact_start_spectrum), stringResource(R.string.tact_stop_detection)) {
                 haptic.hud()
                 if (running) manager.stop() else manager.start()
             }
             error?.let { Text("[!] $it", fontFamily = Mono, fontSize = 9.sp, color = Danger, modifier = Modifier.padding(top = 4.dp)) }
+
+            Spacer(Modifier.height(6.dp))
+            // ── 战术遥测条(雷达同款) ──
+            TacticalStatStrip(
+                listOf(
+                    (frame?.let { "%.0f dB".format(it.peakDb) } ?: "--") to stringResource(R.string.tact_peak),
+                    (frame?.let { "%.0f dB".format(it.noiseFloorDb) } ?: "--") to stringResource(R.string.tact_noise_floor),
+                    (frame?.let { "%.0f dB".format(it.rmsDb) } ?: "--") to "RMS",
+                    (if (running) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_strip_sniff),
+                ),
+            )
+            Spacer(Modifier.height(6.dp))
+
+            // ── 事件日志(告警/强信号时间线,最近 6 条) ──
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.tact_sdr_event_log), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Warn)
+                Text(stringResource(R.string.tact_sdr_event_count, signalLog.size), fontFamily = Mono, fontSize = 7.5.sp, color = Gray)
+            }
+            Surface(
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                color = SurfaceBg,
+                border = BorderStroke(1.dp, BorderDim),
+            ) {
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+                    if (signalLog.isEmpty()) {
+                        Text(stringResource(R.string.tact_sdr_event_empty), fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(vertical = 4.dp))
+                    } else {
+                        signalLog.take(6).forEach { e ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(e.timeMs)), fontFamily = Mono, fontSize = 8.sp, color = Gray, modifier = Modifier.weight(1f))
+                                Text("%.2fkHz".format(e.hz / 1000f), fontFamily = Mono, fontSize = 8.sp, color = White, modifier = Modifier.width(70.dp))
+                                Text("%.0fdB".format(e.db), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (e.alarm) Danger else Warn, modifier = Modifier.width(52.dp), textAlign = TextAlign.End)
+                                if (e.alarm) Text(stringResource(R.string.tact_sdr_alarm_tag), fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Danger, modifier = Modifier.padding(start = 6.dp))
+                            }
+                        }
+                    }
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
 
@@ -769,10 +927,25 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
 
             Spacer(Modifier.height(8.dp))
 
-            // 频谱面板标题条(真实 SDR 的通道标识)
-            Row(Modifier.fillMaxWidth().padding(bottom = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            // 频谱面板标题条(真实 SDR 的通道标识 + 快捷操作)
+            Row(Modifier.fillMaxWidth().padding(bottom = 3.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.tact_sdr_spectrum_header), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TacGreen)
-                Text(if (running) stringResource(R.string.tact_sdr_rec) else stringResource(R.string.tact_sdr_stby), fontFamily = Mono, fontSize = 8.sp, color = if (running) Red else Gray)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.tact_sdr_hold_reset),
+                        fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold,
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            maxHold.value = FloatArray(VoiceSdrManager.BINS) { -120f }
+                        }.padding(horizontal = 5.dp, vertical = 2.dp),
+                    )
+                    Text(
+                        stringResource(if (frozen) R.string.tact_sdr_unfreeze else R.string.tact_sdr_freeze),
+                        fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (frozen) Red else Gray,
+                        modifier = Modifier.clickable { haptic.hud(); frozen = !frozen }.padding(horizontal = 5.dp, vertical = 2.dp),
+                    )
+                    Text(if (running) stringResource(R.string.tact_sdr_rec) else stringResource(R.string.tact_sdr_stby), fontFamily = Mono, fontSize = 8.sp, color = if (running) Red else Gray)
+                }
             }
 
             // ── 实时频谱 + max-hold ──
@@ -802,9 +975,14 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
                         "dBFS", androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 7.sp, color = Gray.copy(alpha = 0.8f)),
                     )
                     drawText(unit, topLeft = Offset(size.width - unit.size.width, 0f))
+                    // 显示频窗(全频/人声/超声)的 kHz 边界与 x 映射
+                    val fLoK = when (viewBand) { 1 -> 0.3f; 2 -> 15f; else -> 0f }
+                    val fHiK = when (viewBand) { 1 -> 3.4f; 2 -> 22.05f; else -> 22.05f }
+                    fun xOfK(khz: Float): Float = size.width * ((khz - fLoK) / (fHiK - fLoK)).coerceIn(0f, 1f)
+                    fun xOfBin(i: Int, n: Int): Float = xOfK(i * 22.05f / n)
                     // 纵向频率网格
-                    for (khz in 2..20 step 2) {
-                        val x = size.width * khz / 22f
+                    for (g in 1..3) {
+                        val x = size.width * g / 4f
                         drawLine(Gray.copy(alpha = 0.10f), Offset(x, 0f), Offset(x, size.height), 0.7f)
                     }
 
@@ -818,13 +996,17 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
                         drawText(m, topLeft = Offset(size.width - m.size.width - 2f, ny + 2f))
                     }
 
-                    // 频谱填充(底部到曲线)
+                    // 频谱填充(底部到曲线,按频窗切片)
                     frame?.let { f ->
+                        val n = f.bins.size
+                        val loBin = (fLoK / 22.05f * n).toInt().coerceIn(0, n - 1)
+                        val hiBin = (fHiK / 22.05f * n).toInt().coerceIn(loBin + 1, n - 1)
                         val path = Path()
-                        f.bins.forEachIndexed { i, db ->
-                            val x = size.width * i / f.bins.size
-                            val y = yOf(db.coerceIn(lo, hi))
-                            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                        var first = true
+                        for (i in loBin..hiBin) {
+                            val x = xOfBin(i, n)
+                            val y = yOf(f.bins[i].coerceIn(lo, hi))
+                            if (first) { path.moveTo(x, y); first = false } else path.lineTo(x, y)
                         }
                         path.lineTo(size.width, size.height)
                         path.lineTo(0f, size.height)
@@ -833,38 +1015,85 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
                         drawPath(path, TacGreen, style = Stroke(1.2f))
                     }
 
-                    // max-hold 金色轨迹
+                    // max-hold 金色轨迹(同窗切片)
                     val hold = maxHold.value
                     if (hold.isNotEmpty() && running) {
+                        val n = hold.size
+                        val loBin = (fLoK / 22.05f * n).toInt().coerceIn(0, n - 1)
+                        val hiBin = (fHiK / 22.05f * n).toInt().coerceIn(loBin + 1, n - 1)
                         val hp = Path()
-                        hold.forEachIndexed { i, db ->
-                            val x = size.width * i / hold.size
-                            val y = yOf(db.coerceIn(lo, hi))
-                            if (i == 0) hp.moveTo(x, y) else hp.lineTo(x, y)
+                        var first = true
+                        for (i in loBin..hiBin) {
+                            val x = xOfBin(i, n)
+                            val y = yOf(hold[i].coerceIn(lo, hi))
+                            if (first) { hp.moveTo(x, y); first = false } else hp.lineTo(x, y)
                         }
                         drawPath(hp, Gold.copy(alpha = 0.75f), style = Stroke(1.6f))
                     }
 
-                    // 峰值标记
+                    // 峰值标记(峰在窗口内才画)
                     frame?.let { f ->
-                        val px = size.width * (f.peakHz / 22050f)
-                        val py = yOf(f.peakDb.coerceIn(lo, hi))
-                        drawCircle(Gold, 3.5f, Offset(px, py))
-                        drawLine(Gold.copy(alpha = 0.6f), Offset(px, py), Offset(px, 0f), 1f)
-                        val m = scaleMeasurer.measure(
-                            "%.1fkHz %.0fdB".format(f.peakHz / 1000f, f.peakDb),
-                            androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gold),
-                        )
-                        drawText(m, topLeft = Offset((px + 5f).coerceAtMost(size.width - m.size.width), py - m.size.height))
+                        val pk = f.peakHz / 1000f
+                        if (pk in fLoK..fHiK) {
+                            val px = xOfK(pk)
+                            val py = yOf(f.peakDb.coerceIn(lo, hi))
+                            drawCircle(Gold, 3.5f, Offset(px, py))
+                            drawLine(Gold.copy(alpha = 0.6f), Offset(px, py), Offset(px, 0f), 1f)
+                            val m = scaleMeasurer.measure(
+                                "%.1fkHz %.0fdB".format(pk, f.peakDb),
+                                androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gold),
+                            )
+                            drawText(m, topLeft = Offset((px + 5f).coerceAtMost(size.width - m.size.width), py - m.size.height))
+                        }
                     }
 
-                    // 频率轴刻度
-                    for (khz in intArrayOf(0, 5, 10, 15, 20)) {
-                        val x = size.width * khz / 22.05f
+                    // 频率轴刻度:窗口内 4 个刻度
+                    for (g in 0..3) {
+                        val khz = fLoK + (fHiK - fLoK) * g / 3f
+                        val x = xOfK(khz)
                         val m = scaleMeasurer.measure(
-                            "${khz}k", androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gray),
+                            if (khz >= 10f) "%.0fk".format(khz) else "%.1fk".format(khz),
+                            androidx.compose.ui.text.TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gray),
                         )
-                        drawText(m, topLeft = Offset(x - m.size.width / 2f, size.height - m.size.height))
+                        drawText(m, topLeft = Offset((x - m.size.width / 2f).coerceIn(0f, size.width - m.size.width), size.height - m.size.height))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+
+            // ── 信号列表:噪声底以上的活跃峰(真实 SDR 的信号清单) ──
+            Row(Modifier.fillMaxWidth().padding(bottom = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.tact_sdr_signals_header), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold)
+                Text(stringResource(R.string.tact_sdr_signals_hint), fontFamily = Mono, fontSize = 7.5.sp, color = Gray)
+            }
+            Surface(
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                color = SurfaceBg,
+                border = BorderStroke(1.dp, BorderDim),
+            ) {
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
+                    if (signals.isEmpty()) {
+                        Text(stringResource(R.string.tact_sdr_no_signals), fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(vertical = 4.dp))
+                    } else {
+                        signals.forEach { s ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("%.2f kHz".format(s.hz / 1000f), fontFamily = Mono, fontSize = 9.sp, color = White, modifier = Modifier.weight(1f))
+                                Text(
+                                    "%.0f dB".format(s.db),
+                                    fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                                    color = if (s.db > -30) Danger else if (s.db > -50) Warn else TacGreen,
+                                    modifier = Modifier.width(64.dp), textAlign = TextAlign.End,
+                                )
+                                val d = s.delta
+                                Text(
+                                    if (d > 0.5f) "▲%.0f".format(d) else if (d < -0.5f) "▼%.0f".format(-d) else "·",
+                                    fontFamily = Mono, fontSize = 8.sp,
+                                    color = if (d > 0.5f) TacGreen else if (d < -0.5f) Danger else Gray,
+                                    modifier = Modifier.width(48.dp), textAlign = TextAlign.End,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -918,6 +1147,12 @@ private fun SdrReadout(label: String, value: String) {
         Text(label, fontFamily = Sans, fontSize = 7.sp, color = Gray)
     }
 }
+
+/** 信号列表行:频率 / 功率 / 相对上帧变化 */
+private data class SdrSignalRow(val hz: Float, val db: Float, val delta: Float)
+
+/** 信号事件日志行:时间 / 频率 / 功率 / 是否告警 */
+private data class SdrEventRow(val timeMs: Long, val hz: Float, val db: Float, val alarm: Boolean)
 
 /**
  * SDR 瀑布热力色阶:黑(噪底) → 深蓝 → 青 → 绿 → 黄 → 红(最强)
@@ -1497,8 +1732,25 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(8.dp))
+            // ── 战术遥测条(雷达同款) ──
+            TacticalStatStrip(
+                listOf(
+                    "${tagHistory.size}" to stringResource(R.string.tact_nfc_history_label),
+                    (lastTag?.uid?.take(12) ?: "--") to "UID",
+                    (if (manager.supported && manager.enabled) stringResource(R.string.tact_nfc_ready_short) else stringResource(R.string.tact_nfc_not_ready)) to "NFC",
+                    stringResource(if (tab == 0) R.string.tact_nfc_tab_reader else if (tab == 1) R.string.tact_nfc_tab_emulator else if (tab == 2) R.string.tact_nfc_tab_writer else R.string.tact_nfc_tab_identifier) to stringResource(R.string.tact_nfc_workspace_label),
+                ),
+            )
+            Spacer(Modifier.height(8.dp))
 
-            when (tab) {
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    (slideInHorizontally(tween(240, easing = FastOutSlowInEasing)) { it / 4 } + fadeIn(tween(180)))
+                        .togetherWith(slideOutHorizontally(tween(200)) { -it / 6 } + fadeOut(tween(140)))
+                },
+            ) { tabIdx ->
+            when (tabIdx) {
                 0 -> Column {
                     // ── 读卡:当前标签完整信息 ──
                     TermPanel(stringResource(R.string.tact_nfc_current_tag)) {
@@ -1509,7 +1761,19 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                             Column {
                                 InfoLine("UID", t.uid)
                                 InfoLine(stringResource(R.string.tact_nfc_tech), t.techs.joinToString(" / "))
-                                InfoLine("NDEF", if (t.ndefRecords.isEmpty()) stringResource(R.string.tact_nfc_no_ndef) else t.ndefRecords.joinToString("\n"))
+                                if (t.ndefRecords.isEmpty()) {
+                                    InfoLine("NDEF", stringResource(R.string.tact_nfc_no_ndef))
+                                } else {
+                                    Text("NDEF", fontFamily = Mono, fontSize = 10.sp, color = Gray)
+                                    Spacer(Modifier.height(2.dp))
+                                    t.ndefRecords.forEachIndexed { i, rec ->
+                                        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Text("▸", fontFamily = Mono, fontSize = 9.sp, color = Gold)
+                                            Spacer(Modifier.width(5.dp))
+                                            Text(rec.take(80), fontFamily = Mono, fontSize = 8.sp, color = White, lineHeight = 11.sp)
+                                        }
+                                    }
+                                }
                                 InfoLine(stringResource(R.string.tact_nfc_sectors), if (t.sectorCount > 0) "${t.sectorCount} (Mifare Classic)" else "--")
                                 InfoLine(stringResource(R.string.tact_nfc_writable), if (t.writable) stringResource(R.string.tact_yes) else stringResource(R.string.tact_no))
                             }
@@ -1571,6 +1835,7 @@ fun NfcScreen(vm: NfcViewModel, back: () -> Unit) {
                         Text(stringResource(R.string.tact_nfc_fp_note), fontFamily = Sans, fontSize = 7.5.sp, color = Gray.copy(alpha = 0.8f))
                     }
                 }
+            }
             }
 
             Spacer(Modifier.height(10.dp))

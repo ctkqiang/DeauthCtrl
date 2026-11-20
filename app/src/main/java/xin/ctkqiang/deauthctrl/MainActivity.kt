@@ -73,6 +73,15 @@ class MainActivity : ComponentActivity() {
     /** 通知点击带来的照片 id —— 直达相机页并打开该照片 */
     private val pendingPhotoId = mutableStateOf<Long?>(null)
 
+    /**
+     * 语言切换后的 recreate 必须在这里重新包装 —— Application 层的 wrap
+     * 只在进程启动时执行一次,不覆盖 Activity 重建;否则「设置里选了
+     * English 界面仍是中文」。
+     */
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LocaleManager.wrap(newBase))
+    }
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
