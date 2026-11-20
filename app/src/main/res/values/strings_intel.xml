@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intel_title">Intel Center</string>
+    <string name="intel_tab_feed">INTEL FEED</string>
+    <string name="intel_tab_sources">SOURCES</string>
+    <string name="intel_tab_map">WORLD MAP</string>
+    <string name="intel_ph_search">Search intel…</string>
+    <string name="intel_cat_all">ALL</string>
+    <string name="intel_cat_advisory">ADVISORY</string>
+    <string name="intel_cat_news">NEWS</string>
+    <string name="intel_cat_cn">CN</string>
+    <string name="intel_cat_world">WORLD</string>
+    <string name="intel_cat_archived">ARCHIVE</string>
+    <string name="intel_cache_hint">Local cache — items are stored on device, readable offline</string>
+    <string name="intel_stat_items">ITEMS</string>
+    <string name="intel_stat_cve">CVE</string>
+    <string name="intel_stat_geo">GEO</string>
+    <string name="intel_stat_cn">CN</string>
+    <string name="intel_src_ok">● OK ×%1$d</string>
+    <string name="intel_src_fail">✖ FAIL</string>
+    <string name="intel_src_pending">… PENDING</string>
+    <string name="intel_map_empty">No geotagged events yet — refresh or wait for world news</string>
+    <string name="intel_map_tap_hint">tap a dot for details</string>
+    <string name="intel_empty">No intel matches — refresh or subscribe to more sources</string>
+    <string name="intel_panel_notify">Push Notifications</string>
+    <string name="intel_notify_title">Subscribe push alerts</string>
+    <string name="intel_notify_desc">Every 15 min the app pulls your subscribed feeds and notifies new items locally — no server, no API key</string>
+    <string name="intel_btn_refresh">REFRESH NOW</string>
+    <string name="intel_btn_refreshing">PULLING…</string>
+    <string name="intel_last_refresh">Last pull %1$s</string>
+    <string name="intel_never_refreshed">Never pulled</string>
+    <string name="intel_new_count">+%1$d NEW</string>
+    <string name="intel_panel_sources">Feed Sources · %1$d/%2$d subscribed</string>
+    <string name="intel_sources_hint">Subscribe to the sources you want — only subscribed feeds are pulled and pushed. English and Chinese only.</string>
+    <string name="intel_subscribed">ON</string>
+    <string name="intel_unsubscribed">OFF</string>
+    <string name="intel_map_hint">%1$d geotagged event(s) — dot = where it is happening</string>
+    <string name="intel_btn_fit">◎ FIT</string>
+    <string name="intel_open_link">OPEN ORIGINAL ▸</string>
+
+    <!-- 通知渠道(本地推送) -->
+    <string name="notif_intel_channel">Intel feed alerts</string>
+    <string name="notif_intel_channel_desc">New items from your subscribed cyber-intel sources</string>
+</resources>

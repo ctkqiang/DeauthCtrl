@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="intel_title">情报中心</string>
+    <string name="intel_tab_feed">情报流</string>
+    <string name="intel_tab_sources">订阅源</string>
+    <string name="intel_tab_map">世界地图</string>
+    <string name="intel_ph_search">搜索情报…</string>
+    <string name="intel_cat_all">全部</string>
+    <string name="intel_cat_advisory">公告</string>
+    <string name="intel_cat_news">新闻</string>
+    <string name="intel_cat_cn">中文</string>
+    <string name="intel_cat_world">世界</string>
+    <string name="intel_cat_archived">存档</string>
+    <string name="intel_cache_hint">本地缓存 —— 情报已存设备,断网也可读</string>
+    <string name="intel_stat_items">条目</string>
+    <string name="intel_stat_cve">CVE</string>
+    <string name="intel_stat_geo">地理</string>
+    <string name="intel_stat_cn">中文</string>
+    <string name="intel_src_ok">● 正常 ×%1$d</string>
+    <string name="intel_src_fail">✖ 失败</string>
+    <string name="intel_src_pending">… 未拉取</string>
+    <string name="intel_map_empty">还没有地理事件 —— 刷新或等世界新闻进来</string>
+    <string name="intel_map_tap_hint">点圆点看详情</string>
+    <string name="intel_empty">没有匹配的情报 —— 刷新或订阅更多源</string>
+    <string name="intel_panel_notify">订阅推送</string>
+    <string name="intel_notify_title">订阅推送提醒</string>
+    <string name="intel_notify_desc">每 15 分钟自动拉取已订阅源,新条目本地通知 —— 无服务器、无 API Key</string>
+    <string name="intel_btn_refresh">立即刷新</string>
+    <string name="intel_btn_refreshing">拉取中…</string>
+    <string name="intel_last_refresh">上次拉取 %1$s</string>
+    <string name="intel_never_refreshed">尚未拉取</string>
+    <string name="intel_new_count">+%1$d 新</string>
+    <string name="intel_panel_sources">订阅源 · 已订 %1$d/%2$d</string>
+    <string name="intel_sources_hint">只订阅你想要的源 —— 拉取与推送都只覆盖已订阅源。仅收英文与中文。</string>
+    <string name="intel_subscribed">已订</string>
+    <string name="intel_unsubscribed">未订</string>
+    <string name="intel_map_hint">%1$d 条地理事件 —— 圆点 = 事件发生地</string>
+    <string name="intel_btn_fit">◎ 全览</string>
+    <string name="intel_open_link">打开原文 ▸</string>
+
+    <!-- 通知渠道(本地推送) -->
+    <string name="notif_intel_channel">情报订阅提醒</string>
+    <string name="notif_intel_channel_desc">已订阅情报源的新条目</string>
+</resources>
