@@ -162,6 +162,7 @@ import xin.ctkqiang.deauthctrl.mirroring.ui.MirroringViewModel
 import xin.ctkqiang.deauthctrl.mirroring.ui.RemoteViewerScreen
 import xin.ctkqiang.deauthctrl.ui.components.*
 import xin.ctkqiang.deauthctrl.ui.components.ErrorStickerOverlay
+import xin.ctkqiang.deauthctrl.ui.components.BruhOverlay
 import xin.ctkqiang.deauthctrl.ui.theme.TEAM_THEMES
 import xin.ctkqiang.deauthctrl.viewmodel.*
 import xin.ctkqiang.deauthctrl.viewmodel.DbViewModel
@@ -407,6 +408,7 @@ fun MainScreen(
         }
         // 全局错误贴纸:任何页面做蠢事时从底部弹入
         ErrorStickerOverlay()
+            BruhOverlay()
     }
 }
 

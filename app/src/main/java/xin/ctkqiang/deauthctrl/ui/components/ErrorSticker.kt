@@ -50,6 +50,17 @@ object StickerBus {
 
     fun subscribe(l: (String) -> Unit) { listeners.add(l) }
     fun unsubscribe(l: (String) -> Unit) { listeners.remove(l) }
+
+    // ─── BRUH 通道(透明底弹图,与文字贴纸独立) ───
+    @Volatile var bruhTick: Int = 0
+        private set
+    private val bruhListeners = mutableListOf<() -> Unit>()
+    fun showBruh() {
+        bruhTick++
+        bruhListeners.forEach { it() }
+    }
+    fun subscribeBruh(l: () -> Unit) { bruhListeners.add(l) }
+    fun unsubscribeBruh(l: () -> Unit) { bruhListeners.remove(l) }
 }
 
 /**
