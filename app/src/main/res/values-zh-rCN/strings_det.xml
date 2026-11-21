@@ -85,6 +85,8 @@
     <string name="det_btn_stop_radar">停止雷达</string>
     <string name="det_btn_network_topology">网络拓扑</string>
     <string name="det_btn_signal_db">信号库</string>
+    <string name="det_btn_fullscreen">全屏 ▸</string>
+    <string name="det_btn_exit_fullscreen">✕ 退出</string>
     <string name="det_btn_open_settings">打开设置 ▸</string>
     <string name="det_btn_cancel">取消</string>
     <string name="det_btn_stop_poisoning">停止投毒</string>
@@ -198,6 +200,12 @@
     <string name="det_info_distance_model">距离模型</string>
     <string name="det_info_tracking">跟踪</string>
     <string name="det_info_threat">威胁</string>
+    <string name="det_info_rpa">RPA 已解析</string>
+    <string name="det_fmt_irk">IRK %1$d</string>
+    <string name="det_irk_title">IRK · RPA 反匿名化</string>
+    <string name="det_irk_desc">每行一个 32 位十六进制 IRK —— 每个观察到的旋转地址都会对全部密钥做 ah() AES-128 校验(BT 规范)。仅接受外部捕获的 IRK;Android 不暴露本地 IRK。</string>
+    <string name="det_irk_placeholder">ABCDEF0123456789ABCDEF0123456789\n…每行一个</string>
+    <string name="det_irk_save">保存 IRK</string>
 
     <!-- ─── 占位与提示 ─── -->
     <string name="det_hint_leave_blank_unlimited">留空表示不限</string>
@@ -226,6 +234,19 @@
     <string name="det_hint_ping_idle">填入目标后执行上方任务，探测结果实时返回</string>
     <string name="det_hint_http_log">发送请求后，传输日志会实时显示在这里</string>
     <string name="det_hint_port_scan_idle">输入目标主机后启动扫描，开放端口会实时列出</string>
+    <string name="det_panel_nmap">nmap · 真引擎</string>
+    <string name="nmap_native_desc">原生引擎 —— nmap-services 高频端口表、服务指纹探测、-T 时序模板全部 Kotlin 原生实现。无 Termux、无下载。</string>
+    <string name="nmap_top100">TOP 100</string>
+    <string name="nmap_top1000">TOP 1000</string>
+    <string name="nmap_bin_missing">环境就绪 —— nmap 尚未安装</string>
+    <string name="nmap_ready">nmap 就绪 —— 目标取上方主机框</string>
+    <string name="nmap_btn_install_env">安装环境</string>
+    <string name="nmap_btn_install_nmap">安装 nmap(apt)</string>
+    <string name="nmap_btn_installing">安装中…</string>
+    <string name="nmap_btn_scan">nmap 扫描 ▸</string>
+    <string name="nmap_btn_scanning">扫描中…</string>
+    <string name="nmap_need_host">先输入目标主机</string>
+    <string name="nmap_log_empty">运行 nmap —— 输出逐行实时回显</string>
     <string name="det_hint_radar_idle">启动雷达后，检测到的设备会亮在扫描盘上</string>
     <string name="det_hint_radar_no_match">过滤条件下没有匹配设备</string>
     <string name="det_hint_probe_wait">等待 WiFi 帧 —— 打开定位服务后信标自动进入</string>
@@ -428,6 +449,14 @@
     <string name="det_tower_operator">MCC/MNC</string>
     <string name="det_tower_bands">频段</string>
     <string name="det_tower_hint">距离 = RSRP 路径损耗粗估(±数百米);方位手机无硬件可测 —— 盘面角度为占位</string>
+    <string name="det_fmt_cctv">监控 %1$d</string>
+    <string name="det_cctv_legend">▣ 监控 ×%1$d(距离未知)</string>
+    <string name="det_cctv_popup_title">摄像头</string>
+    <string name="det_cctv_model">设备</string>
+    <string name="det_cctv_fw">固件</string>
+    <string name="det_cctv_xaddr">ONVIF</string>
+    <string name="det_cctv_open_ops">监控眼 ▸</string>
+    <string name="det_cctv_hint">WS-Discovery 组播发现 —— 距离未知,盘面位置为占位</string>
     <string name="det_fmt_bearing_collecting">方位推演采样中 · 覆盖 %1$d%% · 请缓慢旋转机身</string>
     <string name="det_sat_none">卫星 0 · 室内?</string>
     <string name="det_warn_location_off">定位服务关闭 —— WiFi 目标不可见(BLE 不受影响)</string>

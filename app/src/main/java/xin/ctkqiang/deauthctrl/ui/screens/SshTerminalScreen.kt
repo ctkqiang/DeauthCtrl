@@ -96,9 +96,9 @@ fun SshTerminalScreen(vm: SshClientViewModel, initialHost: String? = null, back:
     val version by vm.screenVersion.collectAsState()
     val haptic = LocalHapticFeedback.current
 
-    // 雷达同网弹窗「SSH」跳转:目标 IP 自动填入主机框
-    LaunchedEffect(Unit) {
-        if (vm.host.value.isBlank()) initialHost?.let { vm.manager.host.value = it }
+    // 雷达同网弹窗「SSH」跳转:目标 IP 无条件覆盖默认值(默认主机框非空,不能用 isBlank 判断)
+    LaunchedEffect(initialHost) {
+        initialHost?.let { vm.manager.host.value = it }
     }
 
     val online = status is SshClientManager.Status.Connected

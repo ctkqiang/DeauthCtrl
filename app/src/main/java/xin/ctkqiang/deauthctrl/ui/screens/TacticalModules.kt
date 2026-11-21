@@ -2595,6 +2595,16 @@ fun TacticalMapScreen(vm: TacticalMapViewModel, back: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader(stringResource(R.string.tact_map_title), back)
+            // ── 战术遥测条:标记/定位/瓦片/跟随 ──
+            TacticalStatStrip(
+                listOf(
+                    "${markers.size}" to stringResource(R.string.tact_map_markers),
+                    (if (status.hasFix) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_map_fix),
+                    (if (networkOnline) stringResource(R.string.tact_map_online) else stringResource(R.string.tact_map_cache)) to stringResource(R.string.tact_map_tiles),
+                    (if (follow) stringResource(R.string.tact_strip_on) else stringResource(R.string.tact_strip_off)) to stringResource(R.string.tact_map_follow),
+                ),
+            )
+            Spacer(Modifier.height(8.dp))
         Column(Modifier.fillMaxSize().navigationBarsPadding().padding(12.dp)) {
             Surface(
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),

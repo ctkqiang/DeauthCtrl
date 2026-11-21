@@ -81,12 +81,30 @@ class IntelFeedManager(private val context: Context) {
             FeedSource("record", "The Record · RF News", "https://therecord.media/feed/", "新闻", "en", "rss"),
             FeedSource("darkreading", "Dark Reading", "https://www.darkreading.com/rss.xml", "新闻", "en", "rss"),
             FeedSource("secweek", "SecurityWeek", "https://www.securityweek.com/feed/", "新闻", "en", "rss"),
+            FeedSource("exploitdb", "Exploit-DB · exploits", "https://www.exploit-db.com/rss.xml", "CVE", "en", "rss"),
+            FeedSource("portswigger", "PortSwigger Research", "https://portswigger.net/research/rss", "新闻", "en", "rss"),
+            FeedSource("sans", "SANS ISC", "https://isc.sans.edu/rssfeed.xml", "新闻", "en", "rss"),
+            FeedSource("securityaffairs", "Security Affairs", "https://securityaffairs.com/feed", "新闻", "en", "rss"),
+            FeedSource("rapid7", "Rapid7 Blog", "https://blog.rapid7.com/rss/", "新闻", "en", "rss"),
+            FeedSource("talos", "Cisco Talos", "https://blog.talosintelligence.com/feed/", "新闻", "en", "rss"),
+            FeedSource("malwarebytes", "Malwarebytes", "https://blog.malwarebytes.com/feed/", "新闻", "en", "rss"),
+            FeedSource("unit42", "Unit 42 · PANW", "https://unit42.paloaltonetworks.com/feed/", "新闻", "en", "rss"),
+            FeedSource("register", "The Register · security", "https://www.theregister.com/security/headlines.atom", "新闻", "en", "atom"),
+            FeedSource("infosecmag", "Infosecurity Magazine", "https://www.infosecurity-magazine.com/feed/", "新闻", "en", "rss"),
+            FeedSource("helpnet", "Help Net Security", "https://www.helpnetsecurity.com/feed/", "新闻", "en", "rss"),
+            FeedSource("cso", "CSO Online", "https://www.csoonline.com/feed/", "新闻", "en", "rss"),
+            FeedSource("gbhackers", "GBHackers", "https://gbhackers.com/feed/", "新闻", "en", "rss"),
+            FeedSource("secblvd", "Security Boulevard", "https://securityboulevard.com/feed/", "新闻", "en", "rss"),
+            FeedSource("secrss", "安全内参(中文)", "https://www.secrss.com/rss", "中文", "zh", "rss"),
             FeedSource("xz", "先知社区(中文)", "https://xz.aliyun.com/feed", "中文", "zh", "atom"),
+            FeedSource("4hou", "嘶吼(中文)", "https://www.4hou.com/feed", "中文", "zh", "rss"),
             FeedSource("freebuf", "FreeBuf(中文)", "https://www.freebuf.com/feed", "中文", "zh", "rss"),
             FeedSource("anquanke", "安全客(中文)", "https://www.anquanke.com/rss", "中文", "zh", "rss"),
             FeedSource("aj", "Al Jazeera · world", "https://www.aljazeera.com/xml/rss/all.xml", "世界", "en", "rss"),
             FeedSource("npr", "NPR World", "https://feeds.npr.org/1004/rss.xml", "世界", "en", "rss"),
             FeedSource("france24", "France24 · world", "https://www.france24.com/en/rss", "世界", "en", "rss"),
+            FeedSource("guardian", "The Guardian · world", "https://www.theguardian.com/world/rss", "世界", "en", "rss"),
+            FeedSource("scmp", "SCMP · world", "https://www.scmp.com/rss/91/feed", "世界", "en", "rss"),
             FeedSource("dw", "DW · world", "https://rss.dw.com/rdf/rss-en-all", "世界", "en", "rss"),
         )
 
@@ -329,12 +347,18 @@ class IntelFeedManager(private val context: Context) {
         return "en"
     }
 
-    /** 内置国家/城市 → 经纬度表(约 90 项,零 API 地理打点) */
+    /**
+     * 内置国家/城市/形容词别名 → 经纬度表(零 API 地理打点)。
+     * 词边界正则匹配:标题里是 "Ukrainian forces" 而不是 "Ukraine" ——
+     * 新闻几乎全用形容词,只存名词会导致大量事件打不上点(地图看着是空的)。
+     * "us" 这类短词靠 \b 避免命中 "just"/"use"。
+     */
     private fun locate(text: String): Triple<Double?, Double?, String?> {
         val lower = text.lowercase()
         var best: Pair<String, Pair<Double, Double>>? = null
         for ((name, c) in GEO_TABLE) {
-            if (lower.contains(name)) {
+            val pattern = Regex("\\b" + Regex.escape(name) + "\\b")
+            if (pattern.containsMatchIn(lower)) {
                 if (best == null || name.length > best!!.first.length) best = name to c
             }
         }
@@ -479,5 +503,31 @@ class IntelFeedManager(private val context: Context) {
         "ghana" to (7.95 to -1.02), "ivory coast" to (7.54 to -5.55), "burkina faso" to (12.24 to -1.56),
         "guinea" to (9.95 to -9.7), "sierra leone" to (8.46 to -11.78), "liberia" to (6.43 to -9.43),
         "mauritania" to (21.01 to -10.94), "djibouti" to (11.83 to 42.59), "eritrea" to (15.18 to 39.78),
+        // ── 形容词/别名(新闻标题常用形式,与名词同坐标) ──
+        "ukrainian" to (48.38 to 31.17), "chinese" to (35.86 to 104.2), "russian" to (55.75 to 37.62),
+        "american" to (38.9 to -77.04), "u.s." to (38.9 to -77.04), "usa" to (38.9 to -77.04),
+        "british" to (51.51 to -0.13), "french" to (46.23 to 2.21), "german" to (51.17 to 10.45),
+        "japanese" to (36.2 to 138.25), "korean" to (35.91 to 127.77), "indian" to (20.59 to 78.96),
+        "israeli" to (31.05 to 34.85), "iranian" to (32.43 to 53.69), "saudi" to (23.89 to 45.08),
+        "turkish" to (38.96 to 35.24), "syrian" to (34.8 to 38.99), "lebanese" to (33.85 to 35.86),
+        "palestinian" to (31.9 to 35.2), "taiwanese" to (23.7 to 120.96), "australian" to (-25.27 to 133.78),
+        "canadian" to (56.13 to -106.35), "brazilian" to (-14.24 to -51.93), "mexican" to (23.63 to -102.55),
+        "egyptian" to (26.82 to 30.8), "nigerian" to (9.08 to 8.68), "vietnamese" to (14.06 to 108.28),
+        "indonesian" to (-0.79 to 113.92), "filipino" to (12.88 to 121.77), "thai" to (15.87 to 100.99),
+        "polish" to (51.92 to 19.15), "dutch" to (52.13 to 5.29), "spanish" to (40.46 to -3.75),
+        "italian" to (41.87 to 12.57), "swedish" to (60.13 to 18.64), "norwegian" to (60.47 to 8.47),
+        "finnish" to (61.92 to 25.75), "greek" to (39.07 to 21.82), "swiss" to (46.82 to 8.23),
+        "austrian" to (47.52 to 14.55), "czech" to (49.82 to 15.47), "hungarian" to (47.16 to 19.5),
+        "romanian" to (45.94 to 24.97), "serbian" to (44.02 to 21.01), "croatian" to (45.1 to 15.2),
+        "bulgarian" to (42.73 to 25.49), "pakistani" to (30.38 to 69.35), "afghan" to (33.94 to 67.71),
+        "iraqi" to (33.2 to 43.68), "libyan" to (26.34 to 17.27), "sudanese" to (15.5 to 30.22),
+        "ethiopian" to (9.15 to 40.49), "somali" to (5.15 to 46.2), "kenyan" to (-0.02 to 37.91),
+        "yemeni" to (15.55 to 48.52), "qatari" to (25.35 to 51.18), "emirati" to (23.42 to 53.85),
+        "kuwaiti" to (29.31 to 47.48), "jordanian" to (31.24 to 36.77), "moroccan" to (31.79 to -7.09),
+        "algerian" to (28.03 to 1.66), "tunisian" to (36.81 to 10.18), "kazakh" to (48.02 to 66.92),
+        "uzbek" to (41.38 to 64.59), "belarusian" to (53.71 to 27.95), "moldovan" to (47.41 to 28.37),
+        "georgian" to (42.32 to 43.36), "armenian" to (40.07 to 45.04), "azerbaijani" to (40.14 to 47.58),
+        "nordic" to (60.13 to 18.64), "middle east" to (29.3 to 42.6), "southeast asia" to (13.7 to 100.5),
+        "central asia" to (41.38 to 64.59), "sub-saharan africa" to (1.0 to 17.0), "latin america" to (-14.0 to -60.0),
     )
 }

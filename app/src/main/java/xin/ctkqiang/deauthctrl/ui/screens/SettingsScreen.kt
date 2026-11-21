@@ -79,6 +79,7 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
     val haptics by vm.hapticsEnabled.collectAsState()
     val radarAlert by vm.radarAlertEnabled.collectAsState()
     val mapStyle by vm.mapStyle.collectAsState()
+    val rssiEnv by vm.rssiEnv.collectAsState()
     val haptic = LocalHapticFeedback.current
 
     Column(Modifier.fillMaxSize().background(Dark)) {
@@ -165,6 +166,32 @@ fun SettingsScreen(vm: SettingsViewModel, back: () -> Unit) {
                         onClick = {
                             haptic.hud()
                             vm.setMapStyle(style)
+                        },
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Spacer(Modifier.height(10.dp))
+
+            // ─── 距离模型环境(btrpa-scan 路径损耗预设) ───
+            TermPanel(stringResource(R.string.settings_rssi_env_section)) {
+                Text(stringResource(R.string.settings_rssi_env_desc), fontFamily = Sans, fontSize = 10.sp, color = Gray)
+                Spacer(Modifier.height(8.dp))
+                listOf(
+                    "free" to (R.string.settings_rssi_free to R.string.settings_rssi_free_desc),
+                    "outdoor" to (R.string.settings_rssi_outdoor to R.string.settings_rssi_outdoor_desc),
+                    "indoor" to (R.string.settings_rssi_indoor to R.string.settings_rssi_indoor_desc),
+                ).forEach { (env, texts) ->
+                    SettingChoiceRow(
+                        title = stringResource(texts.first),
+                        desc = stringResource(texts.second),
+                        selected = rssiEnv == env,
+                        onClick = {
+                            haptic.hud()
+                            vm.setRssiEnv(env)
                         },
                     )
                     Spacer(Modifier.height(6.dp))

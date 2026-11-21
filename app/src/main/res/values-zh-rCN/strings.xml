@@ -43,6 +43,14 @@
     <string name="settings_map_night_desc">低饱和绿色调瓦片,低光环境下更柔和</string>
     <string name="settings_map_color">原始彩色</string>
     <string name="settings_map_color_desc">标准彩色 OSM 瓦片</string>
+    <string name="settings_rssi_env_section">距离模型 · PATH LOSS</string>
+    <string name="settings_rssi_env_desc">蓝牙测距路径损耗预设(btrpa-scan)</string>
+    <string name="settings_rssi_free">自由空间 · n=2.0</string>
+    <string name="settings_rssi_free_desc">开阔区域,障碍物极少</string>
+    <string name="settings_rssi_outdoor">室外 · n=2.2</string>
+    <string name="settings_rssi_outdoor_desc">典型城市室外传播</string>
+    <string name="settings_rssi_indoor">室内 · n=3.0</string>
+    <string name="settings_rssi_indoor_desc">墙体与家具衰减更快</string>
     <string name="settings_sysinfo_section">系统信息</string>
     <string name="settings_info_author">作者</string>
     <string name="settings_info_codename">代号</string>
@@ -112,6 +120,10 @@
     <string name="home_cve_desc">查询公开漏洞数据库</string>
     <string name="home_intel_name">情报中心</string>
     <string name="home_intel_desc">GHSA · HackerNews · CISA KEV · 世界局势,免 API Key</string>
+    <string name="home_onvif_name">监控眼</string>
+    <string name="home_onvif_desc">ONVIF/RTSP 摄像头侦察 · PTZ · 凭据(pwneye 逻辑)</string>
+    <string name="home_rfsense_name">穿墙感知</string>
+    <string name="home_rfsense_desc">Wi-Fi RSSI 扰动穿墙人体活动检测</string>
     <string name="home_sdr_name">语音频谱</string>
     <string name="home_sdr_desc">麦克风 FFT 实时频谱分析</string>
     <string name="home_taccam_name">战术相机</string>

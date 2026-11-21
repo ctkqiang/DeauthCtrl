@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import xin.ctkqiang.deauthctrl.manager.LlmSession
 import xin.ctkqiang.deauthctrl.manager.LocalLlmManager
 
@@ -50,8 +51,12 @@ class AiViewModel(app: Application) : AndroidViewModel(app) {
     private var session: LlmSession? = null
     private var downloadJob: Job? = null
 
-    // 引擎单线程调度器:加载/建会话/清理串行执行
-    private val engineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    // 引擎单线程调度器:加载/建会话/清理串行执行。
+    // 可变:引擎线程疑似卡死(原生调用不响应)时整体换新,旧协程自然作废
+    @Volatile
+    private var engineDispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    /** 代际令牌:重建会话/超时后旧引擎回调直接作废,防止污染新会话 */
+    private val genCounter = java.util.concurrent.atomic.AtomicLong(0)
 
     private val currentSpec get() = manager.allModels().first { it.id == _state.value.modelId }
 
@@ -189,7 +194,7 @@ class AiViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setInput(v: String) { _state.value = _state.value.copy(input = v) }
+    fun setInput(v: String) { _state.value = _state.value.copy(input = v.take(MAX_INPUT_CHARS)) }
 
     /** 系统提示词:落盘 + 重建会话立即生效 —— 操作员自定义模型人设与行为边界 */
     fun setSystemPrompt(prompt: String) {
@@ -230,7 +235,9 @@ class AiViewModel(app: Application) : AndroidViewModel(app) {
     /** 发送消息:先落用户气泡,再流式拼接助手回复 */
     fun send() {
         val s = _state.value
-        val prompt = s.input.trim()
+        // 长输入截断:导入模型上下文窗口可能很小,超长 prefill 会让 LiteRT-LM
+        // 原生层直接崩溃(Java 接不住)—— 在进引擎前就截到安全长度
+        val prompt = s.input.trim().take(MAX_PROMPT_CHARS)
         if (prompt.isEmpty() || s.streaming || !s.ready) return
         val sentAt = System.currentTimeMillis()
         _state.value = s.copy(
@@ -241,34 +248,78 @@ class AiViewModel(app: Application) : AndroidViewModel(app) {
         )
         viewModelScope.launch {
             val current = session ?: run { _state.value = _state.value.copy(streaming = false); return@launch }
+            val genId = genCounter.incrementAndGet()
             val builder = StringBuilder()
-            current.send(
-                prompt,
-                onPartial = { partial ->
-                    builder.clear()
-                    builder.append(partial)
-                    val base = _state.value.messages
-                    _state.value = _state.value.copy(
-                        messages = base.filterNot { it.streaming } + ChatMsg("assistant", builder.toString(), streaming = true, timeMs = sentAt),
-                    )
-                },
-                onDone = {
-                    _state.value = _state.value.copy(
-                        messages = _state.value.messages.filterNot { it.streaming } +
-                            if (builder.isEmpty()) emptyList() else listOf(ChatMsg("assistant", builder.toString(), timeMs = sentAt)),
-                        streaming = false,
-                    )
-                },
-                onError = { msg ->
-                    _state.value = _state.value.copy(
-                        messages = _state.value.messages.filterNot { it.streaming },
-                        streaming = false,
-                        error = msg,
-                    )
-                },
-            )
+            var gotOutput = false
+            var engineError: String? = null
+            // 引擎非线程安全:send 也必须走引擎单线程调度器;外面套看门狗 ——
+            // 引擎线程卡死(原生调用不响应)时超时退出并整体换新调度器
+            val timedOut = withTimeoutOrNull(SEND_TIMEOUT_MS) {
+                runCatching {
+                    withContext(engineDispatcher) {
+                        current.send(
+                            prompt,
+                            onPartial = { partial ->
+                                if (genCounter.get() == genId) {
+                                    gotOutput = true
+                                    builder.clear()
+                                    builder.append(partial)
+                                    val base = _state.value.messages
+                                    _state.value = _state.value.copy(
+                                        messages = base.filterNot { it.streaming } + ChatMsg("assistant", builder.toString(), streaming = true, timeMs = sentAt),
+                                    )
+                                }
+                            },
+                            onDone = {
+                                if (genCounter.get() == genId) {
+                                    _state.value = _state.value.copy(
+                                        messages = _state.value.messages.filterNot { it.streaming } +
+                                            if (builder.isEmpty()) emptyList() else listOf(ChatMsg("assistant", builder.toString(), timeMs = sentAt)),
+                                        streaming = false,
+                                    )
+                                }
+                            },
+                            onError = { msg ->
+                                if (genCounter.get() == genId) {
+                                    engineError = msg
+                                    _state.value = _state.value.copy(
+                                        messages = _state.value.messages.filterNot { it.streaming },
+                                        streaming = false,
+                                        error = msg,
+                                    )
+                                }
+                            },
+                        )
+                    }
+                }.onFailure {
+                    engineError = it.message ?: "inference failed"
+                }
+            }
+            if (timedOut == null) {
+                // 看门狗:引擎线程卡死 —— 作废旧会话,换新调度器重建,明确报错
+                runCatching { current.close() }
+                session = null
+                engineDispatcher = Dispatchers.IO.limitedParallelism(1)
+                _state.value = _state.value.copy(
+                    messages = _state.value.messages.filterNot { it.streaming },
+                    streaming = false,
+                    error = "模型无响应(引擎忙或上下文溢出)—— 会话已重置,请重试",
+                )
+                rebuildSession()
+                return@launch
+            }
+            // 静默零输出:引擎正常返回但一个字没吐 —— 会话已残,重建并提示
+            if (!gotOutput && engineError == null && genCounter.get() == genId) {
+                _state.value = _state.value.copy(
+                    messages = _state.value.messages.filterNot { it.streaming },
+                    streaming = false,
+                    error = "模型没有输出 —— 会话已重置,请重试",
+                )
+                rebuildSession()
+                return@launch
+            }
             // onDone/onError 回调线程不确定,兜底再收敛一次流式状态
-            if (_state.value.streaming) {
+            if (_state.value.streaming && genCounter.get() == genId) {
                 _state.value = _state.value.copy(
                     messages = _state.value.messages.filterNot { it.streaming } +
                         if (builder.isEmpty()) emptyList() else listOf(ChatMsg("assistant", builder.toString(), timeMs = sentAt)),
@@ -279,7 +330,12 @@ class AiViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun stop() {
-        session?.stop()
+        viewModelScope.launch {
+            withContext(engineDispatcher) { runCatching { session?.stop() } }
+            // cancelProcess 之后 conversation 常常静默失效(下次发送零输出)——
+            // 停止即重建,保证会话永远可用
+            rebuildSession()
+        }
     }
 
     /** 清空对话历史:重建会话 */
@@ -296,5 +352,11 @@ class AiViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         /** 系统提示词偏好键(与设置页共用 deauthctrl_prefs) */
         const val KEY_LLM_SYSTEM_PROMPT = "llm_system_prompt"
+        /** 输入框字符上限(UI 层) */
+        private const val MAX_INPUT_CHARS = 2000
+        /** 进引擎前提示词截断上限 —— 防超长 prefill 触发 LiteRT-LM 原生崩溃 */
+        private const val MAX_PROMPT_CHARS = 1200
+        /** 发送看门狗:引擎无任何回调超过此时长即判定卡死,重置会话 */
+        private const val SEND_TIMEOUT_MS = 30_000L
     }
 }

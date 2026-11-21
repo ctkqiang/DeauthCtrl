@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -67,6 +68,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -99,6 +101,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -116,6 +122,7 @@ import androidx.compose.ui.window.Popup
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.HttpClientManager
@@ -125,6 +132,10 @@ import xin.ctkqiang.deauthctrl.manager.DeviceIntel
 import xin.ctkqiang.deauthctrl.manager.WifiDeauthEngine
 import xin.ctkqiang.deauthctrl.manager.ArpEntry
 import xin.ctkqiang.deauthctrl.manager.ArpScanManager
+import xin.ctkqiang.deauthctrl.manager.OnvifCamManager
+import xin.ctkqiang.deauthctrl.manager.NativeNmapScanner
+import xin.ctkqiang.deauthctrl.manager.NmapRunner
+import xin.ctkqiang.deauthctrl.manager.TermuxBootstrap
 import xin.ctkqiang.deauthctrl.manager.GnssSat
 import xin.ctkqiang.deauthctrl.manager.GsmTowerManager
 import xin.ctkqiang.deauthctrl.manager.TowerCell
@@ -147,6 +158,7 @@ import xin.ctkqiang.deauthctrl.ui.components.Gold
 import xin.ctkqiang.deauthctrl.ui.components.Gray
 import xin.ctkqiang.deauthctrl.ui.components.LogHeader
 import xin.ctkqiang.deauthctrl.ui.components.LogLine
+import xin.ctkqiang.deauthctrl.ui.components.lumiaTilt
 import xin.ctkqiang.deauthctrl.ui.components.Mono
 import xin.ctkqiang.deauthctrl.ui.components.PanelStat
 import xin.ctkqiang.deauthctrl.ui.components.Red
@@ -1861,9 +1873,10 @@ fun PortScannerScreen(vm: PortScannerViewModel, initialHost: String? = null, bac
     val error by vm.error.collectAsState()
     val haptic = LocalHapticFeedback.current
 
-    // 雷达同网弹窗「扫端口」跳转:目标 IP 自动填入
-    LaunchedEffect(Unit) {
-        if (host.isBlank()) initialHost?.let { vm.setHost(it) }
+    // 雷达同网弹窗「扫端口」跳转:目标 IP 无条件覆盖默认值
+    // (默认主机框预填 192.168.1.1,非空 —— 不能用 isBlank 判断,否则选中 IP 永远填不进去)
+    LaunchedEffect(initialHost) {
+        initialHost?.let { vm.setHost(it) }
     }
 
     Column(Modifier.fillMaxSize().background(Dark)) {
@@ -1884,6 +1897,75 @@ fun PortScannerScreen(vm: PortScannerViewModel, initialHost: String? = null, bac
 
                 // 高频数据区独立订阅：扫描期间进度与结果持续刷新
                 PortScanLivePanel(vm, running = running, host = host, error = error)
+
+                // ── 真·nmap(内置 Termux 前缀,应用内安装,无需 root) ──
+                NmapPanel(host = host)
+            }
+        }
+    }
+}
+
+/** 原生 nmap 面板 —— nmap-services 端口表 + 服务指纹 + 时序模板,纯 Kotlin */
+@Composable
+private fun NmapPanel(host: String) {
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    var scanning by remember { mutableStateOf(false) }
+    var topN by remember { mutableIntStateOf(100) }
+    var timing by remember { mutableIntStateOf(4) }
+    val nmapLog = remember { mutableStateListOf<String>() }
+    val scanner = remember { NativeNmapScanner() }
+
+    Spacer(Modifier.height(8.dp))
+    TermPanel(stringResource(R.string.det_panel_nmap)) {
+        Text(stringResource(R.string.nmap_native_desc), fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp)
+        Spacer(Modifier.height(6.dp))
+        // 端口档位与时序模板
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            SelectChip(topN == 100, stringResource(R.string.nmap_top100)) { topN = 100 }
+            SelectChip(topN == 1000, stringResource(R.string.nmap_top1000)) { topN = 1000 }
+            Spacer(Modifier.width(4.dp))
+            SelectChip(timing == 2, "-T2") { timing = 2 }
+            SelectChip(timing == 4, "-T4") { timing = 4 }
+            SelectChip(timing == 5, "-T5") { timing = 5 }
+        }
+        Spacer(Modifier.height(6.dp))
+        ActionButton(
+            running = scanning,
+            runLabel = stringResource(R.string.nmap_btn_scan),
+            stopLabel = stringResource(R.string.nmap_btn_scanning),
+        ) {
+            haptic.hud()
+            if (host.isBlank()) {
+                nmapLog.add(0, "[!] " + context.getString(R.string.nmap_need_host))
+            } else {
+                scanning = true
+                kotlinx.coroutines.GlobalScope.launch {
+                    runCatching {
+                        scanner.scan(host, topN, timing, onLine = { line ->
+                            nmapLog.add(0, line.take(100))
+                            if (nmapLog.size > 300) nmapLog.removeAt(nmapLog.size - 1)
+                        }, onPort = {})
+                        scanning = false
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 160.dp)) {
+            if (nmapLog.isEmpty()) {
+                item { Text(stringResource(R.string.nmap_log_empty), fontFamily = Sans, fontSize = 8.sp, color = Gray, modifier = Modifier.padding(vertical = 4.dp)) }
+            } else {
+                items(nmapLog.take(120)) { line ->
+                    val open = line.contains("/tcp open")
+                    Text(
+                        "▸ $line",
+                        fontFamily = Mono, fontSize = 7.5.sp,
+                        color = if (open) TacGreen else if (line.startsWith("[!]")) Danger else Gray,
+                        maxLines = 1,
+                        modifier = Modifier.padding(vertical = 1.dp),
+                    )
+                }
             }
         }
     }
@@ -2265,6 +2347,8 @@ internal val BT_BLIP = Color(0xFF00E676)
 internal val FRIENDLY_BLIP = Color(0xFF4D9FFF)
 /** 基站层固定色:紫 —— 与 blip(红/青/绿/蓝)、同网(琥珀)、网格(金)全部错开 */
 private val CELL_TOWER_COLOR = Color(0xFFB388FF)
+/** CCTV 层固定色:品红 —— 与所有其他图层错开 */
+private val CCTV_COLOR = Color(0xFFFF4FD8)
 private val TIER_HIGH = Color(0xFFFF4D5E)
 private val TIER_MID = Color(0xFFFFB547)
 private val TIER_FAR = Color(0xFF6AD18A)
@@ -2353,6 +2437,7 @@ fun RadarScreen(
     onScanPorts: (String) -> Unit,
     onSsh: (String) -> Unit,
     onKick: (String) -> Unit,
+    onOpenCctv: (String) -> Unit,
 ) {
     val running by vm.isRunning.collectAsState()
     val haptic = LocalHapticFeedback.current
@@ -2426,6 +2511,36 @@ fun RadarScreen(
             }
         }
     }
+    // 全屏模式:盘面占满全屏 + 沉浸式隐藏系统栏
+    var fullscreen by remember { mutableStateOf(false) }
+    val view = LocalView.current
+    LaunchedEffect(fullscreen) {
+        val window = (view.context as? android.app.Activity)?.window
+        val controller = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        if (fullscreen) {
+            controller?.hide(WindowInsetsCompat.Type.systemBars())
+            controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+    BackHandler(enabled = fullscreen) { fullscreen = false }
+
+    // IRK 反匿名化(btrpa-scan 技术):IRK 计数 + 管理对话框
+    val irkCount by vm.irkCount.collectAsState()
+    var irkDialogOn by remember { mutableStateOf(false) }
+    // CCTV 层:WS-Discovery 组播发现的 ONVIF 摄像头 —— 默认开启,60s 轮询
+    var cctvOn by remember { mutableStateOf(true) }
+    val cctvManager = remember { OnvifCamManager() }
+    val cctvCams by cctvManager.cameras.collectAsState()
+    LaunchedEffect(cctvOn) {
+        if (cctvOn) {
+            while (true) {
+                runCatching { cctvManager.discover() }
+                delay(60_000L)
+            }
+        }
+    }
 
     // 聚焦目标距离振动：越近振幅越大、节奏越快；越远渐弱；超出雷达量程静默。
     // 友方(已绑定)设备不震动 —— 非敌对目标不该被触觉警报骚扰
@@ -2452,6 +2567,53 @@ fun RadarScreen(
         }
     }
 
+    if (fullscreen) {
+        // ── 全屏雷达:盘面占满全屏,悬浮退出与筛选 ──
+        Box(Modifier.fillMaxSize().background(Dark)) {
+            RadarScope(
+                vm,
+                walkieVm,
+                gnss = if (satelliteOn) gnss else null,
+                running = running,
+                typeFilter = typeFilter,
+                query = query,
+                focusedId = focusedId,
+                lanHosts = if (lanOn) lanDevices else emptyList(),
+                towers = if (towersOn) towerState.towers else emptyList(),
+                cctvCams = if (cctvOn) cctvCams else emptyList(),
+                onOpenOps = onOpenCctv,
+                onTapDot = { id -> haptic.hud(); focusedId = id },
+                onTapEmpty = { focusedId = null },
+                onOpenDossier = { id -> haptic.hud(); onSelectTarget(id) },
+                onDeauth = onDeauth,
+                onScanPorts = onScanPorts,
+                onSsh = onSsh,
+                onKick = onKick,
+                modifier = Modifier.fillMaxSize(),
+            )
+            // 悬浮退出键(左上)
+            Surface(
+                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(10.dp).clickable {
+                    haptic.hud()
+                    fullscreen = false
+                },
+                shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                color = SurfaceBg.copy(alpha = 0.9f),
+                border = BorderStroke(1.dp, Gold.copy(alpha = 0.6f)),
+            ) {
+                Text(stringResource(R.string.det_btn_exit_fullscreen), fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+            }
+            // 悬浮筛选条(顶部居中)
+            Box(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp, start = 120.dp, end = 10.dp)) {
+                RadarFilterBar(
+                    typeFilter = typeFilter,
+                    onTypeFilter = { typeFilter = it; focusedId = null },
+                )
+            }
+        }
+        return
+    }
+
     Column(Modifier.fillMaxSize().background(Dark)) {
         TerminalHeader(stringResource(R.string.det_title_radar), back)
         PageEnter(locked = running) {
@@ -2473,6 +2635,7 @@ fun RadarScreen(
                     }
                     QuickNavChip(stringResource(R.string.det_btn_network_topology), Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenNetmap() }
                     QuickNavChip(stringResource(R.string.det_btn_signal_db), Gold, Modifier.width(62.dp)) { haptic.hud(); onOpenDb() }
+                    QuickNavChip(stringResource(R.string.det_btn_fullscreen), Gold, Modifier.width(62.dp)) { haptic.hud(); fullscreen = true }
                 }
                 // 定位关闭横幅:WiFi 目标此时不可能进雷达,给出原因与快捷入口
                 if (!locationOn) {
@@ -2500,7 +2663,8 @@ fun RadarScreen(
                 Spacer(Modifier.height(6.dp))
                 // ── 雷达圆盘:动态尺寸 = min(可用宽度, 440dp);高度加状态带余量,盘面更大且文字不裁切 ──
                 BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val disc = minOf(maxWidth, RADAR_DISC_MAX)
+                    // 横屏按可用高度封顶:盘面绝不溢出(竖屏 440dp 上限不变)
+                    val disc = minOf(maxWidth, (maxHeight - 40.dp).coerceAtLeast(200.dp), RADAR_DISC_MAX)
                     RadarScope(
                         vm,
                         walkieVm,
@@ -2511,6 +2675,8 @@ fun RadarScreen(
                         focusedId = focusedId,
                         lanHosts = if (lanOn) lanDevices else emptyList(),
                         towers = if (towersOn) towerState.towers else emptyList(),
+                        cctvCams = if (cctvOn) cctvCams else emptyList(),
+                        onOpenOps = onOpenCctv,
                         onTapDot = { id -> haptic.hud(); focusedId = id },
                         onTapEmpty = { focusedId = null },
                         onOpenDossier = { id -> haptic.hud(); onSelectTarget(id) },
@@ -2589,6 +2755,42 @@ fun RadarScreen(
                             modifier = Modifier.padding(horizontal = 7.dp, vertical = 9.dp),
                         )
                     }
+                    Spacer(Modifier.width(5.dp))
+                    // CCTV 层开关:WS-Discovery 发现的 ONVIF 摄像头
+                    Surface(
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            cctvOn = !cctvOn
+                        },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = if (cctvOn) CCTV_COLOR.copy(alpha = 0.14f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (cctvOn) CCTV_COLOR.copy(alpha = 0.6f) else BorderDim),
+                    ) {
+                        Text(
+                            stringResource(R.string.det_fmt_cctv, cctvCams.size),
+                            fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = if (cctvOn) CCTV_COLOR else Gray,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 9.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(5.dp))
+                    // IRK 反匿名化:点击管理 IRK 列表
+                    Surface(
+                        modifier = Modifier.clickable {
+                            haptic.hud()
+                            irkDialogOn = true
+                        },
+                        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        color = if (irkCount > 0) Gold.copy(alpha = 0.16f) else SurfaceBg,
+                        border = BorderStroke(1.dp, if (irkCount > 0) Gold.copy(alpha = 0.7f) else BorderDim),
+                    ) {
+                        Text(
+                            stringResource(R.string.det_fmt_irk, irkCount),
+                            fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = if (irkCount > 0) Gold else Gray,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 9.dp),
+                        )
+                    }
                 }
                 // ── 搜索行:独占整行,⌕ 前缀 ──
                 Spacer(Modifier.height(5.dp))
@@ -2632,6 +2834,67 @@ fun RadarScreen(
                 Spacer(Modifier.height(6.dp))
                 MeshNodesPanel(walkieVm)
                 Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+
+    // ── IRK 管理对话框:每行一个 32 位十六进制 IRK ──
+    if (irkDialogOn) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { irkDialogOn = false }) {
+            Surface(
+                shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp),
+                color = SurfaceBg,
+                border = BorderStroke(1.dp, Gold.copy(alpha = 0.6f)),
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text(stringResource(R.string.det_irk_title), fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Gold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.det_irk_desc), fontFamily = Sans, fontSize = 9.sp, color = Gray, lineHeight = 13.sp)
+                    Spacer(Modifier.height(8.dp))
+                    var irkText by remember { mutableStateOf("") }
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = irkText,
+                        onValueChange = { irkText = it },
+                        textStyle = TextStyle(fontFamily = Mono, fontSize = 9.sp, color = White),
+                        cursorBrush = SolidColor(Gold),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clip(CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp))
+                            .background(SurfaceAlt)
+                            .border(1.dp, BorderDim, CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp))
+                            .padding(8.dp),
+                        decorationBox = { inner ->
+                            if (irkText.isEmpty()) {
+                                Text(stringResource(R.string.det_irk_placeholder), fontFamily = Mono, fontSize = 8.sp, color = Gray.copy(alpha = 0.5f))
+                            }
+                            inner()
+                        },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable {
+                                haptic.hud()
+                                vm.setIrks(irkText.lines())
+                                irkDialogOn = false
+                            },
+                            shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                            color = Gold.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
+                        ) {
+                            Text(stringResource(R.string.det_irk_save), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                        }
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable { haptic.hud(); irkDialogOn = false },
+                            shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, BorderDim),
+                        ) {
+                            Text(stringResource(R.string.det_btn_cancel), fontFamily = Sans, fontSize = 11.sp, color = Gray, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 9.dp))
+                        }
+                    }
+                }
             }
         }
     }
@@ -2738,7 +3001,7 @@ private fun SnapshotChip(vm: RadarViewModel, dbVm: DbViewModel) {
 @Composable
 private fun QuickNavChip(label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier.lumiaTilt().clickable(onClick = onClick),
         shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
         color = color.copy(alpha = 0.08f),
         border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
@@ -3048,42 +3311,45 @@ private fun RadarFilterBar(
     onTypeFilter: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 等宽分段控件:四个片均分宽度,选中段类别色高亮 + ◆ 指示 —— 不再与搜索框挤一行
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-        // BT(经典发现)与 BLE(广播扫描)分开筛 —— 两条独立观测路径,共用「bt」类型但来源不同
-        listOf(
-            "all" to stringResource(R.string.det_filter_all),
-            "wifi" to "WIFI",
-            "ble" to "BLE",
-            "bt" to "BT",
-        ).forEach { (key, label) ->
-            val selected = typeFilter == key
-            val selColor = when (key) {
-                "wifi" -> WIFI_BLIP
-                "ble" -> BLE_BLIP
-                "bt" -> BT_BLIP
-                else -> Red
-            }
-            Surface(
-                modifier = Modifier.weight(1f).clickable { onTypeFilter(key) },
-                shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
-                color = if (selected) selColor.copy(alpha = 0.16f) else SurfaceBg,
-                border = BorderStroke(1.dp, if (selected) selColor.copy(alpha = 0.8f) else BorderDim),
-            ) {
-                Row(
-                    Modifier.padding(vertical = 9.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
+    // 终端标签页式分段条:一个容器内四等分,细竖线分隔,选中段类别色
+    // 文字 + 底部 2dp 下划线 —— 无边框盒子的干净分段控件
+    Surface(
+        modifier.fillMaxWidth(),
+        shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp),
+        color = SurfaceBg,
+        border = BorderStroke(1.dp, BorderDim),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            listOf(
+                "all" to stringResource(R.string.det_filter_all),
+                "wifi" to "WIFI",
+                "ble" to "BLE",
+                "bt" to "BT",
+            ).forEachIndexed { i, (key, label) ->
+                val selected = typeFilter == key
+                val selColor = when (key) {
+                    "wifi" -> WIFI_BLIP
+                    "ble" -> BLE_BLIP
+                    "bt" -> BT_BLIP
+                    else -> Red
+                }
+                Column(
+                    Modifier.weight(1f).clickable { onTypeFilter(key) }.padding(vertical = 7.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (selected) {
-                        Star(selColor, 5.dp)
-                        Spacer(Modifier.width(4.dp))
-                    }
                     Text(
                         label,
                         fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                         color = if (selected) selColor else Gray,
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier.width(20.dp).height(2.dp).clip(CutCornerShape(topStart = 1.dp, bottomEnd = 1.dp))
+                            .background(if (selected) selColor else Color.Transparent),
+                    )
+                }
+                if (i < 3) {
+                    Box(Modifier.width(1.dp).height(18.dp).background(BorderDim))
                 }
             }
         }
@@ -3119,6 +3385,8 @@ private fun RadarScope(
     focusedId: String?,
     lanHosts: List<ArpEntry>,
     towers: List<TowerCell>,
+    cctvCams: List<OnvifCamManager.OnvifCamera>,
+    onOpenOps: (String) -> Unit,
     onScanPorts: (String) -> Unit,
     onSsh: (String) -> Unit,
     onKick: (String) -> Unit,
@@ -3168,6 +3436,8 @@ private fun RadarScope(
     var popupLan by remember { mutableStateOf<Pair<ArpEntry, Offset>?>(null) }
     // 基站弹窗:(TowerCell, 本地锚点)
     var popupCell by remember { mutableStateOf<Pair<TowerCell, Offset>?>(null) }
+    // CCTV 弹窗:(摄像头, 本地锚点)
+    var popupCctv by remember { mutableStateOf<Pair<OnvifCamManager.OnvifCamera, Offset>?>(null) }
     // 弹窗在窗口坐标系定位:记录本 Box 的窗口偏移与自身尺寸
     var boxPosInWindow by remember { mutableStateOf(IntOffset.Zero) }
     var scopeSize by remember { mutableStateOf(IntSize.Zero) }
@@ -3182,6 +3452,10 @@ private fun RadarScope(
     // 基站消失则关闭其弹窗
     LaunchedEffect(towers) {
         if (popupCell != null && towers.none { it.cid == popupCell!!.first.cid }) popupCell = null
+    }
+    // 摄像头消失则关闭其弹窗
+    LaunchedEffect(cctvCams) {
+        if (popupCctv != null && cctvCams.none { it.id == popupCctv!!.first.id }) popupCctv = null
     }
     val friendlyTagText = stringResource(R.string.det_popup_friendly)
     val cardinalLabels = listOf(
@@ -3198,6 +3472,7 @@ private fun RadarScope(
     val meshLegendText = stringResource(R.string.det_legend_mesh_nodes)
     val lanLegendFmt = ctx.getString(R.string.det_lan_legend)
     val cellLegendFmt = ctx.getString(R.string.det_tower_legend)
+    val cctvLegendFmt = ctx.getString(R.string.det_cctv_legend)
     val satelliteTagFmt = ctx.getString(R.string.det_fmt_satellites)
     val bearingCollectingFmt = ctx.getString(R.string.det_fmt_bearing_collecting)
 
@@ -3402,18 +3677,38 @@ private fun RadarScope(
                             val d = (tap - Offset(hx, hy)).getDistance()
                             if (d <= 15.dp.toPx() && d < cellBest) { cellBest = d; cellHit = tw; cellX = hx; cellY = hy }
                         }
+                        var cctvHit: OnvifCamManager.OnvifCamera? = null
+                        var cctvX = 0f
+                        var cctvY = 0f
+                        var cctvBest = Float.MAX_VALUE
+                        for (cm in cctvCams) {
+                            val pa = (cm.ip.hashCode() and 0x7FFFFFFF) % 360f
+                            val paRad = Math.toRadians((pa - headingState.value - 90.0).toDouble()).toFloat()
+                            val hx = cxTap + rTap * 0.76f * cos(paRad)
+                            val hy = cyTap + rTap * 0.76f * sin(paRad)
+                            val d = (tap - Offset(hx, hy)).getDistance()
+                            if (d <= 15.dp.toPx() && d < cctvBest) { cctvBest = d; cctvHit = cm; cctvX = hx; cctvY = hy }
+                        }
                         if (lanHit != null) {
                             popupAnchor = null
                             popupLan = lanHit!! to Offset(lanX, lanY)
                             popupCell = null
+                            popupCctv = null
                         } else if (cellHit != null) {
                             popupAnchor = null
                             popupLan = null
                             popupCell = cellHit!! to Offset(cellX, cellY)
+                            popupCctv = null
+                        } else if (cctvHit != null) {
+                            popupAnchor = null
+                            popupLan = null
+                            popupCell = null
+                            popupCctv = cctvHit!! to Offset(cctvX, cctvY)
                         } else {
                             popupAnchor = null
                             popupLan = null
                             popupCell = null
+                            popupCctv = null
                             onTapEmpty()
                         }
                     }
@@ -3956,6 +4251,51 @@ private fun RadarScope(
                 drawText(cellLegend, topLeft = Offset(8.dp.toPx(), 44.dp.toPx()))
             }
 
+            // ── CCTV 层:WS-Discovery 发现的 ONVIF 摄像头(品红方框+镜头点) ──
+            // 距离未知,按 IP 哈希散在 0.76r 环上并如实标注
+            if (cctvCams.isNotEmpty()) {
+                val cctvR = r * 0.76f
+                drawCircle(
+                    CCTV_COLOR.copy(alpha = 0.30f),
+                    cctvR, Offset(cx, cy),
+                    style = Stroke(0.8f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 7f))),
+                )
+                cctvCams.sortedBy { it.ip }.forEach { cm ->
+                    val pa = (cm.ip.hashCode() and 0x7FFFFFFF) % 360f
+                    val paRad = Math.toRadians((pa - heading - 90.0).toDouble()).toFloat()
+                    val x = cx + cctvR * cos(paRad)
+                    val y = cy + cctvR * sin(paRad)
+                    val s = 4.5.dp.toPx()
+                    // 方框(机身)+ 中心镜头点
+                    drawRect(
+                        CCTV_COLOR.copy(alpha = 0.9f),
+                        topLeft = Offset(x - s, y - s),
+                        size = Size(s * 2f, s * 2f),
+                        style = Stroke(1.5f),
+                    )
+                    drawCircle(CCTV_COLOR.copy(alpha = 0.95f), 2.2.dp.toPx(), Offset(x, y))
+                    // 型号标签
+                    val paScreen = ((pa - heading - 90f) % 360f + 360f) % 360f
+                    val showTag = cctvCams.size <= 6 || abs(((sweepDeg - paScreen + 540f) % 360f) - 180f) < 40f
+                    if (showTag && (cm.model.isNotEmpty() || cm.manufacturer.isNotEmpty())) {
+                        val tag = cachedMeasure("cctv", "${cm.model.ifBlank { cm.manufacturer }}".take(14), TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = CCTV_COLOR.copy(alpha = 0.95f)))
+                        drawText(tag, topLeft = Offset(x - tag.size.width / 2f, y + 7.dp.toPx()))
+                    }
+                    val anchor = popupCctv
+                    if (anchor != null && anchor.first.id == cm.id) {
+                        val dx = x - anchor.second.x
+                        val dy = y - anchor.second.y
+                        if (dx * dx + dy * dy > 9f) popupCctv = cm to Offset(x, y)
+                    }
+                }
+                val cctvLegend = cachedMeasure(
+                    "cctvlegend",
+                    String.format(cctvLegendFmt, cctvCams.size),
+                    TextStyle(fontFamily = Mono, fontSize = 7.5.sp, color = CCTV_COLOR.copy(alpha = 0.85f)),
+                )
+                drawText(cctvLegend, topLeft = Offset(8.dp.toPx(), 60.dp.toPx()))
+            }
+
             // ── 卫星层:GNSS 星座叠加(仰角→半径, 方位→屏幕角, 与目标同一罗盘映射) ──
             // 数据来自系统 GnssStatus 真实解算;卫星是外圈金色小点+细环,与目标 blip 明显区分
             if (satellites.isNotEmpty()) {
@@ -4026,6 +4366,16 @@ private fun RadarScope(
                 anchorLocal = anchor,
                 boxPosInWindow = boxPosInWindow,
                 scopeSize = scopeSize,
+            )
+        }
+        // ═══ CCTV 弹窗 ═══
+        popupCctv?.let { (cm, anchor) ->
+            RadarCctvPopup(
+                cam = cm,
+                anchorLocal = anchor,
+                boxPosInWindow = boxPosInWindow,
+                scopeSize = scopeSize,
+                onOpenOps = onOpenOps,
             )
         }
     }
@@ -4161,6 +4511,9 @@ private fun RadarBlipPopup(
                 }
                 Spacer(Modifier.height(5.dp))
                 InlineInfoRow(stringResource(R.string.det_info_id), if (wifi) t.id else t.address)
+                if (t.rpaResolved != null) {
+                    InlineInfoRow(stringResource(R.string.det_info_rpa), "IRK ${t.rpaResolved}")
+                }
                 InlineInfoRow(stringResource(R.string.det_info_vendor), "${t.vendor} · OUI ${t.vendorOui}")
                 InlineInfoRow(stringResource(R.string.det_info_signal), stringResource(R.string.det_fmt_signal_detail, t.rssi, t.snrDb, t.noiseDbm))
                 if (wifi) {
@@ -4394,6 +4747,73 @@ private fun LanActionButton(label: String, color: Color, modifier: Modifier = Mo
 }
 
 /**
+ * CCTV 弹窗 —— ONVIF 摄像头:IP/型号/固件 + 跳转监控眼。
+ * 距离未知(无测距),盘面位置为占位 —— 如实标注。
+ */
+@Composable
+private fun RadarCctvPopup(
+    cam: OnvifCamManager.OnvifCamera,
+    anchorLocal: Offset,
+    boxPosInWindow: IntOffset,
+    scopeSize: IntSize,
+    onOpenOps: (String) -> Unit,
+) {
+    val density = LocalDensity.current
+    val cfg = LocalConfiguration.current
+    val haptic = LocalHapticFeedback.current
+    val popupW = 216.dp
+    val estH = 210.dp
+    val side = with(density) { 14.dp.toPx() }
+    val cardW = with(density) { popupW.toPx() }
+    val cardH = with(density) { estH.toPx() }
+    val wPx = scopeSize.width.toFloat()
+    var ax = anchorLocal.x + side
+    if (ax + cardW > wPx - 8f) ax = anchorLocal.x - side - cardW
+    ax = ax.coerceIn(8f, (wPx - cardW - 8f).coerceAtLeast(8f))
+    var ay = anchorLocal.y - cardH / 3f
+    val winH = with(density) { (cfg.screenHeightDp.dp).toPx() }
+    ay = ay.coerceIn(8f, (winH - cardH - 8f).coerceAtLeast(8f))
+    val offset = IntOffset(
+        (boxPosInWindow.x + ax).roundToInt(),
+        (boxPosInWindow.y + ay).roundToInt(),
+    )
+
+    Popup(alignment = Alignment.TopStart, offset = offset, onDismissRequest = {}) {
+        Surface(
+            shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp),
+            color = Dark,
+            border = BorderStroke(1.dp, CCTV_COLOR.copy(alpha = 0.75f)),
+            shadowElevation = 14.dp,
+        ) {
+            Column(Modifier.width(popupW).padding(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp),
+                        color = CCTV_COLOR.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, CCTV_COLOR.copy(alpha = 0.7f)),
+                    ) {
+                        Text(stringResource(R.string.det_cctv_popup_title), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = CCTV_COLOR, modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text("${cam.ip}:${cam.port}", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(6.dp))
+                InlineInfoRow(stringResource(R.string.det_cctv_model), "${cam.manufacturer} ${cam.model}".trim().ifBlank { "--" })
+                InlineInfoRow(stringResource(R.string.det_cctv_fw), cam.firmware.ifBlank { "--" })
+                InlineInfoRow(stringResource(R.string.det_cctv_xaddr), cam.xaddr.take(36))
+                Spacer(Modifier.height(6.dp))
+                LanActionButton(stringResource(R.string.det_cctv_open_ops), CCTV_COLOR, Modifier.fillMaxWidth()) {
+                    haptic.hud()
+                    onOpenOps(cam.ip)
+                }
+                Spacer(Modifier.height(5.dp))
+                Text(stringResource(R.string.det_cctv_hint), fontFamily = Sans, fontSize = 7.5.sp, color = Gray, lineHeight = 11.sp)
+            }
+        }
+    }
+}
+
+/**
  * 基站弹窗 —— 注册小区/邻区技术参数。距离为 RSRP 路径损耗粗估,
  * 方位手机无硬件可测(盘面角度是占位),全部如实标注。
  */
@@ -4524,6 +4944,11 @@ private fun RadarTrackPanel(
                                 else -> "BT"
                             }
                             Text(typeLabel, fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = radarBlipColor(t), modifier = Modifier.width(34.dp))
+                            if (t.rpaResolved != null) {
+                                Text("★", fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.width(12.dp))
+                            } else {
+                                Spacer(Modifier.width(12.dp))
+                            }
                             Column(Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(t.name.take(16), fontFamily = Sans, fontSize = 11.sp, color = White)
@@ -4584,6 +5009,9 @@ private fun RadarTrackPanel(
                         if (expanded) {
                             Column(Modifier.padding(horizontal = 10.dp).padding(bottom = 8.dp)) {
                                 InlineInfoRow(stringResource(R.string.det_info_id), if (wifi) t.id else t.address)
+                if (t.rpaResolved != null) {
+                    InlineInfoRow(stringResource(R.string.det_info_rpa), "IRK ${t.rpaResolved}")
+                }
                                 InlineInfoRow(stringResource(R.string.det_info_vendor), "${t.vendor} · OUI ${t.vendorOui}")
                                 InlineInfoRow(stringResource(R.string.det_info_signal), stringResource(R.string.det_fmt_signal_detail, t.rssi, t.snrDb, t.noiseDbm))
                                 if (wifi) {
@@ -5398,7 +5826,7 @@ private fun RadarPreview() {
         val dbVm = if (app != null) previewViewModel { DbViewModel(app) } else null
         val arpVm = if (app != null) previewViewModel { ArpScanViewModel() } else null
         if (vm == null || walkieVm == null || dbVm == null || arpVm == null) PreviewFallback("设备雷达")
-        else RadarScreen(vm, walkieVm, dbVm, arpVm, back = {}, radarAlertOn = true, onSelectTarget = {}, onOpenNetmap = {}, onOpenDb = {}, onDeauth = {}, onScanPorts = {}, onSsh = {}, onKick = {})
+        else RadarScreen(vm, walkieVm, dbVm, arpVm, back = {}, radarAlertOn = true, onSelectTarget = {}, onOpenNetmap = {}, onOpenDb = {}, onDeauth = {}, onScanPorts = {}, onSsh = {}, onKick = {}, onOpenCctv = {})
     }
 }
 

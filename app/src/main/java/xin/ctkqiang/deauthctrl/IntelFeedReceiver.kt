@@ -27,7 +27,17 @@ class IntelFeedReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val manager = IntelFeedManager(context)
+        // 开机广播:闹钟在重启后被系统清空 —— 这里重新挂号
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            if (manager.isNotifyEnabled()) schedule(context)
+            return
+        }
         if (!manager.isNotifyEnabled()) return
+        // Android 13+ 通知权限未授予时 notify() 静默无效 —— 不做事也比假动作干净
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) return
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {

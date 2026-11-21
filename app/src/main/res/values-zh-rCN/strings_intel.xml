@@ -21,6 +21,11 @@
     <string name="intel_src_pending">… 未拉取</string>
     <string name="intel_map_empty">还没有地理事件 —— 刷新或等世界新闻进来</string>
     <string name="intel_map_tap_hint">点圆点看详情</string>
+    <string name="intel_reader_inapp">应用内阅读</string>
+    <string name="intel_sort_time">最新</string>
+    <string name="intel_sort_cat">按类别</string>
+    <string name="intel_sort_src">按来源</string>
+    <string name="intel_rec_header">★ 为你推荐</string>
     <string name="intel_empty">没有匹配的情报 —— 刷新或订阅更多源</string>
     <string name="intel_panel_notify">订阅推送</string>
     <string name="intel_notify_title">订阅推送提醒</string>

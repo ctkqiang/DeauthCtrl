@@ -1,5 +1,7 @@
 package xin.ctkqiang.deauthctrl.ui.components
 
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -348,8 +350,9 @@ fun TerminalHeader(title: String, back: () -> Unit) {
     val backPressed by backInteraction.collectIsPressedAsState()
     val backScale by animateFloatAsState(if (backPressed) 0.92f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
 
+    Column(Modifier.fillMaxWidth().statusBarsPadding()) {
     Row(
-        Modifier.fillMaxWidth().statusBarsPadding().background(SurfaceBg)
+        Modifier.fillMaxWidth().background(SurfaceBg)
             .border(0.5.dp, BorderDim).padding(horizontal = 12.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -374,6 +377,29 @@ fun TerminalHeader(title: String, back: () -> Unit) {
         Text("root@deauth:~#", fontFamily = Mono, fontSize = 10.sp, color = Gray)
         Text("▊", fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gold.copy(alpha = cursorAlpha))
     }
+        // 头部金色扫线:4.8s 一道细亮线横穿页眉,draw 阶段帧循环,零重组
+        var sweepMs by remember { mutableFloatStateOf(0f) }
+        LaunchedEffect(Unit) {
+            var last = 0L
+            while (true) {
+                withFrameNanos { now ->
+                    if (last == 0L) { last = now; return@withFrameNanos }
+                    val dtMs = (now - last) / 1_000_000f
+                    last = now
+                    sweepMs = (sweepMs + dtMs) % 4800f
+                }
+            }
+        }
+        Canvas(Modifier.fillMaxWidth().height(2.dp)) {
+            val x = sweepMs / 4800f * size.width
+            drawLine(
+                Gold.copy(alpha = 0.55f),
+                Offset(x, 0f),
+                Offset(x + 14.dp.toPx(), 0f),
+                2f,
+            )
+        }
+    }
 }
 
 /**
@@ -383,10 +409,14 @@ fun TerminalHeader(title: String, back: () -> Unit) {
  * 线尾菱形端点。主页分区与详情页面板共用，整支应用的分区视觉锚点。
  */
 @Composable
-fun SectionLabel(text: String, color: Color = Red) {
+fun SectionLabel(text: String, color: Color = Red, count: String? = null) {
     Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("▸ ", fontFamily = Mono, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
         Text(text, fontFamily = Sans, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = White)
+        count?.let {
+            Spacer(Modifier.width(6.dp))
+            Text("· $it", fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gray)
+        }
         Spacer(Modifier.width(9.dp))
         Box(Modifier.weight(1f).height(1.dp).background(color.copy(alpha = 0.35f)))
         Spacer(Modifier.width(7.dp))
@@ -448,6 +478,13 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
                 }
             },
     ) {
+        // 标题行首现滑入(仅首次组合,之后面板重组不再重放)
+        var headerIn by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { headerIn = true }
+        AnimatedVisibility(
+            visible = headerIn,
+            enter = slideInHorizontally(tween(220)) { -it / 4 } + fadeIn(tween(160)),
+        ) {
         Row(
             Modifier.fillMaxWidth().background(Red.copy(alpha = 0.07f)).padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -455,6 +492,7 @@ fun TermPanel(title: String, modifier: Modifier = Modifier, content: @Composable
             Star(Gold, 8.dp)
             Spacer(Modifier.width(7.dp))
             Text("▸ $title", fontFamily = Sans, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Red)
+        }
         }
         Column(Modifier.padding(12.dp)) { content() }
     }
@@ -526,6 +564,7 @@ fun ActionButton(
         modifier = modifier
             .fillMaxWidth()
             .scale(scale)
+            .lumiaTilt()
             .clickable(interactionSource = interaction, indication = LocalIndication.current) {
                 haptic.hud()
                 onClick()
@@ -565,7 +604,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
     val scale by animateFloatAsState(if (pressed) 0.93f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
 
     Surface(
-        modifier = modifier.scale(scale).clickable(interactionSource = interaction, indication = LocalIndication.current) {
+        modifier = modifier.scale(scale).lumiaTilt().clickable(interactionSource = interaction, indication = LocalIndication.current) {
             haptic.hud()
             onClick()
         },
@@ -590,7 +629,7 @@ fun SelectChip(selected: Boolean, text: String, onClick: () -> Unit) {
     val borderColor by animateColorAsState(if (selected) Gold.copy(alpha = 0.7f) else BorderDim, tween(200))
     val contentColor by animateColorAsState(if (selected) White else Gray, tween(200))
     Surface(
-        modifier = Modifier.clickable {
+        modifier = Modifier.lumiaTilt().clickable {
             haptic.hud()
             onClick()
         },
@@ -718,6 +757,7 @@ fun ModuleCard(
     delayMs: Long = 0L,
     onClick: () -> Unit,
     onToggle: (() -> Unit)? = null,
+    sharedBreath: State<Float>? = null,
 ) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { if (delayMs > 0) delay(delayMs); visible = true }
@@ -731,7 +771,7 @@ fun ModuleCard(
     val actionScale by animateFloatAsState(if (actionPressed) 0.92f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
 
     // 运行态的呼吸节奏 —— 只在 graphicsLayer 绘制块内读取 value，避免逐帧重组
-    val breathAlpha: State<Float>? = if (running) {
+    val breathAlpha: State<Float>? = sharedBreath ?: if (running) {
         rememberInfiniteTransition().animateFloat(
             initialValue = 0.35f,
             targetValue = 1f,

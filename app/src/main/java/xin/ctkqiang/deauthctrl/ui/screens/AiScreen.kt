@@ -62,7 +62,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -104,8 +103,7 @@ import xin.ctkqiang.deauthctrl.viewmodel.AiViewModel
  * 下方下载/删除/导入/直链/系统提示词管理区。
  */
 @Composable
-fun AiScreen(back: () -> Unit) {
-    val vm: AiViewModel = viewModel()
+fun AiScreen(vm: AiViewModel, back: () -> Unit) {
     val state by vm.state.collectAsState()
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current

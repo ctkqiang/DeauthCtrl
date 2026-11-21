@@ -90,6 +90,7 @@ import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material.icons.outlined.NetworkPing
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Radar
 import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.outlined.Search
@@ -207,6 +208,7 @@ fun MainScreen(
     terminalVm: SshClientViewModel,
     dbVm: DbViewModel,
     settingsVm: SettingsViewModel,
+    aiVm: AiViewModel,
     initialPhotoId: Long? = null,
 ) {
     // 首次启动免责声明：接受后写入偏好，之后启动不再弹出。
@@ -270,6 +272,7 @@ fun MainScreen(
     var portScanHost by remember { mutableStateOf<String?>(null) }
     var sshPrefill by remember { mutableStateOf<String?>(null) }
     var arpKickIp by remember { mutableStateOf<String?>(null) }
+    var cctvPreselectIp by remember { mutableStateOf<String?>(null) }
 
     /** 雷达页入口 —— 战术仪表盘:整页滚动/垫子网格/金属探测/方位推演/遥测条/网格节点 */
     val openRadar: @Composable () -> Unit = {
@@ -284,6 +287,7 @@ fun MainScreen(
             onScanPorts = { ip -> portScanHost = ip; navigate("portscan") },
             onSsh = { ip -> sshPrefill = ip; navigate("terminal") },
             onKick = { ip -> arpKickIp = ip; navigate("arp") },
+            onOpenCctv = { ip -> cctvPreselectIp = ip; navigate("onvif") },
         )
     }
 
@@ -394,8 +398,10 @@ fun MainScreen(
                     "qr" -> QrScreen(viewModel(), back = goBack)
                     "keygen" -> KeyGenScreen(viewModel(), back = goBack)
                     "level" -> LevelScreen(back = goBack)
-                    "ai" -> AiScreen(back = goBack)
+                    "ai" -> AiScreen(aiVm, back = goBack)
                     "intel" -> IntelFeedScreen(viewModel(), back = goBack)
+                    "onvif" -> CameraOpsScreen(preselectIp = cctvPreselectIp, back = goBack)
+                    "rfsense" -> RfSenseScreen(radarVm, back = goBack)
                     ROUTE_ABOUT -> SettingsScreen(settingsVm, back = goBack)
                 }
             }
@@ -460,7 +466,7 @@ private fun TacticalGrid(modifier: Modifier = Modifier) {
 //
 // 读不到某一项时显示 "--"，而不是编造一个数字。
 
-private const val TELEMETRY_INTERVAL_MS = 1_500L
+private const val TELEMETRY_INTERVAL_MS = 3_000L
 private const val TRAFFIC_UNSUPPORTED = -1L
 private const val TELEMETRY_PLACEHOLDER = "--"
 private const val KIBIBYTE = 1024L
@@ -561,6 +567,38 @@ fun StatusBar() {
             TelemetryCell(stringResource(R.string.main_tel_mem), SysTelemetry.formatMemory(telemetry.memAvailBytes, telemetry.memTotalBytes))
             TelemetryDivider()
             TelemetryCell(stringResource(R.string.main_tel_iface), telemetry.iface.ifEmpty { TELEMETRY_PLACEHOLDER })
+        }
+    }
+}
+
+/** 指挥甲板瓷砖 —— 图标 + 名称 + 可选实时徽标,按压倾斜 */
+@Composable
+private fun DeckTile(icon: ImageVector, label: String, badge: String?, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    Surface(
+        modifier = modifier.lumiaTilt().clickable {
+            haptic.hud()
+            onClick()
+        },
+        shape = CutCornerShape(topStart = 9.dp, bottomEnd = 9.dp),
+        color = color.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.45f)),
+    ) {
+        Box {
+            Column(Modifier.fillMaxWidth().padding(vertical = 9.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.height(4.dp))
+                Text(label, fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (badge != null) {
+                Surface(
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                    shape = CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp),
+                    color = TacGreen.copy(alpha = 0.85f),
+                ) {
+                    Text(badge, fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                }
+            }
         }
     }
 }
@@ -818,6 +856,8 @@ fun HomeScreen(
         HomeEntry(stringResource(R.string.home_netmap_name), stringResource(R.string.home_netmap_desc), "netmap", false, null, Icons.Outlined.TravelExplore),
         HomeEntry(stringResource(R.string.home_cve_name), stringResource(R.string.home_cve_desc), "cve", cver, null, Icons.Outlined.Search),
         HomeEntry(stringResource(R.string.home_intel_name), stringResource(R.string.home_intel_desc), "intel", false, null, Icons.Outlined.Notifications),
+        HomeEntry(stringResource(R.string.home_onvif_name), stringResource(R.string.home_onvif_desc), "onvif", false, null, Icons.Outlined.CameraAlt),
+        HomeEntry(stringResource(R.string.home_rfsense_name), stringResource(R.string.home_rfsense_desc), "rfsense", false, null, Icons.Outlined.Sensors),
         HomeEntry(stringResource(R.string.home_sdr_name), stringResource(R.string.home_sdr_desc), "sdr", false, null, Icons.Outlined.Equalizer),
         HomeEntry(stringResource(R.string.home_taccam_name), stringResource(R.string.home_taccam_desc), "taccam", false, null, Icons.Outlined.CameraAlt),
         HomeEntry(stringResource(R.string.home_gsm_name), stringResource(R.string.home_gsm_desc), "gsm", false, null, Icons.Outlined.Sensors),
@@ -881,7 +921,7 @@ fun HomeScreen(
     )
 
     val groups = listOf(
-        HomeGroup(stringResource(R.string.home_group_recon), Color(0xFF00E5FF), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "intel", "sdr", "taccam", "gsm", "mdns")),
+        HomeGroup(stringResource(R.string.home_group_recon), Color(0xFF00E5FF), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "intel", "onvif", "rfsense", "sdr", "taccam", "gsm", "mdns")),
         HomeGroup(stringResource(R.string.home_group_wireless), Color(0xFFFF4D5E), listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
         HomeGroup(stringResource(R.string.home_group_tools), Color(0xFF00E676), listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview", "hash", "qr", "keygen", "ai")),
         HomeGroup(stringResource(R.string.home_group_situational), Gold, listOf("gnss", "pdr", "mains", "sonic", "selfcheck", "level")),
@@ -892,6 +932,18 @@ fun HomeScreen(
     val entriesByRoute = entries.associateBy { it.route }
     val activeEntries = entries.filter { it.running }
     val haptic = LocalHapticFeedback.current
+
+    // 共享呼吸时钟:所有运行卡片共用一条相位,不再每卡一个 InfiniteTransition(帧回调数 = 运行模块数)
+    val sharedBreath: State<Float>? = if (activeEntries.isNotEmpty()) {
+        rememberInfiniteTransition().animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        )
+    } else null
+    // 入场动画只在本次会话首屏播一次;滚动回来/遥测刷新不再重放整排卡片动画
+    var entranceArmed by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(900); entranceArmed = false }
 
     // 收藏功能:☆ 钉住的模块置顶显示,持久化在 deauthctrl_prefs
     val context = LocalContext.current
@@ -983,6 +1035,17 @@ fun HomeScreen(
                 Spacer(Modifier.height(14.dp))
             }
         }
+        // ─── 指挥甲板:四大核心快捷瓷砖(图标 + 实时徽标) ───
+        item(key = "deck", span = { GridItemSpan(maxLineSpan) }) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                DeckTile(Icons.Outlined.Radar, stringResource(R.string.home_radar_name), badge = if (radarr) "${radarTargets.size}" else null, color = TacGreen, modifier = Modifier.weight(1f), onClick = { nav("radar") })
+                DeckTile(Icons.Outlined.TravelExplore, stringResource(R.string.home_netmap_name), badge = null, color = Color(0xFF00E5FF), modifier = Modifier.weight(1f), onClick = { nav("netmap") })
+                DeckTile(Icons.Outlined.Notifications, stringResource(R.string.home_intel_name), badge = null, color = Color(0xFFB388FF), modifier = Modifier.weight(1f), onClick = { nav("intel") })
+                DeckTile(Icons.Outlined.Settings, stringResource(R.string.main_settings_about), badge = null, color = Gold, modifier = Modifier.weight(1f), onClick = { nav("about") })
+            }
+        }
+        item(key = "deck_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
+
         item(key = "status", span = { GridItemSpan(maxLineSpan) }) { StatusBar() }
         item(key = "status_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(8.dp)) }
 
@@ -1001,6 +1064,8 @@ fun HomeScreen(
                         favorite = true,
                         onToggleFavorite = { haptic.hud(); toggleFav(entry.route) },
                         delayMs = index.coerceAtMost(CASCADE_MAX_STEPS) * CASCADE_STEP_MS,
+                        animate = entranceArmed,
+                        breathAlpha = sharedBreath,
                         onClick = { nav(entry.route) },
                         onToggle = entry.toggle,
                     )
@@ -1022,13 +1087,13 @@ fun HomeScreen(
                 key = { "running_" + it.route },
                 span = { GridItemSpan(maxLineSpan) },
             ) { entry ->
-                ModuleCard(entry.name, entry.desc, entry.running, entry.icon, delayMs = 0L, onClick = { nav(entry.route) }, onToggle = entry.toggle)
+                ModuleCard(entry.name, entry.desc, entry.running, entry.icon, delayMs = 0L, onClick = { nav(entry.route) }, onToggle = entry.toggle, sharedBreath = sharedBreath)
             }
             item(key = "running_gap", span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(2.dp)) }
         }
 
         groups.forEach { group ->
-            item(key = "label_" + group.label, span = { GridItemSpan(maxLineSpan) }) { SectionLabel(group.label, group.color) }
+            item(key = "label_" + group.label, span = { GridItemSpan(maxLineSpan) }) { SectionLabel(group.label, group.color, count = "${group.routes.mapNotNull { entriesByRoute[it] }.size}") }
             group.routes.mapNotNull { entriesByRoute[it] }.forEachIndexed { index, entry ->
                 item(key = "card_" + entry.route) {
                     HomeGridCard(
@@ -1040,6 +1105,8 @@ fun HomeScreen(
                         favorite = entry.route in favRoutes.value,
                         onToggleFavorite = { haptic.hud(); toggleFav(entry.route) },
                         delayMs = index.coerceAtMost(CASCADE_MAX_STEPS) * CASCADE_STEP_MS,
+                        animate = entranceArmed,
+                        breathAlpha = sharedBreath,
                         onClick = { nav(entry.route) },
                         onToggle = entry.toggle,
                     )
@@ -1115,9 +1182,11 @@ private fun HomeGridCard(
     onToggle: (() -> Unit)? = null,
     favorite: Boolean = false,
     onToggleFavorite: (() -> Unit)? = null,
+    animate: Boolean = true,
+    breathAlpha: State<Float>? = null,
 ) {
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { if (delayMs > 0) delay(delayMs); visible = true }
+    LaunchedEffect(Unit) { if (delayMs > 0 && animate) delay(delayMs); visible = true }
 
     val haptic = LocalHapticFeedback.current
     val cardInteraction = remember { MutableInteractionSource() }
@@ -1127,8 +1196,8 @@ private fun HomeGridCard(
     val actionPressed by actionInteraction.collectIsPressedAsState()
     val actionScale by animateFloatAsState(if (actionPressed) 0.93f else 1f, spring(dampingRatio = 0.4f, stiffness = 500f))
 
-    // 运行态的呼吸节奏 —— 只在 graphicsLayer 绘制块内读取 value，避免逐帧重组
-    val breathAlpha: State<Float>? = if (running) {
+    // 运行态的呼吸节奏 —— 优先用主页共享相位,单卡场景才自建;只在绘制块读 value
+    val breathAlpha: State<Float>? = breathAlpha ?: if (running) {
         rememberInfiniteTransition().animateFloat(
             initialValue = 0.35f,
             targetValue = 1f,
@@ -1342,7 +1411,7 @@ private fun MainScreenPreview() {
                 vms.httpVm, vms.pingVm, vms.blescanVm, vms.portscanVm, vms.walkieVm,
                 vms.radarVm, vms.ftVm, vms.vaultVm, vms.revVm, vms.payloadVm,
                 vms.bruteVm, vms.cveVm, mirrorVm = vms.mirrorVm, terminalVm = vms.terminalVm,
-                dbVm = vms.dbVm, settingsVm = vms.settingsVm,
+                dbVm = vms.dbVm, settingsVm = vms.settingsVm, aiVm = viewModel(),
             )
         }
     }

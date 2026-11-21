@@ -19,6 +19,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -192,10 +194,10 @@ private enum class CheckLevel { OK, WARN, FAIL }
 private class StartupCheck(val label: String, val detail: String, val level: CheckLevel)
 
 /** 自检项逐条浮现的间隔（毫秒） */
-private const val CHECK_REVEAL_INTERVAL_MS = 150L
+private const val CHECK_REVEAL_INTERVAL_MS = 110L
 
 /** 自检全部显示完毕后停留多久再进主界面 */
-private const val DONE_HOLD_MS = 450L
+private const val DONE_HOLD_MS = 300L
 
 /** 可用内存低于总量的该比例时给出警告 */
 private const val LOW_MEMORY_RATIO = 0.15
@@ -339,15 +341,15 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
     val warned = checks.count { it.level == CheckLevel.WARN }
 
     LaunchedEffect(checks) {
-        // ── 阶段 1：核心点火 ──
-        coreScale.animateTo(1f, tween(700, easing = FastOutSlowInEasing))
-        coreGlow.animateTo(1f, tween(900))
-        delay(150)
+        // ── 阶段 1：核心点火(提速 30%) ──
+        coreScale.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
+        coreGlow.animateTo(1f, tween(650))
+        delay(100)
         phase = 1
         // ── 阶段 2：战术识别 ──
-        titleAlpha.animateTo(1f, tween(450))
-        lockAlpha.animateTo(1f, tween(600))
-        delay(450)
+        titleAlpha.animateTo(1f, tween(320))
+        lockAlpha.animateTo(1f, tween(420))
+        delay(320)
         phase = 2
         // ── 阶段 3：系统自检（进度条与行浮现共用时间轴） ──
         checks.indices.forEach { index ->
@@ -369,7 +371,11 @@ fun BootSequence(onComplete: () -> Unit, modifier: Modifier = Modifier) {
         }
     }
 
-    Box(modifier = modifier.fillMaxSize().background(Dark)) {
+    Box(
+        modifier = modifier.fillMaxSize().background(Dark)
+            // 点按跳过启动自检 —— 开机不卡用户
+            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onComplete() },
+    ) {
         // 全息数据流雨背景
         DataRain(Modifier.fillMaxSize(), color = TacGreen)
 
@@ -574,9 +580,9 @@ fun DataRain(modifier: Modifier = Modifier, color: Color = TacGreen) {
     val t = rememberInfiniteTransition()
     val phase by t.animateFloat(0f, 1f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart))
     Canvas(modifier) {
-        val cols = 22
+        val cols = 14
         val colW = size.width / cols
-        val tailLen = size.height * 0.20f
+        val tailLen = size.height * 0.16f
         val seg = 9.dp.toPx()
         for (i in 0 until cols) {
             val seed = (i * 0.618034f) % 1f
@@ -585,8 +591,8 @@ fun DataRain(modifier: Modifier = Modifier, color: Color = TacGreen) {
             drawCircle(color.copy(alpha = 0.65f), 1.4f, Offset(x, head))
             var y = head
             var k = 0
-            while (y > 0f && k < 14) {
-                drawLine(color.copy(alpha = (1f - k / 14f) * 0.20f), Offset(x, y), Offset(x, y - seg), 1f)
+            while (y > 0f && k < 9) {
+                drawLine(color.copy(alpha = (1f - k / 9f) * 0.20f), Offset(x, y), Offset(x, y - seg), 1f)
                 y -= seg
                 k++
             }

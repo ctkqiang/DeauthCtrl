@@ -73,6 +73,12 @@
     <string name="tact_sdr_event_log">EVENT LOG</string>
     <string name="tact_sdr_event_count">%1$d events</string>
     <string name="tact_sdr_event_empty">No alarms or strong signals yet</string>
+    <string name="tact_map_markers">MARKERS</string>
+    <string name="tact_map_fix">GPS FIX</string>
+    <string name="tact_map_tiles">TILES</string>
+    <string name="tact_map_online">ONLINE</string>
+    <string name="tact_map_cache">CACHE</string>
+    <string name="tact_map_follow">FOLLOW</string>
     <string name="tact_sdr_alarm_tag">[ALARM]</string>
     <string name="tact_nfc_history_label">TAGS</string>
     <string name="tact_nfc_ready_short">READY</string>

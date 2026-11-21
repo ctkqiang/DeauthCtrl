@@ -254,11 +254,16 @@ class ArpScanManager {
     fun stop() {
         val wasRunning = _isRunning.value
         _isRunning.value = false
+        // 关键:立刻推进会话号 —— 所有在途探测任务的 publish/finally 守卫
+        // 全部失效,设备列表/日志/统计在 stop 之后零更新(此前在途的阻塞
+        // ping 完成前仍会再吐几条,看起来像「停不下来」)
+        sessionId.incrementAndGet()
         scanJob?.cancel()
         scanJob = null
         if (wasRunning) {
             if (sessionStartMs.get() > 0L) sessionEndMs.set(SystemClock.elapsedRealtime())
             publishStats()
+            log("ARP", "stopped by user after ${hostsScanned.get()}/${HOST_COUNT} hosts")
         }
     }
 

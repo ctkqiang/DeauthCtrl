@@ -94,6 +94,8 @@ data class RadarTarget(
     val history: List<RssiSample> = emptyList(), // 最近 N 次信号采样（档案页图表）
     val hitBuckets: List<Int> = emptyList(),     // 最近 10 分钟每分钟命中数（档案页频率图）
     val hitBucketStartMs: Long = 0L,
+    /** RPA 反匿名化:命中 IRK 的掩码展示("ABCD…WXYZ");null = 未解析/非 RPA */
+    val rpaResolved: String? = null,
 )
 
 /** 信号历史保留长度 —— 约 2 分钟 @ 3s 扫描周期 */
@@ -128,6 +130,9 @@ class RadarManager(private val context: Context) {
     private val newContacts = ConcurrentLinkedQueue<String>()
 
     @Volatile var isRunning = false; private set
+
+    /** 用户提供的 IRK 列表(反匿名化旋转地址用) */
+    @Volatile var irks: List<ByteArray> = emptyList()
 
     private var scanJob: Job? = null
     @Volatile private var btDiscoveryActive = false
@@ -247,6 +252,12 @@ class RadarManager(private val context: Context) {
         // 距离模型:BLE 广播真实携带发射功率时用它;经典相位无新广播时继承旧 PTX(否则模型来回跳)
         val ptxDbm = freshAdv?.txPowerLevelDbm?.takeIf { it in -40..10 } ?: prev?.txPowerDbm
         val refDbm = ptxDbm?.toFloat() ?: if (source == "classic") BT_CLASSIC_REF_DBM else BLE_ASSUMED_REF_DBM
+        // RPA 反匿名化:地址命中任一 IRK 即标记(btrpa-scan 技术)
+        val rpaResolved = runCatching {
+            if (irks.isNotEmpty() && RpaResolver.isRpa(addr)) {
+                RpaResolver.resolve(addr, irks)?.let { RpaResolver.maskIrk(it) }
+            } else null
+        }.getOrNull()
         // 绑定状态粘滞:经典发现相位没有 BLE 相位的信息来源,不能把已绑定目标打回陌生
         val bonded = (device?.bondState == BluetoothDevice.BOND_BONDED || device?.bondState == BluetoothDevice.BOND_BONDING) || prev?.bonded == true
         // 名称优先级:有效新名 > 广播名 > 旧名 > 占位名;经典发现的 "(BT设备)" 永不覆盖好名字
@@ -261,7 +272,7 @@ class RadarManager(private val context: Context) {
             name = effectiveName,
             type = "bt",
             rssi = rssi,
-            distanceM = rssiDistanceEstimateM(medianRssi(history), refDbm, BT_PATH_LOSS),
+            distanceM = rssiDistanceEstimateM(medianRssi(history), refDbm, btEnvPathLoss),
             angleDeg = pseudoAngle(addr),
             channel = "2.4GHz",
             address = addr,
@@ -285,6 +296,7 @@ class RadarManager(private val context: Context) {
             history = history,
             hitBuckets = advanceHitBuckets(prev, now).first,
             hitBucketStartMs = advanceHitBuckets(prev, now).second,
+            rpaResolved = rpaResolved ?: prev?.rpaResolved,
         )
         if (isNew) newContacts.add(addr)
     }
@@ -795,6 +807,9 @@ class RadarManager(private val context: Context) {
          * -85dBm ≈ 30m 量级,与真实蓝牙感知距离吻合,盘面分布展开。
          */
         const val BT_PATH_LOSS = 2.0f
+        /** 当前蓝牙路径损耗环境(设置页可切):自由空间 2.0 / 室外 2.2 / 室内 3.0(btrpa-scan 同款预设) */
+        @Volatile
+        var btEnvPathLoss: Float = BT_PATH_LOSS
         /** 经典蓝牙(Class 2 发射功率约 4dBm)1m 参考功率 */
         const val BT_CLASSIC_REF_DBM = -55f
         /** BLE 广播缺 TX Power 字段时的假定 1m 参考功率 */

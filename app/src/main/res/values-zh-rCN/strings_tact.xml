@@ -73,6 +73,12 @@
     <string name="tact_sdr_event_log">事件日志</string>
     <string name="tact_sdr_event_count">%1$d 条</string>
     <string name="tact_sdr_event_empty">还没有告警或强信号事件</string>
+    <string name="tact_map_markers">标记</string>
+    <string name="tact_map_fix">定位</string>
+    <string name="tact_map_tiles">瓦片</string>
+    <string name="tact_map_online">在线</string>
+    <string name="tact_map_cache">缓存</string>
+    <string name="tact_map_follow">跟随</string>
     <string name="tact_sdr_alarm_tag">[告警]</string>
     <string name="tact_nfc_history_label">标签数</string>
     <string name="tact_nfc_ready_short">就绪</string>

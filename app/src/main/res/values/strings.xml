@@ -44,6 +44,14 @@
     <string name="settings_map_night_desc">Desaturated green-tinted tiles for low-light operations</string>
     <string name="settings_map_color">Original Color</string>
     <string name="settings_map_color_desc">Standard colorful OSM tiles</string>
+    <string name="settings_rssi_env_section">Range Model · PATH LOSS</string>
+    <string name="settings_rssi_env_desc">Bluetooth distance path-loss preset (btrpa-scan)</string>
+    <string name="settings_rssi_free">Free Space · n=2.0</string>
+    <string name="settings_rssi_free_desc">Open areas, minimal obstacles</string>
+    <string name="settings_rssi_outdoor">Outdoor · n=2.2</string>
+    <string name="settings_rssi_outdoor_desc">Typical urban outdoor propagation</string>
+    <string name="settings_rssi_indoor">Indoor · n=3.0</string>
+    <string name="settings_rssi_indoor_desc">Walls and furniture attenuate faster</string>
     <string name="settings_sysinfo_section">System Info</string>
     <string name="settings_info_author">Author</string>
     <string name="settings_info_codename">Codename</string>
@@ -113,6 +121,10 @@
     <string name="home_cve_desc">Query public vulnerability databases</string>
     <string name="home_intel_name">Intel Center</string>
     <string name="home_intel_desc">GHSA · HackerNews · CISA KEV · world news, no API key</string>
+    <string name="home_onvif_name">Camera Ops</string>
+    <string name="home_onvif_desc">ONVIF/RTSP camera recon · PTZ · credentials (pwneye logic)</string>
+    <string name="home_rfsense_name">Wall Sense</string>
+    <string name="home_rfsense_desc">Wi-Fi RSSI motion sensing through walls</string>
     <string name="home_sdr_name">Voice Spectrum</string>
     <string name="home_sdr_desc">Live mic FFT spectrum analysis</string>
     <string name="home_taccam_name">Tactical Camera</string>

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.map
 import xin.ctkqiang.deauthctrl.L10n
 import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.RadarManager
+import xin.ctkqiang.deauthctrl.manager.RpaResolver
 import xin.ctkqiang.deauthctrl.manager.RadarTarget
 import xin.ctkqiang.deauthctrl.manager.RssiSample
 import xin.ctkqiang.deauthctrl.manager.rssiDistanceEstimateM
@@ -850,6 +851,26 @@ class RadarViewModel(application: Application) : AndroidViewModel(application) {
 
     /** 配对弹窗消息:让目标设备弹出系统配对请求(改本机蓝牙名 + createBond) */
     fun sendPairingPopup(addr: String, message: String): String? = manager.sendPairingPopup(addr, message)
+
+    /** 设置 IRK 列表(反匿名化旋转地址;持久化在 deauthctrl_prefs) */
+    fun setIrks(lines: List<String>) {
+        val parsed = lines.mapNotNull { RpaResolver.parseIrkText(it) }
+        manager.irks = parsed
+        getApplication<Application>().getSharedPreferences("deauthctrl_prefs", android.content.Context.MODE_PRIVATE)
+            .edit().putString("rpa_irks", lines.filter { it.isNotBlank() }.joinToString("\n")).apply()
+        _irks.value = parsed.size
+    }
+
+    private val _irks = MutableStateFlow(0)
+    /** 当前 IRK 数量(UI 显示) */
+    val irkCount: StateFlow<Int> = _irks
+
+    init {
+        // 启动时恢复已保存的 IRK
+        val saved = getApplication<Application>().getSharedPreferences("deauthctrl_prefs", android.content.Context.MODE_PRIVATE)
+            .getString("rpa_irks", "") ?: ""
+        setIrks(saved.split("\n"))
+    }
 
     /** 配对雷达目标(标准系统配对请求) */
     fun pairTarget(addr: String): String? = manager.pairDevice(addr)

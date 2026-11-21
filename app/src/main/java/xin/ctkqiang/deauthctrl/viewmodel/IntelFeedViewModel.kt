@@ -61,8 +61,6 @@ class IntelFeedViewModel(app: Application) : AndroidViewModel(app) {
                     val newCount = items.count { n -> old.none { it.id == n.id } }
                     val archived = manager.archivedIds()
                     val merged = items.map { it.copy(archived = it.id in archived) }
-                    // 应用内看过的条目视为「已见」:推送轮询不再重复通知
-                    items.forEach { manager.markNotified(it.link) }
                     // 落盘缓存:下次打开/断网立即可读
                     manager.saveCache(merged)
                     _state.value = _state.value.copy(
@@ -102,7 +100,19 @@ class IntelFeedViewModel(app: Application) : AndroidViewModel(app) {
     fun setNotify(on: Boolean) {
         manager.setNotifyEnabled(on)
         _state.value = _state.value.copy(notifyOn = on)
-        if (on) IntelFeedReceiver.schedule(getApplication()) else IntelFeedReceiver.cancel(getApplication())
+        if (on) {
+            // 开启时把当前已有条目标记「已推送」:只推真正的新情报,不把存量刷成通知洪水;
+            // 但之后应用打开/刷新不再触碰该集合 —— 否则推送永远没有「新」条目
+            _state.value.items.forEach { manager.markNotified(it.link) }
+            IntelFeedReceiver.schedule(getApplication())
+        } else {
+            IntelFeedReceiver.cancel(getApplication())
+        }
+    }
+
+    /** 页面进入时补挂号闹钟:重启/强制停止/重装会清掉 AlarmManager 闹钟,这里自愈 */
+    fun rearmAlarmIfEnabled() {
+        if (manager.isNotifyEnabled()) IntelFeedReceiver.schedule(getApplication())
     }
 
     fun setSearch(v: String) { _state.value = _state.value.copy(search = v) }

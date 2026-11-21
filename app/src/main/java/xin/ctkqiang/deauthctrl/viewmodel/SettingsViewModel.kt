@@ -15,6 +15,7 @@ const val KEY_TEAM_ID = "team_id"
 const val KEY_HAPTICS_ENABLED = "haptics_enabled"
 const val KEY_RADAR_ALERT_ENABLED = "radar_alert_enabled"
 const val KEY_MAP_STYLE = "map_style"
+const val KEY_RSSI_ENV = "rssi_env"
 
 /** 地图瓦片风格选项值 */
 const val MAP_STYLE_MONO = "mono"    // 黑白负片(默认,战术夜视)
@@ -48,6 +49,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _radarAlert = MutableStateFlow(prefs.getBoolean(KEY_RADAR_ALERT_ENABLED, true))
     val radarAlertEnabled: StateFlow<Boolean> = _radarAlert
+
+    init {
+        xin.ctkqiang.deauthctrl.manager.RadarManager.btEnvPathLoss = when (prefs.getString(KEY_RSSI_ENV, "free")) {
+            "outdoor" -> 2.2f
+            "indoor" -> 3.0f
+            else -> 2.0f
+        }
+    }
 
     /** 地图瓦片风格 —— 黑白负片 / 夜战绿 / 原始彩色 */
     private val _mapStyle = MutableStateFlow(prefs.getString(KEY_MAP_STYLE, MAP_STYLE_MONO) ?: MAP_STYLE_MONO)
@@ -85,5 +94,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setMapStyle(style: String) {
         _mapStyle.value = style
         prefs.edit().putString(KEY_MAP_STYLE, style).apply()
+    }
+
+    /** 距离模型环境(btrpa-scan 预设:自由空间 2.0 / 室外 2.2 / 室内 3.0) */
+    private val _rssiEnv = MutableStateFlow(prefs.getString(KEY_RSSI_ENV, "free") ?: "free")
+    val rssiEnv: StateFlow<String> = _rssiEnv
+
+    fun setRssiEnv(env: String) {
+        _rssiEnv.value = env
+        prefs.edit().putString(KEY_RSSI_ENV, env).apply()
+        xin.ctkqiang.deauthctrl.manager.RadarManager.btEnvPathLoss = when (env) {
+            "outdoor" -> 2.2f
+            "indoor" -> 3.0f
+            else -> 2.0f
+        }
     }
 }

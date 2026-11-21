@@ -21,6 +21,11 @@
     <string name="intel_src_pending">… PENDING</string>
     <string name="intel_map_empty">No geotagged events yet — refresh or wait for world news</string>
     <string name="intel_map_tap_hint">tap a dot for details</string>
+    <string name="intel_reader_inapp">IN-APP</string>
+    <string name="intel_sort_time">NEWEST</string>
+    <string name="intel_sort_cat">BY CATEGORY</string>
+    <string name="intel_sort_src">BY SOURCE</string>
+    <string name="intel_rec_header">★ RECOMMENDED FOR YOU</string>
     <string name="intel_empty">No intel matches — refresh or subscribe to more sources</string>
     <string name="intel_panel_notify">Push Notifications</string>
     <string name="intel_notify_title">Subscribe push alerts</string>

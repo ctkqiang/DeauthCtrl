@@ -85,6 +85,30 @@ class LocalLlmManager(private val context: Context) {
                 tag = "uncensored",
             ),
             ModelSpec(
+                id = "gemma4abl",
+                name = "Gemma-4-E2B abliterated",
+                fileName = "gemma-4-E2B-it-abliterated.litertlm",
+                url = "https://huggingface.co/csabag76/gemma-4-E2B-it-abliterated-litert-lm/resolve/main/" +
+                    "gemma-4-E2B-it-abliterated.litertlm?download=true",
+                sizeBytes = 2_500_000_000L, // 实际 ~2.59GB;完整性校验以 Content-Length 为准
+                topK = 40,
+                topP = 0.95,
+                temperature = 0.7,
+                tag = "uncensored",
+            ),
+            ModelSpec(
+                id = "gemma4duo",
+                name = "Gemma-4-E2B abliterated (DuoNeural)",
+                fileName = "Gemma-4-E2B-Abliterated.litertlm",
+                url = "https://huggingface.co/DuoNeural/Gemma-4-Abliterated-LiteRT/resolve/main/" +
+                    "Gemma-4-E2B-Abliterated.litertlm?download=true",
+                sizeBytes = 2_500_000_000L, // 实际 ~2.56GB;完整性校验以 Content-Length 为准
+                topK = 40,
+                topP = 0.95,
+                temperature = 0.7,
+                tag = "uncensored",
+            ),
+            ModelSpec(
                 id = "deepseek",
                 name = "DeepSeek-R1-Distill-Qwen-1.5B",
                 fileName = "DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm",

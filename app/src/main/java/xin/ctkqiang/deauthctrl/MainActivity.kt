@@ -199,6 +199,7 @@ class MainActivity : ComponentActivity() {
                             terminalVm = viewModel(),
                             dbVm = viewModel(),
                             settingsVm = settingsVm,
+                            aiVm = viewModel(),
                             initialPhotoId = photoId,
                         )
                     }

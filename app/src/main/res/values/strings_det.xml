@@ -85,6 +85,8 @@
     <string name="det_btn_stop_radar">STOP RADAR</string>
     <string name="det_btn_network_topology">NETMAP</string>
     <string name="det_btn_signal_db">SIGNAL DB</string>
+    <string name="det_btn_fullscreen">FULLSCREEN ▸</string>
+    <string name="det_btn_exit_fullscreen">✕ EXIT</string>
     <string name="det_btn_open_settings">OPEN SETTINGS ▸</string>
     <string name="det_btn_cancel">CANCEL</string>
     <string name="det_btn_stop_poisoning">STOP POISONING</string>
@@ -198,6 +200,12 @@
     <string name="det_info_distance_model">RANGE MODEL</string>
     <string name="det_info_tracking">TRACKING</string>
     <string name="det_info_threat">THREAT</string>
+    <string name="det_info_rpa">RPA RESOLVED</string>
+    <string name="det_fmt_irk">IRK %1$d</string>
+    <string name="det_irk_title">IRK · RPA DEANONYMIZATION</string>
+    <string name="det_irk_desc">One 32-hex IRK per line — every observed rotating address is tested against all keys (ah() AES-128 per BT spec). Captured IRKs only; Android does not expose local IRKs.</string>
+    <string name="det_irk_placeholder">ABCDEF0123456789ABCDEF0123456789\n…one per line</string>
+    <string name="det_irk_save">SAVE IRKS</string>
 
     <!-- ─── 占位与提示 ─── -->
     <string name="det_hint_leave_blank_unlimited">Leave blank = unlimited</string>
@@ -226,6 +234,19 @@
     <string name="det_hint_ping_idle">Enter a target and run the task above — results return in real time</string>
     <string name="det_hint_http_log">Transfer log appears here once a request is sent</string>
     <string name="det_hint_port_scan_idle">Enter a target host and start scanning — open ports will be listed live</string>
+    <string name="det_panel_nmap">nmap · REAL ENGINE</string>
+    <string name="nmap_native_desc">Native engine — nmap-services top ports, service fingerprint probes and -T timing templates ported to Kotlin. No Termux, no downloads.</string>
+    <string name="nmap_top100">TOP 100</string>
+    <string name="nmap_top1000">TOP 1000</string>
+    <string name="nmap_bin_missing">Environment ready — nmap not installed yet</string>
+    <string name="nmap_ready">nmap ready — target comes from the host field above</string>
+    <string name="nmap_btn_install_env">INSTALL ENVIRONMENT</string>
+    <string name="nmap_btn_install_nmap">INSTALL nmap (apt)</string>
+    <string name="nmap_btn_installing">INSTALLING…</string>
+    <string name="nmap_btn_scan">nmap SCAN ▸</string>
+    <string name="nmap_btn_scanning">SCANNING…</string>
+    <string name="nmap_need_host">Enter a target host first</string>
+    <string name="nmap_log_empty">Run nmap — output streams here line by line</string>
     <string name="det_hint_radar_idle">Start the radar — detected devices light up on the scope</string>
     <string name="det_hint_radar_no_match">No devices match the current filters</string>
     <string name="det_hint_probe_wait">Waiting for WiFi frames — beacons appear once location services are on</string>
@@ -428,6 +449,14 @@
     <string name="det_tower_operator">MCC/MNC</string>
     <string name="det_tower_bands">BANDS</string>
     <string name="det_tower_hint">Distance = RSRP path-loss estimate (±hundreds of meters); bearing not measurable on phone hardware — scope angle is a placeholder</string>
+    <string name="det_fmt_cctv">CCTV %1$d</string>
+    <string name="det_cctv_legend">▣ CCTV ×%1$d (range unknown)</string>
+    <string name="det_cctv_popup_title">CCTV</string>
+    <string name="det_cctv_model">CAMERA</string>
+    <string name="det_cctv_fw">FIRMWARE</string>
+    <string name="det_cctv_xaddr">ONVIF</string>
+    <string name="det_cctv_open_ops">CAMERA OPS ▸</string>
+    <string name="det_cctv_hint">Found by WS-Discovery — range unknown, scope position is a placeholder</string>
     <string name="det_fmt_bearing_collecting">Bearing sampling · coverage %1$d%% · rotate the device slowly</string>
     <string name="det_sat_none">SAT 0 · INDOOR?</string>
     <string name="det_warn_location_off">Location services off — WiFi targets invisible (BLE unaffected)</string>
