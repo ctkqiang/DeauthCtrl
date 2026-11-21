@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rfsense_title">Wall Sense</string>
+    <string name="rfsense_level">LEVEL</string>
+    <string name="rfsense_index">INDEX</string>
+    <string name="rfsense_top_ap">TOP AP</string>
+    <string name="rfsense_aps">APS</string>
+    <string name="rfsense_btn_start">START SENSING</string>
+    <string name="rfsense_btn_stop">STOP SENSING</string>
+    <string name="rfsense_alarm">ALARM</string>
+    <string name="rfsense_ap_panel">AP PERTURBATION</string>
+    <string name="rfsense_empty">No APs with enough samples — start the radar first</string>
+    <string name="rfsense_log">EVENT LOG</string>
+    <string name="rfsense_log_empty">No state changes yet</string>
+    <string name="rfsense_calm">CALM</string>
+    <string name="rfsense_faint">FAINT</string>
+    <string name="rfsense_motion">MOTION</string>
+    <string name="rfsense_strong">STRONG</string>
+    <string name="rfsense_honest">RSSI perturbation detection only — answers "is someone moving", not who or what pose. True CSI sensing (DensePose route) needs root + specific chipsets (Atheros CSI Tool / Intel 5300 / Nexmon CSI) which modern phones do not expose.</string>
+</resources>

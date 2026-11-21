@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rfsense_title">穿墙感知</string>
+    <string name="rfsense_level">状态</string>
+    <string name="rfsense_index">指数</string>
+    <string name="rfsense_top_ap">最强 AP</string>
+    <string name="rfsense_aps">AP 数</string>
+    <string name="rfsense_btn_start">开始感知</string>
+    <string name="rfsense_btn_stop">停止感知</string>
+    <string name="rfsense_alarm">告警</string>
+    <string name="rfsense_ap_panel">AP 扰动</string>
+    <string name="rfsense_empty">没有足够样本的 AP —— 先启动雷达</string>
+    <string name="rfsense_log">事件日志</string>
+    <string name="rfsense_log_empty">还没有状态变化</string>
+    <string name="rfsense_calm">静止</string>
+    <string name="rfsense_faint">微动</string>
+    <string name="rfsense_motion">活动</string>
+    <string name="rfsense_strong">强活动</string>
+    <string name="rfsense_honest">仅 RSSI 扰动检测 —— 只能回答「有没有人在动」,无法识别是谁/什么姿态。真·CSI 感知(DensePose 路线)需要 root + 特定芯片(Atheros CSI Tool / Intel 5300 / Nexmon CSI),现代手机不开放该通道。</string>
+</resources>
