@@ -73,6 +73,15 @@ class MainActivity : ComponentActivity() {
     /** 通知点击带来的照片 id —— 直达相机页并打开该照片 */
     private val pendingPhotoId = mutableStateOf<Long?>(null)
 
+    /** 调试深链:--es screen <route> 直达指定模块页 */
+    private val pendingScreen = mutableStateOf<String?>(null)
+
+    /** 调试深链:--ei chapter <n> wiki 章节直达 */
+    private val pendingChapter = mutableStateOf(-1)
+
+    /** 调试深链:--ez autoscan true CCTV 页进入即扫描 */
+    private val pendingAutoScan = mutableStateOf(false)
+
     /**
      * 语言切换后的 recreate 必须在这里重新包装 —— Application 层的 wrap
      * 只在进程启动时执行一次,不覆盖 Activity 重建;否则「设置里选了
@@ -87,6 +96,13 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         val id = intent.getLongExtra(xin.ctkqiang.deauthctrl.manager.PhotoRelayHost.EXTRA_PHOTO_ID, -1L)
         if (id > 0) pendingPhotoId.value = id
+        intent.getStringExtra("screen")?.takeIf { it.isNotBlank() }?.let {
+            android.util.Log.d("DEEPLINK", "onNewIntent screen=$it")
+            pendingScreen.value = it
+        }
+        intent.getIntExtra("chapter", -1).takeIf { it >= 0 }?.let { pendingChapter.value = it }
+        if (intent.getBooleanExtra("autoscan", false)) pendingAutoScan.value = true
+        if (intent.getBooleanExtra("autoscan", false)) pendingAutoScan.value = true
     }
 
     /**
@@ -126,6 +142,12 @@ class MainActivity : ComponentActivity() {
 
         val firstPhotoId = intent.getLongExtra(xin.ctkqiang.deauthctrl.manager.PhotoRelayHost.EXTRA_PHOTO_ID, -1L)
         if (firstPhotoId > 0) pendingPhotoId.value = firstPhotoId
+        intent.getStringExtra("screen")?.takeIf { it.isNotBlank() }?.let {
+            android.util.Log.d("DEEPLINK", "onCreate screen=$it")
+            pendingScreen.value = it
+        }
+        intent.getIntExtra("chapter", -1).takeIf { it >= 0 }?.let { pendingChapter.value = it }
+        if (intent.getBooleanExtra("autoscan", false)) pendingAutoScan.value = true
 
         setContent {
             DeauthCtrlTheme(darkTheme = true) {
@@ -134,6 +156,9 @@ class MainActivity : ComponentActivity() {
                 val settingsVm: SettingsViewModel = viewModel()
                 val teamId by settingsVm.teamId.collectAsState()
                 val photoId by pendingPhotoId
+                val screenRoute by pendingScreen
+                val chapterIdx by pendingChapter
+                val autoScan by pendingAutoScan
 
                 // Android 13+ 通知权限:一次性请求(不阻塞主流程,未授权则照片静默接收)
                 val notifLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -201,6 +226,9 @@ class MainActivity : ComponentActivity() {
                             settingsVm = settingsVm,
                             aiVm = viewModel(),
                             initialPhotoId = photoId,
+                            initialScreen = screenRoute,
+                            initialChapter = chapterIdx,
+                            initialAutoScan = autoScan,
                         )
                     }
                 }

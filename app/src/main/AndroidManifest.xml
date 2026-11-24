@@ -54,6 +54,12 @@
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
+    <!-- ARCore 深度:设备无 ToF 也可用运动深度,仅能力声明不强制 -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
+
+    <!-- com.google.ar:core 要求 minSdk 24,全局 minSdk 23 由此豁免;
+         运行时由 DepthScanManager.checkArAvailability 在 API < 24 上短路守卫 -->
+    <uses-sdk tools:overrideLibrary="com.google.ar.core" />
 
     <application
         android:name=".DeauthApp"

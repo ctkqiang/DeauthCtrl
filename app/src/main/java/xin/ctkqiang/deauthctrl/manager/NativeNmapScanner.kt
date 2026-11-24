@@ -109,7 +109,10 @@ object ServiceProbes {
         if (banner.isBlank()) return ""
         val b = banner.trim()
         return when (port) {
-            22 -> regex(b, "SSH-([0-9.]+)[- ]?([^\\s]*)") { m -> "OpenSSH ${m.groupValues[1]}" }
+            // SSH-2.0-OpenSSH_8.9p1 ... → 捕获软件版本(第 3 段),不是协议版本 2.0
+            22 -> regex(b, "SSH-[0-9.]+-([^\\s]+)") { m ->
+                "OpenSSH " + m.groupValues[1].removePrefix("OpenSSH_").removePrefix("openssh_").take(20)
+            }
             80, 8080, 8000, 8888, 8008, 8081, 3000, 5000 -> httpFingerprint(b)
             443, 8443 -> "https"
             21 -> regex(b, "220[- ](.*)") { m -> "ftp ${m.groupValues[1].take(40)}" }

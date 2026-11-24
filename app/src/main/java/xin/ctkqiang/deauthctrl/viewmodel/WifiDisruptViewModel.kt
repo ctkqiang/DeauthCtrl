@@ -2,6 +2,7 @@ package xin.ctkqiang.deauthctrl.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import xin.ctkqiang.deauthctrl.manager.CapabilityProbe
 import xin.ctkqiang.deauthctrl.manager.WifiDisruptManager
 import xin.ctkqiang.deauthctrl.manager.WifiDisruptStats
 import xin.ctkqiang.deauthctrl.model.HotspotResult
@@ -36,7 +37,9 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
 
     private var targetSsid: String = ""
     private var durationSeconds: Int = 10
-    private var toggleIntervalMs: Long = 80L
+    // LOHS 完成一次 start/stop 本身需要数秒;保持时长必须与 manager 的钳制一致,
+    // 否则 UI 滑杆选的值会被静默吞掉(旧实现 40-500ms 全部被抬到 5s,滑杆纯装饰)
+    private var toggleIntervalMs: Long = WifiDisruptManager.DEFAULT_HOLD_MS
 
     fun scanNetworks() = manager.scanNetworks()
 
@@ -48,9 +51,9 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
         durationSeconds = seconds.coerceIn(1, 60)
     }
 
-    /** 设置热点启停切换间隔（毫秒），影响泛洪节奏 */
+    /** 设置单个热点保持时长（毫秒）—— 与 manager 钳制范围一致,设置值真实生效 */
     fun setToggleInterval(ms: Long) {
-        toggleIntervalMs = ms.coerceIn(40L, 500L)
+        toggleIntervalMs = ms.coerceIn(WifiDisruptManager.MIN_HOLD_MS, WifiDisruptManager.MAX_HOLD_MS)
     }
 
     fun getTargetSsid(): String = targetSsid
@@ -69,7 +72,11 @@ class WifiDisruptViewModel(application: Application) : AndroidViewModel(applicat
 
     // ─── 真实注入(root 门控) ───
 
-    fun probeDeauth() = manager.deauth.probeTools()
+    fun probeDeauth() {
+        // 同步刷新全局能力快照(root/monitor/注入自检),注入面板的判定与之共享
+        CapabilityProbe.get(getApplication()).refreshFull()
+        manager.deauth.probeTools()
+    }
 
     /** @return null 表示会话已启动;非 null 为失败原因(缺 root/工具/芯片不支持等) */
     fun startDeauth(bssid: String, channel: Int, clientMac: String?, count: Int, intervalMs: Long): String? =

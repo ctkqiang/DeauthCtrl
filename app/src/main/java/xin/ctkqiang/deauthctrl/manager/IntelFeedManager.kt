@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit
  * - GitHub Advisory Database(Atom,需 Accept: application/atom+xml)
  * - HackerNews 安全话题(hNrss RSS)
  * - CISA 公告(RSS)+ CISA KEV 已知被利用漏洞清单(JSON,无需 NVD Key)
+ * - CVE JSON:NVD 2.0 / GitHub Advisories API / CIRCL(均免 Key)
  * - The Hacker News / BleepingComputer(RSS)
  * - 先知安全社区(Atom,中文)/ FreeBuf(RSS,中文,部分网络可能受限,容错)
  * - 世界局势:Al Jazeera / NPR World(RSS,英文世界新闻)
@@ -96,6 +97,9 @@ class IntelFeedManager(private val context: Context) {
             FeedSource("gbhackers", "GBHackers", "https://gbhackers.com/feed/", "新闻", "en", "rss"),
             FeedSource("secblvd", "Security Boulevard", "https://securityboulevard.com/feed/", "新闻", "en", "rss"),
             FeedSource("secrss", "安全内参(中文)", "https://www.secrss.com/rss", "中文", "zh", "rss"),
+            FeedSource("nvd", "NVD API · recent CVEs", "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=50", "CVE", "en", "json"),
+            FeedSource("ghapi", "GitHub Advisories API", "https://api.github.com/advisories?per_page=50", "公告", "en", "json"),
+            FeedSource("circl", "CIRCL · last CVEs", "https://cve.circl.lu/api/last", "CVE", "en", "json"),
             FeedSource("xz", "先知社区(中文)", "https://xz.aliyun.com/feed", "中文", "zh", "atom"),
             FeedSource("4hou", "嘶吼(中文)", "https://www.4hou.com/feed", "中文", "zh", "rss"),
             FeedSource("freebuf", "FreeBuf(中文)", "https://www.freebuf.com/feed", "中文", "zh", "rss"),
@@ -106,6 +110,15 @@ class IntelFeedManager(private val context: Context) {
             FeedSource("guardian", "The Guardian · world", "https://www.theguardian.com/world/rss", "世界", "en", "rss"),
             FeedSource("scmp", "SCMP · world", "https://www.scmp.com/rss/91/feed", "世界", "en", "rss"),
             FeedSource("dw", "DW · world", "https://rss.dw.com/rdf/rss-en-all", "世界", "en", "rss"),
+            // ── 多国补充:马来西亚 / 新加坡 / 香港 / 中国 / 英国 / 欧盟 ──
+            FeedSource("fmt", "Free Malaysia Today", "https://www.freemalaysiatoday.com/category/nation/feed/", "世界", "en", "rss"),
+            FeedSource("cna", "CNA · Singapore", "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml", "世界", "en", "rss"),
+            FeedSource("straitstimes", "The Straits Times", "https://www.straitstimes.com/news/asia/rss.xml", "世界", "en", "rss"),
+            FeedSource("rthk", "RTHK 港聞(中文)", "https://rthk.hk/rthk/news/rss/c_expressnews_clocal.xml", "中文", "zh", "rss"),
+            FeedSource("chinanews", "中国新闻网", "https://www.chinanews.com.cn/rss/scroll-news.xml", "中文", "zh", "rss"),
+            FeedSource("bbc", "BBC News", "https://feeds.bbci.co.uk/news/rss.xml", "世界", "en", "rss"),
+            FeedSource("sky", "Sky News", "https://feeds.skynews.com/feeds/rss/home.xml", "世界", "en", "rss"),
+            FeedSource("politicoeu", "POLITICO Europe", "https://www.politico.eu/feed/", "世界", "en", "rss"),
         )
 
         private const val PREFS = "intel_feed"
@@ -113,10 +126,33 @@ class IntelFeedManager(private val context: Context) {
         private const val KEY_NOTIFIED = "notified_links"
         private const val KEY_NOTIFY_ON = "notify_enabled"
         private const val KEY_ARCHIVED = "archived"
+        private const val KEY_SRC_VERSION = "sources_version"
+        /** 订阅源版本:新增源时 +1,触发一次性并入迁移 */
+        private const val SOURCE_VERSION = 3
         private const val NOTIFIED_CAP = 300
     }
 
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    init {
+        migrateSubscriptions()
+    }
+
+    /**
+     * 订阅迁移:新增源后旧设备保存的订阅集合里没有它们,导致新源
+     * 永远不可见(「看不到新功能」)。按版本号一次性并入全部新源。
+     */
+    private fun migrateSubscriptions() {
+        val ver = prefs.getInt(KEY_SRC_VERSION, 0)
+        if (ver < SOURCE_VERSION) {
+            val cur = prefs.getStringSet(KEY_SUBSCRIBED, SOURCES.map { it.id }.toSet())
+                ?: SOURCES.map { it.id }.toSet()
+            prefs.edit()
+                .putStringSet(KEY_SUBSCRIBED, (cur + SOURCES.map { it.id }).toSet())
+                .putInt(KEY_SRC_VERSION, SOURCE_VERSION)
+                .apply()
+        }
+    }
 
     // ─── 订阅 ────────────────────────────────────────────────────────────────
 
@@ -139,7 +175,7 @@ class IntelFeedManager(private val context: Context) {
     /** 单源拉取结果快照 —— 订阅页展示每个源的实时状态(正常 ×n / 失败原因) */
     data class SourcePull(val sourceId: String, val ok: Boolean, val count: Int, val error: String? = null)
 
-    /** 拉取全部已订阅源(并行,单源失败不拖垮整体);返回合并排序后的新条目 */
+    /** 拉取全部已订阅源;返回合并排序后的新条目 */
     suspend fun refresh(): List<FeedItem> = refreshDetailed().first
 
     /**
@@ -173,8 +209,59 @@ class IntelFeedManager(private val context: Context) {
     /** 单源拉取:按 kind 分发解析;语言过滤 + 地理打点在解析后统一做 */
     private fun fetchSource(src: FeedSource): List<FeedItem> = when (src.kind) {
         "kev" -> parseKev(src)
+        "json" -> parseJsonApi(src)
         "atom" -> parseFeed(src, atom = true)
         else -> parseFeed(src, atom = false)
+    }
+
+    /** 免 Key JSON API 解析:NVD 2.0 / GitHub Advisories / CIRCL */
+    private fun parseJsonApi(src: FeedSource): List<FeedItem> {
+        val raw = runCatching { httpGet(src.url) }.getOrNull() ?: return emptyList()
+        val out = mutableListOf<FeedItem>()
+        runCatching {
+            when (src.id) {
+                "nvd" -> {
+                    val arr = JSONObject(raw).getJSONArray("vulnerabilities")
+                    for (i in 0 until minOf(arr.length(), 50)) {
+                        val cve = arr.getJSONObject(i).getJSONObject("cve")
+                        val id = cve.optString("id", "")
+                        if (id.isEmpty()) continue
+                        val desc = cve.optJSONArray("descriptions")?.let { d ->
+                            if (d.length() > 0) d.getJSONObject(0).optString("value", "") else ""
+                        } ?: ""
+                        val title = "$id · ${desc.take(90)}"
+                        val published = cve.optString("published", "")
+                        buildItem(src, title, "https://nvd.nist.gov/vuln/detail/$id", desc, parseTime(published))?.let(out::add)
+                    }
+                }
+                "ghapi" -> {
+                    val arr = JSONArray(raw)
+                    for (i in 0 until minOf(arr.length(), 50)) {
+                        val o = arr.getJSONObject(i)
+                        val id = o.optString("ghsa_id", "")
+                        if (id.isEmpty()) continue
+                        val summary = o.optString("summary", "")
+                        val desc = o.optString("description", "")
+                        val sev = o.optString("severity", "").ifBlank { "" }
+                        val title = "$id${if (sev.isNotEmpty()) " [$sev]" else ""} · $summary".take(200)
+                        val link = o.optString("html_url", "")
+                        if (link.isEmpty()) continue
+                        buildItem(src, title, link, desc, parseTime(o.optString("published_at", "")))?.let(out::add)
+                    }
+                }
+                else -> {
+                    val arr = JSONArray(raw)
+                    for (i in 0 until minOf(arr.length(), 50)) {
+                        val o = arr.getJSONObject(i)
+                        val id = o.optString("id", "")
+                        if (id.isEmpty()) continue
+                        val summary = o.optString("summary", "")
+                        buildItem(src, "$id · ${summary.take(90)}", "https://nvd.nist.gov/vuln/detail/$id", summary, 0L)?.let(out::add)
+                    }
+                }
+            }
+        }
+        return out
     }
 
     /** HTTP GET 文本;失败抛异常由调用方容错(超时收紧:连接 8s / 读取 12s) */

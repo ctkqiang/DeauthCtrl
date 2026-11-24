@@ -2,6 +2,8 @@ package xin.ctkqiang.deauthctrl.manager
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * 全部操作走摄像头自身 SOAP 接口;重启/压暗会真实改变设备 —— 仅用于
  * 自己拥有或明确授权的系统。RTSP 预览交给系统播放器(应用不内置解码器)。
  */
-class OnvifCamManager {
+class OnvifCamManager(private val context: Context? = null) {
 
     data class OnvifCamera(
         val id: String,
@@ -44,6 +46,8 @@ class OnvifCamManager {
         var infoFetched: Boolean = false,
         /** 发现来源:"onvif"(WS-Discovery)/ "rtsp"(端口扫描)/ "manual"(手动输入) */
         val source: String = "onvif",
+        /** 发现时间戳 —— 每条结果可追溯,绝不硬编码 */
+        val foundAtMs: Long = System.currentTimeMillis(),
     )
 
     private val _cameras = MutableStateFlow<List<OnvifCamera>>(emptyList())
@@ -51,6 +55,10 @@ class OnvifCamManager {
 
     private val _scanning = MutableStateFlow(false)
     val scanning: StateFlow<Boolean> = _scanning
+
+    /** 扫描阶段文案:UI 如实显示当前在做什么 */
+    private val _phase = MutableStateFlow("")
+    val phase: StateFlow<String> = _phase
 
     private val _log = MutableStateFlow<List<String>>(emptyList())
     val log: StateFlow<List<String>> = _log
@@ -72,32 +80,57 @@ class OnvifCamManager {
 
     // ─── 1. WS-Discovery 组播发现 ─────────────────────────────────────────────
 
-    /** 发送 Probe 并监听 6 秒,收集摄像头设备服务地址 */
+    /** 发送 Probe(共 3 次)并监听 6 秒,收集摄像头设备服务地址。
+     *  关键:必须持有 MulticastLock —— 多数 Android 设备会丢弃未持锁的组播包,
+     *  这就是「现场全是摄像头却一台都扫不到」的头号原因。 */
     suspend fun discover(interfaceIp: String? = null) = withContext(Dispatchers.IO) {
         _scanning.value = true
-        logLine("WS-Discovery probe on 239.255.255.250:3702")
+        _cameras.value = emptyList() // 新扫描从干净列表开始,不留上次残留
+        // 未显式指定网卡时自动取本机局域网 IP —— 组播 Probe 必须从摄像头所在
+        // 网卡发出;绑定通配地址时 Android 常走默认路由(可能是蜂窝),Wi-Fi 里的
+        // 摄像头根本收不到,这是「满场摄像头扫出 0 台」的代码侧原因之一。
+        val ifIp = interfaceIp ?: context?.let { localLanIp(it) }
+        _phase.value = "WS-Discovery 组播发现 (239.255.255.250:3702)"
+        logLine("WS-Discovery probe on 239.255.255.250:3702" + (ifIp?.let { " via $it" } ?: " (no LAN iface)"))
         val probe = buildProbeXml()
         val found = HashMap<String, OnvifCamera>()
-        runCatching {
-            MulticastSocket(null).use { sock ->
-                sock.reuseAddress = true
-                sock.bind(java.net.InetSocketAddress(3702))
-                sock.soTimeout = 3000
-                interfaceIp?.let { runCatching { sock.setInterface(InetAddress.getByName(it)) } }
-                sock.joinGroup(InetAddress.getByName("239.255.255.250"))
-                val data = probe.toByteArray(Charsets.UTF_8)
-                sock.send(DatagramPacket(data, data.size, InetAddress.getByName("239.255.255.250"), 3702))
-                val deadline = System.currentTimeMillis() + 6000
-                val buf = ByteArray(64 * 1024)
-                while (System.currentTimeMillis() < deadline) {
-                    val pkt = DatagramPacket(buf, buf.size)
-                    try { sock.receive(pkt) } catch (_: Exception) { continue }
-                    val xml = String(pkt.data, 0, pkt.length, Charsets.UTF_8)
-                    if (!xml.contains("ProbeMatch")) continue
-                    parseProbeMatches(xml, pkt.address.hostAddress ?: continue, found)
+        val wifi = context?.getSystemService(android.content.Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+        val mlock = runCatching { wifi?.createMulticastLock("onvif-disc") }.getOrNull()
+        runCatching { mlock?.setReferenceCounted(false) }
+        mlock?.acquire()
+        try {
+            runCatching {
+                MulticastSocket(null).use { sock ->
+                    sock.reuseAddress = true
+                    // 绑定到具体局域网地址(而非通配):Probe 从 Wi-Fi 网卡发出,
+                    // 摄像头的 ProbeMatch 单播回包也回到同一 socket
+                    if (ifIp != null) sock.bind(java.net.InetSocketAddress(ifIp, 3702))
+                    else sock.bind(java.net.InetSocketAddress(3702))
+                    sock.soTimeout = 400
+                    ifIp?.let { runCatching { sock.setInterface(InetAddress.getByName(it)) } }
+                    sock.joinGroup(InetAddress.getByName("239.255.255.250"))
+                    val data = probe.toByteArray(Charsets.UTF_8)
+                    val pkt = DatagramPacket(data, data.size, InetAddress.getByName("239.255.255.250"), 3702)
+                    val deadline = System.currentTimeMillis() + 6000
+                    var nextSend = 0L
+                    val buf = ByteArray(64 * 1024)
+                    while (System.currentTimeMillis() < deadline) {
+                        val now = System.currentTimeMillis()
+                        if (now >= nextSend) { // 三次 Probe 提高命中率
+                            sock.send(pkt)
+                            nextSend = now + 1500
+                        }
+                        val rp = DatagramPacket(buf, buf.size)
+                        try { sock.receive(rp) } catch (_: Exception) { continue }
+                        val xml = String(rp.data, 0, rp.length, Charsets.UTF_8)
+                        if (!xml.contains("ProbeMatch")) continue
+                        parseProbeMatches(xml, rp.address.hostAddress ?: continue, found)
+                    }
                 }
-            }
-        }.onFailure { logLine("discovery error: ${it.message}") }
+            }.onFailure { logLine("discovery error: ${it.message}") }
+        } finally {
+            runCatching { mlock?.release() }
+        }
         if (found.isNotEmpty()) {
             _cameras.value = (_cameras.value.filter { it.id !in found.keys } + found.values).sortedBy { it.ip }
         }
@@ -105,7 +138,7 @@ class OnvifCamManager {
         _scanning.value = false
     }
 
-    private fun buildProbeXml(): String {
+    internal fun buildProbeXml(): String {
         val msgId = "uuid:${UUID.randomUUID()}"
         return """<?xml version="1.0" encoding="UTF-8"?>
 <e:Envelope xmlns:e="http://www.w3.org/2003/05/soap-envelope" xmlns:w="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery" xmlns:dn="http://www.onvif.org/ver10/network/wsdl">
@@ -114,10 +147,12 @@ class OnvifCamManager {
 </e:Envelope>"""
     }
 
-    private fun parseProbeMatches(xml: String, ip: String, out: HashMap<String, OnvifCamera>) {
-        val xaddr = Regex("<d:XAddrs>(.*?)</d:XAddrs>", RegexOption.DOT_MATCHES_ALL).find(xml)?.groupValues?.get(1)?.trim()
+    internal fun parseProbeMatches(xml: String, ip: String, out: HashMap<String, OnvifCamera>) {
+        // 命名空间前缀不固定(d:/wsd:/无前缀都见过),正则按任意前缀匹配
+        val ns = "(?:[A-Za-z_][A-Za-z0-9_.-]*:)?"
+        val xaddr = Regex("<${ns}XAddrs>(.*?)</${ns}XAddrs>", RegexOption.DOT_MATCHES_ALL).find(xml)?.groupValues?.get(1)?.trim()
             ?: return
-        val scopes = Regex("<d:Scopes>(.*?)</d:Scopes>", RegexOption.DOT_MATCHES_ALL).find(xml)?.groupValues?.get(1)?.trim().orEmpty()
+        val scopes = Regex("<${ns}Scopes>(.*?)</${ns}Scopes>", RegexOption.DOT_MATCHES_ALL).find(xml)?.groupValues?.get(1)?.trim().orEmpty()
         val url = xaddr.split(" ").firstOrNull() ?: return
         val u = runCatching { URL(url) }.getOrNull() ?: return
         val cam = OnvifCamera(
@@ -128,6 +163,93 @@ class OnvifCamManager {
             scopes = scopes.take(200),
         )
         out[cam.id] = cam
+    }
+
+    // ─── 1.5 HTTP ONVIF 网段探测 ────────────────────────────────────────────
+
+    /** 快速 ONVIF 探测:POST /onvif/device_service,返回(状态码, 响应体)。短超时保证扫描速度 */
+    private fun onvifProbeHttp(ip: String, port: Int): Pair<Int, String?>? = runCatching {
+        val conn = URL("http://$ip:$port/onvif/device_service").openConnection() as HttpURLConnection
+        try {
+            conn.connectTimeout = 800
+            conn.readTimeout = 1500
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            // ONVIF 规范要求 Content-Type 携带 action 参数,个别固件缺失时直接 400
+            conn.setRequestProperty("Content-Type", "application/soap+xml; charset=utf-8; action=\"http://www.onvif.org/ver10/device/wsdl/GetDeviceInformation\"")
+            val soap = """<?xml version="1.0" encoding="UTF-8"?><s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Body><GetDeviceInformation xmlns="http://www.onvif.org/ver10/device/wsdl"/></s:Body></s:Envelope>"""
+            conn.outputStream.use { it.write(soap.toByteArray(Charsets.UTF_8)) }
+            val code = conn.responseCode
+            val body = runCatching { conn.inputStream.bufferedReader().use { it.readText() } }.getOrNull()
+            code to body
+        } finally {
+            runCatching { conn.disconnect() }
+        }
+    }.getOrNull()
+
+    /**
+     * 网段 HTTP ONVIF 探测:对 /24 内每台主机试 80/8899/8080(并行分批)。
+     * 命中条件:200 + GetDeviceInformation 响应,或 401(端点存在需认证)。
+     * 覆盖「WS-Discovery 被防火墙/AP 隔离干掉但 HTTP 服务在」的摄像头。
+     */
+    suspend fun httpOnvifSweep(subnetPrefix: String, ports: List<Int> = listOf(80, 8899, 8080, 8000), clearFirst: Boolean = true) = withContext(Dispatchers.IO) {
+        _scanning.value = true
+        rtspScanStop = false
+        if (clearFirst) _cameras.value = emptyList() // 默认单次扫描从干净列表开始;scanAll 阶段 2 传 false 以保留组播结果
+        _phase.value = "HTTP ONVIF 探测 $subnetPrefix.0/24"
+        logLine("HTTP ONVIF sweep $subnetPrefix.0/24 ports ${ports.joinToString(",")}")
+        val found = java.util.concurrent.ConcurrentHashMap<String, OnvifCamera>()
+        val done = java.util.concurrent.atomic.AtomicInteger(0)
+        val total = 254 * ports.size
+        val batch = 32
+        for (start in 1..254 step batch) {
+            if (rtspScanStop) break
+            val jobs = (start until minOf(start + batch, 255)).map { host ->
+                async(Dispatchers.IO) {
+                    for (port in ports) {
+                        if (rtspScanStop) return@async
+                        val res = onvifProbeHttp("$subnetPrefix.$host", port) ?: continue
+                        done.incrementAndGet()
+                        _rtspProgress.value = done.get() to total
+                        val (code, body) = res
+                        val ip = "$subnetPrefix.$host"
+                        if (code == 401) {
+                            val cam = OnvifCamera("http_${ip}_$port", ip, port, "http://$ip:$port/onvif/device_service", manufacturer = "ONVIF 端点(需认证)", source = "http")
+                            found[cam.id] = cam
+                            logLine("ONVIF 401: $ip:$port(需认证)")
+                        } else if (code == 200 && body != null &&
+                            (body.contains("GetDeviceInformationResponse") || body.contains("<tds:") || body.contains("Manufacturer"))
+                        ) {
+                            val manu = Regex("<tds:Manufacturer>(.*?)</tds:Manufacturer>", RegexOption.DOT_MATCHES_ALL).find(body)?.groupValues?.get(1) ?: ""
+                            val model = Regex("<tds:Model>(.*?)</tds:Model>", RegexOption.DOT_MATCHES_ALL).find(body)?.groupValues?.get(1) ?: ""
+                            val cam = OnvifCamera(
+                                "http_${ip}_$port", ip, port, "http://$ip:$port/onvif/device_service",
+                                manufacturer = manu, model = model, source = "http",
+                            )
+                            found[cam.id] = cam
+                            logLine("ONVIF hit: $ip:$port $manu $model")
+                        }
+                    }
+                }
+            }
+            jobs.awaitAll()
+        }
+        if (found.isNotEmpty()) {
+            _cameras.value = (_cameras.value.filter { it.id !in found.keys } + found.values).sortedBy { it.ip }
+        }
+        logLine("HTTP ONVIF sweep done: ${found.size} host(s)")
+        _scanning.value = false
+    }
+
+    /**
+     * 一键全扫:组播发现 + HTTP 网段探测,两阶段结果合并。
+     * 此前 UI 里 discover() 后紧跟 httpOnvifSweep(),阶段 2 开头清空列表会把
+     * 阶段 1 的组播结果全部抹掉 —— 组播扫到了也显示 0 台。
+     */
+    suspend fun scanAll(subnetPrefix: String? = null) {
+        discover()
+        val prefix = subnetPrefix ?: context?.let { localLanPrefix(it) }
+        if (prefix != null) httpOnvifSweep(prefix, clearFirst = false)
     }
 
     // ─── 2. 设备信息(免认证,多数设备可读) ───────────────────────────────────
@@ -159,6 +281,7 @@ class OnvifCamManager {
     suspend fun rtspScan(subnetPrefix: String, ports: List<Int> = listOf(554, 8554)) = withContext(Dispatchers.IO) {
         _scanning.value = true
         rtspScanStop = false
+        _cameras.value = emptyList()
         logLine("RTSP sweep $subnetPrefix.0/24 ports ${ports.joinToString(",")}")
         val found = HashMap<String, OnvifCamera>()
         for (host in 1..254) {
@@ -203,6 +326,8 @@ class OnvifCamManager {
             val cam = OnvifCamManager.OnvifCamera("manual_${ip}_$p", ip, p, url, source = "manual")
             val info = fetchInfo(cam)
             if (info.infoFetched) return@withContext info
+            // 200 拿不到信息但 401 时端点确实存在(需认证)—— 如实标记,不判「失败」
+            if (onvifProbeHttp(ip, p)?.first == 401) return@withContext info.copy(manufacturer = "ONVIF 端点(需认证)")
         }
         // 回退 RTSP banner
         for (p in listOf(554, 8554)) {
@@ -259,7 +384,7 @@ class OnvifCamManager {
     }.getOrDefault(false)
 
     /** banner 厂商指纹(关键词表) */
-    private fun fingerprintBanner(banner: String): String? {
+    internal fun fingerprintBanner(banner: String): String? {
         val b = banner.lowercase()
         return when {
             "hikvision" in b || "hiwits" in b -> "Hikvision"
@@ -589,6 +714,32 @@ class OnvifCamManager {
             .joinToString("") { "%02x".format(it) }
 
     companion object {
+        /** 私网 IPv4 判定(10.x / 172.16-31.x / 192.168.x) */
+        private fun isPrivateLan(ip: String): Boolean =
+            ip.startsWith("192.168.") || ip.startsWith("10.") ||
+                (ip.startsWith("172.") &&
+                    ip.substringAfter("172.").substringBefore(".").toIntOrNull()?.let { it in 16..31 } == true)
+
+        /**
+         * 本机局域网 IPv4。优先 Wi-Fi/以太网网卡,跳过蜂窝/VPN 接口 ——
+         * 蜂窝数据常拿 10.x 的 CG-NAT 地址,若误选它组播和网段扫描全废。
+         */
+        fun localLanIp(context: android.content.Context): String? = runCatching {
+            val ifs = java.net.NetworkInterface.getNetworkInterfaces().toList()
+            fun lanIpOf(iface: java.net.NetworkInterface): String? =
+                iface.inetAddresses.toList().filterIsInstance<java.net.Inet4Address>()
+                    .map { it.hostAddress ?: "" }
+                    .firstOrNull(::isPrivateLan)
+            val wifiLike = Regex("wlan|eth|swlan|usb", RegexOption.IGNORE_CASE)
+            val cellLike = Regex("rmnet|radio|ccmni|wwan|p2p|dummy|vpn|tun|ppp", RegexOption.IGNORE_CASE)
+            (ifs.firstOrNull { wifiLike.containsMatchIn(it.name) }?.let(::lanIpOf))
+                ?: ifs.firstOrNull { !cellLike.containsMatchIn(it.name) }?.let(::lanIpOf)
+        }.getOrNull()
+
+        /** 本机 /24 网段前缀(供 HTTP/RTSP 网段扫描),无局域网连接时 null */
+        fun localLanPrefix(context: android.content.Context): String? =
+            localLanIp(context)?.substringBeforeLast('.')
+
         /** 内置常见 RTSP 流路径(公开路径表) */
         val RTSP_PATHS = listOf(
             "/", "/live", "/live.sdp", "/stream1", "/stream0", "/h264", "/h265",

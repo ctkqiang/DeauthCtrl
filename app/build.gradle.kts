@@ -21,7 +21,6 @@ android {
         // 真机运行时验证测试(connectedDebugAndroidTest)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "xin.ctkqiang.deauthctrl.test"
-
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -40,6 +39,12 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+
+    // 单元测试 APK 的 manifest 合并不继承主 manifest 的 tools:overrideLibrary,
+    // 显式挂上测试 manifest 以豁免 com.google.ar:core 的 minSdk 24 冲突
+    sourceSets {
+        getByName("test").manifest.srcFile("src/test/AndroidManifest.xml")
     }
 
     compileOptions {
@@ -107,6 +112,10 @@ dependencies {
     // 离线 AI 终端 —— LiteRT-LM 本地大模型运行时(Gemma3-1B int4,推理 100% 离线)
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.11.0")
 
+    // 深度扫视 —— Google ARCore Depth API(相机独占,minSdk 24 与全局 23 冲突
+    // 由 Manifest tools:overrideLibrary 消解 + 运行时能力守卫)
+    implementation("com.google.ar:core:1.57.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
@@ -121,4 +130,6 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test:rules:1.6.1")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }

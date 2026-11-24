@@ -40,7 +40,9 @@ class BleSpamViewModel(application: Application) : AndroidViewModel(application)
     // ─── UI 本地缓存值（Compose 重组后回填用） ──────────────────────────────
 
     private var selectedProfile = BlePayloadProfile.ALL
-    private var intervalMs = 30L
+    // 会话重建间隔与 manager 钳制一致(100-300ms):低于 100ms 不会让空口广播更快,
+    // 旧实现默认 30ms 且滑杆 20-100ms,所选值全被静默抬到 100ms,滑杆纯装饰
+    private var intervalMs = 200L
     private var selectedTxPower = BleTxPower.HIGH
     private var selectedCycleMode = BleCycleMode.SEQUENCE
     private var selectedMaxPackets = -1L
@@ -59,7 +61,7 @@ class BleSpamViewModel(application: Application) : AndroidViewModel(application)
     // ─── Interval ───────────────────────────────────────────────────────────
 
     fun setInterval(intervalMs: Long) {
-        this.intervalMs = intervalMs
+        this.intervalMs = intervalMs.coerceIn(100L, 300L)
         manager.setInterval(intervalMs)
     }
 
