@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 社交工程防御:鱼钩与诱饵 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M8,8 L22,8 M10,8 C10,26 20,34 30,25" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M30,25 A4,4 0 1,1 29.99,25" android:fillColor="#FFD54F"/>
+    <path android:pathData="M30,25 A1.2,1.2 0 1,1 29.99,25" android:fillColor="#FF5252"/>
+    <path android:pathData="M36,10 h8 M40,6 v8" android:strokeColor="#FF5252" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+</vector>

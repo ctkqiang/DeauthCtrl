@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wiki_title">Survival Guide</string>
+    <string name="wiki_tab_field">FIELD</string>
+    <string name="wiki_tab_digital">DIGITAL</string>
+    <string name="wiki_section_field">Field &amp; Emergency Survival</string>
+    <string name="wiki_section_digital">Digital &amp; OpSec Survival</string>
+    <string name="wiki_note">Open-source field manual — verify locally, train before you need it</string>
+
+    <!-- 第 1 章 应急通信 -->
+    <string name="wiki_ch1_title">Emergency Communications</string>
+    <string name="wiki_ch1_summary">Signal discipline, radio basics and the rule of three</string>
+    <string name="wiki_ch1_p1">The universal distress signal is three of anything: three whistle blasts, three fires, three light flashes. Repeat in cycles with pauses — searchers are trained to recognize it.</string>
+    <string name="wiki_ch1_p2">Agree on a radio channel, call schedule and fallback frequencies with your team before separation. Key the mic, speak clearly, end with \"over\". A phone is a radio too — offline maps and GPS work without signal.</string>
+    <string name="wiki_ch1_p3">Signal mirrors, whistles and bright cloth are cheap, weightless backups that never run out of battery. A mirror flash is visible for kilometers in daylight.</string>
+
+    <!-- 第 2 章 水源 -->
+    <string name="wiki_ch2_title">Water Sourcing &amp; Treatment</string>
+    <string name="wiki_ch2_summary">Find it, filter it, boil it — the 3-day rule</string>
+    <string name="wiki_ch2_p1">You can survive 3 weeks without food but only 3 days without water. Prioritize water above everything except shelter in extreme weather.</string>
+    <string name="wiki_ch2_p2">Boiling is the most reliable treatment: 1 minute rolling boil at sea level, 3 minutes above 2000 m. Filter cloudy water through cloth first, then boil or use purification tablets.</string>
+    <string name="wiki_ch2_p3">Find water downhill: valleys, lines of green vegetation, animal trails converging, morning dew on grass. Rain collection and solar stills are slow but work.</string>
+
+    <!-- 第 3 章 庇护所 -->
+    <string name="wiki_ch3_title">Shelter</string>
+    <string name="wiki_ch3_summary">The rule of 3s: 3 hours without shelter in extreme conditions</string>
+    <string name="wiki_ch3_p1">3 minutes without air, 3 hours without shelter in extreme conditions, 3 days without water, 3 weeks without food. Shelter beats fire and water in cold, wind or wet weather.</string>
+    <string name="wiki_ch3_p2">Pick high ground away from water, falling branches and wind tunnels. Insulate from the ground — a thick leaf bed beats a thin blanket; you lose more heat to the ground than to the air.</string>
+    <string name="wiki_ch3_p3">A lean-to with a reflective wall (space blanket) doubles fire heat. Keep the entrance small and angled away from wind. Dry clothes are part of the shelter.</string>
+
+    <!-- 第 4 章 火 -->
+    <string name="wiki_ch4_title">Fire</string>
+    <string name="wiki_ch4_summary">Tinder, kindling, fuel — the three-layer structure</string>
+    <string name="wiki_ch4_p1">Fire needs three layers: tinder (dry grass, birch bark, cotton), kindling (twigs), fuel (branches). Prepare twice as much of each as you think you need before striking a spark.</string>
+    <string name="wiki_ch4_p2">Ignition without matches: ferro rod sparks, battery + steel wool, a magnifier or a polished can bottom with sunlight. Carry at least two independent ignition methods.</string>
+    <string name="wiki_ch4_p3">In rain, split dead standing wood — the core stays dry. Store tinder in a waterproof bag always, not just when it rains.</string>
+
+    <!-- 第 5 章 急救 -->
+    <string name="wiki_ch5_title">Field First Aid</string>
+    <string name="wiki_ch5_summary">Stop bleeding, splint, rewarm — ABC first</string>
+    <string name="wiki_ch5_p1">ABC: Airway, Breathing, Circulation. Check responsiveness, clear the airway, verify breathing, then stop major bleeding with direct pressure — not a tourniquet unless the limb is lost or pressure fails.</string>
+    <string name="wiki_ch5_p2">Splint fractures as found — do not straighten. Immobilize the joint above and below. Elevate sprains and apply cold if available.</string>
+    <string name="wiki_ch5_p3">Hypothermia kills faster than most injuries. Rewarm gradually: dry clothes, warm drinks (if conscious), shared body heat — never rub limbs or use direct heat on skin.</string>
+
+    <!-- 第 6 章 十必备 -->
+    <string name="wiki_ch6_title">The 10 Essentials</string>
+    <string name="wiki_ch6_summary">Navigation, sun, insulation, light, first aid, fire, repair, food, water, shelter</string>
+    <string name="wiki_ch6_p1">The ten essentials: navigation (map + compass), sun protection, insulation, illumination, first-aid kit, fire starter, repair kit, food, water, emergency shelter.</string>
+    <string name="wiki_ch6_p2">Carry them on your person, not in a pack you might drop. A knife, cord and tape are the universal repair trio.</string>
+    <string name="wiki_ch6_p3">Keep cash, a paper contact list and a charged power bank — electronics fail exactly when you need them most.</string>
+
+    <!-- 第 7 章 匿名通信 -->
+    <string name="wiki_ch7_title">Anonymous Communications</string>
+    <string name="wiki_ch7_summary">Tor, Signal, and identity separation</string>
+    <string name="wiki_ch7_p1">Use Tor (or the Tails live system) for anonymous browsing and Signal for end-to-end encrypted messaging. Never mix anonymous identities with your real accounts on the same device.</string>
+    <string name="wiki_ch7_p2">A burner device with no SIM history, paid in cash, is the baseline for operations that must not trace back. Assume every cell tower records your IMSI and location.</string>
+    <string name="wiki_ch7_p3">Metadata kills: who you talk to, when and how often is often more revealing than content. Use signal delays, vary timing and avoid patterns.</string>
+
+    <!-- 第 8 章 设备反取证 -->
+    <string name="wiki_ch8_title">Device Anti-Forensics</string>
+    <string name="wiki_ch8_summary">Encrypt, wipe, isolate — before seizure, not after</string>
+    <string name="wiki_ch8_p1">Full-disk encryption with a long passphrase is the first line. After reboot, memory-based secrets (keys in RAM) decay — reboot or shut down when crossing borders or approaching checkpoints.</string>
+    <string name="wiki_ch8_p2">A Faraday bag blocks all radio: cellular, Wi-Fi, GPS tracking. Test it before relying on it — cheap bags leak.</string>
+    <string name="wiki_ch8_p3">Secure deletion means overwriting or crypto-erasing, not \"delete\". Deleting only removes the index entry; data survives until overwritten.</string>
+
+    <!-- 第 9 章 反窃听排查 -->
+    <string name="wiki_ch9_title">Bug &amp; Camera Sweep</string>
+    <string name="wiki_ch9_summary">RF spectrum, IR glint, physical inspection</string>
+    <string name="wiki_ch9_p1">Hidden cameras reveal themselves by lens glint: sweep a strong light or IR flashlight in a dark room and look for pinpoint reflections (a phone camera sees IR).</string>
+    <string name="wiki_ch9_p2">RF bugs emit when transmitting. Use a spectrum sweep (this app\'s RF Sense) near suspect fixtures — smoke detectors, chargers, wall plates — and watch for unexpected signals.</string>
+    <string name="wiki_ch9_p3">Physical inspection: open fixtures, check for new holes, mismatched screws, unexpected wires. A bug needs power and a signal path — trace both.</string>
+
+    <!-- 第 10 章 认证 -->
+    <string name="wiki_ch10_title">Passwords &amp; Authentication</string>
+    <string name="wiki_ch10_summary">Passphrases, a manager, 2FA — never reuse</string>
+    <string name="wiki_ch10_p1">Use a password manager and memorize only its master passphrase — five or more random words beat a short complex string and are easier to remember.</string>
+    <string name="wiki_ch10_p2">Enable 2FA everywhere; TOTP apps beat SMS (SIM-swap attacks). Keep recovery codes offline on paper.</string>
+    <string name="wiki_ch10_p3">Never reuse passwords across sites — one breached site compromises all. Check breach databases and rotate compromised credentials immediately.</string>
+
+    <!-- 第 11 章 社交工程防御 -->
+    <string name="wiki_ch11_title">Social Engineering Defense</string>
+    <string name="wiki_ch11_summary">Verify out-of-band, slow down, question urgency</string>
+    <string name="wiki_ch11_p1">Scammers weaponize urgency and authority. Any request demanding immediate action (payment, password, code) should trigger a full stop and out-of-band verification.</string>
+    <string name="wiki_ch11_p2">Verify identity out-of-band: hang up and call the known number, or use a pre-arranged code phrase. Never give sensitive information to someone who called you.</string>
+    <string name="wiki_ch11_p3">Phishing indicators: mismatched domains, urgent threats, generic greetings, requests to bypass normal process. Hover links, check headers, and when in doubt — don\'t click.</string>
+
+    <!-- 第 12 章 数字逃生包 -->
+    <string name="wiki_ch12_title">Digital Bug-Out Bag</string>
+    <string name="wiki_ch12_summary">3-2-1 backups, offline copies, rehearsed restore</string>
+    <string name="wiki_ch12_p1">3-2-1: three copies, two different media, one off-site. Encrypt backups before they leave your control — an unencrypted drive is a liability.</string>
+    <string name="wiki_ch12_p2">Keep an offline copy of critical documents (IDs, contacts, keys) in an encrypted container on a small drive, plus paper copies of the essentials.</string>
+    <string name="wiki_ch12_p3">A backup you haven\'t restored is a wish, not a plan. Rehearse a restore on a spare device once a year and verify the passphrase actually opens it.</string>
+
+    <!-- 第 13 章 战伤急救 -->
+    <string name="wiki_ch13_title">Combat Trauma First Aid</string>
+    <string name="wiki_ch13_summary">Tourniquet, wound packing, tension pneumothorax</string>
+    <string name="wiki_ch13_p1">Massive bleeding is the number one preventable cause of battlefield death. Limb bleeding: place the tourniquet high (5–8 cm above the wound), tighten until bleeding stops, note the time — professional care is required within 2 hours.</string>
+    <string name="wiki_ch13_p2">Junctional areas (armpit, groin, neck) cannot take a tourniquet — pack the wound with hemostatic gauze and hold direct pressure for 3+ minutes, then apply a pressure bandage.</string>
+    <string name="wiki_ch13_p3">Tension pneumothorax: chest penetrating wound plus progressive difficulty breathing requires needle decompression (2nd intercostal space, mid-clavicular line). If untrained, seek guidance — do not improvise blind.</string>
+
+    <!-- 第 14 章 核生化防护 -->
+    <string name="wiki_ch14_title">CBRN Protection</string>
+    <string name="wiki_ch14_summary">Upwind evacuation, sealing, decontamination</string>
+    <string name="wiki_ch14_p1">Determine wind direction and move upwind / crosswind. Indoors: close windows and doors, shut ventilation, seal gaps with tape and plastic.</string>
+    <string name="wiki_ch14_p2">Decontamination order: remove outer clothing first (80% of contamination is on clothes), then rinse skin with large amounts of water, then change into clean clothes. No conditioner, no hot water.</string>
+    <string name="wiki_ch14_p3">Iodine tablets only protect against radioactive iodine and must be taken promptly; they do not block other radiation. N95 / gas masks stop inhalation but not every gas.</string>
+
+    <!-- 第 15 章 伪装与隐蔽 -->
+    <string name="wiki_ch15_title">Camouflage &amp; Concealment</string>
+    <string name="wiki_ch15_summary">Thermal signature, movement discipline, anti-tracking</string>
+    <string name="wiki_ch15_p1">Modern sensors see heat and movement. Night movement: slow, low, quiet — use vegetation and terrain shadows, never silhouette against the skyline.</string>
+    <string name="wiki_ch15_p2">Thermal management: a thermal blanket temporarily reduces heat signature; hide behind thick walls or rocks; a vehicle engine bay is the hottest signature around.</string>
+    <string name="wiki_ch15_p3">Anti-tracking: randomize routes, avoid fixed schedules, watch for the same vehicle or person appearing three times behind you, check reflective surfaces at night.</string>
+
+    <!-- 第 16 章 应急食品与储存 -->
+    <string name="wiki_ch16_title">Food &amp; Water Storage</string>
+    <string name="wiki_ch16_summary">Long-term reserves, rationing, calorie density</string>
+    <string name="wiki_ch16_p1">Long-term storage: minimum 2 L water and 2000 kcal per person per day; stock 3 days to 2 weeks and rotate stock regularly.</string>
+    <string name="wiki_ch16_p2">Rationing: when resupply is uncertain, ration from day one; protein goes to the weak first; water outranks food.</string>
+    <string name="wiki_ch16_p3">Emergency food: high-calorie, long-shelf-life (cans, energy bars, honey, nuts); avoid high-salt items that increase thirst.</string>
+
+    <!-- 第 17 章 导航与逃生路线 -->
+    <string name="wiki_ch17_title">Navigation &amp; Escape Routes</string>
+    <string name="wiki_ch17_summary">Two routes minimum, no-GPS navigation, checkpoints</string>
+    <string name="wiki_ch17_p1">Plan at least two escape routes (on foot / by vehicle) avoiding bridges, tunnels and checkpoints; pre-set rendezvous points along each.</string>
+    <string name="wiki_ch17_p2">Navigation without GPS: map and compass; sun by day, North Star / Southern Cross by night; rivers flow toward population downstream.</string>
+    <string name="wiki_ch17_p3">Movement logging: record position every 30 minutes; tell a trusted person your route and timeline; agree on an overdue alarm protocol.</string>
+
+    <!-- 第 18 章 信号与救援 -->
+    <string name="wiki_ch18_title">Signaling &amp; Rescue</string>
+    <string name="wiki_ch18_summary">Ground-to-air signals, beacons, rescue discipline</string>
+    <string name="wiki_ch18_p1">Ground-to-air signals: SOS with rocks or trenches (3–10 m letters, high contrast); three fires in a line; mirror flashes at aircraft.</string>
+    <string name="wiki_ch18_p2">Electronic rescue: register a PLB / satellite beacon and trigger it once; in many countries 112 works even without a SIM card.</string>
+    <string name="wiki_ch18_p3">When rescue arrives: do not move the injured; wave bright clothing; at night draw slow circles with a light; stay in place and wait.</string>
+
+    <!-- 第 19 章 通信韧性 -->
+    <string name="wiki_ch19_title">Communication Resilience</string>
+    <string name="wiki_ch19_summary">Grid-down comms, listening windows, paper redundancy</string>
+    <string name="wiki_ch19_p1">When power and cellular networks fail: two-way radios (agreed frequencies and callsigns), satellite messaging, mesh networks — and paper records.</string>
+    <string name="wiki_ch19_p2">Pre-arrange: an emergency frequency list, fixed listening windows (e.g. 5 minutes at the top of every hour), and a code-word list.</string>
+    <string name="wiki_ch19_p3">Information redundancy: write critical contacts on waterproof paper — never rely on a phone alone.</string>
+
+    <!-- 第 20 章 位置隐私与反跟踪 -->
+    <string name="wiki_ch20_title">Location Privacy &amp; Anti-Tracking</string>
+    <string name="wiki_ch20_summary">Silence devices, border discipline, cash habits</string>
+    <string name="wiki_ch20_p1">Smart devices are moving beacons: when silence matters, disable location, Bluetooth and Wi-Fi — or use a Faraday bag.</string>
+    <string name="wiki_ch20_p2">Borders and checkpoints: power off in advance (memory keys decay), separate devices among carriers, carry a clean \"white\" phone.</string>
+    <string name="wiki_ch20_p3">Cash discipline: buy sensitive supplies with cash, skip loyalty cards, never buy sensitive items at the same store on a schedule.</string>
+
+    <!-- 第 21 章 应急电力 -->
+    <string name="wiki_ch21_title">Emergency Power</string>
+    <string name="wiki_ch21_summary">Tiered power, solar selection, battery safety</string>
+    <string name="wiki_ch21_p1">Tier your power: small (phone/radio: power banks + solar panels), medium (lights/medical: portable power stations), large (generators — mind carbon monoxide ventilation).</string>
+    <string name="wiki_ch21_p2">Solar panels: folding panels are portable; overcast days deliver only 10–30% output; charge multiple power banks simultaneously.</string>
+    <string name="wiki_ch21_p3">Battery safety: keep lithium batteries out of direct sun and pressure; run generators 5+ meters from shelter, never indoors.</string>
+
+    <!-- 第 22 章 心理韧性 -->
+    <string name="wiki_ch22_title">Psychological Resilience</string>
+    <string name="wiki_ch22_summary">Breathing control, team first aid, sleep discipline</string>
+    <string name="wiki_ch22_p1">Under crisis the brain enters fight / flight / freeze. 4-7-8 breathing (inhale 4 s, hold 7 s, exhale 8 s) rapidly calms the physiological alarm.</string>
+    <string name="wiki_ch22_p2">Team psychological first aid: listen without judgment, secure basics (water, food, sleep), assign simple tasks to restore a sense of control.</string>
+    <string name="wiki_ch22_p3">Sleep discipline: rotate watch so everyone gets at least 4 continuous hours per 24 h; caffeine only for critical windows.</string>
+
+    <!-- 第 23 章 医疗信息应急卡 -->
+    <string name="wiki_ch23_title">Medical Information Card</string>
+    <string name="wiki_ch23_summary">Paper card, encrypted copy, medication backup</string>
+    <string name="wiki_ch23_p1">Paper emergency card: blood type, allergies, chronic conditions, medications, emergency contacts — one in wallet, one in pack.</string>
+    <string name="wiki_ch23_p2">Keep an encrypted digital copy and tell at least one companion how to open it; battlefield medicine does not wait while you unlock a phone.</string>
+    <string name="wiki_ch23_p3">Medication backup: at least 30 days of chronic medication, split between two locations — losing one cache leaves another.</string>
+
+    <!-- 第 24 章 分层逃生包清单 -->
+    <string name="wiki_ch24_title">Tiered Bug-Out Bag</string>
+    <string name="wiki_ch24_summary">EDC, 72-hour bag, long-term reserves</string>
+    <string name="wiki_ch24_p1">EDC (on person): knife, flashlight, lighter, cash, whistle, tourniquet, multitool.</string>
+    <string name="wiki_ch24_p2">72-hour bag: 3 L water + filter, 3 days food, shelter (emergency blanket / tarp), first-aid kit, comms, spare clothing.</string>
+    <string name="wiki_ch24_p3">Long-term / home reserves: two weeks of food and water, fuel, generator, medication, copies of key documents — inspect and rotate regularly.</string>
+
+    <!-- 操作步骤与关键警示 -->
+    <string name="wiki_sec_steps">OPERATING STEPS</string>
+    <string name="wiki_sec_warn">CRITICAL WARNINGS</string>
+    <string name="wiki_ch1_steps">1. Fix frequencies before separating: agree primary + backup channels and callsigns, write on a waterproof card.
+2. Any distress starts with the rule of three: 3 whistle blasts / 3 flashes / 3 fires, repeated in cycles with 1-minute gaps.
+3. Radio discipline: press PTT, wait 1 second, speak slowly and clearly, end every transmission with \"over\".
+4. Listening windows: monitor for 5 minutes at the top of every hour.
+5. Phone as radio: pre-download offline maps — GPS works with zero signal; use airplane mode to save battery.
+6. Get high for range: move to high ground or open terrain; do not block the antenna with your body.
+7. Signal mirror: hold mirror in one hand, make a V over the target with the other, flash 3 times per group.</string>
+    <string name="wiki_ch1_warn">Radio direction-finding is real: in wartime, long transmissions expose your position — send short bursts and move.
+Sound carries far at night — it also gives you away. Use light signals when possible.
+Battery is ammunition: power off during non-critical hours.</string>
+    <string name="wiki_ch2_steps">1. Find water downhill: valley floors, lines of green vegetation, converging animal trails, rock hollows.
+2. Collect in order of safety: rain > dew > flowing clear water > still water; take flowing water upstream of contamination.
+3. Filter murky water through cloth, then sand, then charcoal in layers.
+4. BOIL: rolling boil 1 minute (3 minutes above 2000 m). Boiling is the gold standard — do it whenever possible.
+5. Chemical backup: purification tablets per instructions (usually 30 min); or 2 drops of 2% iodine per liter, wait 30 minutes.
+6. Store 3 L per person per day; keep containers dark and covered to prevent algae.</string>
+    <string name="wiki_ch2_warn">Never drink from still water near animal carcasses or downstream of them.
+Melted snow must be boiled — cold does not kill pathogens.
+Seawater kills faster than thirst — it accelerates dehydration.
+Dark urine means you are already dehydrated. Drink before you feel thirst.</string>
+    <string name="wiki_ch3_steps">1. Site selection: high ground, out of wind, away from dead branches, riverbeds and cliff bases.
+2. Insulate the ground first: a 30 cm bed of leaves/grass — the ground steals more heat than the air.
+3. Lean-to: one ridge pole + angled poles at 45°, opening facing away from wind, reflective layer facing the fire.
+4. Thatch the roof with leaves/moss laid pointing downward so water runs off.
+5. Keep the entrance small — just big enough to crawl through — and hang a wind curtain.
+6. Change out of wet clothes before sleeping; stuff them into the sleeping bag as extra insulation.</string>
+    <string name="wiki_ch3_warn">Never shelter in valley bottoms (cold air sinks) or dry riverbeds (flash floods).
+Keep fire at least 1.5 m from the shelter.
+Protect heat-loss zones first: head, neck, armpits, groin.</string>
+    <string name="wiki_ch4_steps">1. Prepare three layers before striking a spark: one fist of tinder (dry grass, birch bark, cotton), one armful of twigs, one pile of branches — double what you estimate.
+2. Lay: cone style for wet/windy weather; log-cabin style for cooking.
+3. Ferro rod: scrape at 45° with the knife spine, sparks onto the tinder.
+4. Battery + steel wool: short two cells in series against the wool.
+5. Magnifier or polished can bottom: focus to the smallest brightest point and hold still.
+6. Nurture: when tinder smokes, blow gently; feed twigs first, then branches.</string>
+    <string name="wiki_ch4_warn">Keep tinder in a waterproof bag at all times, not just when it rains.
+In rain, split dead standing wood — the core is dry.
+Clear 1 m of ground around the fire; fully extinguish before leaving (water + soil, test with the back of your hand).</string>
+    <string name="wiki_ch5_steps">1. Assess: tap shoulders and shout; no response — call for help, check airway and breathing.
+2. Stop massive bleeding with direct pressure: gauze + both hands, do not release for 10 minutes.
+3. Limb arterial bleeding: tourniquet high on the limb (5–8 cm above wound), tighten until bleeding stops, write the time on it.
+4. Fractures: splint in the position found — never straighten; immobilize the joints above and below.
+5. Hypothermia: move out of wind/wet, dry clothing, warm the core (chest/back), warm drinks if conscious.
+6. Shock: lay flat, raise legs 30 cm, keep warm, give nothing by mouth (especially abdominal wounds).</string>
+    <string name="wiki_ch5_warn">Never pull out an impaled object — stabilize it in place.
+Never give water to an unconscious person.
+Tourniquet window is 2 hours — mark the time, hand over to medical.
+Rubbing frostbitten tissue causes amputation.</string>
+    <string name="wiki_ch6_steps">1. Carry the ten essentials on your PERSON, not in a pack you might drop: navigation (map+compass), sun protection, insulation, illumination, first aid, fire, repair, food, water, emergency shelter.
+2. Layer the load: EDC on body, 72-hour bag on back, long-term reserves at base.
+3. Repair trio everywhere: knife, cord, tape.
+4. Waterproof everything twice: double bags.
+5. Drill monthly: use each item once so you know it works.</string>
+    <string name="wiki_ch6_warn">Gear you have not practiced with is gear you do not have.
+A broken compass beats a dead phone.
+In wartime, dark/olive gear over bright colors — visibility kills.</string>
+    <string name="wiki_ch7_steps">1. Build a Tails live USB from the official site (verify the signature) for anonymous sessions.
+2. Use Tor Browser for anonymous browsing; never maximize the window.
+3. Signal for end-to-end encrypted messaging with disappearing messages.
+4. Separate anonymous identities from real ones: different devices, different accounts, never mixed.
+5. Burner phone: bought with cash, no real-name registration, only public Wi-Fi at changing locations.
+6. Compartmentalize: one identity per purpose; one leak must not chain to the rest.</string>
+    <string name="wiki_ch7_warn">Metadata kills: who you talk to, when, and how often reveals more than content.
+One single cross-login burns the whole identity.
+Public cameras see your face — anonymity is not just software.</string>
+    <string name="wiki_ch8_steps">1. Enable full-disk encryption with a long passphrase on every device.
+2. Reboot or power off before borders, checkpoints or seizure risk — memory keys decay after reboot.
+3. Test your Faraday bag: inside it, calls and GPS must fail completely.
+4. Secure erase = overwrite (3 passes) or crypto-erase, never \"delete\".
+5. Crossing borders: power off in advance, split devices between carriers, carry a clean \"white\" phone.</string>
+    <string name="wiki_ch8_warn">\"Deleted\" files survive until overwritten.
+Encryption does not stop coercion — plan what you will say.
+Cloud backups are a second crime scene.</string>
+    <string name="wiki_ch9_steps">1. Darken the room and sweep with a strong flashlight or IR light — look for pinpoint lens reflections (a phone camera sees IR).
+2. Run an RF sweep (this app\'s RF Sense) against suspect fixtures: smoke detectors, chargers, wall plates, clocks, picture frames.
+3. Physical inspection: open fixtures, look for new holes, mismatched screws, unexpected wires.
+4. Power test: cut power — if the signal disappears it is wired; if not, it has a battery.
+5. Pay special attention to gifts, borrowed devices and newly \"repaired\" items.</string>
+    <string name="wiki_ch9_warn">Do not talk about sensitive matters during or after the sweep — if you missed one, it heard you.
+Laser window-bounce surveillance exists — close curtains for sensitive discussions.
+A clean sweep is never a guarantee.</string>
+    <string name="wiki_ch10_steps">1. Use a password manager; memorize only its master passphrase: 5+ random words.
+2. Enable TOTP 2FA everywhere; keep recovery codes on paper offline.
+3. Give critical accounts (mail, bank, comms) unique strong passphrases.
+4. Check breach databases regularly; rotate compromised credentials immediately.
+5. Never share passwords or 2FA codes with anyone — no legitimate support asks.</string>
+    <string name="wiki_ch10_warn">SMS 2FA can be defeated by SIM-swap attacks.
+Phishing pages harvest 2FA codes in real time.
+Biometrics can be forced by anyone holding your finger or face.</string>
+    <string name="wiki_ch11_steps">1. Any request combining urgency + authority triggers a full stop — no legitimate emergency works this way.
+2. Verify out-of-band: hang up and call the known number, or use a pre-arranged code phrase.
+3. Never give sensitive information to someone who called YOU.
+4. Inspect before clicking: hover links, check domains and sender headers.
+5. Insider defense: least-knowledge principle, verify identity by behavior not appearance.
+6. Slow down: real decisions can survive 10 minutes of checking.</string>
+    <string name="wiki_ch11_warn">Scammers manufacture urgency to disable your judgment.
+A hijacked account of someone you trust is the most dangerous vector.
+One careless click can compromise everything.</string>
+    <string name="wiki_ch12_steps">1. Follow 3-2-1: three copies, two different media, one off-site.
+2. Encrypt backups (Veracrypt / Cryptomator) before they leave your control.
+3. Keep paper copies of essential documents in two locations.
+4. Rehearse a full restore on a spare device once a year.
+5. Share the decryption passphrase with at least one trusted person.</string>
+    <string name="wiki_ch12_warn">A backup you have never restored is a wish, not a plan.
+Flash drives and disks fail without warning.
+Cloud storage is someone else\'s server.</string>
+    <string name="wiki_ch13_steps">1. Firefight first: return fire / reach cover before treating casualties — a dead medic helps no one.
+2. Run MARCH: Massive bleeding → Airway → Respiration → Circulation → Hypothermia.
+3. Limb bleeding: tourniquet high (5–8 cm above wound), tighten until bleeding stops, write the time; window is 2 hours.
+4. Junctional wounds (armpit/groin/neck): pack with hemostatic gauze, hold pressure 3+ minutes, then pressure bandage.
+5. Tension pneumothorax (chest wound + worsening breathing): needle decompression, 2nd intercostal space, mid-clavicular line.
+6. Evacuation: drag low-profile first; spinal injuries need a rigid board.</string>
+    <string name="wiki_ch13_warn">Never loosen a tourniquet once applied — that is a medical decision.
+Never remove impaled objects.
+Hypothermia kills faster than blood loss in cold conditions — treat both together.</string>
+    <string name="wiki_ch14_steps">1. Determine wind direction (grass, smoke, dust) and move upwind / crosswind immediately.
+2. Indoors: close windows, doors and ventilation; tape and plastic over gaps; move to the innermost room.
+3. Decontaminate in order: remove outer clothing (80% of contamination) → flush skin with large amounts of water → change into clean clothes.
+4. Respiratory protection: N95 as an emergency stopgap; gas mask with the correct filter canister.
+5. Iodine tablets: only against radioactive iodine, taken as early as possible.
+6. Nerve agent signs (salivation, pinpoint pupils, convulsions): get away, ventilate, do not become the next casualty.</string>
+    <string name="wiki_ch14_warn">Nuclear flash: never look at it; drop flat, stay down 30+ seconds for the shockwave; shelter 48 hours if downwind.
+Hot water and conditioner accelerate chemical absorption — use cool water only.
+Removing clothing decontaminates more than any rinse.</string>
+    <string name="wiki_ch15_steps">1. Movement discipline: slow, low, quiet; move through shadows, never along the skyline.
+2. Break your outline: vegetation, netting, local materials.
+3. Thermal management: thermal blanket, thick walls, rock cover; let hot vehicle engines cool.
+4. Anti-tracking: randomize routes, change schedules, watch for the same vehicle or person appearing three times.
+5. Night adaptation: 20 minutes in darkness before moving; use red light for all tasks.</string>
+    <string name="wiki_ch15_warn">Movement is the most detectable thing you do.
+Drones see heat signatures — cover does not mean hidden.
+Reflections (watch, glasses, metal) are fatal at night.</string>
+    <string name="wiki_ch16_steps">1. Stock baseline: 2 L water + 2000 kcal per person per day, minimum 3 days, aim 2 weeks.
+2. Ration from day one when resupply is uncertain; water outranks food.
+3. Rotate stock: first in, first out; inspect every 6 months.
+4. Best calorie density: honey, nuts, peanut butter, canned food, energy bars.
+5. Emergency still: pot + plastic sheet + cup can distill small amounts of water.</string>
+    <string name="wiki_ch16_warn">High-salt food increases thirst — avoid it for emergency stocks.
+Cooking dry food consumes water — plan for it.
+The body survives 3 weeks without food, 3 days without water.</string>
+    <string name="wiki_ch17_steps">1. Plan two escape routes (foot + vehicle) avoiding bridges, tunnels and checkpoints; set rendezvous points along each.
+2. Locate yourself: map + compass, three-line intersection.
+3. Without a compass: sun by day; North Star / Southern Cross by night.
+4. Rivers flow toward people downstream.
+5. Record position every 30 minutes.
+6. Mark your trail (broken twigs, stone piles) for backtracking.</string>
+    <string name="wiki_ch17_warn">In fog or darkness, do not move blind — wait for light or use terrain contours.
+Tell a trusted person your route and timeline; agree on an overdue alarm.
+Bridges, tunnels and checkpoints are choke points — plan around them.</string>
+    <string name="wiki_ch18_steps">1. Three fires in a straight line: light at night, smoke by day.
+2. SOS ground signal: letters 3–10 m, high contrast, in the open.
+3. Signal mirror at aircraft: aim and flash 3 times per group.
+4. Registered PLB / satellite beacon: trigger once and leave it on.
+5. When rescue arrives: wave bright clothing; at night draw slow circles with a light; stay in place.</string>
+    <string name="wiki_ch18_warn">Do not waste energy wandering once signaling is set up.
+Do not start wildfires with signal fires.
+Check beacon battery expiry dates.</string>
+    <string name="wiki_ch19_steps">1. Prepare a waterproof card: frequencies, callsigns, code words, listening schedule.
+2. Listen 5 minutes at the top of every hour on the agreed frequency.
+3. Radios: high ground, slow speech, short bursts.
+4. Satellite messenger as backup for beyond-line-of-sight.
+5. Mesh/network apps (this app\'s walkie) over local Wi-Fi.
+6. Log everything on paper — paper survives.</string>
+    <string name="wiki_ch19_warn">In wartime, transmitting exposes you — short bursts, then move.
+Battery discipline: off during non-critical hours.
+No single channel is reliable — always have two.</string>
+    <string name="wiki_ch20_steps">1. Silence your devices: location, Bluetooth, Wi-Fi off — or a Faraday bag.
+2. Border/checkpoint discipline: power off in advance, split devices among carriers, carry a clean phone.
+3. Pay cash for sensitive supplies; skip loyalty cards and fixed schedules.
+4. Randomize routes and verify with anti-tracking observation.
+5. Sensitive conversations: devices off or bagged, and away from smart speakers.</string>
+    <string name="wiki_ch20_warn">Every cell tower logs your IMSI and location — assume it is recorded.
+Car GPS, dashcams and smartwatches are beacons too.
+A phone that is \"off\" may still be tracked unless the battery is removed or bagged.</string>
+    <string name="wiki_ch21_steps">1. Tier your power: small (power banks + folding solar for phone/radio), medium (portable power station for lights/medical), large (generator).
+2. Solar: angle panels toward the midday sun; overcast days give only 10–30% output.
+3. Keep every power bank full; recharge nightly.
+4. Generator: run outdoors 5+ m from shelter with a carbon monoxide alarm.
+5. Save power: airplane mode, lower brightness, kill background apps.</string>
+    <string name="wiki_ch21_warn">Lithium batteries in direct sun or under pressure can catch fire.
+A generator indoors kills — carbon monoxide is odorless.
+Unstable voltage destroys equipment — use regulators.</string>
+    <string name="wiki_ch22_steps">1. 4-7-8 breathing: inhale 4 s, hold 7 s, exhale 8 s; repeat 4 rounds.
+2. Grounding 5-4-3-2-1: name 5 things you see, 4 you hear, 3 you touch, 2 you smell, 1 you taste.
+3. Team psychological first aid: listen without judgment, secure basics (water/food/sleep), assign small tasks.
+4. Sleep discipline: guarantee every person 4 continuous hours per 24 h; rotate watch.
+5. Caffeine only for critical windows.
+6. Panicking teammate: low voice, slow speech, give ONE simple action to do.</string>
+    <string name="wiki_ch22_warn">Panic spreads faster than any threat — contain it first.
+Fatigue zeroes judgment — a tired leader makes fatal calls.
+Breakdowns happen; take turns, do not let everyone collapse at once.</string>
+    <string name="wiki_ch23_steps">1. Paper emergency card: blood type, allergies, medical history, medications, emergency contacts — one in wallet, one in pack.
+2. Keep an encrypted digital copy; tell at least one companion the passphrase.
+3. Chronic medication: 30+ days, split across two locations.
+4. Triage marking: write injury + time on skin or tape for medics.
+5. If blood type is unknown, write UNKNOWN — a wrong type is worse than none.</string>
+    <string name="wiki_ch23_warn">Battlefield medicine does not wait for you to unlock a phone.
+Write severe allergies (penicillin) in the most visible place.
+Medics treat the card, not your memory.</string>
+    <string name="wiki_ch24_steps">1. EDC (on person): knife, flashlight, lighter, cash, whistle, tourniquet, multitool.
+2. 72-hour bag: 3 L water + filter, 3 days food, shelter (tarp/blanket), first aid, comms, spare clothing.
+3. Long-term home reserves: two weeks food and water, fuel, generator, medication, copies of key documents.
+4. Inspect and rotate stock regularly; replace batteries and expired items.
+5. Pack to carry: if you cannot walk 10 km with it, it is too heavy.</string>
+    <string name="wiki_ch24_warn">A bag that stays at home saves no one — keep one in the vehicle too.
+Drill: live out of the 72-hour bag once to find its gaps.
+Two is one, one is none: duplicate the critical items.</string>
+</resources>

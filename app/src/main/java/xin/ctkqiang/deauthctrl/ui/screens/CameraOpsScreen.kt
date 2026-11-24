@@ -90,12 +90,21 @@ import xin.ctkqiang.deauthctrl.viewmodel.IntelFeedViewModel
  * 全部操作走摄像头自身 SOAP 接口;重启/压暗真实改变设备 —— 仅限授权目标。
  */
 @Composable
-fun CameraOpsScreen(preselectIp: String? = null, back: () -> Unit) {
-    val manager = remember { OnvifCamManager() }
+fun CameraOpsScreen(preselectIp: String? = null, back: () -> Unit, autoScan: Boolean = false) {
+    val context = LocalContext.current
+    val manager = remember { OnvifCamManager(context) }
     val cameras by manager.cameras.collectAsState()
     val scanning by manager.scanning.collectAsState()
     val log by manager.log.collectAsState()
     val haptic = LocalHapticFeedback.current
+
+    // 深链自扫:进入页面即执行一键扫描(阶段 1 组播 + 阶段 2 HTTP 网段探测,结果合并)
+    LaunchedEffect(autoScan) {
+        if (autoScan) {
+            kotlinx.coroutines.delay(1500)
+            manager.scanAll()
+        }
+    }
     var tab by remember { mutableStateOf(0) }
     var selectedId by remember { mutableStateOf<String?>(null) }
     var user by remember { mutableStateOf("admin") }
@@ -107,7 +116,7 @@ fun CameraOpsScreen(preselectIp: String? = null, back: () -> Unit) {
 
     LaunchedEffect(Unit) {
         if (preselectIp != null) selectedId = null
-        manager.discover()
+        if (!autoScan) manager.discover() // autoScan 模式由上面的 scanAll 负责,避免重复组播
         // 期间循环刷新设备信息(免认证字段)
         while (true) {
             delay(4000)
@@ -165,6 +174,7 @@ private fun DiscoverTab(
     var manualIp by remember { mutableStateOf("") }
     var manualPort by remember { mutableStateOf("") }
     val progress by manager.rtspProgress.collectAsState()
+    val phase by manager.phase.collectAsState()
     var probeMsg by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize()) {
@@ -185,16 +195,36 @@ private fun DiscoverTab(
         Spacer(Modifier.height(6.dp))
 
         when (mode) {
-            0 -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ActionButton(
-                    running = scanning,
-                    runLabel = stringResource(R.string.onvif_btn_scan),
-                    stopLabel = stringResource(R.string.onvif_btn_scanning),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    haptic.hud()
-                    kotlinx.coroutines.GlobalScope.launchSafe { manager.discover() }
+            0 -> Column {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ActionButton(
+                        running = scanning,
+                        runLabel = stringResource(R.string.onvif_btn_scan_all),
+                        stopLabel = stringResource(R.string.onvif_btn_scanning),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        haptic.hud()
+                        if (scanning) {
+                            manager.stopRtspScan()
+                        } else {
+                            kotlinx.coroutines.GlobalScope.launchSafe {
+                                manager.scanAll() // 组播 + HTTP 逐台探测,两阶段结果合并
+                            }
+                        }
+                    }
                 }
+                if (scanning) {
+                    Spacer(Modifier.height(5.dp))
+                    Text(phase, fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold)
+                    Spacer(Modifier.height(3.dp))
+                    LinearProgressIndicator(
+                        progress = { (progress.first.toFloat() / progress.second.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                    )
+                    Text(stringResource(R.string.onvif_sweep_progress, progress.first, progress.second), fontFamily = Mono, fontSize = 8.sp, color = Gold, modifier = Modifier.padding(top = 3.dp))
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(R.string.onvif_scan_hint), fontFamily = Sans, fontSize = 8.sp, color = Gray, lineHeight = 12.sp)
             }
             1 -> Column {
                 // RTSP 扫描:自动取本机 /24 网段
@@ -269,7 +299,22 @@ private fun DiscoverTab(
 
         Spacer(Modifier.height(6.dp))
         if (cameras.isEmpty()) {
-            EmptyHint(if (scanning) stringResource(R.string.onvif_scanning_hint) else stringResource(R.string.onvif_empty_hint))
+            if (scanning) {
+                EmptyHint(stringResource(R.string.onvif_scanning_hint))
+            } else {
+                Surface(
+                    Modifier.fillMaxWidth(),
+                    shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                    color = Warn.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Warn.copy(alpha = 0.5f)),
+                ) {
+                    Column(Modifier.padding(10.dp)) {
+                        Text(stringResource(R.string.onvif_empty_title), fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Warn)
+                        Spacer(Modifier.height(4.dp))
+                        Text(stringResource(R.string.onvif_empty_reasons), fontFamily = Sans, fontSize = 9.sp, color = White, lineHeight = 14.sp)
+                    }
+                }
+            }
         } else {
             LazyColumn(Modifier.fillMaxSize()) {
                 items(cameras, key = { it.id }) { cam ->
@@ -291,12 +336,13 @@ private fun DiscoverTab(
                                 Text(":${cam.port}", fontFamily = Mono, fontSize = 9.sp, color = Gray)
                                 Spacer(Modifier.width(6.dp))
                                 val srcColor = when (cam.source) { "rtsp" -> Color(0xFF00E5FF); "manual" -> Warn; else -> TacGreen }
-                                Text(stringResource(if (cam.source == "rtsp") R.string.onvif_src_rtsp else if (cam.source == "manual") R.string.onvif_src_manual else R.string.onvif_src_onvif), fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = srcColor)
+                                Text(stringResource(when (cam.source) { "rtsp" -> R.string.onvif_src_rtsp; "manual" -> R.string.onvif_src_manual; "http" -> R.string.onvif_src_http; else -> R.string.onvif_src_onvif }), fontFamily = Mono, fontSize = 7.sp, fontWeight = FontWeight.Bold, color = srcColor)
                                 Spacer(Modifier.width(6.dp))
                                 Text(if (cam.infoFetched || cam.manufacturer.isNotEmpty()) "${cam.manufacturer} ${cam.model}".trim().take(18) else stringResource(R.string.onvif_fetching), fontFamily = Sans, fontSize = 9.sp, color = if (cam.infoFetched || cam.manufacturer.isNotEmpty()) TacGreen else Gray, maxLines = 1)
                             }
                             Spacer(Modifier.height(2.dp))
                             Text(cam.xaddr.ifBlank { stringResource(R.string.onvif_no_onvif) }, fontFamily = Mono, fontSize = 7.5.sp, color = Gray, maxLines = 1)
+                            Text(stringResource(R.string.onvif_found_at, java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(cam.foundAtMs))), fontFamily = Mono, fontSize = 7.sp, color = Gray.copy(alpha = 0.7f))
                         }
                     }
                 }
@@ -309,17 +355,8 @@ private fun DiscoverTab(
     }
 }
 
-/** 本机 /24 网段前缀(无则 null) */
-private fun localIpPrefix(context: android.content.Context): String? = runCatching {
-    java.net.NetworkInterface.getNetworkInterfaces().toList().forEach { i ->
-        i.inetAddresses.toList().forEach { a ->
-            if (a is java.net.Inet4Address && !a.isLoopbackAddress && a.hostAddress?.startsWith("192.168.") == true) {
-                return a.hostAddress.substringBeforeLast('.')
-            }
-        }
-    }
-    null
-}.getOrNull()
+/** 本机 /24 网段前缀(无则 null)—— 统一走 manager 助手,覆盖 10.x / 172.16-31.x / 192.168.x */
+private fun localIpPrefix(context: android.content.Context): String? = OnvifCamManager.localLanPrefix(context)
 
 // ─── 目标 ────────────────────────────────────────────────────────────────────
 

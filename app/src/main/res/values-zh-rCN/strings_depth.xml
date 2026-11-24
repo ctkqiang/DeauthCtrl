@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="depth_title">深度扫视</string>
+    <string name="depth_cap_checking">正在检查 Google Play 服务(AR)…</string>
+    <string name="depth_cap_available">深度 API 可用(运动深度 + 设备硬件 ToF 若有)</string>
+    <string name="depth_cap_unsupported">此设备不支持深度 API</string>
+    <string name="depth_cap_ar_missing">缺少 Google Play 服务(AR)/ 需更新</string>
+    <string name="depth_cap_permission">需要相机权限</string>
+    <string name="depth_cap_init">初始化中 —— 缓慢移动设备以建立特征点</string>
+    <string name="depth_btn_heatmap_on">热力图 · 开</string>
+    <string name="depth_btn_heatmap_off">热力图 · 关</string>
+    <string name="depth_btn_cam_front">摄像头 · 前置</string>
+    <string name="depth_btn_cam_back">摄像头 · 后置</string>
+    <string name="depth_btn_grant">授予相机权限</string>
+    <string name="depth_btn_install_ar">安装 AR 服务</string>
+    <string name="depth_btn_optical">夜视光学扫视</string>
+    <string name="depth_note_accuracy">深度精度最佳区间约 0.5–5 米,需缓慢平稳移动设备 · 无需专用 LiDAR 传感器(运动深度)</string>
+    <string name="depth_tap_hint">点击任意点测量距离</string>
+    <string name="depth_tap_fmt">点击: %1$s</string>
+    <string name="depth_fallback_note">此设备无法提供深度数据。光学相机扫视(前后摄切换、低光 IR/反光检查)完全可用。</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 装备:背包 + 前袋 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M13,14 h22 a3,3 0 0 1 3,3 v20 a3,3 0 0 1 -3,3 h-22 a3,3 0 0 1 -3,-3 v-20 a3,3 0 0 1 3,-3 Z" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M13,14 C13,8 17,6 24,6 C31,6 35,8 35,14" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M18,22 h12 v11 h-12 Z" android:strokeColor="#FFD54F" android:strokeWidth="2" android:fillColor="#00000000"/>
+    <path android:pathData="M22,6 h4" android:strokeColor="#FFD54F" android:strokeWidth="2" android:fillColor="#00000000"/>
+</vector>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="depth_title">Depth Scan</string>
+    <string name="depth_cap_checking">Checking Google Play Services for AR…</string>
+    <string name="depth_cap_available">Depth API Available (Motion + Hardware ToF if present)</string>
+    <string name="depth_cap_unsupported">Depth API Not Supported on This Device</string>
+    <string name="depth_cap_ar_missing">Google Play Services for AR Missing / Update Required</string>
+    <string name="depth_cap_permission">Camera Permission Required</string>
+    <string name="depth_cap_init">Initializing — move device slowly to build feature points</string>
+    <string name="depth_btn_heatmap_on">HEATMAP · ON</string>
+    <string name="depth_btn_heatmap_off">HEATMAP · OFF</string>
+    <string name="depth_btn_cam_front">CAM · FRONT</string>
+    <string name="depth_btn_cam_back">CAM · BACK</string>
+    <string name="depth_btn_grant">GRANT CAMERA</string>
+    <string name="depth_btn_install_ar">INSTALL AR SERVICES</string>
+    <string name="depth_btn_optical">NIGHT VISION SWEEP</string>
+    <string name="depth_note_accuracy">Depth accuracy is best roughly 0.5 m – 5 m with smooth device movement · no dedicated LiDAR sensor required (motion depth)</string>
+    <string name="depth_tap_hint">TAP ANY POINT TO MEASURE DISTANCE</string>
+    <string name="depth_tap_fmt">TAP: %1$s</string>
+    <string name="depth_fallback_note">This device cannot provide depth data. The optical camera sweep (front/rear toggle, low-light IR/glint inspection) remains fully functional.</string>
+</resources>

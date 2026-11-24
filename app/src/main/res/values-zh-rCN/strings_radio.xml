@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="radio_title">对讲机信道表</string>
+    <string name="radio_ph_filter">筛选频率 / 亚音 / 用途…</string>
+    <string name="radio_hint">点击任意行复制频率 · 数据全部离线内置 · 发射前务必核实当地法规</string>
+    <string name="radio_sec_std16">标准 16 信道</string>
+    <string name="radio_note_std16">经典 FRS/GMRS 风格 16 信道表,含分列 CTCSS/DCS 亚音</string>
+    <string name="radio_sec_cn">中国 · 公众对讲机 409 MHz</string>
+    <string name="radio_note_cn">409.7500–409.9875 · 12.5kHz 步进 · 0.5W · 免执照公众频段</string>
+    <string name="radio_sec_my">马来西亚 · UHF 477 MHz</string>
+    <string name="radio_note_my">477.0125–477.4875 · 12.5kHz 步进 · MCMC 类执照分配(澳式 CBRS)</string>
+    <string name="radio_sec_pmr">PMR446 · 欧盟 / 英国 / 新加坡</string>
+    <string name="radio_note_pmr">446.00625–446.19375 · 12.5kHz 步进 · 0.5W · 免执照</string>
+    <string name="radio_sec_frs">美国 · FRS 22 信道</string>
+    <string name="radio_note_frs">462/467 MHz · 12.5kHz · 2W · 免执照家用对讲</string>
+    <string name="radio_sec_gmrs">美国 · GMRS 中继输入</string>
+    <string name="radio_note_gmrs">467 MHz 中继输入 · 需 GMRS 执照 · 最高 50W</string>
+    <string name="radio_sec_murs">美国 · MURS 5 信道</string>
+    <string name="radio_note_murs">VHF 151/154 MHz · 2W · 免执照</string>
+    <string name="radio_sec_marine">海事 VHF · 关键信道</string>
+    <string name="radio_note_marine">156–162 MHz 频段 · CH16 遇险 156.800 · CH70 DSC 数字(禁止语音)</string>
+    <string name="radio_sec_aviation">航空应急</string>
+    <string name="radio_note_aviation">121.500 VHF 应急 · 243.000 UHF 军用 · 民用仅监听</string>
+    <string name="radio_sec_cb">美国 · CB 40 信道(HF)</string>
+    <string name="radio_note_cb">26.965–27.405 MHz · 10kHz 步进 · AM/SSB · 4W · CH9 应急通用</string>
+    <string name="radio_sec_uklight">英国 · Simple UK Light</string>
+    <string name="radio_note_uklight">449.3125 / 449.4000 / 449.4750 · 0.5W · 免执照</string>
+    <string name="radio_sec_lpd">欧盟 · LPD433 · 69 信道</string>
+    <string name="radio_note_lpd">433.075–434.775 MHz · 25kHz 步进 · 10mW · 免执照</string>
+    <string name="radio_legend_title">怎么看这张表</string>
+    <string name="radio_legend_body">CH = 对讲机旋钮信道号 · FREQ = 实际收发频率(MHz)· 亚音类型 = 静噪过滤码:CTCSS = 模拟亚音(单位 Hz),DCS = 数字亚音码,None = 无过滤(同频率所有人都能听到你)。R-* = 接收端设置 · T-* = 发射端设置。两台对讲机互通条件:频率相同 + 亚音相同。点击任意行复制频率,可直接填进写频软件。</string>
+</resources>

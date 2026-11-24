@@ -72,4 +72,15 @@
     <string name="selfchk_stat_gateway">网关</string>
     <string name="selfchk_stat_wifi_standard">Wi-Fi 标准</string>
     <string name="selfchk_warn_no_location">[!] 未授予定位权限,SSID/BSSID 会被系统隐去</string>
+    <string name="selfchk_panel_caps">能力矩阵 · 攻击工具</string>
+    <string name="selfchk_caps_probe">运行完整探测(可能弹 root 授权)</string>
+    <string name="selfchk_caps_probing">探测中…</string>
+    <string name="selfchk_caps_root">root 授权</string>
+    <string name="selfchk_caps_monitor">监控模式</string>
+    <string name="selfchk_caps_injection">帧注入</string>
+    <string name="selfchk_caps_lohs">本机热点</string>
+    <string name="selfchk_caps_ble">BLE 广播</string>
+    <string name="selfchk_caps_unlocked">外部工具模式已解锁</string>
+    <string name="selfchk_caps_locked">未解锁 —— 本机注入类工具不可用</string>
+    <string name="selfchk_caps_unknown">尚未探测</string>
 </resources>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="radio_title">Radio Channel List</string>
+    <string name="radio_ph_filter">Filter frequency / tone / note…</string>
+    <string name="radio_hint">Tap any row to copy its frequency · all data bundled offline · verify local regulations before transmitting</string>
+    <string name="radio_sec_std16">STANDARD 16 CHANNELS</string>
+    <string name="radio_note_std16">Classic FRS/GMRS-style 16-channel table with split CTCSS/DCS tones</string>
+    <string name="radio_sec_cn">CHINA · PUBLIC RADIO 409 MHz</string>
+    <string name="radio_note_cn">409.7500–409.9875 · 12.5 kHz steps · 0.5 W · license-free public band</string>
+    <string name="radio_sec_my">MALAYSIA · UHF 477 MHz</string>
+    <string name="radio_note_my">477.0125–477.4875 · 12.5 kHz steps · MCMC Class Assignment (CBRS-style)</string>
+    <string name="radio_sec_pmr">PMR446 · EU / UK / SINGAPORE</string>
+    <string name="radio_note_pmr">446.00625–446.19375 · 12.5 kHz steps · 0.5 W · license-free</string>
+    <string name="radio_sec_frs">USA · FRS 22 CHANNELS</string>
+    <string name="radio_note_frs">462/467 MHz · 12.5 kHz · 2 W · license-free family radio</string>
+    <string name="radio_sec_gmrs">USA · GMRS REPEATER INPUTS</string>
+    <string name="radio_note_gmrs">467 MHz repeater inputs · GMRS license required · up to 50 W</string>
+    <string name="radio_sec_murs">USA · MURS 5 CHANNELS</string>
+    <string name="radio_note_murs">VHF 151/154 MHz · 2 W · license-free</string>
+    <string name="radio_sec_marine">MARINE VHF · KEY CHANNELS</string>
+    <string name="radio_note_marine">156–162 MHz band · CH16 distress 156.800 · CH70 DSC digital (never voice)</string>
+    <string name="radio_sec_aviation">AVIATION EMERGENCY</string>
+    <string name="radio_note_aviation">121.500 VHF guard · 243.000 UHF military · monitor-only for civilians</string>
+    <string name="radio_sec_cb">USA · CB 40 CHANNELS (HF)</string>
+    <string name="radio_note_cb">26.965–27.405 MHz · 10 kHz steps · AM/SSB · 4 W · CH9 emergency general use</string>
+    <string name="radio_sec_uklight">UK · SIMPLE UK LIGHT</string>
+    <string name="radio_note_uklight">449.3125 / 449.4000 / 449.4750 · 0.5 W · license-free</string>
+    <string name="radio_sec_lpd">EU · LPD433 · 69 CHANNELS</string>
+    <string name="radio_note_lpd">433.075–434.775 MHz · 25 kHz steps · 10 mW · license-free</string>
+    <string name="radio_legend_title">HOW TO READ THIS TABLE</string>
+    <string name="radio_legend_body">CH = knob channel number · FREQ = actual transmit/receive frequency in MHz · TONE TYPE = squelch filter: CTCSS = analog tone (Hz), DCS = digital code, None = no filter (everyone on that frequency hears you). R-* = RECEIVE side setting · T-* = TRANSMIT side setting. Two radios talk to each other ONLY if frequency AND tone match. Tap a row to copy the frequency into your radio programming app.</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 水源:水滴 + 过滤层 + 净水星光 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,5 C31,13 35,19 35,25 A11,11 0 1,1 13,25 C13,19 17,13 24,5 Z" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M16,25 L32,25" android:strokeColor="#00E5FF" android:strokeWidth="2" android:fillColor="#00000000"/>
+    <path android:pathData="M18,30 L30,30" android:strokeColor="#00E5FF" android:strokeWidth="2" android:fillColor="#00000000"/>
+    <path android:pathData="M40,8 L41,11 L44,12 L41,13 L40,16 L39,13 L36,12 L39,11 Z" android:fillColor="#FFD54F"/>
+</vector>

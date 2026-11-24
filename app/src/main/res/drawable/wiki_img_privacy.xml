@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 位置隐私:定位针 + 斜杠 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,6 C17,6 12,11 12,18 C12,28 24,40 24,40 C24,40 36,28 36,18 C36,11 31,6 24,6 Z" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,14 A4,4 0 1,1 23.99,14" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M10,8 L40,44" android:strokeColor="#FF5252" android:strokeWidth="3.5" android:fillColor="#00000000"/>
+</vector>

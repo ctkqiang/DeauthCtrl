@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通信韧性:天线塔与电波 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M20,40 L20,12 M20,12 L20,6" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M20,14 L34,22 M20,22 L34,30" android:strokeColor="#00E676" android:strokeWidth="2" android:fillColor="#00000000"/>
+    <path android:pathData="M8,30 A6,6 0 0 1 12,24 M10,38 A12,12 0 0 1 18,28" android:strokeColor="#00E5FF" android:strokeWidth="2" android:fillColor="#00000000"/>
+    <path android:pathData="M36,14 A6,6 0 0 1 40,20" android:strokeColor="#00E5FF" android:strokeWidth="2" android:fillColor="#00000000"/>
+</vector>

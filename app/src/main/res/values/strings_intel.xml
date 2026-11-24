@@ -20,7 +20,7 @@
     <string name="intel_src_fail">✖ FAIL</string>
     <string name="intel_src_pending">… PENDING</string>
     <string name="intel_map_empty">No geotagged events yet — refresh or wait for world news</string>
-    <string name="intel_map_tap_hint">tap a dot for details</string>
+    <string name="intel_map_tap_hint">PINCH ZOOM · DRAG PAN · TAP DOT</string>
     <string name="intel_reader_inapp">IN-APP</string>
     <string name="intel_sort_time">NEWEST</string>
     <string name="intel_sort_cat">BY CATEGORY</string>

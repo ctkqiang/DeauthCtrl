@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 灯火管制 -->
+    <string name="nl_brightness">RED OVERLAY INTENSITY</string>
+    <string name="nl_hide">HIDE CONTROLS (TAP SCREEN TO SHOW)</string>
+    <string name="nl_exit">EXIT LIGHT DISCIPLINE</string>
+    <string name="nl_note">Night ops light discipline: pure red light preserves dark adaptation. Use before entering dark areas — 20+ min for full night vision.</string>
+
+    <!-- 紧急信标 -->
+    <string name="beacon_title">Emergency Beacon</string>
+    <string name="beacon_running">SOS TRANSMITTING…</string>
+    <string name="beacon_idle">BEACON STANDBY</string>
+    <string name="beacon_cycles">CYCLES: %1$d</string>
+    <string name="beacon_start">START SOS BEACON</string>
+    <string name="beacon_stop">STOP BEACON</string>
+    <string name="beacon_flash">FLASH</string>
+    <string name="beacon_sound">SOUND</string>
+    <string name="beacon_vibrate">VIBRATE</string>
+    <string name="beacon_autostop">AUTO STOP</string>
+    <string name="beacon_off">OFF</string>
+    <string name="beacon_note">SOS = three short, three long, three short. Flash uses the camera torch; sound uses the speaker beep; battery drains fast — use only when needed.</string>
+
+    <!-- 足迹面包屑 -->
+    <string name="crumb_title">Breadcrumb Tracker</string>
+    <string name="crumb_points">WAYPOINTS</string>
+    <string name="crumb_walked">WALKED</string>
+    <string name="crumb_back_hint">BACK: %1$s · %2$s</string>
+    <string name="crumb_no_back">NO BACKTRACK FIX YET — MOVE TO GET GPS</string>
+    <string name="crumb_start">START LOGGING</string>
+    <string name="crumb_stop">STOP LOGGING</string>
+    <string name="crumb_step_back">STEP BACK</string>
+    <string name="crumb_clear">CLEAR TRAIL</string>
+    <string name="crumb_note">Logs GPS every 5 m / 10 s to local storage. Follow the BACK bearing to retrace your route — works without network.</string>
+
+    <!-- 补给追踪 -->
+    <string name="ration_title">Ration Tracker</string>
+    <string name="ration_persons">PERSONS</string>
+    <string name="ration_water">WATER</string>
+    <string name="ration_water_stock">STOCK: %.1f L</string>
+    <string name="ration_food">FOOD</string>
+    <string name="ration_food_stock">STOCK: %1$d kcal</string>
+    <string name="ration_note">Baseline: 3 L water / 2200 kcal per person per day. RED ≤ 1 day left, AMBER ≤ 3 days. ±0.5 L / ±550 kcal per tap.</string>
+
+    <!-- 天文时刻 -->
+    <string name="sun_title">Sun &amp; Moon Times</string>
+    <string name="sun_lat">LATITUDE</string>
+    <string name="sun_lon">LONGITUDE</string>
+    <string name="sun_auto_on">AUTO LOCATION ON (LAST KNOWN FIX)</string>
+    <string name="sun_auto_off">AUTO LOCATION OFF — MANUAL</string>
+    <string name="sun_rise">SUNRISE</string>
+    <string name="sun_set">SUNSET</string>
+    <string name="sun_day_len">DAYLIGHT</string>
+    <string name="sun_next">NEXT EVENT</string>
+    <string name="sun_to_sunrise">SUNRISE</string>
+    <string name="sun_to_sunset">SUNSET</string>
+    <string name="sun_moon">MOON PHASE</string>
+    <string name="sun_illum">ILLUMINATION</string>
+    <string name="sun_note">Plan night movement windows: full moon aids movement but exposes you; new moon hides you but needs navigation. Civil twilight = usable light before sunrise / after sunset.</string>
+</resources>

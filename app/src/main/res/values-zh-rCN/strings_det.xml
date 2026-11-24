@@ -7,10 +7,10 @@
 <resources>
 
     <!-- ─── 页面标题 · TerminalHeader ─── -->
-    <string name="det_title_ble_flood">BLE 泛洪引擎</string>
-    <string name="det_title_bt_jam">蓝牙压制引擎</string>
-    <string name="det_title_wifi_disrupt">WiFi 干扰引擎</string>
-    <string name="det_title_wifi_jam">WiFi 压制引擎</string>
+    <string name="det_title_ble_flood">BLE 厂商广告广播</string>
+    <string name="det_title_bt_jam">蓝牙广播与发现</string>
+    <string name="det_title_wifi_disrupt">本机热点轮换</string>
+    <string name="det_title_wifi_jam">本机热点循环</string>
     <string name="det_title_web_server">WEB 服务器</string>
     <string name="det_title_arp_scan">ARP 网络扫描</string>
     <string name="det_title_ble_scanner">BLE 嗅探扫描</string>
@@ -33,7 +33,7 @@
     <string name="det_panel_tx_params">发送参数</string>
     <string name="det_panel_status">状态</string>
     <string name="det_panel_nearby_devices">附近设备 (%1$d)</string>
-    <string name="det_panel_flood_params">泛洪参数</string>
+    <string name="det_panel_flood_params">广播参数</string>
     <string name="det_panel_deauth_injection">真实注入 · DEAUTH INJECTION</string>
     <string name="det_panel_config">配置</string>
     <string name="det_panel_web_file">网页文件</string>
@@ -54,12 +54,12 @@
     <string name="det_panel_session_log">会话日志</string>
 
     <!-- ─── 操作按钮 ─── -->
-    <string name="det_btn_run_flood">执行泛洪</string>
-    <string name="det_btn_stop_flood">停止泛洪</string>
-    <string name="det_btn_run_suppress">执行压制</string>
-    <string name="det_btn_stop_suppress">停止压制</string>
-    <string name="det_btn_run_disrupt">执行干扰</string>
-    <string name="det_btn_stop_disrupt">停止干扰</string>
+    <string name="det_btn_run_flood">开始广播</string>
+    <string name="det_btn_stop_flood">停止广播</string>
+    <string name="det_btn_run_suppress">开始循环</string>
+    <string name="det_btn_stop_suppress">停止循环</string>
+    <string name="det_btn_run_disrupt">开始轮换</string>
+    <string name="det_btn_stop_disrupt">停止轮换</string>
     <string name="det_btn_scan_networks">扫描附近网络</string>
     <string name="det_btn_scanning">正在扫描…</string>
     <string name="det_btn_probe_capability">探测能力</string>
@@ -131,13 +131,13 @@
     <string name="det_label_tx_interval">发送间隔</string>
     <string name="det_label_max_packets">最大发包数</string>
     <string name="det_label_target_network">目标网络</string>
-    <string name="det_label_disrupt_duration">干扰时长</string>
-    <string name="det_label_toggle_interval">切换间隔</string>
+    <string name="det_label_disrupt_duration">轮换时长</string>
+    <string name="det_label_toggle_interval">热点保持时长</string>
     <string name="det_label_target_bssid">目标 BSSID</string>
     <string name="det_label_channel">信道</string>
     <string name="det_label_client_mac">客户端 MAC(可选)</string>
     <string name="det_label_frames_per_round">每轮帧数</string>
-    <string name="det_label_channel_switch_interval">信道切换间隔</string>
+    <string name="det_label_channel_switch_interval">热点保持时长</string>
     <string name="det_label_listen_address">监听地址</string>
     <string name="det_label_browser_url">浏览器访问地址</string>
     <string name="det_label_gateway_ip">网关 IP</string>
@@ -225,8 +225,8 @@
     <string name="det_hint_cve_query">CVE 编号 / 厂商 / 产品名</string>
     <string name="det_hint_ptt">按住圆盘发送语音 · 松开停止 · 直播模式免按</string>
     <string name="det_hint_local_ap_measured">(本机 ↔ AP 实测)</string>
-    <string name="det_hint_ble_flood_log">启动泛洪后，发包记录会实时显示在这里</string>
-    <string name="det_hint_bt_jam_log">启动压制后，运行日志会实时显示在这里</string>
+    <string name="det_hint_ble_flood_log">开始广播后，广播会话记录会实时显示在这里</string>
+    <string name="det_hint_bt_jam_log">开始循环后，运行日志会实时显示在这里</string>
     <string name="det_hint_web_log">启动服务器后，访问日志会实时显示在这里</string>
     <string name="det_hint_arp_log">扫描开始后，战地日志会实时显示在这里</string>
     <string name="det_hint_arp_idle">执行上方任务扫描局域网，在线设备会实时列出</string>
@@ -261,9 +261,9 @@
     <string name="det_stat_failed">失败</string>
     <string name="det_stat_total_attempts">总尝试</string>
     <string name="det_stat_success_rate">成功率</string>
-    <string name="det_stat_pps">发包速率</string>
+    <string name="det_stat_pps">会话/秒</string>
     <string name="det_stat_uptime">运行时长</string>
-    <string name="det_stat_ble_packets">BLE 数据包</string>
+    <string name="det_stat_ble_packets">BLE 广播会话</string>
     <string name="det_stat_scan_cycles">扫描轮次</string>
     <string name="det_stat_devices_found">发现设备</string>
     <string name="det_stat_cycle">周期</string>
@@ -320,11 +320,11 @@
     <string name="det_state_connected">已连接</string>
     <string name="det_state_waiting">等待连接</string>
     <string name="det_state_open">开放</string>
-    <string name="det_chip_ble_flood">BLE 泛洪</string>
+    <string name="det_chip_ble_flood">BLE 广播</string>
     <string name="det_chip_device_discovery">设备发现</string>
 
     <!-- ─── 消息与错误 ─── -->
-    <string name="det_msg_flood_complete">泛洪完成</string>
+    <string name="det_msg_flood_complete">广播完成</string>
     <string name="det_msg_scanning_bands">正在扫描 2.4/5GHz 频段…</string>
     <string name="det_msg_networks_found">发现 %1$d 个网络 · 按信号排序 · 点击选择目标</string>
     <string name="det_msg_scanning_targets">正在扫描目标…</string>
@@ -362,12 +362,15 @@
     <!-- ─── Deauth 注入说明 ─── -->
     <string name="det_warn_recent_fail_rate">[!] 近期失败率 %1$.0f%%，建议增大发送间隔</string>
     <string name="det_deauth_requires_root">root + 监控模式芯片才能启用;无 root 的 stock Android 无法注入 802.11 管理帧</string>
+    <string name="det_cap_unlocked">全局自检:root + 监控模式 + 注入自检通过 —— 外部工具模式已解锁</string>
+    <string name="det_cap_locked">全局自检:本机未解锁 —— %1$s</string>
+    <string name="det_cap_unknown">全局自检:尚未探测 —— 点 PROBE 运行 root / 监控模式 / 注入自检</string>
     <string name="det_deauth_missing_aireplay">" aireplay-ng"</string>
     <string name="det_deauth_missing_monitor">" 监控模式固件(Nexmon/QCACLD)"</string>
     <string name="det_deauth_missing">缺少:%1$s%2$s —— 安装后重新探测</string>
     <string name="det_deauth_disclaimer">注入会话由 su 驱动 aireplay-ng 执行;仅用于授权测试,目标必须是你拥有或获授权的网络</string>
     <string name="det_fmt_cycle">周期 %1$d/%2$d</string>
-    <string name="det_fmt_jam_progress">压制目标 %1$d 个 · 轮次 %2$d · 启动 %3$d · 失败 %4$d</string>
+    <string name="det_fmt_jam_progress">循环目标 %1$d 个 · 轮次 %2$d · 启动 %3$d · 失败 %4$d</string>
     <string name="det_label_response_headers">响应头（服务器实际发出的字段）</string>
     <string name="det_fmt_content_length">%1$s &lt;随页面大小变化&gt;</string>
     <string name="det_fmt_other_status">其余状态: %1$s</string>
@@ -555,4 +558,5 @@
     <string name="det_fmt_search_results">搜索结果 · %1$d</string>
     <string name="det_fmt_published">发布时间: %1$s</string>
 
+    <string name="det_btn_channels">对讲机信道表</string>
 </resources>

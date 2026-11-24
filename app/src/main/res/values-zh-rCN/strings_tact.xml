@@ -54,7 +54,7 @@
     <string name="tact_discovery_exhausted">未发现接收台 · %1$s</string>
 
     <!-- ─── 语音频谱 · SDR ─── -->
-    <string name="tact_voice_sdr_title">语音频谱 · SDR</string>
+    <string name="tact_voice_sdr_title">语音频谱 · 麦克风 FFT</string>
     <string name="tact_band_full">全频段 0-22k</string>
     <string name="tact_band_ultrasonic">超声聚焦 15-22k</string>
     <string name="tact_ultrasonic_alarm">[!] 超声告警:18-22kHz 频段能量显著 —— 附近可能有电子设备线圈啸叫/超声源(启发式,消费级麦克风 20kHz+ 衰减严重,不代表鉴定结论)</string>

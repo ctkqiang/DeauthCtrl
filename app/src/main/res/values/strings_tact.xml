@@ -54,7 +54,7 @@
     <string name="tact_discovery_exhausted">No receivers found · %1$s</string>
 
     <!-- ─── Voice SDR spectrum ─── -->
-    <string name="tact_voice_sdr_title">Voice Spectrum · SDR</string>
+    <string name="tact_voice_sdr_title">Voice Spectrum · Mic FFT</string>
     <string name="tact_band_full">FULL BAND 0-22k</string>
     <string name="tact_band_ultrasonic">ULTRASONIC FOCUS 15-22k</string>
     <string name="tact_ultrasonic_alarm">[!] Ultrasonic alert: notable energy in 18-22kHz -- possible coil whine / ultrasonic source nearby (heuristic; consumer mics roll off hard above 20kHz; not a conclusive finding)</string>

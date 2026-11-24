@@ -72,6 +72,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
@@ -126,6 +127,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.HttpClientManager
+import xin.ctkqiang.deauthctrl.manager.CapabilityProbe
+import xin.ctkqiang.deauthctrl.manager.CapabilityStatus
+import xin.ctkqiang.deauthctrl.manager.RootStatus
 import xin.ctkqiang.deauthctrl.manager.JammerScanState
 import xin.ctkqiang.deauthctrl.manager.AdStructureDecoder
 import xin.ctkqiang.deauthctrl.manager.DeviceIntel
@@ -391,7 +395,8 @@ fun BleDetailScreen(vm: BleSpamViewModel, back: () -> Unit) {
                         Text(stringResource(R.string.det_label_tx_interval), fontFamily = Sans, fontSize = 11.sp, color = Gray)
                         Text("${interval.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                     }
-                    Slider(interval, { interval = it; vm.setInterval(interval.toLong()) }, valueRange = 20f..100f, steps = 7, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
+                    // 会话重建间隔与 manager 钳制一致(100-300ms),所设值真实生效
+                    Slider(interval, { interval = it; vm.setInterval(interval.toLong()) }, valueRange = 100f..300f, steps = 7, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                     Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         TermInput(stringResource(R.string.det_label_max_packets), maxPacketsText, placeholder = stringResource(R.string.det_hint_leave_blank_unlimited), modifier = Modifier.weight(1f)) { v ->
@@ -659,9 +664,10 @@ fun WifiDetailScreen(vm: WifiDisruptViewModel, radarVm: RadarViewModel, initialB
                             Spacer(Modifier.height(4.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(stringResource(R.string.det_label_toggle_interval), fontFamily = Sans, fontSize = 11.sp, color = Gray)
-                                Text("${toggle.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
+                                Text("${(toggle / 1000).toInt()}s", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                             }
-                            Slider(toggle, { toggle = it; vm.setToggleInterval(toggle.toLong()) }, valueRange = 40f..500f, steps = 22, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
+                            // LOHS 启停本身需数秒 —— 范围与 manager 钳制一致(5-15s),所设值真实生效
+                            Slider(toggle, { toggle = it; vm.setToggleInterval(toggle.toLong()) }, valueRange = 5000f..15000f, steps = 9, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                         }
                         Spacer(Modifier.height(8.dp))
                         ActionButton(fl, stringResource(R.string.det_btn_run_disrupt), stringResource(R.string.det_btn_stop_disrupt)) {
@@ -701,6 +707,9 @@ private fun DeauthInjectionPanel(
 ) {
     val session by vm.deauthSession.collectAsState()
     val haptic = LocalHapticFeedback.current
+    // 全局能力快照(进程内单例):root/监控模式/注入自检的权威结论 ——
+    // 探测过且未解锁时,面板如实亮红;未探测时提示先点 PROBE
+    val caps by CapabilityProbe.get(LocalContext.current).capabilities.collectAsState()
     var bssid by remember { mutableStateOf("") }
     var channel by remember { mutableStateOf("") }
     var client by remember { mutableStateOf("") }
@@ -721,6 +730,26 @@ private fun DeauthInjectionPanel(
             stringResource(R.string.det_deauth_requires_root),
             fontFamily = Sans, fontSize = 8.sp, color = Warn, lineHeight = 12.sp,
         )
+        Spacer(Modifier.height(6.dp))
+        // ── 全局能力判定(与探测单例共享同一份结论,不再只靠单工具 probe) ──
+        when {
+            caps.externalToolModeUnlocked -> Text(
+                stringResource(R.string.det_cap_unlocked),
+                fontFamily = Mono, fontSize = 8.sp, color = TacGreen, lineHeight = 12.sp,
+            )
+            caps.root == RootStatus.Unknown -> Text(
+                stringResource(R.string.det_cap_unknown),
+                fontFamily = Mono, fontSize = 8.sp, color = Gray, lineHeight = 12.sp,
+            )
+            else -> Text(
+                stringResource(
+                    R.string.det_cap_locked,
+                    listOf(caps.rootDetail, caps.wifiMonitorMode.detail)
+                        .firstOrNull { it.isNotBlank() } ?: "—",
+                ),
+                fontFamily = Mono, fontSize = 8.sp, color = Danger, lineHeight = 12.sp,
+            )
+        }
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             QuickNavChip(stringResource(R.string.det_btn_probe_capability), Gold, Modifier.weight(1f)) {
@@ -927,9 +956,10 @@ fun WifiJamDetailScreen(vm: WifiJammerViewModel, back: () -> Unit) {
                 TermPanel(stringResource(R.string.det_panel_config)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(stringResource(R.string.det_label_channel_switch_interval), fontFamily = Sans, fontSize = 11.sp, color = Gray)
-                        Text("${ms.toLong()}ms", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
+                        Text("${(ms / 1000).toInt()}s", fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = White)
                     }
-                    Slider(ms, { ms = it; vm.setInterval(ms.toLong()) }, valueRange = 60f..300f, steps = 11, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
+                    // LOHS 启停本身需数秒 —— 范围与 manager 钳制一致(5-15s),所设值真实生效
+                    Slider(ms, { ms = it; vm.setInterval(ms.toLong()) }, valueRange = 5000f..15000f, steps = 9, colors = SliderDefaults.colors(thumbColor = Red, activeTrackColor = Red, inactiveTrackColor = Track))
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -2029,7 +2059,7 @@ private fun PortScanLivePanel(vm: PortScannerViewModel, running: Boolean, host: 
  * - 直播模式开关 + 固定底栏的按住说话大按钮(滚动不影响按压)
  */
 @Composable
-fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
+fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit, onOpenChannels: () -> Unit) {
     val running by vm.isRunning.collectAsState()
     val talking by vm.isTalking.collectAsState()
     val error by vm.error.collectAsState()
@@ -2058,12 +2088,21 @@ fun WalkieTalkieScreen(vm: WalkieTalkieViewModel, back: () -> Unit) {
                 // ── 滚动区:整页滚动,PTT 圆盘固定在底栏外 ──
                 Column(
                     Modifier.weight(1f).navigationBarsPadding()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(rememberSaveable(saver = androidx.compose.foundation.ScrollState.Saver) { androidx.compose.foundation.ScrollState(0) })
                         .padding(horizontal = 12.dp).padding(top = 12.dp),
                 ) {
                     ActionButton(running, stringResource(R.string.det_btn_run_walkie), stringResource(R.string.det_btn_stop_walkie)) {
                         haptic.hud()
                         if (running) vm.stop() else vm.start()
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable { haptic.hud(); onOpenChannels() },
+                        shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                        color = Gold.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, Gold.copy(alpha = 0.5f)),
+                    ) {
+                        Text(stringResource(R.string.det_btn_channels), fontFamily = Sans, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
                     }
                     error?.let { ErrorBanner(it) }
                     Spacer(Modifier.height(6.dp))
@@ -2531,7 +2570,8 @@ fun RadarScreen(
     var irkDialogOn by remember { mutableStateOf(false) }
     // CCTV 层:WS-Discovery 组播发现的 ONVIF 摄像头 —— 默认开启,60s 轮询
     var cctvOn by remember { mutableStateOf(true) }
-    val cctvManager = remember { OnvifCamManager() }
+    val ctx = LocalContext.current
+    val cctvManager = remember { OnvifCamManager(ctx) }
     val cctvCams by cctvManager.cameras.collectAsState()
     LaunchedEffect(cctvOn) {
         if (cctvOn) {
@@ -5812,7 +5852,7 @@ private fun WalkieTalkiePreview() {
     PreviewTheme {
         val app = LocalContext.current.applicationContext as? Application
         val vm = if (app != null) previewViewModel { WalkieTalkieViewModel(app) } else null
-        if (vm == null) PreviewFallback("WiFi 对讲机") else WalkieTalkieScreen(vm, back = {})
+        if (vm == null) PreviewFallback("WiFi 对讲机") else WalkieTalkieScreen(vm, back = {}, onOpenChannels = {})
     }
 }
 

@@ -95,4 +95,10 @@
     <string name="onvif_ok_darken">Picture darkened</string>
     <string name="onvif_ok_restore">Picture restored</string>
     <string name="onvif_imaging_warn">Changes the live camera picture — authorized devices only. Restore profile is in-memory (process lifetime).</string>
+    <string name="onvif_btn_scan_all">ONE-TAP SCAN (DISCOVER + HTTP SWEEP)</string>
+    <string name="onvif_scan_hint">Stage 1: WS-Discovery multicast (MulticastLock held). Stage 2: HTTP ONVIF probe of every host on your /24 subnet (ports 80/8899/8080) — catches cameras whose multicast is blocked.</string>
+    <string name="onvif_empty_title">SCAN FOUND NOTHING — WHY THIS HAPPENS</string>
+    <string name="onvif_empty_reasons">1. Cameras on an isolated security VLAN — the Wi-Fi you are on cannot reach them at all; this is the most common case in malls/garages "full of CCTV".\n2. AP client isolation (guest Wi-Fi) blocks ALL device-to-device traffic, even on the same subnet.\n3. Cameras are not ONVIF devices (P2P cloud cams like Xiaomi/EZVIZ, or analog + DVR systems) or ONVIF is disabled (Hikvision/Dahua default OFF).\n4. Same subnet + ONVIF confirmed? Use MANUAL mode with the camera IP, or check the firewall.</string>
+    <string name="onvif_src_http">HTTP</string>
+    <string name="onvif_found_at">FOUND %1$s · live SOAP response, not hardcoded</string>
 </resources>

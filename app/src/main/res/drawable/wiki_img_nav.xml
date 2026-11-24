@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 导航:指南针 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,6 A18,18 0 1,1 24,42 A18,18 0 1,1 24,6 Z" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,12 L30,30 L24,26 L18,30 Z" android:strokeColor="#FFD54F" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,12 L21,16 M24,12 L27,16" android:strokeColor="#00E676" android:strokeWidth="1.8" android:fillColor="#00000000"/>
+</vector>

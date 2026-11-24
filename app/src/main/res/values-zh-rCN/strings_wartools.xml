@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 灯火管制 -->
+    <string name="nl_brightness">红光强度</string>
+    <string name="nl_hide">隐藏控制(点屏幕唤出)</string>
+    <string name="nl_exit">退出灯火管制</string>
+    <string name="nl_note">夜间行动灯火管制:纯红光保护暗适应。进入暗区前使用 —— 完全夜视需要 20 分钟以上适应。</string>
+
+    <!-- 紧急信标 -->
+    <string name="beacon_title">紧急信标</string>
+    <string name="beacon_running">SOS 发送中…</string>
+    <string name="beacon_idle">信标待命</string>
+    <string name="beacon_cycles">循环次数: %1$d</string>
+    <string name="beacon_start">启动 SOS 信标</string>
+    <string name="beacon_stop">停止信标</string>
+    <string name="beacon_flash">闪光</string>
+    <string name="beacon_sound">声音</string>
+    <string name="beacon_vibrate">震动</string>
+    <string name="beacon_autostop">自动停止</string>
+    <string name="beacon_off">关</string>
+    <string name="beacon_note">SOS = 三短、三长、三短。闪光用手电筒,声音用扬声器蜂鸣;耗电快 —— 只在需要时使用。</string>
+
+    <!-- 足迹面包屑 -->
+    <string name="crumb_title">足迹面包屑</string>
+    <string name="crumb_points">足迹点</string>
+    <string name="crumb_walked">已行进</string>
+    <string name="crumb_back_hint">返回: %1$s · %2$s</string>
+    <string name="crumb_no_back">尚无返回定位 —— 移动获取 GPS</string>
+    <string name="crumb_start">开始记录</string>
+    <string name="crumb_stop">停止记录</string>
+    <string name="crumb_step_back">回退一步</string>
+    <string name="crumb_clear">清空轨迹</string>
+    <string name="crumb_note">每 5 米 / 10 秒记录一次 GPS 到本地存储。沿「返回」方位角原路折返 —— 无网络可用。</string>
+
+    <!-- 补给追踪 -->
+    <string name="ration_title">补给追踪</string>
+    <string name="ration_persons">人数</string>
+    <string name="ration_water">水</string>
+    <string name="ration_water_stock">存量: %.1f 升</string>
+    <string name="ration_food">食物</string>
+    <string name="ration_food_stock">存量: %1$d 千卡</string>
+    <string name="ration_note">基准:每人每天 3 升水 / 2200 千卡。红色 ≤ 1 天,琥珀 ≤ 3 天。每次点击 ±0.5 升 / ±550 千卡。</string>
+
+    <!-- 天文时刻 -->
+    <string name="sun_title">天文时刻</string>
+    <string name="sun_lat">纬度</string>
+    <string name="sun_lon">经度</string>
+    <string name="sun_auto_on">自动定位开(上次已知位置)</string>
+    <string name="sun_auto_off">自动定位关 —— 手动输入</string>
+    <string name="sun_rise">日出</string>
+    <string name="sun_set">日落</string>
+    <string name="sun_day_len">白昼时长</string>
+    <string name="sun_next">下一事件</string>
+    <string name="sun_to_sunrise">日出</string>
+    <string name="sun_to_sunset">日落</string>
+    <string name="sun_moon">月相</string>
+    <string name="sun_illum">照明度</string>
+    <string name="sun_note">规划夜间行动窗口:满月便于行进但暴露自己;新月隐蔽但需要导航。民用晨昏蒙影 = 日出前/日落后仍可用的微光。</string>
+</resources>

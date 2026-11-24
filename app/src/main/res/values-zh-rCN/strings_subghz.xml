@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subghz_title">Sub-GHz 实验室</string>
+    <string name="subghz_tab_view">查看</string>
+    <string name="subghz_tab_gen">生成</string>
+    <string name="subghz_note">Flipper .sub 文件互操作 —— 手机无 Sub-GHz 射频硬件,发射需 Flipper / CC1101 硬件</string>
+    <string name="subghz_ph_paste">在此粘贴 Flipper .sub 文件内容…</string>
+    <string name="subghz_parse_fail">解析失败 —— 不是有效的 .sub 文件(需要 Frequency / Protocol)</string>
+    <string name="subghz_f_freq">频率</string>
+    <string name="subghz_f_freq_mhz">频率 (MHz)</string>
+    <string name="subghz_f_band">频段</string>
+    <string name="subghz_f_proto">协议</string>
+    <string name="subghz_f_preset">预设</string>
+    <string name="subghz_f_samples">采样数</string>
+    <string name="subghz_f_bit">位数</string>
+    <string name="subghz_f_key">密钥</string>
+    <string name="subghz_f_te">TE (µs)</string>
+    <string name="subghz_f_pattern">RAW 波形 (µs,负值 = 静默)</string>
+    <string name="subghz_band_hint">%1$s</string>
+    <string name="subghz_btn_gen">生成 .SUB</string>
+    <string name="subghz_btn_save">保存到存储</string>
+    <string name="subghz_preview">预览</string>
+    <string name="subghz_saved">已保存: %1$s</string>
+</resources>

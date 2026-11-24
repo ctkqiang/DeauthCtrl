@@ -2,6 +2,7 @@ package xin.ctkqiang.deauthctrl.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,10 +28,14 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +46,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.BatterySnapshot
+import xin.ctkqiang.deauthctrl.manager.CapabilityProbe
+import xin.ctkqiang.deauthctrl.manager.CapabilityStatus
 import xin.ctkqiang.deauthctrl.manager.NetworkSnapshot
+import xin.ctkqiang.deauthctrl.manager.RootStatus
 import xin.ctkqiang.deauthctrl.manager.SelfCheckState
 import xin.ctkqiang.deauthctrl.manager.SensorEntry
 import xin.ctkqiang.deauthctrl.manager.ThermalSnapshot
@@ -143,6 +151,7 @@ fun SelfCheckScreen(back: () -> Unit) {
                 loaded = loaded,
                 onRefresh = { haptic.hud(); vm.refresh() },
             )
+            CapabilityMatrixPanel()
             BatteryPanel(state.battery)
             ThermalPanel(state.thermal)
             LoadPanel(state)
@@ -762,4 +771,95 @@ private fun signalColor(dbm: Int?): Color = when {
     dbm >= -55 -> TacGreen
     dbm >= -70 -> Gold
     else -> Danger
+}
+
+// ─── 能力矩阵:root / monitor / 注入 / LOHS / BLE 的权威判定 ──────────────────
+// 与注入面板共享同一份探测单例(CapabilityProbe),这里的结论就是攻击类工具
+// 在本机是否可用的唯一事实来源;红/黄状态如实展示缺什么,绝不假装可用。
+
+@Composable
+private fun CapabilityMatrixPanel() {
+    val context = LocalContext.current
+    val caps by CapabilityProbe.get(context).capabilities.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    var probing by remember { mutableStateOf(false) }
+
+    TermPanel(stringResource(R.string.selfchk_panel_caps)) {
+        // 结论行 + 完整探测按钮(full 探测会触发 su,可能弹 root 授权)
+        val unlocked = caps.externalToolModeUnlocked
+        val known = caps.root != RootStatus.Unknown
+        val verdict = when {
+            unlocked -> stringResource(R.string.selfchk_caps_unlocked) to TacGreen
+            known -> stringResource(R.string.selfchk_caps_locked) to Danger
+            else -> stringResource(R.string.selfchk_caps_unknown) to Gray
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                verdict.first,
+                fontFamily = Mono, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
+                color = verdict.second, modifier = Modifier.weight(1f),
+            )
+            Surface(
+                modifier = Modifier.clickable {
+                    haptic.hud()
+                    if (probing) return@clickable
+                    probing = true
+                    scope.launch {
+                        CapabilityProbe.get(context).probeNow(full = true)
+                        probing = false
+                    }
+                },
+                shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                color = Gold.copy(alpha = 0.10f),
+                border = BorderStroke(1.dp, Gold.copy(alpha = 0.5f)),
+            ) {
+                Text(
+                    if (probing) stringResource(R.string.selfchk_caps_probing) else stringResource(R.string.selfchk_caps_probe),
+                    fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Gold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        CapsRow(
+            stringResource(R.string.selfchk_caps_root),
+            when (caps.root) {
+                RootStatus.Granted -> CapabilityStatus.Supported
+                RootStatus.Denied -> CapabilityStatus.PermissionDenied
+                RootStatus.NoRoot -> CapabilityStatus.Unsupported
+                RootStatus.Unknown -> CapabilityStatus.Unknown
+            },
+            caps.rootDetail,
+        )
+        CapsRow(stringResource(R.string.selfchk_caps_monitor), caps.wifiMonitorMode.status, caps.wifiMonitorMode.detail)
+        CapsRow(stringResource(R.string.selfchk_caps_injection), caps.wifiFrameInjection.status, caps.wifiFrameInjection.detail)
+        CapsRow(stringResource(R.string.selfchk_caps_lohs), caps.localOnlyHotspot.status, caps.localOnlyHotspot.detail)
+        CapsRow(stringResource(R.string.selfchk_caps_ble), caps.bleAdvertising.status, caps.bleAdvertising.detail)
+    }
+}
+
+@Composable
+private fun CapsRow(label: String, status: CapabilityStatus, detail: String) {
+    val color = when (status) {
+        CapabilityStatus.Supported -> TacGreen
+        CapabilityStatus.PermissionDenied -> Warn
+        CapabilityStatus.Unsupported -> Danger
+        CapabilityStatus.Unknown -> Gray
+    }
+    val tag = when (status) {
+        CapabilityStatus.Supported -> "OK"
+        CapabilityStatus.PermissionDenied -> "PERM"
+        CapabilityStatus.Unsupported -> "NO"
+        CapabilityStatus.Unknown -> "--"
+    }
+    Column(Modifier.padding(vertical = 3.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, fontFamily = Sans, fontSize = 10.sp, color = Gray)
+            Text(tag, fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = color)
+        }
+        if (detail.isNotBlank() && status != CapabilityStatus.Supported) {
+            Text(detail, fontFamily = Mono, fontSize = 7.5.sp, color = color.copy(alpha = 0.85f), lineHeight = 11.sp)
+        }
+    }
 }

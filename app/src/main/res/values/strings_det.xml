@@ -7,10 +7,10 @@
 <resources>
 
     <!-- ─── 页面标题 · TerminalHeader ─── -->
-    <string name="det_title_ble_flood">BLE Flood Engine</string>
-    <string name="det_title_bt_jam">Bluetooth Suppression Engine</string>
-    <string name="det_title_wifi_disrupt">WiFi Disruption Engine</string>
-    <string name="det_title_wifi_jam">WiFi Suppression Engine</string>
+    <string name="det_title_ble_flood">BLE Beacon Broadcast</string>
+    <string name="det_title_bt_jam">Bluetooth Broadcast &amp; Discovery</string>
+    <string name="det_title_wifi_disrupt">Local Hotspot Rotator</string>
+    <string name="det_title_wifi_jam">Local Hotspot Cycler</string>
     <string name="det_title_web_server">WEB Server</string>
     <string name="det_title_arp_scan">ARP Network Scan</string>
     <string name="det_title_ble_scanner">BLE Sniff Scan</string>
@@ -33,7 +33,7 @@
     <string name="det_panel_tx_params">TX PARAMETERS</string>
     <string name="det_panel_status">STATUS</string>
     <string name="det_panel_nearby_devices">NEARBY DEVICES (%1$d)</string>
-    <string name="det_panel_flood_params">FLOOD PARAMETERS</string>
+    <string name="det_panel_flood_params">BROADCAST PARAMETERS</string>
     <string name="det_panel_deauth_injection">REAL INJECTION · DEAUTH INJECTION</string>
     <string name="det_panel_config">CONFIG</string>
     <string name="det_panel_web_file">WEB FILE</string>
@@ -54,12 +54,12 @@
     <string name="det_panel_session_log">SESSION LOG</string>
 
     <!-- ─── 操作按钮 ─── -->
-    <string name="det_btn_run_flood">RUN FLOOD</string>
-    <string name="det_btn_stop_flood">STOP FLOOD</string>
-    <string name="det_btn_run_suppress">RUN SUPPRESSION</string>
-    <string name="det_btn_stop_suppress">STOP SUPPRESSION</string>
-    <string name="det_btn_run_disrupt">RUN DISRUPTION</string>
-    <string name="det_btn_stop_disrupt">STOP DISRUPTION</string>
+    <string name="det_btn_run_flood">START BROADCAST</string>
+    <string name="det_btn_stop_flood">STOP BROADCAST</string>
+    <string name="det_btn_run_suppress">START CYCLING</string>
+    <string name="det_btn_stop_suppress">STOP CYCLING</string>
+    <string name="det_btn_run_disrupt">START ROTATION</string>
+    <string name="det_btn_stop_disrupt">STOP ROTATION</string>
     <string name="det_btn_scan_networks">SCAN NETWORKS</string>
     <string name="det_btn_scanning">SCANNING…</string>
     <string name="det_btn_probe_capability">PROBE</string>
@@ -131,13 +131,13 @@
     <string name="det_label_tx_interval">TX INTERVAL</string>
     <string name="det_label_max_packets">MAX PACKETS</string>
     <string name="det_label_target_network">TARGET NETWORK</string>
-    <string name="det_label_disrupt_duration">DURATION</string>
-    <string name="det_label_toggle_interval">TOGGLE INTERVAL</string>
+    <string name="det_label_disrupt_duration">ROTATION DURATION</string>
+    <string name="det_label_toggle_interval">HOLD PER SESSION</string>
     <string name="det_label_target_bssid">TARGET BSSID</string>
     <string name="det_label_channel">CHANNEL</string>
     <string name="det_label_client_mac">CLIENT MAC (OPTIONAL)</string>
     <string name="det_label_frames_per_round">FRAMES PER ROUND</string>
-    <string name="det_label_channel_switch_interval">CHANNEL SWITCH INTERVAL</string>
+    <string name="det_label_channel_switch_interval">HOLD PER SESSION</string>
     <string name="det_label_listen_address">LISTEN ADDRESS</string>
     <string name="det_label_browser_url">BROWSER URL</string>
     <string name="det_label_gateway_ip">GATEWAY IP</string>
@@ -225,8 +225,8 @@
     <string name="det_hint_cve_query">CVE ID / vendor / product name</string>
     <string name="det_hint_ptt">Hold the disc to transmit · release to stop · live mode is hands-free</string>
     <string name="det_hint_local_ap_measured">(measured local ↔ AP)</string>
-    <string name="det_hint_ble_flood_log">Packet log appears here once flooding starts</string>
-    <string name="det_hint_bt_jam_log">Run log appears here once suppression starts</string>
+    <string name="det_hint_ble_flood_log">Broadcast log appears here once broadcasting starts</string>
+    <string name="det_hint_bt_jam_log">Run log appears here once cycling starts</string>
     <string name="det_hint_web_log">Access log appears here once the server starts</string>
     <string name="det_hint_arp_log">Battle log appears here once the scan starts</string>
     <string name="det_hint_arp_idle">Run the task above to scan the LAN — online devices will be listed live</string>
@@ -261,9 +261,9 @@
     <string name="det_stat_failed">FAILED</string>
     <string name="det_stat_total_attempts">TOTAL ATTEMPTS</string>
     <string name="det_stat_success_rate">SUCCESS RATE</string>
-    <string name="det_stat_pps">TX RATE</string>
+    <string name="det_stat_pps">SESSIONS/S</string>
     <string name="det_stat_uptime">UPTIME</string>
-    <string name="det_stat_ble_packets">BLE PACKETS</string>
+    <string name="det_stat_ble_packets">BLE ADV SESSIONS</string>
     <string name="det_stat_scan_cycles">SCAN CYCLES</string>
     <string name="det_stat_devices_found">DEVICES FOUND</string>
     <string name="det_stat_cycle">CYCLE</string>
@@ -320,11 +320,11 @@
     <string name="det_state_connected">CONNECTED</string>
     <string name="det_state_waiting">WAITING</string>
     <string name="det_state_open">OPEN</string>
-    <string name="det_chip_ble_flood">BLE FLOOD</string>
+    <string name="det_chip_ble_flood">BLE BROADCAST</string>
     <string name="det_chip_device_discovery">DISCOVERY</string>
 
     <!-- ─── 消息与错误 ─── -->
-    <string name="det_msg_flood_complete">FLOOD COMPLETE</string>
+    <string name="det_msg_flood_complete">BROADCAST COMPLETE</string>
     <string name="det_msg_scanning_bands">Scanning 2.4/5GHz bands…</string>
     <string name="det_msg_networks_found">Found %1$d networks · sorted by signal · tap to select a target</string>
     <string name="det_msg_scanning_targets">Scanning for targets…</string>
@@ -362,6 +362,9 @@
     <!-- ─── Deauth 注入说明 ─── -->
     <string name="det_warn_recent_fail_rate">[!] Recent failure rate %1$.0f%% — increase TX interval</string>
     <string name="det_deauth_requires_root">Requires root + monitor-mode chipset; stock Android without root cannot inject 802.11 management frames</string>
+    <string name="det_cap_unlocked">GLOBAL CHECK: root + monitor + injection verified — external tool mode unlocked</string>
+    <string name="det_cap_locked">GLOBAL CHECK: not unlocked on this device — %1$s</string>
+    <string name="det_cap_unknown">GLOBAL CHECK: not probed yet — tap PROBE to run root / monitor / injection self-tests</string>
     <string name="det_deauth_missing_aireplay">" aireplay-ng"</string>
     <string name="det_deauth_missing_monitor">" monitor-mode firmware (Nexmon/QCACLD)"</string>
     <string name="det_deauth_missing">Missing:%1$s%2$s — re-probe after installation</string>
@@ -555,4 +558,5 @@
     <string name="det_fmt_search_results">SEARCH RESULTS · %1$d</string>
     <string name="det_fmt_published">Published: %1$s</string>
 
+    <string name="det_btn_channels">RADIO CHANNEL LIST</string>
 </resources>

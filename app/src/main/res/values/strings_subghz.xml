@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subghz_title">Sub-GHz Lab</string>
+    <string name="subghz_tab_view">VIEWER</string>
+    <string name="subghz_tab_gen">GENERATOR</string>
+    <string name="subghz_note">Flipper .sub file interop — phones have no Sub-GHz radio, transmit with Flipper / CC1101 hardware</string>
+    <string name="subghz_ph_paste">Paste Flipper .sub file content here…</string>
+    <string name="subghz_parse_fail">Parse failed — not a valid .sub file (Frequency / Protocol required)</string>
+    <string name="subghz_f_freq">FREQ</string>
+    <string name="subghz_f_freq_mhz">FREQUENCY (MHz)</string>
+    <string name="subghz_f_band">BAND</string>
+    <string name="subghz_f_proto">PROTOCOL</string>
+    <string name="subghz_f_preset">PRESET</string>
+    <string name="subghz_f_samples">SAMPLES</string>
+    <string name="subghz_f_bit">BIT</string>
+    <string name="subghz_f_key">KEY</string>
+    <string name="subghz_f_te">TE (µs)</string>
+    <string name="subghz_f_pattern">RAW PATTERN (µs, negative = silence)</string>
+    <string name="subghz_band_hint">%1$s</string>
+    <string name="subghz_btn_gen">GENERATE .SUB</string>
+    <string name="subghz_btn_save">SAVE TO STORAGE</string>
+    <string name="subghz_preview">PREVIEW</string>
+    <string name="subghz_saved">Saved: %1$s</string>
+</resources>

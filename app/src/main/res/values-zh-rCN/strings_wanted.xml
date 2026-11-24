@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wanted_title">通缉令</string>
+    <string name="wanted_tab_list">名单</string>
+    <string name="wanted_tab_map">世界地图</string>
+    <string name="wanted_ph_search">搜索姓名 / 罪名…</string>
+    <string name="wanted_stat_total">总数</string>
+    <string name="wanted_stat_geo">地理打点</string>
+    <string name="wanted_empty">暂无通缉数据 —— 等待自动刷新</string>
+    <string name="wanted_map_empty">暂无地理打点记录</string>
+    <string name="wanted_map_hint">打点 %1$d 个 · 双指缩放 · 拖动平移 · 点击选择</string>
+    <string name="wanted_btn_fit">适配</string>
+    <string name="wanted_open_link">打开官方详情</string>
+    <string name="wanted_src_ok">● %1$s ×%2$d</string>
+    <string name="wanted_src_fail">✖ %1$s [%2$s]</string>
+</resources>

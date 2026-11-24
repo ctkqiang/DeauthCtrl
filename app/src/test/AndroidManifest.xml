@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 单元测试 APK 的 manifest 合并不继承主 manifest 的 tools:overrideLibrary,
+     此处显式豁免 com.google.ar:core(minSdk 24)与全局 minSdk 23 的冲突 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-sdk tools:overrideLibrary="com.google.ar.core" />
+
+</manifest>

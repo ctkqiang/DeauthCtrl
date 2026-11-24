@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- IMSI 捕捉器检测 -->
+    <string name="ops_imsi_title">IMSI Catcher Detector</string>
+    <string name="ops_imsi_risk">THREAT LEVEL: %1$s</string>
+    <string name="ops_imsi_cell">CELL: %1$s · LAC %2$d · CID %3$d · %4$d dBm</string>
+    <string name="ops_imsi_reset">RESET BASELINE</string>
+    <string name="ops_imsi_note">Watches for stingray signatures: RAT downgrade (4G/5G → 2G), LAC/TAC jumps, signal surges. No root needed — reads the live modem. Alerts are heuristic, not proof.</string>
+
+    <!-- AnyIntruder 蜜罐 -->
+    <string name="ops_hp_title">AnyIntruder Honeypot</string>
+    <string name="ops_hp_start">START LISTENER</string>
+    <string name="ops_hp_stop">STOP LISTENER</string>
+    <string name="ops_hp_stats">ATTEMPTS: %1$d · UNIQUE IP: %2$d</string>
+    <string name="ops_hp_note">Listens on a high port (no root). Classifies first packets: SSH probes, HTTP exploit paths, CGI scans, brute attempts. For authorized networks only.</string>
+    <string name="ops_hp_line">%1$s:%2$d · %3$s</string>
+
+    <!-- AppShark -->
+    <string name="ops_as_title">AppShark Static Audit</string>
+    <string name="ops_as_scan">SCAN INSTALLED APPS</string>
+    <string name="ops_as_note">PackageManager-level risk audit: dangerous permissions, exported components, cleartext traffic, debuggable flag, low targetSdk. No root.</string>
+
+    <!-- Aircrack 审计 -->
+    <string name="ops_air_title">Wi-Fi Audit (aircrack)</string>
+    <string name="ops_air_scan">SCAN NEARBY APs</string>
+    <string name="ops_air_scanning">SCANNING…</string>
+    <string name="ops_air_note">Honest boundary: phones cannot enter monitor mode — this audits security posture only (encryption, WPS exposure, risk score). Cracking requires aircrack-ng on a supported adapter.</string>
+
+    <!-- BitChat -->
+    <string name="ops_chat_title">BitChat</string>
+    <string name="ops_chat_start">ON</string>
+    <string name="ops_chat_stop">OFF</string>
+    <string name="ops_chat_peers">PEERS NEARBY: %1$d</string>
+    <string name="ops_chat_ph">type a message (max 40 chars)…</string>
+    <string name="ops_chat_send">SEND</string>
+    <string name="ops_chat_note">BLE broadcast chat — no pairing, no internet. Short range (~30 m), open channel: treat as public.</string>
+
+    <!-- Weaver -->
+    <string name="ops_weaver_title">Weaver Aggregator</string>
+    <string name="ops_weaver_pull">PULL SECURITY FEEDS</string>
+    <string name="ops_weaver_pulling">PULLING…</string>
+    <string name="ops_weaver_note">Aggregates all subscribed security feeds (CVE, advisories, news, world) into one reading stream. Offline cache included.</string>
+    <string name="ops_weaver_open">OPEN IN BROWSER</string>
+
+    <!-- BlueDucky -->
+    <string name="ops_bd_title">BlueDucky Payloads</string>
+    <string name="ops_bd_note">Phones cannot inject as a Bluetooth keyboard (CVE-2023-45866 needs Linux/ESP32). This lab generates and validates DuckyScript payload files for BlueDucky / Flipper BadUSB hardware.</string>
+    <string name="ops_bd_ok">SYNTAX: OK</string>
+    <string name="ops_bd_problems">SYNTAX PROBLEMS: %1$d</string>
+    <string name="ops_bd_export">EXPORT .TXT PAYLOAD</string>
+    <string name="ops_bd_saved">Saved: %1$s</string>
+
+    <!-- 毛选思维框架 -->
+    <string name="ops_mx_title">Mao Framework</string>
+    <string name="ops_mx_models">7 MENTAL MODELS</string>
+    <string name="ops_mx_heur">10 DECISION HEURISTICS</string>
+    <string name="ops_mx_m1">Seek truth from facts 实事求是</string>
+    <string name="ops_mx_m1b">Base every decision on investigated reality, not assumptions. No investigation, no right to speak.</string>
+    <string name="ops_mx_m2">Contradiction analysis 矛盾论</string>
+    <string name="ops_mx_m2b">Find the principal contradiction and its principal aspect — solve that first; the rest follows.</string>
+    <string name="ops_mx_m3">Practice–theory–practice 实践论</string>
+    <string name="ops_mx_m3b">Knowledge comes from action and is validated only by action. Iterate: act, observe, correct.</string>
+    <string name="ops_mx_m4">Despise strategically, respect tactically</string>
+    <string name="ops_mx_m4b">Hold total confidence in the long game while preparing every detail with maximum seriousness.</string>
+    <string name="ops_mx_m5">Concentrate superior force 集中优势兵力</string>
+    <string name="ops_mx_m5b">Never fight evenly everywhere. Concentrate overwhelming resources on the weakest point, destroy it, move on.</string>
+    <string name="ops_mx_m6">Protracted war in stages 持久战</string>
+    <string name="ops_mx_m6b">Long conflicts are won in phases. Do not trade the campaign for one battle; time is a weapon.</string>
+    <string name="ops_mx_m7">United front 统一战线</string>
+    <string name="ops_mx_m7b">Unite the many against the few: win over neutrals, isolate the main opponent, never fight all enemies at once.</string>
+    <string name="ops_mx_h1">Investigate before deciding.</string>
+    <string name="ops_mx_h1b">First-hand data beats second-hand opinion. Field research before every major call.</string>
+    <string name="ops_mx_h2">One principal contradiction at a time.</string>
+    <string name="ops_mx_h2b">Rank problems; solving the top one dissolves several others.</string>
+    <string name="ops_mx_h3">Prepare for the worst, strive for the best.</string>
+    <string name="ops_mx_h3b">Plan from the worst case so surprises never become disasters.</string>
+    <string name="ops_mx_h4">Enemy advances, we retreat; enemy halts, we harass; enemy tires, we strike; enemy retreats, we pursue.</string>
+    <string name="ops_mx_h4b">The weak side wins by controlling tempo, not by matching strength.</string>
+    <string name="ops_mx_h5">Fight no unprepared battle.</string>
+    <string name="ops_mx_h5b">Rehearse and calculate before committing; win the battle before fighting it.</string>
+    <string name="ops_mx_h6">See problems as developing processes.</string>
+    <string name="ops_mx_h6b">Each stage has its own strategy — what worked yesterday may fail tomorrow.</string>
+    <string name="ops_mx_h7">Rely on your own strength.</string>
+    <string name="ops_mx_h7b">Core capabilities must be independent of others; alliances supplement, never substitute.</string>
+    <string name="ops_mx_h8">From the masses, to the masses.</string>
+    <string name="ops_mx_h8b">Information and morale flow both ways with the people you work with — listen, then lead.</string>
+    <string name="ops_mx_h9">Preserve yourself to destroy the enemy.</string>
+    <string name="ops_mx_h9b">Survival is the precondition of victory — never trade existence for a point.</string>
+    <string name="ops_mx_h10">Win over the many, isolate the few.</string>
+    <string name="ops_mx_h10b">Split your opponents; fight one principal enemy at a time.</string>
+
+    <!-- fsociety 作战台 -->
+    <string name="ops_fs_title">fsociety Ops</string>
+    <string name="ops_fs_banner">PENETRATION TESTING FRAMEWORK · QUICK COMMAND CONSOLE</string>
+    <string name="ops_fs_recon">RECON</string>
+    <string name="ops_fs_wireless">WIRELESS</string>
+    <string name="ops_fs_ops">OPS</string>
+    <string name="ops_fs_arp">ARP sweep</string>
+    <string name="ops_fs_portscan">Port scan</string>
+    <string name="ops_fs_radar">Device radar</string>
+    <string name="ops_fs_cctv">CCTV scanner</string>
+    <string name="ops_fs_onvif">Camera ops</string>
+    <string name="ops_fs_ble">BLE spam</string>
+    <string name="ops_fs_wifi">Wi-Fi disrupt</string>
+    <string name="ops_fs_btjam">BT jam</string>
+    <string name="ops_fs_wifijam">Wi-Fi jam</string>
+    <string name="ops_fs_aircrack">Wi-Fi audit</string>
+    <string name="ops_fs_imsi">IMSI detector</string>
+    <string name="ops_fs_gsmlab">GSM lab</string>
+    <string name="ops_fs_honeypot">Honeypot</string>
+    <string name="ops_fs_subghz">Sub-GHz lab</string>
+    <string name="ops_fs_mfclassic">Mifare cracker</string>
+    <string name="ops_fs_depth">Depth scan</string>
+    <string name="ops_fs_checklist">ENGAGEMENT CHECKLIST</string>
+    <string name="ops_fs_t1">Confirm scope and authorization</string>
+    <string name="ops_fs_t2">Recon complete</string>
+    <string name="ops_fs_t3">Vulnerability map</string>
+    <string name="ops_fs_t4">Minimal proof-of-impact only</string>
+    <string name="ops_fs_t5">Evidence collected</string>
+    <string name="ops_fs_t6">Report drafted</string>
+    <!-- ─── 毛选框架:出处标注 ─── -->
+    <string name="ops_mx_excerpts">SOURCE TEXTS</string>
+    <string name="ops_mx_intro">Strategic methodology distilled from the Selected Works of Mao Zedong — every model and heuristic below is grounded in the source texts listed in the third tab.</string>
+    <string name="ops_mx_m1s">《改造我们的学习》(1941) · Reform Our Study</string>
+    <string name="ops_mx_m2s">《矛盾论》(1937) · On Contradiction</string>
+    <string name="ops_mx_m3s">《实践论》(1937) · On Practice</string>
+    <string name="ops_mx_m4s">《关于目前党的政策中的几个重要问题》(1948) · On Some Important Problems of the Party\'s Present Policy</string>
+    <string name="ops_mx_m5s">《中国革命战争的战略问题》(1936) · Problems of Strategy in China\'s Revolutionary War</string>
+    <string name="ops_mx_m6s">《论持久战》(1938) · On Protracted War</string>
+    <string name="ops_mx_m7s">《〈共产党人〉发刊词》(1939) · Introduce The Communist</string>
+    <string name="ops_mx_h1s">《反对本本主义》(1930) · Oppose Book Worship</string>
+    <string name="ops_mx_h2s">《矛盾论》(1937) · On Contradiction</string>
+    <string name="ops_mx_h3s">《论持久战》(1938) · On Protracted War</string>
+    <string name="ops_mx_h4s">《中国革命战争的战略问题》(1936) · Problems of Strategy in China\'s Revolutionary War</string>
+    <string name="ops_mx_h5s">《目前形势和我们的任务》(1947) · The Present Situation and Our Tasks</string>
+    <string name="ops_mx_h6s">《矛盾论》(1937) · On Contradiction</string>
+    <string name="ops_mx_h7s">《必须学会做经济工作》(1945) · We Must Learn to Do Economic Work</string>
+    <string name="ops_mx_h8s">《关于领导方法的若干问题》(1943) · Some Questions Concerning Methods of Leadership</string>
+    <string name="ops_mx_h9s">《论持久战》(1938) · On Protracted War</string>
+    <string name="ops_mx_h10s">《目前抗日统一战线中的策略问题》(1940) · On Policy in the Anti-Japanese United Front</string>
+    <!-- ─── 毛选框架:原著选段(原文 + 出处 + 译文) ─── -->
+    <string name="ops_mx_q1">没有调查,没有发言权。</string>
+    <string name="ops_mx_q1_en">No investigation, no right to speak.</string>
+    <string name="ops_mx_q1_src">《反对本本主义》(1930) · Oppose Book Worship</string>
+    <string name="ops_mx_q2">你要知道梨子的滋味,你就得变革梨子,亲口吃一吃。</string>
+    <string name="ops_mx_q2_en">If you want to know the taste of a pear, you must change the pear by eating it yourself.</string>
+    <string name="ops_mx_q2_src">《实践论》(1937) · On Practice</string>
+    <string name="ops_mx_q3">实践、认识、再实践、再认识,这种形式,循环往复以至无穷。</string>
+    <string name="ops_mx_q3_en">Practice, knowledge, again practice, and again knowledge. This form repeats itself in endless cycles.</string>
+    <string name="ops_mx_q3_src">《实践论》(1937) · On Practice</string>
+    <string name="ops_mx_q4">事物的矛盾法则,即对立统一的法则,是唯物辩证法的最根本的法则。</string>
+    <string name="ops_mx_q4_en">The law of contradiction in things, that is, the law of the unity of opposites, is the fundamental law of materialist dialectics.</string>
+    <string name="ops_mx_q4_src">《矛盾论》(1937) · On Contradiction</string>
+    <string name="ops_mx_q5">敌进我退,敌驻我扰,敌疲我打,敌退我追。</string>
+    <string name="ops_mx_q5_en">The enemy advances, we retreat; the enemy camps, we harass; the enemy tires, we attack; the enemy retreats, we pursue.</string>
+    <string name="ops_mx_q5_src">《中国革命战争的战略问题》(1936) · Problems of Strategy in China\'s Revolutionary War</string>
+    <string name="ops_mx_q6">对于人,伤其十指不如断其一指;对于敌,击溃其十个师不如歼灭其一个师。</string>
+    <string name="ops_mx_q6_en">Injuring all of a man\'s ten fingers is not as effective as chopping off one; and routing ten enemy divisions is not as effective as annihilating one of them.</string>
+    <string name="ops_mx_q6_src">《中国革命战争的战略问题》(1936) · Problems of Strategy in China\'s Revolutionary War</string>
+    <string name="ops_mx_q7">战争的伟力之最深厚的根源,存在于民众之中。</string>
+    <string name="ops_mx_q7_en">The richest source of power to wage war lies in the masses of the people.</string>
+    <string name="ops_mx_q7_src">《论持久战》(1938) · On Protracted War</string>
+    <string name="ops_mx_q8">兵民是胜利之本。</string>
+    <string name="ops_mx_q8_en">The army and the people are the foundation of victory.</string>
+    <string name="ops_mx_q8_src">《论持久战》(1938) · On Protracted War</string>
+    <string name="ops_mx_q9">墙上芦苇,头重脚轻根底浅;山间竹笋,嘴尖皮厚腹中空。</string>
+    <string name="ops_mx_q9_en">The reed growing on the wall — top-heavy, thin-stemmed and shallow of root; the bamboo shoot in the hills — sharp-tongued, thick-skinned and hollow inside.</string>
+    <string name="ops_mx_q9_src">《改造我们的学习》(1941) · Reform Our Study</string>
+    <string name="ops_mx_q10">到什么山上唱什么歌。……我们无论做什么事都要看情形办理。</string>
+    <string name="ops_mx_q10_en">Sing different songs on different mountains. … Whatever we do, we must act according to the circumstances.</string>
+    <string name="ops_mx_q10_src">《反对党八股》(1942) · Oppose Stereotyped Party Writing</string>
+    <string name="ops_mx_q11">人固有一死,或重于泰山,或轻于鸿毛。</string>
+    <string name="ops_mx_q11_en">All men must die, but death can be weightier than Mount Tai or lighter than a feather. (quoting Sima Qian)</string>
+    <string name="ops_mx_q11_src">《为人民服务》(1944) · Serve the People</string>
+    <string name="ops_mx_q12">在战略上我们要藐视一切敌人,在战术上我们要重视一切敌人。</string>
+    <string name="ops_mx_q12_en">Strategically we should despise all our enemies, but tactically we should take them all seriously.</string>
+    <string name="ops_mx_q12_src">《关于目前党的政策中的几个重要问题》(1948) · On Some Important Problems of the Party\'s Present Policy</string>
+    <string name="ops_mx_q13">下定决心,不怕牺牲,排除万难,去争取胜利。</string>
+    <string name="ops_mx_q13_en">Be resolute, fear no sacrifice and surmount every difficulty to win victory.</string>
+    <string name="ops_mx_q13_src">《愚公移山》(1945) · The Foolish Old Man Who Removed the Mountains</string>
+</resources>

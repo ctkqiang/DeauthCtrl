@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- IMSI 捕捉器检测 -->
+    <string name="ops_imsi_title">IMSI 捕捉器检测</string>
+    <string name="ops_imsi_risk">威胁等级: %1$s</string>
+    <string name="ops_imsi_cell">小区: %1$s · LAC %2$d · CID %3$d · %4$d dBm</string>
+    <string name="ops_imsi_reset">重置基线</string>
+    <string name="ops_imsi_note">监视假基站特征:制式降级(4G/5G → 2G)、LAC/TAC 突变、信号突增。免 root,读本机调制解调器。告警为启发式判断,不是实锤。</string>
+
+    <!-- AnyIntruder 蜜罐 -->
+    <string name="ops_hp_title">AnyIntruder 蜜罐</string>
+    <string name="ops_hp_start">开始监听</string>
+    <string name="ops_hp_stop">停止监听</string>
+    <string name="ops_hp_stats">尝试次数: %1$d · 攻击者 IP: %2$d</string>
+    <string name="ops_hp_note">高位端口监听(免 root)。对首包分类:SSH 探测、HTTP 漏洞路径、CGI 扫描、爆破尝试。仅限授权网络。</string>
+    <string name="ops_hp_line">%1$s:%2$d · %3$s</string>
+
+    <!-- AppShark -->
+    <string name="ops_as_title">AppShark 静态体检</string>
+    <string name="ops_as_scan">扫描已装应用</string>
+    <string name="ops_as_note">PackageManager 级风险审计:危险权限、导出组件、明文流量、可调试标志、低 targetSdk。免 root。</string>
+
+    <!-- Aircrack 审计 -->
+    <string name="ops_air_title">Wi-Fi 审计(aircrack)</string>
+    <string name="ops_air_scan">扫描附近 AP</string>
+    <string name="ops_air_scanning">扫描中…</string>
+    <string name="ops_air_note">诚实边界:手机无法进入监听模式 —— 本台只做安全态势审计(加密协议、WPS 暴露、风险评分)。破解需 aircrack-ng + 支持的网卡。</string>
+
+    <!-- BitChat -->
+    <string name="ops_chat_title">BitChat</string>
+    <string name="ops_chat_start">开</string>
+    <string name="ops_chat_stop">关</string>
+    <string name="ops_chat_peers">附近节点: %1$d</string>
+    <string name="ops_chat_ph">输入消息(最长 40 字符)…</string>
+    <string name="ops_chat_send">发送</string>
+    <string name="ops_chat_note">BLE 广播聊天 —— 免配对、免联网。距离短(约 30 米),开放信道:视为公开。</string>
+
+    <!-- Weaver -->
+    <string name="ops_weaver_title">Weaver 聚合阅读</string>
+    <string name="ops_weaver_pull">拉取安全资讯</string>
+    <string name="ops_weaver_pulling">拉取中…</string>
+    <string name="ops_weaver_note">聚合全部已订阅安全源(CVE、公告、新闻、世界局势)为一条阅读流,离线缓存可用。</string>
+    <string name="ops_weaver_open">浏览器打开</string>
+
+    <!-- BlueDucky -->
+    <string name="ops_bd_title">BlueDucky 载荷工坊</string>
+    <string name="ops_bd_note">手机无法以蓝牙键盘注入(CVE-2023-45866 需 Linux/ESP32 硬件)。本工坊生成并校验 DuckyScript 载荷文件,供 BlueDucky / Flipper BadUSB 使用。</string>
+    <string name="ops_bd_ok">语法: 通过</string>
+    <string name="ops_bd_problems">语法问题: %1$d</string>
+    <string name="ops_bd_export">导出 .TXT 载荷</string>
+    <string name="ops_bd_saved">已保存: %1$s</string>
+
+    <!-- 毛选思维框架 -->
+    <string name="ops_mx_title">毛选思维框架</string>
+    <string name="ops_mx_models">7 个心智模型</string>
+    <string name="ops_mx_heur">10 条决策启发式</string>
+    <string name="ops_mx_m1">实事求是</string>
+    <string name="ops_mx_m1b">一切决策从调查过的事实出发,不从臆想出发。没有调查,就没有发言权。</string>
+    <string name="ops_mx_m2">矛盾论</string>
+    <string name="ops_mx_m2b">找出主要矛盾和矛盾的主要方面 —— 先解决它,其余迎刃而解。</string>
+    <string name="ops_mx_m3">实践论</string>
+    <string name="ops_mx_m3b">认识来自实践,也只有在实践中检验。循环:行动 → 观察 → 修正。</string>
+    <string name="ops_mx_m4">战略上藐视,战术上重视</string>
+    <string name="ops_mx_m4b">对长期全局保持必胜信心,对每个细节做最认真的准备。</string>
+    <string name="ops_mx_m5">集中优势兵力,各个歼灭</string>
+    <string name="ops_mx_m5b">绝不处处平分力量。把压倒性资源集中在最薄弱点上,消灭一个,再打下一个。</string>
+    <string name="ops_mx_m6">持久战与阶段论</string>
+    <string name="ops_mx_m6b">长期博弈分阶段取胜。不为一场战斗输掉整个战役;时间本身就是武器。</string>
+    <string name="ops_mx_m7">统一战线</string>
+    <string name="ops_mx_m7b">团结多数、孤立少数:争取中间派,孤立主要对手,绝不一次与所有人为敌。</string>
+    <string name="ops_mx_h1">先调查,后决策。</string>
+    <string name="ops_mx_h1b">一手数据胜过二手观点。每个重大决定之前先做现场调研。</string>
+    <string name="ops_mx_h2">同一时期只抓一个主要矛盾。</string>
+    <string name="ops_mx_h2b">给问题排序;解决最上面的一个,能连带消解其他几个。</string>
+    <string name="ops_mx_h3">从最坏处准备,向最好处努力。</string>
+    <string name="ops_mx_h3b">按最坏情况做计划,意外就永远变不成灾难。</string>
+    <string name="ops_mx_h4">敌进我退,敌驻我扰,敌疲我打,敌退我追。</string>
+    <string name="ops_mx_h4b">弱势一方靠控制节奏取胜,而不是硬碰硬。</string>
+    <string name="ops_mx_h5">不打无准备之仗。</string>
+    <string name="ops_mx_h5b">投入之前先推演与计算;在开打之前先赢得战斗。</string>
+    <string name="ops_mx_h6">用发展的眼光看问题。</string>
+    <string name="ops_mx_h6b">每个阶段有每个阶段的打法 —— 昨天有效的策略明天可能失效。</string>
+    <string name="ops_mx_h7">独立自主。</string>
+    <string name="ops_mx_h7b">核心能力必须不依赖他人;联盟是补充,不是替代。</string>
+    <string name="ops_mx_h8">从群众中来,到群众中去。</string>
+    <string name="ops_mx_h8b">信息与士气与同行者双向流动 —— 先倾听,再带领。</string>
+    <string name="ops_mx_h9">保存自己,消灭敌人。</string>
+    <string name="ops_mx_h9b">生存是胜利的前提 —— 绝不为一个点丢掉全局的存在。</string>
+    <string name="ops_mx_h10">团结多数,孤立少数。</string>
+    <string name="ops_mx_h10b">分化对手;一次只打一个主要敌人。</string>
+
+    <!-- fsociety 作战台 -->
+    <string name="ops_fs_title">fsociety 作战台</string>
+    <string name="ops_fs_banner">渗透测试框架 · 快速指挥控制台</string>
+    <string name="ops_fs_recon">侦察</string>
+    <string name="ops_fs_wireless">无线</string>
+    <string name="ops_fs_ops">作战</string>
+    <string name="ops_fs_arp">ARP 扫描</string>
+    <string name="ops_fs_portscan">端口扫描</string>
+    <string name="ops_fs_radar">设备雷达</string>
+    <string name="ops_fs_cctv">CCTV 扫描</string>
+    <string name="ops_fs_onvif">监控眼</string>
+    <string name="ops_fs_ble">BLE 洪泛</string>
+    <string name="ops_fs_wifi">Wi-Fi 干扰</string>
+    <string name="ops_fs_btjam">蓝牙干扰</string>
+    <string name="ops_fs_wifijam">Wi-Fi 压制</string>
+    <string name="ops_fs_aircrack">Wi-Fi 审计</string>
+    <string name="ops_fs_imsi">IMSI 检测</string>
+    <string name="ops_fs_gsmlab">GSM 实验室</string>
+    <string name="ops_fs_honeypot">蜜罐</string>
+    <string name="ops_fs_subghz">Sub-GHz 实验室</string>
+    <string name="ops_fs_mfclassic">Mifare 破解</string>
+    <string name="ops_fs_depth">深度扫视</string>
+    <string name="ops_fs_checklist">行动检查清单</string>
+    <string name="ops_fs_t1">确认授权与范围</string>
+    <string name="ops_fs_t2">侦察完成</string>
+    <string name="ops_fs_t3">漏洞图谱</string>
+    <string name="ops_fs_t4">仅最小影响验证</string>
+    <string name="ops_fs_t5">证据固定</string>
+    <string name="ops_fs_t6">报告成稿</string>
+    <string name="ops_mx_excerpts">原著选段</string>
+    <string name="ops_mx_intro">战略方法论参考,提炼自《毛泽东选集》—— 每个思维模型与启发式都以第三个标签页中的原著选段为出处依据。</string>
+</resources>

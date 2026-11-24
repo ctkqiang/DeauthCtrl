@@ -717,7 +717,7 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
         }
     }
 
-    // 信号列表:每帧提取噪声底以上的局部峰(间距 ≥3 bin),取前 8 —— 真实 SDR 的信号清单
+    // 信号列表:每帧提取噪声底以上的局部峰(间距 ≥3 bin),取前 8 —— SDR 风格峰值清单
     val signals = remember { mutableStateListOf<SdrSignalRow>() }
     LaunchedEffect(frame) {
         frame?.let { f ->
@@ -927,7 +927,7 @@ fun VoiceSdrScreen(vm: VoiceSdrViewModel, back: () -> Unit) {
 
             Spacer(Modifier.height(8.dp))
 
-            // 频谱面板标题条(真实 SDR 的通道标识 + 快捷操作)
+            // 频谱面板标题条(SDR 风格通道标识 + 快捷操作)
             Row(Modifier.fillMaxWidth().padding(bottom = 3.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.tact_sdr_spectrum_header), fontFamily = Mono, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = TacGreen)
                 Row(verticalAlignment = Alignment.CenterVertically) {

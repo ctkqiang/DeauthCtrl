@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gsm_title">GSM 实验室</string>
+    <string name="gsm_tab_live">实时小区</string>
+    <string name="gsm_tab_calc">频点计算</string>
+    <string name="gsm_operator">运营商</string>
+    <string name="gsm_mccmnc">MCC / MNC</string>
+    <string name="gsm_nettype">网络制式</string>
+    <string name="gsm_roaming">漫游</string>
+    <string name="gsm_serving">服务小区</string>
+    <string name="gsm_type">制式</string>
+    <string name="gsm_cellid">小区 ID</string>
+    <string name="gsm_band">频段</string>
+    <string name="gsm_signal">信号</string>
+    <string name="gsm_tadist">TA 估算距离</string>
+    <string name="gsm_no_service">未注册到小区 —— 检查 SIM 与权限</string>
+    <string name="gsm_neighbors">邻区列表(%1$d)</string>
+    <string name="gsm_note">TA 测距为估算(GSM TA × 550 米 · LTE TA × 78 米)。小区信息来自本机调制解调器,无需网络。</string>
+    <string name="gsm_calc_hint">输入 ARFCN(1–885)· EARFCN(1200–60000)· 或 MHz(300–3000)</string>
+    <string name="gsm_calc_ph">如 512 · 1300 · 1815</string>
+    <string name="gsm_calc_empty">输入数值:GSM ARFCN / LTE EARFCN / 频率 MHz</string>
+    <string name="gsm_calc_bands">LTE 覆盖:B1 2100 · B3 1800 · B5 850 · B7 2600 · B8 900 · B20 800 · B28 700 · B38/B40/B41 TDD。GSM:850/900/1800/1900。</string>
+</resources>

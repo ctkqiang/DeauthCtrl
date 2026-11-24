@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mf_title">Mifare Classic 破解台</string>
+    <string name="mf_nfc_missing">此设备没有 NFC 硬件</string>
+    <string name="mf_nfc_disabled">NFC 未开启 —— 请在系统设置中启用</string>
+    <string name="mf_waiting">将 Mifare Classic 卡贴近手机背面…</string>
+    <string name="mf_ready">已读卡 —— 下方扇区显示破解结果</string>
+    <string name="mf_note">仅使用公开默认密钥字典(mf_classic_dict)· 仅限自有卡或授权测试 · 未知密钥扇区如实标为锁定,不做在线穷举</string>
+    <string name="mf_ph_uid">[ UID ]</string>
+    <string name="mf_ph_hint">等待读卡</string>
+    <string name="mf_stat">%1$d/%2$d 已破解</string>
+    <string name="mf_btn_export">导出 Dump + 密钥报告</string>
+    <string name="mf_export_ok">已保存: %1$s</string>
+    <string name="mf_export_fail">导出失败: %1$s</string>
+</resources>

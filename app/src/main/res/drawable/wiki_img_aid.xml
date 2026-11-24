@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 急救:急救箱 + 红十字 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M14,8 h20 a4,4 0 0 1 4,4 v24 a4,4 0 0 1 -4,4 h-20 a4,4 0 0 1 -4,-4 v-24 a4,4 0 0 1 4,-4 Z" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,15 v18 M15,24 h18" android:strokeColor="#FF5252" android:strokeWidth="4" android:fillColor="#00000000"/>
+</vector>

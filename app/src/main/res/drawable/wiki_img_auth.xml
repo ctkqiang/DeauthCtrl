@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 认证:钥匙 + 锁 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M15,21 A6,6 0 1,1 14.99,21" android:strokeColor="#FFD54F" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M21,21 L34,21 M30,21 v4 M34,21 v4" android:strokeColor="#FFD54F" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M12,32 h24 v10 h-24 Z" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,36 A1.4,1.4 0 1,1 23.99,36" android:fillColor="#00E676"/>
+</vector>

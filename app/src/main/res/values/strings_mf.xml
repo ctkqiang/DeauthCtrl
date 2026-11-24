@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mf_title">Mifare Classic</string>
+    <string name="mf_nfc_missing">This device has no NFC hardware</string>
+    <string name="mf_nfc_disabled">NFC is off — enable it in system settings</string>
+    <string name="mf_waiting">Hold a Mifare Classic card to the back of the phone…</string>
+    <string name="mf_ready">Card read — tap sectors below for details</string>
+    <string name="mf_note">Public default-key dictionary only (mf_classic_dict) · authorized use on your own cards · unknown sectors are reported locked, no online brute-force</string>
+    <string name="mf_ph_uid">[ UID ]</string>
+    <string name="mf_ph_hint">Waiting for card</string>
+    <string name="mf_stat">%1$d/%2$d CRACKED</string>
+    <string name="mf_btn_export">EXPORT DUMP + KEY REPORT</string>
+    <string name="mf_export_ok">Saved: %1$s</string>
+    <string name="mf_export_fail">Export failed: %1$s</string>
+</resources>

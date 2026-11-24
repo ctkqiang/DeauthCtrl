@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 匿名通信:洋葱路由分层 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,4 A20,20 0 1,1 24,44 A20,20 0 1,1 24,4 Z" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,11 A13,13 0 1,1 24,37 A13,13 0 1,1 24,11 Z" android:strokeColor="#FFD54F" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,18 A6,6 0 1,1 24,30 A6,6 0 1,1 24,18 Z" android:fillColor="#00E5FF"/>
+</vector>

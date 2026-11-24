@@ -59,7 +59,7 @@ import xin.ctkqiang.deauthctrl.ui.components.White
 import xin.ctkqiang.deauthctrl.viewmodel.MainsWireViewModel
 
 /**
- * 墙内电线探测 —— 工频(50/60Hz)电磁 / 声学特征
+ * 墙内电线探测 —— 工频(50/60Hz)声学特征(麦克风拾音)
  *
  * 麦克风实时采样 → Goertzel 检测工频基波与谐波 → 与整帧 RMS 的比值
  * 经自适应基线归一为 0-100 电平。靠近有负载的带电线路时电平与告警

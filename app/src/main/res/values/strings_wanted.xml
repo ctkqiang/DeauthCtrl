@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wanted_title">Wanted List</string>
+    <string name="wanted_tab_list">LIST</string>
+    <string name="wanted_tab_map">WORLD MAP</string>
+    <string name="wanted_ph_search">Search name / charge…</string>
+    <string name="wanted_stat_total">TOTAL</string>
+    <string name="wanted_stat_geo">GEO-TAGGED</string>
+    <string name="wanted_empty">No wanted records — auto-refresh pending</string>
+    <string name="wanted_map_empty">No geotagged records yet</string>
+    <string name="wanted_map_hint">GEO: %1$d · PINCH ZOOM · DRAG PAN · TAP SELECT</string>
+    <string name="wanted_btn_fit">FIT</string>
+    <string name="wanted_open_link">OPEN OFFICIAL DETAILS</string>
+    <string name="wanted_src_ok">● %1$s ×%2$d</string>
+    <string name="wanted_src_fail">✖ %1$s [%2$s]</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 伪装隐蔽:叶片与遮蔽 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,6 C32,12 40,22 40,30 C40,38 32,42 24,42 C16,42 8,38 8,30 C8,22 16,12 24,6 Z" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,10 L24,38 M14,20 C20,24 28,24 34,20 M14,30 C20,26 28,26 34,30" android:strokeColor="#00E676" android:strokeWidth="1.8" android:fillColor="#00000000"/>
+    <path android:pathData="M10,10 L14,14 M38,10 L34,14" android:strokeColor="#FFD54F" android:strokeWidth="2" android:fillColor="#00000000"/>
+</vector>

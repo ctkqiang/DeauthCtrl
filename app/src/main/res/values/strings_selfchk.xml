@@ -72,4 +72,15 @@
     <string name="selfchk_stat_gateway">Gateway</string>
     <string name="selfchk_stat_wifi_standard">Wi-Fi standard</string>
     <string name="selfchk_warn_no_location">[!] Location permission not granted; SSID/BSSID will be hidden by the system</string>
+    <string name="selfchk_panel_caps">CAPABILITY MATRIX · ATTACK TOOLS</string>
+    <string name="selfchk_caps_probe">RUN FULL PROBE (may prompt for root)</string>
+    <string name="selfchk_caps_probing">PROBING…</string>
+    <string name="selfchk_caps_root">Root access</string>
+    <string name="selfchk_caps_monitor">Monitor mode</string>
+    <string name="selfchk_caps_injection">Frame injection</string>
+    <string name="selfchk_caps_lohs">Local hotspot</string>
+    <string name="selfchk_caps_ble">BLE advertising</string>
+    <string name="selfchk_caps_unlocked">EXTERNAL TOOL MODE UNLOCKED</string>
+    <string name="selfchk_caps_locked">LOCKED — injection tools unavailable on this device</string>
+    <string name="selfchk_caps_unknown">Not probed yet</string>
 </resources>

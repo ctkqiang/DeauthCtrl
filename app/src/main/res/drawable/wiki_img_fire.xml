@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 火:三层火焰 + 柴 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,4 C28,12 34,17 34,24 A10,10 0 1,1 14,24 C14,18 18,14 21,9 C22,12 23,12 24,4 Z" android:strokeColor="#FFD54F" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,13 C26,16 29,19 29,23 A5,5 0 1,1 19,23 C19,20 21,17 22,15 C23,15 23,15 24,13 Z" android:strokeColor="#FF5252" android:strokeWidth="2" android:fillColor="#00000000"/>
+    <path android:pathData="M8,38 L26,34 M20,42 L40,34" android:strokeColor="#00E676" android:strokeWidth="3" android:fillColor="#00000000"/>
+</vector>

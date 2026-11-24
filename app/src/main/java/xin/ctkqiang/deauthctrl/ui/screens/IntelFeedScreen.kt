@@ -16,15 +16,21 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.ui.graphics.Path
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +67,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -70,12 +78,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.osmdroid.util.BoundingBox
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import xin.ctkqiang.deauthctrl.manager.TacticalMapManager
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
@@ -84,6 +86,7 @@ import java.util.Locale
 import kotlin.math.floor
 import xin.ctkqiang.deauthctrl.R
 import xin.ctkqiang.deauthctrl.manager.IntelFeedManager
+import xin.ctkqiang.deauthctrl.manager.WorldLandmass
 import xin.ctkqiang.deauthctrl.ui.components.ActionButton
 import xin.ctkqiang.deauthctrl.ui.components.BorderDim
 import xin.ctkqiang.deauthctrl.ui.components.Danger
@@ -468,74 +471,249 @@ private fun SourcesTab(
 @Composable
 private fun MapTab(state: IntelFeedViewModel.State, onOpenItem: (IntelFeedManager.FeedItem) -> Unit) {
     val haptic = LocalHapticFeedback.current
-    val context = LocalContext.current
     val geotagged = state.items.filter { it.lat != null && it.lon != null }.take(120)
     var selectedId by remember { mutableStateOf<String?>(null) }
-    var fitRequested by remember { mutableStateOf(0) }
+    var fitTick by remember { mutableStateOf(0) }
+    var view by remember { mutableStateOf<FloatArray?>(null) }
     var fittedSignature by remember { mutableStateOf("") }
-    val mapMgr = remember { TacticalMapManager(context) }
+    /** 用户手动缩放/平移后置真:数据刷新不再自动重取景,直到点 FIT */
+    var userZoomed by remember { mutableStateOf(false) }
+    val latestView = rememberUpdatedState(view)
     val selected = selectedId?.let { id -> geotagged.firstOrNull { it.id == id } }
+    val measurer = rememberTextMeasurer()
+    val selLabel = selected?.let { measurer.measure("◎ ${it.locName ?: ""} ${it.title.take(20)}", TextStyle(fontFamily = Mono, fontSize = 8.sp, color = Gold)) }
+
+    /** 按钮缩放:窗口中心为焦点,跨度乘 factor(<1 放大 / >1 缩小),钳位世界范围 */
+    fun zoomBy(factor: Float) {
+        val v = view ?: floatArrayOf(-180f, 180f, -85f, 85f)
+        val cLon = (v[0] + v[1]) / 2.0
+        val cLat = (v[2] + v[3]) / 2.0
+        val nLonSpan = ((v[1] - v[0]) * factor).coerceIn(0.5f, 360f)
+        val nLatSpan = ((v[3] - v[2]) * factor).coerceIn(0.5f, 170f)
+        val nMinLon = (cLon - nLonSpan / 2.0).coerceIn(-180.0, 180.0 - nLonSpan)
+        val nMaxLat = (cLat + nLatSpan / 2.0).coerceIn(-85.0 + nLatSpan, 85.0)
+        view = floatArrayOf(nMinLon.toFloat(), (nMinLon + nLonSpan).toFloat(), (nMaxLat - nLatSpan).toFloat(), nMaxLat.toFloat())
+        userZoomed = true
+    }
 
     Column(Modifier.fillMaxSize()) {
-        Box(
+        BoxWithConstraints(
             Modifier.fillMaxWidth().weight(1f)
                 .clip(CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp))
-                .border(1.dp, BorderDim, CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)),
-        ) {
-            AndroidView(
-                factory = { ctx ->
-                    val cfg = org.osmdroid.config.Configuration.getInstance()
-                    cfg.load(ctx.applicationContext, ctx.getSharedPreferences("osmdroid", 0))
-                    cfg.userAgentValue = "DeauthCtrl/1.0 (intel)"
-                    cfg.osmdroidBasePath = java.io.File(ctx.filesDir, "osmdroid")
-                    cfg.osmdroidTileCache = java.io.File(ctx.filesDir, "osmdroid/tiles")
-                    MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
-                        setMultiTouchControls(true)
-                        // 三件套:禁重复铺满 + 最小缩放 2 + 负片滤镜
-                        isHorizontalMapRepetitionEnabled = false
-                        isVerticalMapRepetitionEnabled = false
-                        minZoomLevel = 2.0
-                        overlayManager.tilesOverlay.setColorFilter(mapMgr.monoNegativeFilter())
-                        overlayManager.tilesOverlay.loadingBackgroundColor = 0xFF0A0F14.toInt()
-                        overlayManager.tilesOverlay.loadingLineColor = 0xFF2A3440.toInt()
+                .background(Color(0xFF02090F))
+                .border(1.dp, BorderDim, CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp))
+                .pointerInput(geotagged) {
+                    // 自定义手势:单指点选 / 单指拖动平移 / 双指缩放。
+                    // 键不包含 view —— 手势过程中窗口更新不会重启手势检测。
+                    fun window(): FloatArray = latestView.value ?: floatArrayOf(-180f, 180f, -85f, 85f)
+                    fun proj(v: FloatArray): Triple<Float, Float, Float> {
+                        val geoW = v[1] - v[0]
+                        val geoH = v[3] - v[2]
+                        val scale = minOf(size.width / geoW, size.height / geoH)
+                        return Triple(scale, (size.width - geoW * scale) / 2f, (size.height - geoH * scale) / 2f)
                     }
-                },
-                update = { map ->
-                    // 重建地理标记(类别色圆点)
-                    map.overlays.removeAll { it is Marker }
-                    val pts = geotagged.map { item ->
-                        GeoPoint(item.lat!!, item.lon!!).also { gp ->
-                            val srcCat = IntelFeedManager.SOURCES.firstOrNull { it.id == item.sourceId }?.category ?: "新闻"
-                            val color = intelCategoryColor(srcCat)
-                            map.overlays.add(
-                                Marker(map).apply {
-                                    id = item.id
-                                    position = gp
-                                    title = item.title
-                                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                                    icon = intelDot(color, selected = item.id == selectedId)
-                                    setOnMarkerClickListener { _, _ ->
-                                        selectedId = item.id
-                                        haptic.hud()
-                                        true
+                    fun applyPan(pan: Offset) {
+                        val v = window()
+                        val (scale, _, _) = proj(v)
+                        val lonSpan = (v[1] - v[0]).toDouble()
+                        val latSpan = (v[3] - v[2]).toDouble()
+                        val nMinLon = (v[0].toDouble() - pan.x / scale).coerceIn(-180.0, 180.0 - lonSpan)
+                        val nMaxLat = (v[3].toDouble() + pan.y / scale).coerceIn(-85.0 + latSpan, 85.0)
+                        view = floatArrayOf(nMinLon.toFloat(), (nMinLon + lonSpan).toFloat(), (nMaxLat - latSpan).toFloat(), nMaxLat.toFloat())
+                        userZoomed = true
+                    }
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        var moved = false
+                        var multiTouch = false
+                        var pendingPan = Offset.Zero
+                        val slop = 8.dp.toPx()
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val pressed = event.changes.filter { it.pressed }
+                            if (pressed.size >= 2) {
+                                multiTouch = true
+                                moved = true
+                                val v = window()
+                                val (scale, offX, offY) = proj(v)
+                                val minLon = v[0].toDouble(); val maxLon = v[1].toDouble()
+                                val minLat = v[2].toDouble(); val maxLat = v[3].toDouble()
+                                val oldLonSpan = maxLon - minLon
+                                val oldLatSpan = maxLat - minLat
+                                val c = event.calculateCentroid()
+                                // 焦点地理坐标:缩放围绕指尖中心,而不是窗口中心
+                                val gx = minLon + (c.x - offX) / scale
+                                val gy = maxLat - (c.y - offY) / scale
+                                val fx = ((gx - minLon) / oldLonSpan).coerceIn(0.0, 1.0)
+                                val fy = ((maxLat - gy) / oldLatSpan).coerceIn(0.0, 1.0)
+                                val z = event.calculateZoom()
+                                val p = event.calculatePan()
+                                val nLonSpan = (oldLonSpan / z).coerceIn(0.5, 360.0)
+                                val nLatSpan = (oldLatSpan / z).coerceIn(0.5, 170.0)
+                                val nMinLon = (gx - fx * nLonSpan - p.x / scale).coerceIn(-180.0, 180.0 - nLonSpan)
+                                val nMaxLat = (gy + fy * nLatSpan + p.y / scale).coerceIn(-85.0 + nLatSpan, 85.0)
+                                view = floatArrayOf(nMinLon.toFloat(), (nMinLon + nLonSpan).toFloat(), (nMaxLat - nLatSpan).toFloat(), nMaxLat.toFloat())
+                                userZoomed = true
+                            } else if (pressed.size == 1) {
+                                val change = pressed[0].positionChange()
+                                if (moved) {
+                                    applyPan(change)
+                                } else {
+                                    pendingPan += change
+                                    if (pendingPan.getDistance() > slop) {
+                                        moved = true
+                                        applyPan(pendingPan)
+                                        pendingPan = Offset.Zero
                                     }
-                                },
-                            )
+                                }
+                            }
+                            if (pressed.isEmpty()) {
+                                if (!moved && !multiTouch) {
+                                    // 单指无移动 = 点选圆点
+                                    val tap = down.position
+                                    val v = window()
+                                    val (scale, offX, offY) = proj(v)
+                                    var best: IntelFeedManager.FeedItem? = null
+                                    var bestD = Float.MAX_VALUE
+                                    for (it in geotagged) {
+                                        val x = offX + (it.lon!! - v[0]).toFloat() * scale
+                                        val y = offY + (v[3] - it.lat!!).toFloat() * scale
+                                        val d = (tap - Offset(x, y)).getDistance()
+                                        if (d <= 24.dp.toPx() && d < bestD) { bestD = d; best = it }
+                                    }
+                                    if (best != null) {
+                                        haptic.hud()
+                                        selectedId = best!!.id
+                                    } else {
+                                        selectedId = null
+                                    }
+                                }
+                                break
+                            }
                         }
                     }
-                    // 自动包络:新批次首次(或手动 FIT)框进视野
-                    val signature = "${geotagged.size}|${geotagged.firstOrNull()?.id.orEmpty()}"
-                    if (pts.size >= 2 && (fitRequested > 0 || fittedSignature != signature)) {
-                        val box = BoundingBox.fromGeoPoints(pts)
-                        runCatching { map.zoomToBoundingBox(box, false, 24) }
-                        fittedSignature = signature
-                    }
-                    if (fitRequested > 0) fitRequested = 0
-                    map.invalidate()
                 },
-                modifier = Modifier.fillMaxSize(),
-            )
+        ) {
+            // 等比例投影:统一缩放 + 居中 —— 竖屏画布不再把大陆纵向拉伸
+            val aspect = (maxWidth / maxHeight).toFloat()
+            val signature = "${geotagged.size}|${geotagged.firstOrNull()?.id.orEmpty()}|$aspect"
+            if (!userZoomed && fittedSignature != signature) {
+                view = autoGeoView(geotagged, aspect)
+                fittedSignature = signature
+            }
+            if (fitTick > 0) {
+                view = autoGeoView(geotagged, aspect)
+                fittedSignature = signature
+                fitTick = 0
+                userZoomed = false
+            }
+            Canvas(Modifier.fillMaxSize()) {
+                val v = view ?: floatArrayOf(-180f, 180f, -85f, 85f)
+                val minLon = v[0].toDouble()
+                val maxLon = v[1].toDouble()
+                val minLat = v[2].toDouble()
+                val maxLat = v[3].toDouble()
+                val geoW = maxLon - minLon
+                val geoH = maxLat - minLat
+                val scale = minOf(size.width / geoW.toFloat(), size.height / geoH.toFloat())
+                val offX = (size.width - geoW.toFloat() * scale) / 2f
+                val offY = (size.height - geoH.toFloat() * scale) / 2f
+                fun xOf(lon: Double): Float = offX + (lon - minLon).toFloat() * scale
+                fun yOf(lat: Double): Float = offY + (maxLat - lat).toFloat() * scale
+
+                // 经纬网格
+                var lon = floor(minLon / 30.0) * 30.0
+                while (lon <= maxLon) {
+                    val x = xOf(lon)
+                    val major = (lon % 90.0) == 0.0
+                    drawLine(TacGreen.copy(alpha = if (major) 0.18f else 0.07f), Offset(x, 0f), Offset(x, size.height), if (major) 1.2f else 0.6f)
+                    lon += 10.0
+                }
+                var lat = floor(minLat / 30.0) * 30.0
+                while (lat <= maxLat) {
+                    val y = yOf(lat)
+                    val major = (lat % 90.0) == 0.0
+                    drawLine(TacGreen.copy(alpha = if (major) 0.18f else 0.07f), Offset(0f, y), Offset(size.width, y), if (major) 1.2f else 0.6f)
+                    lat += 10.0
+                }
+
+                // 内嵌低多边形世界大陆(确定性数据,零网络零线程)
+                WorldLandmass.RINGS.forEach { ring ->
+                    val path = Path()
+                    var first = true
+                    var prevLon = 0f
+                    var jump = false
+                    ring.forEach { (plon, plat) ->
+                        val x = xOf(plon.toDouble())
+                        val y = yOf(plat.toDouble())
+                        if (first) { path.moveTo(x, y); first = false }
+                        else if (kotlin.math.abs(plon - prevLon) > 90f) {
+                            // 跨日期变更线的环(南极洲):断开子路径,否则一条线横穿整幅地图
+                            jump = true
+                            path.moveTo(x, y)
+                        } else path.lineTo(x, y)
+                        prevLon = plon
+                    }
+                    if (!jump) path.close()
+                    if (!jump) drawPath(path, TacGreen.copy(alpha = 0.13f))
+                    // 阴影 + 双层海岸线(近岸亮线 + 外圈暗线,更有地图质感)
+                    drawPath(path, Color.Black.copy(alpha = 0.25f), style = Stroke(2.5f))
+                    drawPath(path, TacGreen.copy(alpha = 0.55f), style = Stroke(0.9f))
+                }
+
+                // 主格线经纬标注
+                var lonL = floor(minLon / 30.0) * 30.0
+                while (lonL <= maxLon) {
+                    if ((lonL % 90.0) == 0.0) {
+                        val x = xOf(lonL)
+                        val label = when {
+                            lonL == 0.0 -> "0°"
+                            lonL > 0 -> "%.0f°E".format(lonL)
+                            else -> "%.0f°W".format(-lonL)
+                        }
+                        val t = measurer.measure(label, TextStyle(fontFamily = Mono, fontSize = 7.sp, color = TacGreen.copy(alpha = 0.7f)))
+                        drawText(t, topLeft = Offset((x - t.size.width / 2f).coerceIn(2f, size.width - t.size.width - 2f), size.height - t.size.height))
+                    }
+                    lonL += 30.0
+                }
+                var latL = floor(minLat / 30.0) * 30.0
+                while (latL <= maxLat) {
+                    if ((latL % 90.0) == 0.0) {
+                        val y = yOf(latL)
+                        val label = when {
+                            latL == 0.0 -> "0°"
+                            latL > 0 -> "%.0f°N".format(latL)
+                            else -> "%.0f°S".format(-latL)
+                        }
+                        val t = measurer.measure(label, TextStyle(fontFamily = Mono, fontSize = 7.sp, color = TacGreen.copy(alpha = 0.7f)))
+                        drawText(t, topLeft = Offset(2f, (y - t.size.height / 2f).coerceIn(0f, size.height - t.size.height)))
+                    }
+                    latL += 30.0
+                }
+
+                // 事件点
+                geotagged.forEach { item ->
+                    val x = xOf(item.lon!!)
+                    val y = yOf(item.lat!!)
+                    val srcCat = IntelFeedManager.SOURCES.firstOrNull { it.id == item.sourceId }?.category ?: "新闻"
+                    val c = intelCategoryColor(srcCat)
+                    val isSel = item.id == selectedId
+                    drawCircle(c.copy(alpha = 0.18f), (if (isSel) 12f else 8f) * density, Offset(x, y))
+                    drawCircle(c.copy(alpha = 0.95f), (if (isSel) 5f else 3.5f) * density, Offset(x, y))
+                    if (isSel) {
+                        drawCircle(Gold, 9f * density, Offset(x, y), style = Stroke(2f))
+                        drawLine(Gold.copy(alpha = 0.8f), Offset(x - 12f * density, y), Offset(x + 12f * density, y), 1.4f)
+                        drawLine(Gold.copy(alpha = 0.8f), Offset(x, y - 12f * density), Offset(x, y + 12f * density), 1.4f)
+                    }
+                }
+                selected?.let { item ->
+                    val x = xOf(item.lon!!)
+                    val y = yOf(item.lat!!)
+                    selLabel?.let { tag ->
+                        drawText(tag, topLeft = Offset((x + 14f * density).coerceAtMost(size.width - tag.size.width - 4f), (y - tag.size.height / 2f).coerceIn(0f, size.height - tag.size.height)))
+                    }
+                }
+            }
             if (geotagged.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -549,8 +727,12 @@ private fun MapTab(state: IntelFeedViewModel.State, onOpenItem: (IntelFeedManage
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.intel_map_hint, geotagged.size), fontFamily = Sans, fontSize = 9.sp, color = Gray, modifier = Modifier.weight(1f))
+            MapZoomBtn("-") { haptic.hud(); zoomBy(1.4f) }
+            Spacer(Modifier.width(6.dp))
+            MapZoomBtn("+") { haptic.hud(); zoomBy(0.7f) }
+            Spacer(Modifier.width(6.dp))
             Surface(
-                modifier = Modifier.clickable { haptic.hud(); fitRequested++ },
+                modifier = Modifier.clickable { haptic.hud(); fitTick++ },
                 shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
                 color = TacGreen.copy(alpha = 0.12f),
                 border = BorderStroke(1.dp, TacGreen.copy(alpha = 0.6f)),
@@ -610,14 +792,55 @@ private fun MapTab(state: IntelFeedViewModel.State, onOpenItem: (IntelFeedManage
     }
 }
 
-/** 事件点标记:类别色圆点,选中态金环 */
-private fun intelDot(color: Color, selected: Boolean): android.graphics.drawable.Drawable =
-    android.graphics.drawable.ShapeDrawable().apply {
-        shape = android.graphics.drawable.shapes.OvalShape()
-        paint.color = android.graphics.Color.argb(if (selected) 255 else 210, (color.red * 255).toInt(), (color.green * 255).toInt(), (color.blue * 255).toInt())
-        setIntrinsicWidth(if (selected) 34 else 26)
-        setIntrinsicHeight(if (selected) 34 else 26)
+/** 地图缩放按钮:ASCII 标签,与 FIT 同排 */
+@Composable
+private fun MapZoomBtn(label: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+        color = SurfaceAlt,
+        border = BorderStroke(1.dp, BorderDim),
+    ) {
+        Text(label, fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = White, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
     }
+}
+
+/** 自动窗口:事件点包络 + 20% 边距,按画布宽高比扩展较短方向(窗口与画布同比例,满幅不变形) */
+private fun autoGeoView(points: List<IntelFeedManager.FeedItem>, aspect: Float): FloatArray? {
+    if (points.isEmpty()) return null
+    val lons = points.map { it.lon!! }
+    val lats = points.map { it.lat!! }
+    var minLon = lons.minOrNull()!!.toDouble()
+    var maxLon = lons.maxOrNull()!!.toDouble()
+    var minLat = lats.minOrNull()!!.toDouble()
+    var maxLat = lats.maxOrNull()!!.toDouble()
+    val dLon = (maxLon - minLon).coerceAtLeast(10.0) * 0.20
+    val dLat = (maxLat - minLat).coerceAtLeast(10.0) * 0.20
+    minLon = (minLon - dLon).coerceIn(-180.0, 180.0)
+    maxLon = (maxLon + dLon).coerceIn(-180.0, 180.0)
+    minLat = (minLat - dLat).coerceIn(-85.0, 85.0)
+    maxLat = (maxLat + dLat).coerceIn(-85.0, 85.0)
+    if (maxLon - minLon < 6.0) { minLon = (minLon - 3.0).coerceIn(-180.0, 180.0); maxLon = (maxLon + 3.0).coerceIn(-180.0, 180.0) }
+    if (maxLat - minLat < 6.0) { minLat = (minLat - 3.0).coerceIn(-85.0, 85.0); maxLat = (maxLat + 3.0).coerceIn(-85.0, 85.0) }
+    var lonSpan = maxLon - minLon
+    var latSpan = maxLat - minLat
+    val centerLon = (minLon + maxLon) / 2.0
+    val centerLat = (minLat + maxLat) / 2.0
+    // 等比扩展较短方向;超出世界范围则保持几何窗口(画布侧留边补偿,不拉伸)
+    if (lonSpan / latSpan < aspect) {
+        val want = latSpan * aspect
+        if (want <= 360.0) lonSpan = want
+    } else {
+        val want = lonSpan / aspect
+        if (want <= 170.0) latSpan = want
+    }
+    minLon = (centerLon - lonSpan / 2.0).coerceIn(-180.0, 180.0 - lonSpan)
+    maxLon = minLon + lonSpan
+    minLat = (centerLat - latSpan / 2.0).coerceIn(-85.0, 85.0 - latSpan)
+    maxLat = minLat + latSpan
+    return floatArrayOf(minLon.toFloat(), maxLon.toFloat(), minLat.toFloat(), maxLat.toFloat())
+}
+
 
 /** 自动推荐:存档(★)条目的关键词频次打分,给未读条目排序 */
 private fun recommendItems(items: List<IntelFeedManager.FeedItem>): List<IntelFeedManager.FeedItem> {

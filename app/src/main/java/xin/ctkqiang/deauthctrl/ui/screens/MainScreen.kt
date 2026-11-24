@@ -63,26 +63,42 @@ import androidx.compose.material.icons.outlined.BluetoothDisabled
 import androidx.compose.material.icons.outlined.BluetoothSearching
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.CellTower
 import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Contactless
 import androidx.compose.material.icons.outlined.DevicesOther
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Equalizer
 import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.Sensors
+import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Dangerous
+import androidx.compose.material.icons.outlined.Forum
+import androidx.compose.material.icons.outlined.HistoryEdu
+import androidx.compose.material.icons.outlined.PhonelinkSetup
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.SettingsInputAntenna
+import androidx.compose.material.icons.outlined.SimCard
+import androidx.compose.material.icons.outlined.WifiTethering
 import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Http
 import androidx.compose.material.icons.outlined.Lan
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.ManageSearch
+import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Hub
@@ -92,14 +108,19 @@ import androidx.compose.material.icons.outlined.NetworkPing
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Radar
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.Router
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.TravelExplore
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.VideoCall
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -210,6 +231,12 @@ fun MainScreen(
     settingsVm: SettingsViewModel,
     aiVm: AiViewModel,
     initialPhotoId: Long? = null,
+    /** 调试深链:--es screen <route> 直达指定模块页 */
+    initialScreen: String? = null,
+    /** 调试深链:--ei chapter <n> wiki 章节直达 */
+    initialChapter: Int = -1,
+    /** 调试深链:--ez autoscan true CCTV 页进入即扫描 */
+    initialAutoScan: Boolean = false,
 ) {
     // 首次启动免责声明：接受后写入偏好，之后启动不再弹出。
     // 静态预览拿不到 SharedPreferences 时视为已接受，让预览直达主界面。
@@ -246,6 +273,16 @@ fun MainScreen(
             backStack.clear()
             openPhotoId = initialPhotoId
             screen = "taccam"
+        }
+    }
+
+    // 调试深链直达:清栈进入指定路由
+    LaunchedEffect(initialScreen) {
+        android.util.Log.d("DEEPLINK", "MainScreen effect initialScreen=$initialScreen")
+        initialScreen?.takeIf { it.isNotBlank() }?.let {
+            backStack.clear()
+            screen = it
+            android.util.Log.d("DEEPLINK", "navigated to $it")
         }
     }
 
@@ -343,7 +380,8 @@ fun MainScreen(
                     "ping" -> PingScreen(pingVm, back = goBack)
                     "blescan" -> BleScannerScreen(blescanVm, back = goBack)
                     "portscan" -> PortScannerScreen(portscanVm, initialHost = portScanHost, back = goBack)
-                    "walkie" -> WalkieTalkieScreen(walkieVm, back = goBack)
+                    "walkie" -> WalkieTalkieScreen(walkieVm, back = goBack, onOpenChannels = { navigate("radiochannels") })
+                    "radiochannels" -> RadioChannelsScreen(back = goBack)
                     "radar" -> openRadar()
                     "target" -> selectedTargetId?.let { TargetDossierScreen(radarVm, it, back = goBack) } ?: openRadar()
                     "filetransfer" -> FileTransferScreen(ftVm, arpVm, back = goBack)
@@ -359,6 +397,11 @@ fun MainScreen(
                     "otgprobe" -> OtgProbeScreen(onOpenArp = { navigate("arp") }, onOpenSerial = { navigate("serialmon") }, back = goBack)
                     "gnss" -> GnssSkyScreen(back = goBack)
                     "pdr" -> PdrHomingScreen(back = goBack)
+                    "nightlight" -> NightLightScreen(back = goBack)
+                    "beacon" -> BeaconScreen(back = goBack)
+                    "breadcrumbs" -> BreadcrumbsScreen(back = goBack)
+                    "rations" -> RationsScreen(back = goBack)
+                    "suntimes" -> SunTimesScreen(back = goBack)
                     "mains" -> MainsWireScreen(back = goBack)
                     "selfcheck" -> SelfCheckScreen(back = goBack)
                     "sonic" -> SonicLinkScreen(back = goBack)
@@ -377,10 +420,24 @@ fun MainScreen(
                     "morse" -> MorseScreen(back = goBack)
                     "dbview" -> DbViewScreen(dbVm, radarVm, blescanVm, wifiVm, back = goBack)
                     "taccam" -> TacticalCameraScreen(viewModel(), operatorName = username, back = goBack, openPhotoId = openPhotoId)
+                    "depth" -> DepthScanScreen(viewModel(), back = goBack, onOpenNightVision = { navigate("nightvision") })
+                    "wiki" -> WikiScreen(back = goBack, initialChapter = initialChapter)
                     "sdr" -> VoiceSdrScreen(viewModel(), back = goBack)
                     "irremote" -> IrRemoteScreen(viewModel(), back = goBack, onOpenUniversal = { navigate("flippertv") })
                     "gsm" -> GsmTowerScreen(back = goBack)
+                    "gsmlab" -> GsmLabScreen(back = goBack)
+                    "imsi" -> ImsiDetectorScreen(back = goBack)
+                    "honeypot" -> HoneypotScreen(back = goBack)
+                    "appshark" -> AppSharkScreen(back = goBack)
+                    "aircrack" -> AircrackScreen(back = goBack)
+                    "bitchat" -> BitChatScreen(back = goBack)
+                    "weaver" -> WeaverScreen(back = goBack)
+                    "blueducky" -> BlueDuckyScreen(back = goBack)
+                    "maoxuan" -> MaoxuanScreen(back = goBack)
+                    "fsociety" -> FsocietyScreen(back = goBack, nav = navigate)
                     "nfc" -> NfcScreen(viewModel(), back = goBack)
+                    "mfclassic" -> MfClassicScreen(back = goBack)
+                    "subghz" -> SubGhzLabScreen(back = goBack)
                     "nightvision" -> NightVisionScreen(viewModel(), back = goBack)
                     "tacmap" -> TacticalMapScreen(viewModel(), back = goBack)
                     "netmap" -> NetMapScreen(
@@ -400,7 +457,8 @@ fun MainScreen(
                     "level" -> LevelScreen(back = goBack)
                     "ai" -> AiScreen(aiVm, back = goBack)
                     "intel" -> IntelFeedScreen(viewModel(), back = goBack)
-                    "onvif" -> CameraOpsScreen(preselectIp = cctvPreselectIp, back = goBack)
+                    "wanted" -> WantedScreen(viewModel(), back = goBack)
+                    "onvif" -> CameraOpsScreen(preselectIp = cctvPreselectIp, back = goBack, autoScan = initialAutoScan)
                     "rfsense" -> RfSenseScreen(radarVm, back = goBack)
                     ROUTE_ABOUT -> SettingsScreen(settingsVm, back = goBack)
                 }
@@ -856,16 +914,31 @@ fun HomeScreen(
         HomeEntry(stringResource(R.string.home_netmap_name), stringResource(R.string.home_netmap_desc), "netmap", false, null, Icons.Outlined.TravelExplore),
         HomeEntry(stringResource(R.string.home_cve_name), stringResource(R.string.home_cve_desc), "cve", cver, null, Icons.Outlined.Search),
         HomeEntry(stringResource(R.string.home_intel_name), stringResource(R.string.home_intel_desc), "intel", false, null, Icons.Outlined.Notifications),
+        HomeEntry(stringResource(R.string.home_wanted_name), stringResource(R.string.home_wanted_desc), "wanted", false, null, Icons.Outlined.Gavel),
         HomeEntry(stringResource(R.string.home_onvif_name), stringResource(R.string.home_onvif_desc), "onvif", false, null, Icons.Outlined.CameraAlt),
         HomeEntry(stringResource(R.string.home_rfsense_name), stringResource(R.string.home_rfsense_desc), "rfsense", false, null, Icons.Outlined.Sensors),
         HomeEntry(stringResource(R.string.home_sdr_name), stringResource(R.string.home_sdr_desc), "sdr", false, null, Icons.Outlined.Equalizer),
         HomeEntry(stringResource(R.string.home_taccam_name), stringResource(R.string.home_taccam_desc), "taccam", false, null, Icons.Outlined.CameraAlt),
+        HomeEntry(stringResource(R.string.home_depth_name), stringResource(R.string.home_depth_desc), "depth", false, null, Icons.Outlined.Visibility),
+        HomeEntry(stringResource(R.string.home_wiki_name), stringResource(R.string.home_wiki_desc), "wiki", false, null, Icons.Outlined.MenuBook),
         HomeEntry(stringResource(R.string.home_gsm_name), stringResource(R.string.home_gsm_desc), "gsm", false, null, Icons.Outlined.Sensors),
+        HomeEntry(stringResource(R.string.home_gsmlab_name), stringResource(R.string.home_gsmlab_desc), "gsmlab", false, null, Icons.Outlined.SettingsInputAntenna),
+        HomeEntry(stringResource(R.string.home_imsi_name), stringResource(R.string.home_imsi_desc), "imsi", false, null, Icons.Outlined.SimCard),
+        HomeEntry(stringResource(R.string.home_honeypot_name), stringResource(R.string.home_honeypot_desc), "honeypot", false, null, Icons.Outlined.BugReport),
+        HomeEntry(stringResource(R.string.home_appshark_name), stringResource(R.string.home_appshark_desc), "appshark", false, null, Icons.Outlined.Security),
+        HomeEntry(stringResource(R.string.home_aircrack_name), stringResource(R.string.home_aircrack_desc), "aircrack", false, null, Icons.Outlined.WifiTethering),
+        HomeEntry(stringResource(R.string.home_bitchat_name), stringResource(R.string.home_bitchat_desc), "bitchat", false, null, Icons.Outlined.Forum),
+        HomeEntry(stringResource(R.string.home_weaver_name), stringResource(R.string.home_weaver_desc), "weaver", false, null, Icons.Outlined.AutoStories),
+        HomeEntry(stringResource(R.string.home_blueducky_name), stringResource(R.string.home_blueducky_desc), "blueducky", false, null, Icons.Outlined.PhonelinkSetup),
+        HomeEntry(stringResource(R.string.home_maoxuan_name), stringResource(R.string.home_maoxuan_desc), "maoxuan", false, null, Icons.Outlined.HistoryEdu),
+        HomeEntry(stringResource(R.string.home_fsociety_name), stringResource(R.string.home_fsociety_desc), "fsociety", false, null, Icons.Outlined.Dangerous),
         HomeEntry(stringResource(R.string.home_probe_name), stringResource(R.string.home_probe_desc), "probe", false, null, Icons.Outlined.Router),
         HomeEntry(stringResource(R.string.home_nightvision_name), stringResource(R.string.home_nightvision_desc), "nightvision", false, null, Icons.Outlined.Nightlight),
         HomeEntry(stringResource(R.string.home_tacmap_name), stringResource(R.string.home_tacmap_desc), "tacmap", false, null, Icons.Outlined.Map),
         HomeEntry(stringResource(R.string.home_irremote_name), stringResource(R.string.home_irremote_desc), "irremote", false, null, Icons.Outlined.Sensors),
         HomeEntry(stringResource(R.string.home_nfc_name), stringResource(R.string.home_nfc_desc), "nfc", false, null, Icons.Outlined.Contactless),
+        HomeEntry(stringResource(R.string.home_mfclassic_name), stringResource(R.string.home_mfclassic_desc), "mfclassic", false, null, Icons.Outlined.Memory),
+        HomeEntry(stringResource(R.string.home_subghz_name), stringResource(R.string.home_subghz_desc), "subghz", false, null, Icons.Outlined.CellTower),
 
         HomeEntry(stringResource(R.string.home_webserver_name), stringResource(R.string.home_webserver_desc), "webserver", wsr, { if (wsr) wsVm.stopServer() else wsVm.startServer() }, Icons.Outlined.Language),
         HomeEntry(stringResource(R.string.home_http_name), stringResource(R.string.home_http_desc), "http", httpr, null, Icons.Outlined.Http),
@@ -878,6 +951,7 @@ fun HomeScreen(
         HomeEntry(stringResource(R.string.home_wifijam_name), stringResource(R.string.home_wifijam_desc), "wifijam", wjr, { if (wjr) wjVm.stop() else wjVm.start() }, Icons.Outlined.WifiOff),
 
         HomeEntry(stringResource(R.string.home_walkie_name), stringResource(R.string.home_walkie_desc), "walkie", walkier, { if (walkier) walkieVm.stop() else walkieVm.start() }, Icons.Outlined.Mic),
+        HomeEntry(stringResource(R.string.home_radiochannels_name), stringResource(R.string.home_radiochannels_desc), "radiochannels", false, null, Icons.Outlined.Tune),
         HomeEntry(stringResource(R.string.home_filetransfer_name), stringResource(R.string.home_filetransfer_desc), "filetransfer", ftr, { if (ftr) ftVm.stop() else ftVm.start() }, Icons.Outlined.SwapHoriz),
         HomeEntry(stringResource(R.string.home_mirroring_name), stringResource(R.string.home_mirroring_desc), "mirroring", mirrorr, null, Icons.Outlined.Cast),
         HomeEntry(stringResource(R.string.home_vault_name), stringResource(R.string.home_vault_desc), "vault", false, null, Icons.Outlined.Lock),
@@ -890,6 +964,11 @@ fun HomeScreen(
         HomeEntry(stringResource(R.string.home_otgprobe_name), stringResource(R.string.home_otgprobe_desc), "otgprobe", false, null, Icons.Outlined.SwapHoriz),
         HomeEntry(stringResource(R.string.home_gnss_name), stringResource(R.string.home_gnss_desc), "gnss", false, null, Icons.Outlined.TravelExplore),
         HomeEntry(stringResource(R.string.home_pdr_name), stringResource(R.string.home_pdr_desc), "pdr", false, null, Icons.Outlined.Navigation),
+        HomeEntry(stringResource(R.string.home_nightlight_name), stringResource(R.string.home_nightlight_desc), "nightlight", false, null, Icons.Outlined.Nightlight),
+        HomeEntry(stringResource(R.string.home_beacon_name), stringResource(R.string.home_beacon_desc), "beacon", false, null, Icons.Outlined.Campaign),
+        HomeEntry(stringResource(R.string.home_breadcrumbs_name), stringResource(R.string.home_breadcrumbs_desc), "breadcrumbs", false, null, Icons.Outlined.Route),
+        HomeEntry(stringResource(R.string.home_rations_name), stringResource(R.string.home_rations_desc), "rations", false, null, Icons.Outlined.Restaurant),
+        HomeEntry(stringResource(R.string.home_suntimes_name), stringResource(R.string.home_suntimes_desc), "suntimes", false, null, Icons.Outlined.WbSunny),
         HomeEntry(stringResource(R.string.home_mains_name), stringResource(R.string.home_mains_desc), "mains", false, null, Icons.Outlined.Sensors),
         HomeEntry(stringResource(R.string.home_selfcheck_name), stringResource(R.string.home_selfcheck_desc), "selfcheck", false, null, Icons.Outlined.Storage),
         HomeEntry(stringResource(R.string.home_sonic_name), stringResource(R.string.home_sonic_desc), "sonic", false, null, Icons.Outlined.Equalizer),
@@ -921,12 +1000,12 @@ fun HomeScreen(
     )
 
     val groups = listOf(
-        HomeGroup(stringResource(R.string.home_group_recon), Color(0xFF00E5FF), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "intel", "onvif", "rfsense", "sdr", "taccam", "gsm", "mdns")),
-        HomeGroup(stringResource(R.string.home_group_wireless), Color(0xFFFF4D5E), listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench")),
-        HomeGroup(stringResource(R.string.home_group_tools), Color(0xFF00E676), listOf("walkie", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview", "hash", "qr", "keygen", "ai")),
-        HomeGroup(stringResource(R.string.home_group_situational), Gold, listOf("gnss", "pdr", "mains", "sonic", "selfcheck", "level")),
-        HomeGroup(stringResource(R.string.home_group_lab), Warn, listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools")),
-        HomeGroup(stringResource(R.string.home_group_network), Color(0xFFB388FF), listOf("webserver", "http", "brute", "ping", "packetmon", "dns", "whois", "tlscert")),
+        HomeGroup(stringResource(R.string.home_group_recon), Color(0xFF00E5FF), listOf("arp", "blescan", "portscan", "radar", "probe", "netmap", "netbios", "snmp", "cve", "intel", "wanted", "onvif", "rfsense", "sdr", "taccam", "depth", "gsm", "gsmlab", "mdns", "weaver")),
+        HomeGroup(stringResource(R.string.home_group_wireless), Color(0xFFFF4D5E), listOf("ble", "wifi", "btjam", "wifijam", "irremote", "nfc", "blegatt", "nordicbench", "aircrack", "bitchat", "blueducky")),
+        HomeGroup(stringResource(R.string.home_group_tools), Color(0xFF00E676), listOf("walkie", "radiochannels", "filetransfer", "mirroring", "conference", "nightvision", "tacmap", "vault", "payload", "revshell", "terminal", "localterm", "morse", "serialmon", "otgprobe", "dbview", "hash", "qr", "keygen", "ai", "wiki", "appshark", "maoxuan", "fsociety")),
+        HomeGroup(stringResource(R.string.home_group_situational), Gold, listOf("gnss", "pdr", "nightlight", "beacon", "breadcrumbs", "rations", "suntimes", "mains", "sonic", "selfcheck", "level", "imsi")),
+        HomeGroup(stringResource(R.string.home_group_lab), Warn, listOf("mesh", "sonar", "chansurvey", "seismo", "logicscope", "flippertv", "lantools", "mfclassic", "subghz")),
+        HomeGroup(stringResource(R.string.home_group_network), Color(0xFFB388FF), listOf("webserver", "http", "brute", "ping", "packetmon", "dns", "whois", "tlscert", "honeypot")),
     )
 
     val entriesByRoute = entries.associateBy { it.route }

@@ -95,4 +95,10 @@
     <string name="onvif_ok_darken">画面已压暗</string>
     <string name="onvif_ok_restore">画面已恢复</string>
     <string name="onvif_imaging_warn">会真实改变摄像头直播画面 —— 仅限授权设备。恢复档为进程内存级。</string>
+    <string name="onvif_btn_scan_all">一键扫描(组播 + HTTP 网段探测)</string>
+    <string name="onvif_scan_hint">阶段 1:WS-Discovery 组播发现(已持有组播锁)。阶段 2:对本机 /24 网段逐台 HTTP ONVIF 探测(端口 80/8899/8080)—— 覆盖「组播被防火墙干掉但网页服务在」的摄像头。</string>
+    <string name="onvif_empty_title">没扫到 —— 为什么,以及怎么办</string>
+    <string name="onvif_empty_reasons">1. 摄像头在独立安防 VLAN —— 你连的 Wi-Fi 与它们不同网段,组播与扫描都到不了(商场/车库「满场 CCTV」扫出 0 台最常见的原因)。\n2. 访客 Wi-Fi 开启 AP 客户端隔离 —— 即使同网段,手机与任何设备互不可达。\n3. 摄像头并非 ONVIF 设备(小米/萤石等 P2P 云摄像头、同轴模拟机 + 硬盘录像机)或未开启 ONVIF(海康/大华默认关闭)。\n4. 确认同网段且支持 ONVIF:用「手动」模式直接输入摄像头 IP 探测,或检查防火墙。</string>
+    <string name="onvif_src_http">HTTP</string>
+    <string name="onvif_found_at">发现于 %1$s · 实时 SOAP 响应,非内置数据</string>
 </resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gsm_title">GSM Lab</string>
+    <string name="gsm_tab_live">LIVE CELL</string>
+    <string name="gsm_tab_calc">FREQ CALC</string>
+    <string name="gsm_operator">OPERATOR</string>
+    <string name="gsm_mccmnc">MCC / MNC</string>
+    <string name="gsm_nettype">NETWORK</string>
+    <string name="gsm_roaming">ROAMING</string>
+    <string name="gsm_serving">SERVING CELL</string>
+    <string name="gsm_type">RAT</string>
+    <string name="gsm_cellid">CELL ID</string>
+    <string name="gsm_band">BAND</string>
+    <string name="gsm_signal">SIGNAL</string>
+    <string name="gsm_tadist">TA DISTANCE (EST.)</string>
+    <string name="gsm_no_service">No registered cell — check SIM and permission</string>
+    <string name="gsm_neighbors">NEIGHBOR CELLS (%1$d)</string>
+    <string name="gsm_note">Timing-advance distance is an estimate (GSM TA × 550 m · LTE TA × 78 m). Cell identities come from the live modem — no network needed.</string>
+    <string name="gsm_calc_hint">Input ARFCN (1–885) · EARFCN (1200–60000) · or MHz (300–3000)</string>
+    <string name="gsm_calc_ph">e.g. 512 · 1300 · 1815</string>
+    <string name="gsm_calc_empty">Enter a value: GSM ARFCN / LTE EARFCN / frequency in MHz</string>
+    <string name="gsm_calc_bands">LTE bands covered: B1 2100 · B3 1800 · B5 850 · B7 2600 · B8 900 · B20 800 · B28 700 · B38/B40/B41 TDD. GSM: 850/900/1800/1900.</string>
+</resources>

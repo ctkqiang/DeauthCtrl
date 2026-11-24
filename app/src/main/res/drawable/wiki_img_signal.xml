@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 信号:SOS 三短三长三短 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M8,14 h4 M16,14 h4 M24,14 h4" android:strokeColor="#00E676" android:strokeWidth="3" android:fillColor="#00000000"/>
+    <path android:pathData="M8,24 h12 M8,34 h4 M16,34 h4 M24,34 h4" android:strokeColor="#00E676" android:strokeWidth="3" android:fillColor="#00000000"/>
+    <path android:pathData="M36,10 L40,14 L36,18 M40,38 L36,34" android:strokeColor="#FFD54F" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+</vector>

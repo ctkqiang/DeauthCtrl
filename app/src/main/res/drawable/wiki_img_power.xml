@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 应急电力:电池 + 太阳能 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M12,18 h20 a2,2 0 0 1 2,2 v12 a2,2 0 0 1 -2,2 h-20 a2,2 0 0 1 -2,-2 v-12 a2,2 0 0 1 2,-2 Z" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M36,22 h3 v8 h-3" android:strokeColor="#00E676" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M24,20 L20,26 L23,26 L19,32 L28,24 L25,24 L29,20 Z" android:fillColor="#FFD54F"/>
+    <path android:pathData="M6,8 L6,18 M2,11 L10,11" android:strokeColor="#FFD54F" android:strokeWidth="2" android:fillColor="#00000000"/>
+</vector>

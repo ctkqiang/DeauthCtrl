@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 反窃听:放大镜 + 信号弧 + 目标点 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M18,18 A9,9 0 1,1 17.99,18" android:strokeColor="#00E5FF" android:strokeWidth="2.5" android:fillColor="#00000000"/>
+    <path android:pathData="M25,25 L36,36" android:strokeColor="#00E5FF" android:strokeWidth="3" android:fillColor="#00000000"/>
+    <path android:pathData="M18,4 A14,14 0 0 1 18,12 M14,5 A9,9 0 0 1 14,10" android:strokeColor="#FFD54F" android:strokeWidth="1.8" android:fillColor="#00000000"/>
+    <path android:pathData="M18,18 A2,2 0 1,1 17.99,18" android:fillColor="#FF5252"/>
+</vector>

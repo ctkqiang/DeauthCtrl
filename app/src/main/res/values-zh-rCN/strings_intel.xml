@@ -20,7 +20,7 @@
     <string name="intel_src_fail">✖ 失败</string>
     <string name="intel_src_pending">… 未拉取</string>
     <string name="intel_map_empty">还没有地理事件 —— 刷新或等世界新闻进来</string>
-    <string name="intel_map_tap_hint">点圆点看详情</string>
+    <string name="intel_map_tap_hint">双指缩放 · 拖动平移 · 点圆点看详情</string>
     <string name="intel_reader_inapp">应用内阅读</string>
     <string name="intel_sort_time">最新</string>
     <string name="intel_sort_cat">按类别</string>
