@@ -1,12 +1,12 @@
 package xin.ctkqiang.deauthctrl.manager
 
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 /**
  * OUI 资产完整性回归测试。
@@ -19,21 +19,20 @@ import org.robolectric.RuntimeEnvironment
  *
  * 若资产在构建中被剥离或改坏,此测试第一个报警。
  */
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 class BleVendorDbTest {
 
     @Test
-    fun `bundled asset parses to a large index`() {
-        val context = RuntimeEnvironment.getApplication()
+    fun bundledAssetParsesToALargeIndex() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val stream = context.assets.open(BleVendorDb.ASSET_PATH)
         val index = BleVendorDb.parse(stream)
-        assertTrue("注册表应解析出 5 万条以上前缀,实际 ${index.size}",
-            index.size > 50_000)
+        assertTrue("注册表应解析出 5 万条以上前缀,实际 ${index.size}", index.size > 50_000)
     }
 
     @Test
-    fun `xerox prefix is resolvable from bundled asset`() {
-        val context = RuntimeEnvironment.getApplication()
+    fun xeroxPrefixIsResolvableFromBundledAsset() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val vendor = BleVendorDb.vendorOfMac(context, "00:00:00:11:22:33")
         assertNotNull("00:00:00 前缀必须可查", vendor)
         assertEquals("Xerox", vendor)
